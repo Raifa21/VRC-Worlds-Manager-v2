@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-siderbar";
 
 
 const geistSans = Geist({
@@ -23,11 +24,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-    return (
-        <html lang="en">
-          <body>
-            <main>{children}</main>
-          </body>
-        </html>
-      )
+  return (
+    <html>
+      <body>
+        <SidebarProvider>
+          <AppSidebar />
+          <div>
+            <SidebarTrigger />
+            {children}
+          </div>
+        </SidebarProvider>
+      </body>
+    </html>
+  );
 }
