@@ -1,13 +1,47 @@
+"use client"
+
 import Gear from "@/../public/icons/Gear.svg"
 import Logout from "@/../public/icons/Logout.svg"
 import Saturn from "@/../public/icons/Saturn.svg"
 import { File, ChevronDown, Info } from "lucide-react"
 import Image from "next/image"
 
+import { invoke } from '@tauri-apps/api/core';
+import { useState, useEffect } from 'react';
+
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarFooter, SidebarGroupLabel } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "./ui/collapsible";
 
+
+interface Folder {
+    folderName: string;
+    worldCount: number;
+}
+
 export function AppSidebar() {
+    const [folders, setFolders] = useState<Folder[]>([]);
+
+    useEffect(() => {
+        loadFolders();
+    }, []);
+
+    const loadFolders = async () => {
+        try {
+            const result = await invoke<Folder[]>('get_folders');
+            setFolders(result);
+        } catch (error) {
+            console.error('Failed to load folders:', error);
+        }
+    };
+
+    const createFolder = async (name: string) => {
+        try {
+            await invoke<Folder>('create_folder', { folderName: name });
+            await loadFolders(); // Reload folders after creating new one
+        } catch (error) {
+            console.error('Failed to create folder:', error);
+        }
+    };
     return (
         <Sidebar>
             <SidebarHeader>
@@ -28,7 +62,9 @@ export function AppSidebar() {
                             </CollapsibleTrigger>
                         </SidebarGroupLabel>
                         <CollapsibleContent>
-                            file 1
+                            {folders.map((folder, index) => (
+                                <div key={index}>{folder.folderName}</div>
+                            ))}
                         </CollapsibleContent>
                     </SidebarGroup>
                 </Collapsible>

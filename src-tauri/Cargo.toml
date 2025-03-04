@@ -24,3 +24,6 @@ log = "0.4"
 tauri = { version = "2.2.4", features = [] }
 tauri-plugin-log = "2.0.0-rc"
 vrchatapi = "1.19.1"
+chrono = { version = "0.4", features = ["serde"] }
+directories = "6.0.0"
+toml = "0.8.20"
