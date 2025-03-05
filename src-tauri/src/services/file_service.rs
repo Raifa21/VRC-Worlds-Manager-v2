@@ -1,4 +1,5 @@
 use crate::definitions::AuthCookies;
+use log;
 use crate::definitions::{StoredFolder, WorldModel};
 use crate::services::EncryptionService;
 use directories::BaseDirs;
@@ -26,6 +27,7 @@ impl FileService {
     }
 
     fn read_config(path: &std::path::PathBuf) -> Result<AuthCookies, String> {
+        log::info!("Reading config from: {:?}", path);
         let encrypted =
             fs::read_to_string(path).map_err(|e| format!("Failed to read config: {}", e))?;
 

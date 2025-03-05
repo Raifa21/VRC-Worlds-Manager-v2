@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use tauri_plugin_log::{Target, TargetKind};
 
 mod commands;
 mod definitions;
@@ -16,17 +17,11 @@ pub fn run() {
     };
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::new().target(tauri_plugin_log::Target::new(
+            tauri_plugin_log::TargetKind::Stdout,
+                ))
+                .build())
         .manage(state)
-        .setup(|app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
-            Ok(())
-        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
