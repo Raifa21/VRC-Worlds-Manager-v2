@@ -1,18 +1,14 @@
 use serde::Deserialize;
-use std::fs;
-use base64;
 
-#[derive(Deserialize)]
+/// Configuration settings for the application
+#[derive(Debug, Deserialize)]
 pub struct Config {
-    pub api_key: String,
+    //TODO: Add fields for configuration settings
 }
 
-pub fn load_config() -> Result<Config, String> {
-    let (config_path, _, _) = crate::config::paths::get_paths();
-    
-    let encoded = fs::read_to_string(config_path)
-        .map_err(|e| format!("Failed to read config: {}", e))?;
-        
-    toml::from_slice(&decoded)
-        .map_err(|e| format!("Failed to parse config: {}", e))
+impl Config {
+    // Load the configuration from the specified file
 }
+
+#[cfg(test)]
+mod tests {}

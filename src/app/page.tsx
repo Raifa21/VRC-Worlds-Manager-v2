@@ -9,7 +9,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    invoke('get_data')
+    invoke('initialize_app')
       .catch(err => setError(err.toString()))
   }, [])
   if (error != null) {
@@ -18,7 +18,6 @@ export default function Home() {
     }, []);
   }
   else {
-
     useEffect(() => {
       router.push("/listview");
     }, []);

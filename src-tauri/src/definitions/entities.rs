@@ -2,42 +2,103 @@ use chrono::NaiveDateTime as DateTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WorldModel {
+pub struct WorldApiData {
+    #[serde(rename = "imageUrl")]
     pub image_url: String,
+    #[serde(rename = "name")]
     pub world_name: String,
+    #[serde(rename = "id")]
     pub world_id: String,
+    #[serde(rename = "authorName")]
     pub author_name: String,
+    #[serde(rename = "authorId")]
     pub author_id: String,
+
     pub capacity: i32,
+    #[serde(rename = "recommendedCapacity")]
     pub recommended_capacity: Option<i32>,
+
     pub tags: Vec<String>,
+    #[serde(rename = "publicationDate")]
     pub publication_date: DateTime,
+    #[serde(rename = "updated_at")]
     pub last_update: DateTime,
+
     pub description: String,
     pub visits: Option<i32>,
     pub favorites: i32,
-    pub date_added: DateTime,
     pub platform: Vec<String>,
-    pub memo: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StoredFolder {
-    pub folder_name: String,
-    pub world_ids: Vec<String>, // Only IDs for storage
+pub struct WorldUserData {
+    pub date_added: DateTime,
+    pub memo: String,
+    pub folders: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
-pub struct RuntimeFolder {
-    pub folder_name: String,
-    pub worlds: Vec<WorldModel>, // Full world objects for memory
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorldModel {
+    #[serde(flatten)]
+    pub api_data: WorldApiData,
+    #[serde(flatten)]
+    pub user_data: WorldUserData,
 }
 
-impl From<StoredFolder> for RuntimeFolder {
-    fn from(stored: StoredFolder) -> Self {
-        RuntimeFolder {
-            folder_name: stored.folder_name,
-            worlds: vec![],
+impl WorldModel {
+    pub fn new(
+        image_url: String,
+        world_name: String,
+        world_id: String,
+        author_name: String,
+        author_id: String,
+        capacity: i32,
+        recommended_capacity: Option<i32>,
+        tags: Vec<String>,
+        publication_date: DateTime,
+        last_update: DateTime,
+        description: String,
+        visits: Option<i32>,
+        favorites: i32,
+        platform: Vec<String>,
+    ) -> Self {
+        Self {
+            api_data: WorldApiData {
+                image_url,
+                world_name,
+                world_id,
+                author_name,
+                author_id,
+                capacity,
+                recommended_capacity,
+                tags,
+                publication_date,
+                last_update,
+                description,
+                visits,
+                favorites,
+                platform,
+            },
+            user_data: WorldUserData {
+                date_added: chrono::Utc::now().naive_utc(),
+                memo: "".to_string(),
+                folders: vec![],
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FolderModel {
+    pub folder_name: String,
+    pub world_ids: Vec<String>, // Only IDs are stored to ensure data consistency
+}
+
+impl FolderModel {
+    pub fn new(folder_name: String) -> Self {
+        Self {
+            folder_name,
+            world_ids: vec![],
         }
     }
 }
