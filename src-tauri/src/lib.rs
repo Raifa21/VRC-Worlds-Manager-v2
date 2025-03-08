@@ -1,18 +1,38 @@
-use std::sync::Arc;
+use definitions::{AuthCookies, FolderModel, PreferenceModel, WorldModel};
+use state::InitCell;
+use std::sync::RwLock;
 use tauri_plugin_log::{Target, TargetKind};
 
 mod commands;
 mod definitions;
 mod errors;
 mod services;
-mod state;
-mod utils;
+
+static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
+static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
+static WORLDS: InitCell<RwLock<Vec<WorldModel>>> = InitCell::new();
+static AUTH: InitCell<RwLock<AuthCookies>> = InitCell::new();
+static INITSTATE: InitCell<RwLock<definitions::InitState>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Initialize application state with folder/world data, with error handling
-    let state = Arc::new(state::app_state::AppState::initialize());
+    match services::initialize_service::initialize_app() {
+        Ok((preferences, folders, worlds, auth, init_state)) => {
+            PREFERENCES.set(RwLock::new(preferences));
+            FOLDERS.set(RwLock::new(folders));
+            WORLDS.set(RwLock::new(worlds));
+            AUTH.set(RwLock::new(auth));
+            INITSTATE.set(RwLock::new(init_state));
+        }
+        Err(e) => {
+            PREFERENCES.set(RwLock::new(PreferenceModel::new()));
+            FOLDERS.set(RwLock::new(vec![]));
+            WORLDS.set(RwLock::new(vec![]));
+            AUTH.set(RwLock::new(AuthCookies::new()));
+            INITSTATE.set(RwLock::new(definitions::InitState::error(false, e)));
+        }
+    };
 
     tauri::Builder::default()
         .plugin(
@@ -21,11 +41,15 @@ pub fn run() {
                 .level(log::LevelFilter::Info)
                 .build(),
         )
-        .manage(state)
         .invoke_handler(tauri::generate_handler![
             commands::folder_commands::get_folders,
             commands::folder_commands::create_folder,
-            commands::data::read_data_commands::initialize_app,
+            commands::folder_commands::delete_folder,
+            commands::folder_commands::add_world_to_folder,
+            commands::folder_commands::remove_world_from_folder,
+            commands::folder_commands::get_worlds,
+            commands::data::read_data_commands::require_initial_setup,
+            commands::data::read_data_commands::check_files_loaded,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

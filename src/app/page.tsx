@@ -9,19 +9,28 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    invoke('initialize_app')
-      .catch(err => setError(err.toString()))
-  }, [])
-  if (error != null) {
-    useEffect(() => {
-      router.push(`${"/error/read_data_error"}?${error}`);
-    }, []);
-  }
-  else {
-    useEffect(() => {
-      router.push("/listview");
-    }, []);
+    const checkFirstTime = async () => {
+      const isFirstTime = await invoke('check_first_time');
+      if (isFirstTime) {
+        // Handle first time setup
+        router.push("/setup");
+      } else {
+        const checkFilesLoaded = async () => {
+          try {
+            await invoke('check_files_loaded');
+            router.push("/listview");
+            const isFilesLoaded = await invoke('check_files_loaded');
+          }
+          catch (err) {
+            router.push(`${"/error/read_data_error"}?${encodeURIComponent(String(err))}`);
+          }
+        };
+        checkFilesLoaded();
+      }
+    };
+    checkFirstTime();
+  }, []);
 
-    return <div>Redirecting...</div>;
-  }
+  return <div>Redirecting...</div>;
 }
+

@@ -1,6 +1,6 @@
 use crate::definitions::{FolderModel, WorldModel};
 use crate::errors::{AppError, ConcurrencyError, EntityError};
-use crate::state::app_state::AppState;
+use std::sync::RwLock;
 
 /// Service for managing world/folder operations
 #[derive(Debug)]
@@ -11,9 +11,10 @@ impl FolderManager {
     /// Updates existing world data if the world is already in the folder
     ///
     /// # Arguments
-    /// * `state` - The application state
     /// * `folder_name` - The name of the folder
     /// * `world_id` - The ID of the world to add
+    /// * `folders` - The list of folders, as a RwLock
+    /// * `worlds` - The list of worlds, as a RwLock
     ///
     /// # Returns
     /// Ok if the world was added successfully
@@ -22,42 +23,38 @@ impl FolderManager {
     /// Returns an error if the folder is not found
     /// Returns an error if the world is not found
     /// Returns an error if the folders lock is poisoned
-    #[must_use]
     pub fn add_world_to_folder(
-        state: &AppState,
         folder_name: String,
         world_id: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        worlds: &RwLock<Vec<WorldModel>>,
     ) -> Result<(), AppError> {
-        let mut folders_lock = state
-            .folders
-            .lock()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+
         let folder = folders_lock
             .iter_mut()
             .find(|f| f.folder_name == folder_name);
-
-        let mut worlds_lock = state
-            .worlds
-            .lock()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
         let world = worlds_lock
             .iter_mut()
             .find(|w| w.api_data.world_id == world_id);
 
-        match folder {
-            Some(folder) => {
-                match world {
-                    Some(world) => {
-                        if !world.user_data.folders.iter().any(|f| f == &folder_name) {
-                            folder.world_ids.push(world_id.clone());
-                        }
-                    }
-                    None => return Err(EntityError::WorldNotFound(world_id).into()),
-                }
-                Ok(())
-            }
-            None => Err(EntityError::FolderNotFound(folder_name).into()),
+        if folder.is_none() {
+            return Err(EntityError::FolderNotFound(folder_name).into());
         }
+        if world.is_none() {
+            return Err(EntityError::WorldNotFound(world_id).into());
+        }
+        let folder = folder.unwrap();
+        let world = world.unwrap();
+
+        if !world.user_data.folders.iter().any(|f| f == &folder_name) {
+            folder.world_ids.push(world_id.clone());
+            world.user_data.folders.push(folder_name.clone());
+        }
+        Ok(())
     }
 
     /// Removes a world from a folder
@@ -65,9 +62,10 @@ impl FolderManager {
     /// If the world is not in any other folder, add to "Unclassified" folder
     ///
     /// # Arguments
-    /// * `state` - The application state
     /// * `folder_name` - The name of the folder
     /// * `world_id` - The ID of the world to remove
+    /// * `folders` - The list of folders, as a RwLock
+    /// * `worlds` - The list of worlds, as a RwLock
     ///
     /// # Returns
     /// Ok if the world was removed successfully
@@ -75,52 +73,73 @@ impl FolderManager {
     /// # Errors
     /// Returns an error if the folder is not found
     /// Returns an error if the folders lock is poisoned
-    #[must_use]
     pub fn remove_world_from_folder(
-        state: &AppState,
         folder_name: String,
         world_id: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        worlds: &RwLock<Vec<WorldModel>>,
     ) -> Result<(), AppError> {
-        let (_unused1, mut folders, mut worlds, _unused2) = state
-            .access_all()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
-        let folders = folders.iter_mut().find(|f| f.folder_name == folder_name);
-        let worlds = worlds.iter_mut().find(|w| w.api_data.world_id == world_id);
-        if folders.is_none() {
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+
+        let folder = folders_lock
+            .iter_mut()
+            .find(|f| f.folder_name == folder_name);
+        let world = worlds_lock
+            .iter_mut()
+            .find(|w| w.api_data.world_id == world_id);
+        if folder.is_none() {
             return Err(EntityError::FolderNotFound(folder_name).into());
         }
-        if worlds.is_none() {
+        if world.is_none() {
             return Err(EntityError::WorldNotFound(world_id).into());
         }
-        let folders = folders.unwrap();
-        let worlds = worlds.unwrap();
+        let folder = folder.unwrap();
+        let world = world.unwrap();
 
-        let mut world_folders = &mut worlds.user_data.folders;
-        if world_folders.iter().any(|f| f == &folder_name) {
-            //remove the folder from the world's folders
-            let folder_index = world_folders.iter().position(|f| f == &folder_name);
-            if let Some(index) = folder_index {
-                world_folders.remove(index);
-            }
+        let should_add_to_unclassified = {
+            if world.user_data.folders.contains(&folder_name) {
+                // Remove folder from world's folders
+                if let Some(index) = world
+                    .user_data
+                    .folders
+                    .iter()
+                    .position(|f| f == &folder_name)
+                {
+                    world.user_data.folders.remove(index);
+                }
 
-            //remove the world from the folder's world_ids
-            let folder_index = folders.world_ids.iter().position(|id| id == &world_id);
-            if let Some(index) = folder_index {
-                folders.world_ids.remove(index);
-            }
+                // Remove world from folder's world_ids
+                if let Some(index) = folder.world_ids.iter().position(|id| id == &world_id) {
+                    folder.world_ids.remove(index);
+                }
 
-            //if the world is not in any other folder after removing the current folder, add it to "Unclassified"
-            if folders.world_ids.is_empty() {
-                Self::add_world_to_folder(state, "Unclassified".to_string(), world_id)?;
+                world.user_data.folders.is_empty()
+            } else {
+                return Err(EntityError::FolderNotFound(folder.folder_name.clone()).into());
             }
+        };
+
+        if should_add_to_unclassified {
+            drop(folders_lock);
+            drop(worlds_lock);
+            FolderManager::add_world_to_folder(
+                "Unclassified".to_string(),
+                world_id,
+                folders,
+                worlds,
+            )?;
         }
+
         Ok(())
     }
 
     /// Get the names of all folders
     ///
     /// # Arguments
-    /// * `state` - The application state
+    /// * `folders` - The list of folders, as a RwLock
     ///
     /// # Returns
     /// A vector of folder names
@@ -128,14 +147,10 @@ impl FolderManager {
     /// # Errors
     /// Returns an error if the folders lock is poisoned
     #[must_use]
-    pub fn get_folders(state: &AppState) -> Result<Vec<String>, AppError> {
-        Ok(state
-            .folders
-            .lock()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?
-            .iter()
-            .map(|folder| folder.folder_name.clone())
-            .collect())
+    pub fn get_folders(folders: &RwLock<Vec<FolderModel>>) -> Result<Vec<String>, AppError> {
+        let folders_lock = folders.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let folder_names = folders_lock.iter().map(|f| f.folder_name.clone()).collect();
+        Ok(folder_names)
     }
 
     /// Returns a unique name for a folder, as a string
@@ -145,8 +160,8 @@ impl FolderManager {
     /// If it is, we increment the number
     ///
     /// # Arguments
-    /// * `state` - The application state
     /// * `name` - The name of the new folder
+    /// * `folders` - The list of folders, as a RwLock
     ///
     /// # Returns
     /// The unique folder name
@@ -154,11 +169,11 @@ impl FolderManager {
     /// # Errors
     /// Returns an error if the folders lock is poisoned
     #[must_use]
-    fn increment_folder_name(state: &AppState, name: String) -> Result<String, AppError> {
-        let folders_lock = state
-            .folders
-            .lock()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
+    fn increment_folder_name(
+        name: String,
+        folders: &RwLock<Vec<FolderModel>>,
+    ) -> Result<String, AppError> {
+        let folders_lock = folders.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
 
         let mut new_name = name.clone();
         let mut base_name = name.clone();
@@ -177,6 +192,7 @@ impl FolderManager {
         }
         // if not, check if the name already exists
         while folders_lock.iter().any(|f| f.folder_name == new_name) {
+            println!("Folder name exists: {}", new_name);
             new_name = format!("{} ({})", base_name, count);
             count += 1;
         }
@@ -187,8 +203,8 @@ impl FolderManager {
     /// Use the increment_folder_name function to get a unique name
     ///
     /// # Arguments
-    /// * `state` - The application state
     /// * `name` - The name of the new folder
+    /// * `folders` - The list of folders, as a RwLock
     ///
     /// # Returns
     /// The new folder
@@ -196,12 +212,15 @@ impl FolderManager {
     /// # Errors
     /// Returns an error if the folders lock is poisoned
     #[must_use]
-    pub fn create_folder(state: &AppState, name: String) -> Result<FolderModel, AppError> {
-        let new_name = FolderManager::increment_folder_name(state, name)?;
-        let mut folders_lock = state
-            .folders
-            .lock()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
+    pub fn create_folder(
+        name: String,
+        folders: &RwLock<Vec<FolderModel>>,
+    ) -> Result<FolderModel, AppError> {
+        let new_name = FolderManager::increment_folder_name(name, folders)?;
+
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
 
         let new_folder = FolderModel::new(new_name);
         folders_lock.push(new_folder.clone());
@@ -214,32 +233,44 @@ impl FolderManager {
     ///
     ///
     /// # Arguments
-    /// * `state` - The application state
     /// * `name` - The name of the folder to delete
+    /// * `folders` - The list of folders, as a RwLock
+    /// * `worlds` - The list of worlds, as a RwLock
     ///
     /// # Returns
     /// Ok if the folder was deleted successfully
     ///
     /// # Errors
     /// Returns an error if the folder is not found
-    #[must_use]
-    pub fn delete_folder(state: &AppState, name: String) -> Result<(), AppError> {
+    pub fn delete_folder(
+        name: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<(), AppError> {
         if name == "Unclassified" {
             return Err(EntityError::InvalidOperation(
                 "Cannot delete the 'Unclassified' folder".to_string(),
             )
             .into());
         }
-        let mut folders_lock = state
-            .folders
-            .lock()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
+
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+
         let folder_index = folders_lock.iter().position(|f| f.folder_name == name);
         match folder_index {
             Some(index) => {
-                let folder = folders_lock.remove(index);
-                for world_id in folder.world_ids {
-                    Self::remove_world_from_folder(state, name.clone(), world_id)?;
+                let world_ids = folders_lock[index].world_ids.clone();
+                folders_lock.remove(index);
+                drop(folders_lock);
+                for world_id in world_ids {
+                    FolderManager::remove_world_from_folder(
+                        name.clone(),
+                        world_id,
+                        folders,
+                        worlds,
+                    )?;
                 }
                 Ok(())
             }
@@ -248,10 +279,11 @@ impl FolderManager {
     }
 
     /// Get a world by its ID
+    /// TODO: move this to world_manager.rs
     ///
     /// # Arguments
-    /// * state - The application state
     /// * world_id - The ID of the world
+    /// * worlds - The list of worlds, as a RwLock
     ///
     /// # Returns
     /// Returns the world with the specified ID if found
@@ -259,11 +291,11 @@ impl FolderManager {
     /// # Errors
     /// Returns an error if the world is not found
     #[must_use]
-    fn get_world(state: &AppState, world_id: String) -> Result<WorldModel, AppError> {
-        let worlds_lock = state
-            .worlds
-            .lock()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
+    fn get_world(
+        world_id: String,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<WorldModel, AppError> {
+        let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
         match worlds_lock.iter().find(|w| w.api_data.world_id == world_id) {
             Some(world) => Ok(world.clone()),
             None => Err(EntityError::WorldNotFound(world_id).into()),
@@ -274,8 +306,9 @@ impl FolderManager {
     /// Calls get_world for each world ID in the folder
     ///
     /// # Arguments
-    /// * `state` - The application state
     /// * `folder_name` - The name of the folder
+    /// * `folders` - The list of folders, as a RwLock
+    /// * `worlds` - The list of worlds, as a RwLock
     ///
     /// # Returns
     /// A vector of world models
@@ -284,29 +317,24 @@ impl FolderManager {
     /// Returns an error if the folder is not found
     /// Returns an error if the folders lock is poisoned
     #[must_use]
-    pub fn get_worlds(state: &AppState, folder_name: String) -> Result<Vec<WorldModel>, AppError> {
-        let folders_lock = state
-            .folders
-            .lock()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
+    pub fn get_worlds(
+        folder_name: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<Vec<WorldModel>, AppError> {
+        let folders_lock = folders.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
+
         let folder = folders_lock.iter().find(|f| f.folder_name == folder_name);
         match folder {
             Some(folder) => {
-                let worlds_lock = state
-                    .worlds
-                    .lock()
-                    .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
-                let worlds = folder
-                    .world_ids
-                    .iter()
-                    .map(
-                        |id| match worlds_lock.iter().find(|w| &w.api_data.world_id == id) {
-                            Some(world) => Ok(world.clone()),
-                            None => Err(EntityError::WorldNotFound(id.clone()).into()),
-                        },
-                    )
-                    .collect::<Result<Vec<WorldModel>, AppError>>()?;
-                Ok(worlds)
+                let world_ids = folder.world_ids.clone();
+                let mut folder_worlds = vec![];
+                drop(folders_lock);
+                for world_id in world_ids {
+                    let world = Self::get_world(world_id, worlds)?;
+                    folder_worlds.push(world);
+                }
+                Ok(folder_worlds)
             }
             None => Err(EntityError::FolderNotFound(folder_name).into()),
         }
@@ -315,15 +343,30 @@ impl FolderManager {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-
     use super::*;
+    use crate::definitions::{AuthCookies, FolderModel, PreferenceModel, WorldModel};
+    use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+    use std::sync::LazyLock;
+    use std::sync::RwLock;
 
-    fn setup_test_state() -> AppState {
-        AppState::initialize()
+    static TEST_STATE: LazyLock<TestState> = LazyLock::new(|| TestState {
+        preferences: RwLock::new(PreferenceModel::new()),
+        folders: RwLock::new(vec![]),
+        worlds: RwLock::new(vec![]),
+        auth: RwLock::new(AuthCookies::new()),
+    });
+
+    struct TestState {
+        preferences: RwLock<PreferenceModel>,
+        folders: RwLock<Vec<FolderModel>>,
+        worlds: RwLock<Vec<WorldModel>>,
+        auth: RwLock<AuthCookies>,
     }
 
-    fn add_test_world_to_state(state: &AppState, world_id: String) -> Result<(), AppError> {
+    fn add_test_world_to_state(
+        world_id: String,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<(), AppError> {
         let world = WorldModel::new(
             "".to_string(),
             "".to_string(),
@@ -346,12 +389,18 @@ mod tests {
             1,
             vec!["platform".to_string()],
         );
-        let mut worlds_lock = state
-            .worlds
-            .lock()
-            .map_err(|_| -> AppError { ConcurrencyError::PoisonedLock.into() })?;
-        worlds_lock.push(world.clone());
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        worlds_lock.push(world);
         Ok(())
+    }
+
+    fn setup_test_state() -> TestState {
+        TestState {
+            preferences: RwLock::new(PreferenceModel::new()),
+            folders: RwLock::new(vec![]),
+            worlds: RwLock::new(vec![]),
+            auth: RwLock::new(AuthCookies::new()),
+        }
     }
 
     #[test]
@@ -360,28 +409,31 @@ mod tests {
         let name = "Test Folder".to_string();
 
         // Test basic increment
-        let result = FolderManager::increment_folder_name(&state, name.clone()).unwrap();
+        let result = FolderManager::increment_folder_name(name.clone(), &state.folders).unwrap();
         assert_eq!(result, "Test Folder");
 
         // Test increment with existing folder
-        let _ = FolderManager::create_folder(&state, name.clone());
-        let result = FolderManager::increment_folder_name(&state, name).unwrap();
+        let _ = FolderManager::create_folder(name.clone(), &state.folders).unwrap();
+        let result = FolderManager::increment_folder_name(name.clone(), &state.folders).unwrap();
         assert_eq!(result, "Test Folder (1)");
     }
+
     #[test]
     fn test_increment_folder_name_numbered() {
         let state = setup_test_state();
-        let _ = FolderManager::create_folder(&state, "Test Folder".to_string());
+        let _ = FolderManager::create_folder("Test Folder".to_string(), &state.folders).unwrap();
         let name = "Test Folder (1)".to_string();
 
         // Test increment of already numbered folder
-        let result = FolderManager::increment_folder_name(&state, name).unwrap();
+        let result = FolderManager::increment_folder_name(name, &state.folders).unwrap();
         assert_eq!(result, "Test Folder (1)");
 
         // Test increment with existing numbered folder
-        let _ = FolderManager::create_folder(&state, "Test Folder (1)".to_string());
+        let _ =
+            FolderManager::create_folder("Test Folder (1)".to_string(), &state.folders).unwrap();
         let result =
-            FolderManager::increment_folder_name(&state, "Test Folder (1)".to_string()).unwrap();
+            FolderManager::increment_folder_name("Test Folder (1)".to_string(), &state.folders)
+                .unwrap();
         assert_eq!(result, "Test Folder (2)");
     }
 
@@ -390,11 +442,11 @@ mod tests {
         let state = setup_test_state();
         let name = "Test Folder".to_string();
 
-        let result = FolderManager::create_folder(&state, name.clone()).unwrap();
+        let result = FolderManager::create_folder(name.clone(), &state.folders).unwrap();
         assert_eq!(result.folder_name, name);
 
         // Test creating duplicate folder
-        let result = FolderManager::create_folder(&state, name).unwrap();
+        let result = FolderManager::create_folder(name, &state.folders).unwrap();
         assert_eq!(result.folder_name, "Test Folder (1)");
     }
 
@@ -404,16 +456,21 @@ mod tests {
         let name = "Test Folder".to_string();
 
         // Test delete existing folder
-        let _ = FolderManager::create_folder(&state, name.clone());
-        let result = FolderManager::delete_folder(&state, name);
+        let _ = FolderManager::create_folder(name.clone(), &state.folders).unwrap();
+        let result = FolderManager::delete_folder(name, &state.folders, &state.worlds);
+        if let Err(e) = result.clone() {
+            eprintln!("Error deleting folder: {}", e);
+        }
         assert!(result.is_ok());
 
         // Test delete non-existent folder
-        let result = FolderManager::delete_folder(&state, "NonExistent".to_string());
+        let result =
+            FolderManager::delete_folder("NonExistent".to_string(), &state.folders, &state.worlds);
         assert!(result.is_err());
 
         // Test delete Unclassified folder
-        let result = FolderManager::delete_folder(&state, "Unclassified".to_string());
+        let result =
+            FolderManager::delete_folder("Unclassified".to_string(), &state.folders, &state.worlds);
         assert!(result.is_err());
     }
 
@@ -422,10 +479,18 @@ mod tests {
         let state = setup_test_state();
         let folder_name = "Test Folder".to_string();
         let world_id = "test_world".to_string();
-        add_test_world_to_state(&state, world_id.clone()).unwrap();
+        add_test_world_to_state(world_id.clone(), &state.worlds).unwrap();
 
-        let _ = FolderManager::create_folder(&state, folder_name.clone());
-        let result = FolderManager::add_world_to_folder(&state, folder_name, world_id);
+        let _ = FolderManager::create_folder(folder_name.clone(), &state.folders).unwrap();
+        let result = FolderManager::add_world_to_folder(
+            folder_name,
+            world_id,
+            &state.folders,
+            &state.worlds,
+        );
+        if let Err(e) = result.clone() {
+            eprintln!("Error adding world to folder: {}", e);
+        }
         assert!(result.is_ok());
     }
 
@@ -434,14 +499,28 @@ mod tests {
         let state = setup_test_state();
         let folder_name = "Test Folder".to_string();
         let world_id = "test_world".to_string();
-        add_test_world_to_state(&state, world_id.clone()).unwrap();
+        add_test_world_to_state(world_id.clone(), &state.worlds).unwrap();
 
-        let _ = FolderManager::create_folder(&state, folder_name.clone());
+        let _ = FolderManager::create_folder("Unclassified".to_string(), &state.folders).unwrap();
+        let _ = FolderManager::create_folder(folder_name.clone(), &state.folders).unwrap();
 
-        let _ = FolderManager::add_world_to_folder(&state, folder_name.clone(), world_id.clone());
+        let _ = FolderManager::add_world_to_folder(
+            folder_name.clone(),
+            world_id.clone(),
+            &state.folders,
+            &state.worlds,
+        )
+        .unwrap();
 
-        let result = FolderManager::remove_world_from_folder(&state, folder_name, world_id);
-
+        let result = FolderManager::remove_world_from_folder(
+            folder_name,
+            world_id,
+            &state.folders,
+            &state.worlds,
+        );
+        if let Err(e) = result.clone() {
+            eprintln!("Error removing world from folder: {}", e);
+        }
         assert!(result.is_ok());
     }
 
@@ -449,18 +528,19 @@ mod tests {
     fn test_get_worlds() {
         let state = setup_test_state();
         let name = "Test Folder".to_string();
-        let _ = FolderManager::create_folder(&state, name.clone());
-        let result = FolderManager::get_worlds(&state, name);
+        let _ = FolderManager::create_folder(name.clone(), &state.folders).unwrap();
+        let result = FolderManager::get_worlds(name, &state.folders, &state.worlds);
+        if let Err(e) = result.clone() {
+            eprintln!("Error getting worlds: {}", e);
+        }
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_get_world() {
         let state = setup_test_state();
-        let world_id = "test_world".to_string();
-
-        // Test get non-existent world
-        let result = FolderManager::get_world(&state, world_id);
+        let world_id = "test_world_123".to_string();
+        let result = FolderManager::get_world(world_id, &state.worlds);
         assert!(result.is_err());
     }
 }

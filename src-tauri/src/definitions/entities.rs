@@ -104,6 +104,23 @@ impl FolderModel {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PreferenceModel {
+    pub first_time: bool,
+    pub theme: String,
+    pub language: String,
+}
+
+impl PreferenceModel {
+    pub fn new() -> Self {
+        Self {
+            first_time: true,
+            theme: "light".to_string(),
+            language: "en".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthCookies {
     #[serde(rename = "two-factor-auth")]
     pub two_factor_auth: Option<String>,
@@ -115,6 +132,30 @@ impl AuthCookies {
         Self {
             two_factor_auth: None,
             auth_token: None,
+        }
+    }
+}
+
+pub struct InitState {
+    pub success: bool,
+    pub data_loaded: bool,
+    pub message: String,
+}
+
+impl InitState {
+    pub fn success() -> Self {
+        Self {
+            success: true,
+            data_loaded: true,
+            message: "".to_string(),
+        }
+    }
+
+    pub fn error(data_loaded: bool, message: String) -> Self {
+        Self {
+            success: false,
+            data_loaded,
+            message: message,
         }
     }
 }

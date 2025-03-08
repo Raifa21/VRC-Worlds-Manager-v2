@@ -1,3 +1,3 @@
 pub mod read_data_commands;
 
-pub use read_data_commands::{check_first_time, initialize_app};
+pub use read_data_commands::{check_files_loaded, require_initial_setup};
