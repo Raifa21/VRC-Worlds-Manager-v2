@@ -1,6 +1,9 @@
 use crate::definitions::InitState;
 use crate::services;
+use crate::services::migration_service::MigrationService;
 use crate::PREFERENCES;
+use directories::BaseDirs;
+use std::path::PathBuf;
 
 /// Checks if the app is being run for the first time
 /// As this is called every time / is loaded from the frontend, cache result in the state
@@ -25,7 +28,6 @@ pub async fn require_initial_setup() -> bool {
 }
 
 /// Checks if files have been loaded from disk successfully
-/// As this is called every time / is loaded from the frontend, cache result in the state
 ///
 /// # Returns
 /// Returns a boolean indicating if the files have been loaded successfully
@@ -40,4 +42,19 @@ pub async fn check_files_loaded() -> Result<bool, String> {
         true => Ok(true),
         false => Err(init_state.message.clone()),
     }
+}
+
+#[tauri::command]
+pub async fn detect_old_installation() -> Result<(String, String, String), String> {
+    MigrationService::detect_old_installation()
+}
+
+#[tauri::command]
+pub async fn migrate_old_data(
+    path_to_worlds: String,
+    path_to_folders: String,
+    path_to_config: String,
+) -> Result<(), String> {
+    MigrationService::migrate_old_data(path_to_worlds, path_to_folders, path_to_config).await;
+    Ok(())
 }

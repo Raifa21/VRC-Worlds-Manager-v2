@@ -1,1 +1,1 @@
-cargo fmt --manifest-path src-tauri/Cargo.toml -- --check && cargo clippy --manifest-path src-tauri/Cargo.toml -- -W warnings && cargo test --manifest-path src-tauri/Cargo.toml --release -- --nocapture
+cargo fmt --manifest-path src-tauri/Cargo.toml -- --check && cargo clippy --manifest-path src-tauri/Cargo.toml -- -W warnings && cargo test --manifest-path src-tauri/Cargo.toml --release -- --nocapture && npx prettier --write "src/**/*.{ts,tsx}"

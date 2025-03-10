@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
 export default function Home() {
-    return(
-        <div>
-            <h1>ListView</h1>
-        </div>
-    )
+  return (
+    <div>
+      <h1>ListView</h1>
+    </div>
+  );
 }

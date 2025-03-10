@@ -10,4 +10,8 @@ impl EncryptionService {
     pub fn decrypt(data: String) -> Result<String, String> {
         Ok(data.to_string())
     }
+
+    pub fn decrypt_old_AES(data: String) -> Result<String, String> {
+        Ok(data.to_string())
+    }
 }

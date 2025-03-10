@@ -50,6 +50,8 @@ pub fn run() {
             commands::folder_commands::get_worlds,
             commands::data::read_data_commands::require_initial_setup,
             commands::data::read_data_commands::check_files_loaded,
+            commands::data::read_data_commands::detect_old_installation,
+            commands::data::read_data_commands::migrate_old_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
