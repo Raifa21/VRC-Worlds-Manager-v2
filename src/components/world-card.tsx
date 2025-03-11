@@ -26,7 +26,7 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
   const sizeClasses: Record<CardSize, string> = {
     [CardSize.Compact]: 'w-48 h-32',
     [CardSize.Normal]: 'w-52 h-48',
-    [CardSize.Expanded]: 'w-64 h-70',
+    [CardSize.Expanded]: 'w-64 h-64',
     [CardSize.Original]: 'w-64 h-48',
   };
 

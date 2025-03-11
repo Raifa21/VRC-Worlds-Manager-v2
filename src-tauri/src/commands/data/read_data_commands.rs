@@ -1,10 +1,7 @@
-use crate::definitions::InitState;
 use crate::services;
 use crate::services::migration_service::MigrationService;
 use crate::PREFERENCES;
 use directories::BaseDirs;
-use std::path::PathBuf;
-
 /// Checks if the app is being run for the first time
 /// As this is called every time / is loaded from the frontend, cache result in the state
 #[tauri::command]
@@ -45,16 +42,33 @@ pub async fn check_files_loaded() -> Result<bool, String> {
 }
 
 #[tauri::command]
-pub async fn detect_old_installation() -> Result<(String, String, String), String> {
+pub async fn detect_old_installation() -> Result<(String, String), String> {
     MigrationService::detect_old_installation()
 }
 
+/// Passes the paths to the frontend
+/// Gets the path to the local app data directory
+///
+/// # Returns
+/// Returns the path to the local app data directory
+///
+/// # Errors
+/// Returns an error message if the path to the local app data directory could not be found
 #[tauri::command]
-pub async fn migrate_old_data(
-    path_to_worlds: String,
-    path_to_folders: String,
-    path_to_config: String,
-) -> Result<(), String> {
-    MigrationService::migrate_old_data(path_to_worlds, path_to_folders, path_to_config).await;
-    Ok(())
+pub async fn pass_paths() -> Result<String, String> {
+    let base_dirs = BaseDirs::new().ok_or("Could not get base directories")?;
+    base_dirs
+        .data_local_dir()
+        .join("VRC_World_Manager")
+        .to_str()
+        .ok_or("Could not convert path to string")
+        .map(|s| s.to_string())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn migrate_old_data(worlds_path: String, folders_path: String) -> Result<(), String> {
+    MigrationService::migrate_old_data(worlds_path, folders_path)
+        .await
+        .map_err(|e| e.to_string())
 }

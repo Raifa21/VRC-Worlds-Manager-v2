@@ -7,5 +7,5 @@ pub mod migration_service;
 pub use encryption_service::EncryptionService;
 pub use file_service::FileService;
 pub use folder_manager::FolderManager;
-pub use initialize_service::initialize_app;
+pub use initialize_service::{initialize_app, set_preferences};
 pub use migration_service::MigrationService;

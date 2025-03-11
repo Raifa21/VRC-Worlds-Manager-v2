@@ -1,3 +1,4 @@
+use crate::definitions;
 use crate::definitions::{AuthCookies, FolderModel, InitState, PreferenceModel, WorldModel};
 use crate::services::file_service::FileService;
 use crate::PREFERENCES;
@@ -39,6 +40,35 @@ pub fn initialize_app() -> Result<
         Ok((preferences, folders, worlds, auth)) => {
             Ok((preferences, folders, worlds, auth, InitState::success()))
         }
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// /// Set the user's preference for first time run
+/// This is called when the user has completed the initial setup
+///
+/// # Arguments
+/// * `theme` - A string indicating the theme the user has selected
+/// * `language` - A string indicating the language the user has selected
+/// * `card_size` - A string indicating the size of the cards the user has selected
+///
+/// # Returns
+/// Returns a boolean indicating if the app is being run for the first time
+///
+/// # Errors
+/// Returns a string error message if there was an error saving the preferences
+pub fn set_preferences(
+    theme: String,
+    language: String,
+    card_size: definitions::CardSize,
+) -> Result<bool, String> {
+    let mut preferences_lock = PREFERENCES.get().write();
+    let preference = preferences_lock.as_mut().unwrap();
+    preference.theme = theme;
+    preference.language = language;
+    preference.card_size = card_size;
+    match FileService::write_preferences(preference) {
+        Ok(_) => Ok(true),
         Err(e) => Err(e.to_string()),
     }
 }

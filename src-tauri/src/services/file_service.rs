@@ -1,11 +1,9 @@
 use crate::definitions::AuthCookies;
-use crate::definitions::InitState;
 use crate::definitions::{FolderModel, PreferenceModel, WorldModel};
 use crate::errors::FileError;
 use crate::services::EncryptionService;
-use crate::INITSTATE;
 use directories::BaseDirs;
-use log;
+use log::debug;
 use serde_json;
 use std::fs;
 use std::path::PathBuf;
@@ -23,7 +21,7 @@ impl FileService {
         BaseDirs::new()
             .expect("Failed to get base directories")
             .data_local_dir()
-            .join("VRC_Worlds_Manager")
+            .join("VRC_Worlds_Manager_new")
     }
 
     /// Gets the paths for the configuration and data files
@@ -31,18 +29,21 @@ impl FileService {
     /// # Returns
     /// Returns the paths for the configuration, folders, worlds, and authentication files
     #[must_use]
-    fn get_paths() -> (
+    pub fn get_paths() -> (
         std::path::PathBuf,
         std::path::PathBuf,
         std::path::PathBuf,
         std::path::PathBuf,
     ) {
         let base = Self::get_app_dir();
+        if let Err(e) = fs::create_dir_all(&base) {
+            log::error!("Failed to create data directory: {}", e);
+        }
         (
             base.join("preferences.json"),
             base.join("folders.json"),
             base.join("worlds.json"),
-            base.join("auth.toml"),
+            base.join("auth.json"),
         )
     }
 
@@ -53,27 +54,6 @@ impl FileService {
     pub fn check_first_time() -> bool {
         let (preferences_path, _, _, _) = Self::get_paths();
         !preferences_path.exists()
-    }
-
-    /// Reads the configuration file from disk
-    ///
-    /// # Arguments
-    /// * `path` - Path to the configuration file
-    ///
-    /// # Returns
-    /// Returns the authentication cookies from the configuration file
-    ///
-    /// # Errors
-    /// Returns a FileError if the file is not found, cannot be decrypted, or is invalid
-    fn read_config(path: &std::path::PathBuf) -> Result<PreferenceModel, FileError> {
-        log::info!("Reading config from: {:?}", path);
-
-        let encrypted = fs::read_to_string(path).map_err(|_| FileError::FileNotFound)?;
-
-        let decrypted =
-            EncryptionService::decrypt(encrypted).map_err(|_| FileError::DecryptionError)?;
-
-        toml::from_str(&decrypted).map_err(|_| FileError::InvalidFile)
     }
 
     /// Reads the stored data from disk and deserializes it
@@ -104,6 +84,7 @@ impl FileService {
     ///
     /// # Errors
     /// Returns a FileError if any file is not found, cannot be decrypted, or is invalid
+    #[must_use]
     pub fn load_data() -> Result<
         (
             PreferenceModel,
@@ -115,12 +96,85 @@ impl FileService {
     > {
         let (config_path, folders_path, worlds_path, auth_path) = Self::get_paths();
 
-        let preferences = Self::read_config(&config_path)?;
+        let preferences = Self::read_file(&config_path)?;
         let folders = Self::read_file(&folders_path)?;
         let worlds = Self::read_file(&worlds_path)?;
         let cookies = Self::read_file(&auth_path)?;
 
         Ok((preferences, folders, worlds, cookies))
+    }
+
+    /// Writes preference data to disk
+    /// Serializes and writes the data to disk
+    ///
+    /// # Arguments
+    /// * `preferences` - The preference data to write
+    ///
+    /// # Returns
+    /// Ok(()) if the data was written successfully
+    ///
+    /// # Errors
+    /// Returns a FileError if the data could not be written
+    pub fn write_preferences(preferences: &PreferenceModel) -> Result<(), FileError> {
+        let (config_path, _, _, _) = Self::get_paths();
+
+        let data = serde_json::to_string_pretty(preferences).map_err(|_| FileError::InvalidFile)?;
+        fs::write(config_path, data).map_err(|_| FileError::FileWriteError)
+    }
+
+    /// Writes folder data to disk
+    /// Serializes and writes the data to disk
+    ///
+    /// # Arguments
+    /// * `folders` - The folder data to write
+    ///
+    /// # Returns
+    /// Ok(()) if the data was written successfully
+    ///
+    /// # Errors
+    /// Returns a FileError if the data could not be written    
+    pub fn write_folders(folders: &Vec<FolderModel>) -> Result<(), FileError> {
+        let (_, folders_path, _, _) = Self::get_paths();
+        println!("folders_path: {:?}", folders_path);
+        debug!("folders_path: {:?}", folders_path);
+        let data = serde_json::to_string_pretty(folders).map_err(|_| FileError::InvalidFile)?;
+        fs::write(folders_path, data).map_err(|_| FileError::FileWriteError)
+    }
+
+    /// Writes world data to disk
+    /// Serializes and writes the data to disk
+    ///
+    /// # Arguments
+    /// * `worlds` - The world data to write
+    ///
+    /// # Returns
+    /// Ok(()) if the data was written successfully
+    ///
+    /// # Errors
+    /// Returns a FileError if the data could not be written
+    pub fn write_worlds(worlds: &Vec<WorldModel>) -> Result<(), FileError> {
+        let (_, _, worlds_path, _) = Self::get_paths();
+        println!("worlds_path: {:?}", worlds_path);
+        debug!("worlds_path: {:?}", worlds_path);
+        let data = serde_json::to_string_pretty(worlds).map_err(|_| FileError::InvalidFile)?;
+        fs::write(worlds_path, data).map_err(|_| FileError::FileWriteError)
+    }
+
+    /// Writes authentication data to disk
+    /// Serializes and writes the data to disk
+    ///
+    /// # Arguments
+    /// * `cookies` - The authentication data to write
+    ///
+    /// # Returns
+    /// Ok(()) if the data was written successfully
+    ///
+    /// # Errors
+    /// Returns a FileError if the data could not be written
+    pub fn write_auth(cookies: &AuthCookies) -> Result<(), FileError> {
+        let (_, _, _, auth_path) = Self::get_paths();
+        let data = serde_json::to_string_pretty(cookies).map_err(|_| FileError::InvalidFile)?;
+        fs::write(auth_path, data).map_err(|_| FileError::FileWriteError)
     }
 }
 
@@ -136,7 +190,7 @@ mod tests {
     #[test]
     fn test_get_app_dir() {
         let app_dir = FileService::get_app_dir();
-        assert!(app_dir.ends_with("VRC_Worlds_Manager"));
+        assert!(app_dir.ends_with("VRC_Worlds_Manager_new"));
         assert!(app_dir.starts_with(BaseDirs::new().unwrap().data_local_dir()));
     }
 
@@ -147,7 +201,7 @@ mod tests {
         assert!(preference.ends_with("preferences.json"));
         assert!(folders.ends_with("folders.json"));
         assert!(worlds.ends_with("worlds.json"));
-        assert!(auth.ends_with("auth.toml"));
+        assert!(auth.ends_with("auth.json"));
 
         assert!(preference.starts_with(FileService::get_app_dir()));
         assert!(folders.starts_with(FileService::get_app_dir()));
@@ -158,10 +212,10 @@ mod tests {
     #[test]
     fn test_app_dir_structure() {
         let temp = setup_test_dir();
-        let preferences_path = temp.path().join("preferences.toml");
+        let preferences_path = temp.path().join("preferences.json");
         let folders_path = temp.path().join("folders.json");
         let worlds_path = temp.path().join("worlds.json");
-        let auth_path = temp.path().join("auth.toml");
+        let auth_path = temp.path().join("auth.json");
 
         assert!(!preferences_path.exists());
         assert!(!folders_path.exists());

@@ -106,13 +106,6 @@ impl FolderModel {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum AutoUpdateFrequency {
-    EveryWeek,
-    EveryMonth,
-    Never,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CardSize {
     Compact,  // Small preview
     Normal,   // Standard size
@@ -125,7 +118,6 @@ pub struct PreferenceModel {
     pub first_time: bool,
     pub theme: String,
     pub language: String,
-    pub auto_update_frequency: AutoUpdateFrequency,
     pub card_size: CardSize,
 }
 
@@ -135,7 +127,6 @@ impl PreferenceModel {
             first_time: true,
             theme: "light".to_string(),
             language: "en".to_string(),
-            auto_update_frequency: AutoUpdateFrequency::Never,
             card_size: CardSize::Normal,
         }
     }

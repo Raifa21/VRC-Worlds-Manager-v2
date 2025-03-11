@@ -6,7 +6,12 @@
     "main"
   ],
   "permissions": [
+    "shell:allow-open",
     "core:default",
-    "log:default"
+    "log:default",
+    "shell:default",
+    "dialog:default",
+    "opener:default",
+    "log:allow-log"
   ]
 }

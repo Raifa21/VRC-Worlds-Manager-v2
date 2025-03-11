@@ -1,13 +1,29 @@
 use crate::definitions::{FolderModel, WorldApiData, WorldModel, WorldUserData};
+use crate::services::EncryptionService;
+use crate::services::FileService;
 use crate::FOLDERS;
 use crate::WORLDS;
-use chrono::{Duration, NaiveDateTime};
+use chrono::{DateTime, Duration, NaiveDateTime};
 use directories::BaseDirs;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use std::collections::HashSet;
 use std::fs;
-use std::path::PathBuf;
 
 pub struct MigrationService;
+
+fn deserialize_datetime<'de, D>(deserializer: D) -> Result<Option<NaiveDateTime>, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
+    if let Some(s) = s {
+        DateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S%.f%:z")
+            .map(|dt| Some(dt.naive_utc()))
+            .map_err(serde::de::Error::custom)
+    } else {
+        Ok(None)
+    }
+}
 
 #[derive(Debug, Deserialize)]
 struct PreviousWorldModel {
@@ -31,7 +47,7 @@ struct PreviousWorldModel {
     visits: Option<i32>,
     #[serde(rename = "Favorites")]
     favorites: i32,
-    #[serde(rename = "DateAdded")]
+    #[serde(rename = "DateAdded", deserialize_with = "deserialize_datetime")]
     date_added: Option<NaiveDateTime>,
     #[serde(rename = "Platform")]
     platform: Option<Vec<String>>,
@@ -39,9 +55,31 @@ struct PreviousWorldModel {
     user_memo: Option<String>,
 }
 
+impl Default for PreviousWorldModel {
+    fn default() -> Self {
+        PreviousWorldModel {
+            thumbnail_image_url: String::default(),
+            world_name: String::default(),
+            world_id: String::default(),
+            author_name: String::default(),
+            author_id: String::default(),
+            capacity: 0,
+            last_update: String::default(),
+            description: String::default(),
+            visits: None,
+            favorites: 0,
+            date_added: None,
+            platform: None,
+            user_memo: None,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct PreviousFolderCollection {
+    #[serde(rename = "Name")]
     name: String,
+    #[serde(rename = "Worlds")]
     worlds: Vec<PreviousWorldModel>,
 }
 
@@ -51,26 +89,123 @@ impl MigrationService {
     ///
     /// # Returns
     /// Returns the path to the old VRC World Manager Data
-    /// A tuple containing the path to the old VRC World Manager Worlds file, the path to the old VRC World Manager Folders file, and the path to the old VRC World Manager Config file
+    /// A tuple containing the path to the old VRC World Manager Worlds file, and the path to the old VRC World Manager Folders file
     ///
     /// # Errors
     /// Returns an error message if the old VRC World Manager Data could not be found
-    pub fn detect_old_installation() -> Result<(String, String, String), String> {
+    pub fn detect_old_installation() -> Result<(String, String), String> {
         let base_dirs = BaseDirs::new().ok_or("Could not get base directories")?;
         let local_app_data = base_dirs.data_local_dir().join("VRC_World_Manager");
 
         let worlds_path = local_app_data.join("worlds.json");
         let folders_path = local_app_data.join("folders.json");
-        let config_path = local_app_data.join("Config.toml");
 
-        if worlds_path.exists() && folders_path.exists() && config_path.exists() {
+        if worlds_path.exists() && folders_path.exists() {
             Ok((
                 worlds_path.to_string_lossy().to_string(),
                 folders_path.to_string_lossy().to_string(),
-                config_path.to_string_lossy().to_string(),
             ))
         } else {
-            Err("Could not find old VRC World Manager data".to_string())
+            let mut missing_files = Vec::new();
+            if !worlds_path.exists() {
+                missing_files.push("worlds.json");
+            }
+            if !folders_path.exists() {
+                missing_files.push("folders.json");
+            }
+            Err(format!(
+                "Could not find the following files: {}, from {}",
+                missing_files.join(", "),
+                base_dirs.data_local_dir().to_string_lossy()
+            ))
+        }
+    }
+
+    async fn read_data_files(
+        path_to_worlds: &str,
+        path_to_folders: &str,
+    ) -> Result<(String, String), String> {
+        let worlds_content = fs::read_to_string(path_to_worlds)
+            .map_err(|e| format!("Failed to read worlds: {}", e))?;
+        let folders_content = fs::read_to_string(path_to_folders)
+            .map_err(|e| format!("Failed to read folders: {}", e))?;
+        Ok((worlds_content, folders_content))
+    }
+
+    fn parse_world_data(worlds_json: &str) -> Result<Vec<PreviousWorldModel>, String> {
+        EncryptionService::decrypt_aes(worlds_json)
+            .map_err(|e| format!("Failed to decrypt worlds: {}", e))
+            .and_then(|decrypted| {
+                serde_json::from_str(&decrypted)
+                    .map_err(|e| format!("Failed to parse worlds: {}", e))
+            })
+    }
+
+    fn parse_folder_data(folders_json: &str) -> Result<Vec<PreviousFolderCollection>, String> {
+        println!("Folders JSON content: {}", folders_json);
+
+        let decrypted = EncryptionService::decrypt_aes(folders_json)
+            .map_err(|e| format!("Failed to decrypt folders: {}", e))?;
+
+        println!("Decrypted folders: {}", decrypted);
+
+        serde_json::from_str(&decrypted).map_err(|e| format!("Failed to parse folders: {}", e))
+    }
+
+    fn calculate_dates(worlds: &[PreviousWorldModel]) -> (NaiveDateTime, Vec<NaiveDateTime>) {
+        let earliest_date = worlds
+            .iter()
+            .filter_map(|w| w.date_added)
+            .min()
+            .unwrap_or_else(|| chrono::Utc::now().naive_utc());
+
+        let null_count = worlds.iter().filter(|w| w.date_added.is_none()).count();
+
+        let base_date = earliest_date - Duration::minutes(null_count as i64);
+        let mut dates = Vec::with_capacity(worlds.len());
+        let mut current_null_date = base_date;
+
+        for world in worlds {
+            if let Some(date) = world.date_added {
+                dates.push(date);
+            } else {
+                dates.push(current_null_date);
+                current_null_date += Duration::minutes(1);
+            }
+        }
+
+        (earliest_date, dates)
+    }
+
+    fn convert_to_new_model(
+        old_world: &PreviousWorldModel,
+        date: NaiveDateTime,
+        hidden: bool,
+    ) -> WorldModel {
+        WorldModel {
+            api_data: WorldApiData {
+                image_url: old_world.thumbnail_image_url.clone(),
+                world_name: old_world.world_name.clone(),
+                world_id: old_world.world_id.clone(),
+                author_name: old_world.author_name.clone(),
+                author_id: old_world.author_id.clone(),
+                capacity: old_world.capacity,
+                recommended_capacity: None,
+                tags: vec![],
+                publication_date: NaiveDateTime::default(),
+                last_update: NaiveDateTime::parse_from_str(&old_world.last_update, "%m/%d/%Y")
+                    .unwrap_or_else(|_| NaiveDateTime::default()),
+                description: old_world.description.clone(),
+                visits: old_world.visits,
+                favorites: old_world.favorites,
+                platform: old_world.platform.clone().unwrap_or_default(),
+            },
+            user_data: WorldUserData {
+                date_added: date,
+                memo: old_world.user_memo.clone().unwrap_or_default(),
+                folders: Vec::new(),
+                hidden,
+            },
         }
     }
 
@@ -80,111 +215,56 @@ impl MigrationService {
     /// # Arguments
     /// * `path_to_worlds` - The path to the old VRC World Manager Worlds file
     /// * `path_to_folders` - The path to the old VRC World Manager Folders file
-    /// * `path_to_config` - The path to the old VRC World Manager Config file
     ///
     /// # Errors
     /// Returns an error message if the old VRC World Manager Data could not be migrated
     pub async fn migrate_old_data(
         path_to_worlds: String,
         path_to_folders: String,
-        path_to_config: String,
     ) -> Result<(), String> {
-        // Read encrypted files
-        let worlds_content = fs::read_to_string(path_to_worlds)
-            .map_err(|e| format!("Failed to read worlds: {}", e))?;
-        let folders_content = fs::read_to_string(path_to_folders)
-            .map_err(|e| format!("Failed to read folders: {}", e))?;
+        let (worlds_content, folders_content) =
+            Self::read_data_files(&path_to_worlds, &path_to_folders).await?;
 
-        // TODO: Decrypt files via EncryptionService
-        let worlds_json = worlds_content;
-        let folders_json = folders_content;
+        let old_worlds = Self::parse_world_data(&worlds_content)?;
+        let old_folders = Self::parse_folder_data(&folders_content)?;
 
-        // Parse worlds
-        let old_worlds: Vec<PreviousWorldModel> = serde_json::from_str(&worlds_json)
-            .map_err(|e| format!("Failed to parse worlds: {}", e))?;
+        let (_, dates) = Self::calculate_dates(&old_worlds);
 
-        let earliest_date = old_worlds
-            .iter()
-            .filter_map(|w| w.date_added)
-            .min()
-            .unwrap_or_else(|| chrono::Utc::now().naive_utc());
-
-        // Convert worlds to new format with decremented dates
         let mut new_worlds = Vec::new();
+        let mut new_folders = Vec::new();
+        let mut hidden_world_ids = HashSet::new();
 
-        for (idx, old_world) in old_worlds.iter().enumerate() {
-            let world_model = WorldModel {
-                api_data: WorldApiData {
-                    image_url: old_world.thumbnail_image_url.clone(),
-                    world_name: old_world.world_name.clone(),
-                    world_id: old_world.world_id.clone(),
-                    author_name: old_world.author_name.clone(),
-                    author_id: old_world.author_id.clone(),
-                    capacity: old_world.capacity,
-                    recommended_capacity: None, // TODO: API call
-                    tags: vec![],               // TODO: API call
-                    publication_date: NaiveDateTime::default(), // TODO: API call
-                    last_update: NaiveDateTime::parse_from_str(&old_world.last_update, "%m/%d/%Y")
-                        .unwrap_or_else(|_| NaiveDateTime::default()),
-                    description: old_world.description.clone(),
-                    visits: old_world.visits,
-                    favorites: old_world.favorites,
-                    platform: old_world.platform.clone().unwrap_or_default(),
-                },
-                user_data: WorldUserData {
-                    date_added: old_world
-                        .date_added
-                        .unwrap_or_else(|| earliest_date - Duration::minutes(idx as i64)),
-                    memo: "".to_string(),
-                    folders: Vec::new(),
-                    hidden: false,
-                },
-            };
-            new_worlds.push(world_model);
+        // Process hidden folder first
+        if let Some(hidden_folder) = old_folders.iter().find(|f| f.name == "Hidden") {
+            for world in &hidden_folder.worlds {
+                hidden_world_ids.insert(world.world_id.clone());
+            }
         }
 
-        // Parse and process folders
-        let old_folders: Vec<PreviousFolderCollection> = serde_json::from_str(&folders_json)
-            .map_err(|e| format!("Failed to parse folders: {}", e))?;
+        // Convert worlds with calculated dates
+        for (idx, old_world) in old_worlds.iter().enumerate() {
+            let is_hidden = hidden_world_ids.contains(&old_world.world_id);
+            new_worlds.push(Self::convert_to_new_model(old_world, dates[idx], is_hidden));
+        }
 
-        let mut new_folders = Vec::new();
-
-        // Process folders and update world folder references
+        // Process regular folders
         for folder in old_folders {
-            if folder.name == "Hidden" {
-                // Mark worlds as hidden instead of creating folder
-                for world in folder.worlds {
-                    if let Some(w) = new_worlds
-                        .iter_mut()
-                        .find(|w| w.api_data.world_id == world.world_id)
-                    {
-                        w.user_data.hidden = true;
+            if folder.name != "Hidden" && folder.name != "Unclassified" {
+                let world_ids: Vec<String> =
+                    folder.worlds.iter().map(|w| w.world_id.clone()).collect();
+
+                // Add folder name to corresponding worlds
+                for world in new_worlds.iter_mut() {
+                    if world_ids.contains(&world.api_data.world_id) {
+                        world.user_data.folders.push(folder.name.clone());
                     }
                 }
-                continue;
+
+                new_folders.push(FolderModel {
+                    folder_name: folder.name,
+                    world_ids,
+                });
             }
-
-            if folder.name == "Unclassified" {
-                continue;
-            }
-
-            // Create new folder with world IDs
-            let folder_model = FolderModel {
-                folder_name: folder.name.clone(),
-                world_ids: folder.worlds.iter().map(|w| w.world_id.clone()).collect(),
-            };
-
-            // Add folder name to world's folders vec
-            for world_id in &folder_model.world_ids {
-                if let Some(w) = new_worlds
-                    .iter_mut()
-                    .find(|w| w.api_data.world_id == *world_id)
-                {
-                    w.user_data.folders.push(folder.name.clone());
-                }
-            }
-
-            new_folders.push(folder_model);
         }
 
         // Store migrated data
@@ -192,18 +272,92 @@ impl MigrationService {
             let mut worlds_lock = WORLDS
                 .get()
                 .write()
-                .map_err(|_| "Failed to acquire worlds lock")?;
+                .map_err(|e| format!("Failed to acquire worlds lock: {}", e))?;
             *worlds_lock = new_worlds;
+            FileService::write_worlds(&worlds_lock)
+                .map_err(|e| format!("Failed to write worlds: {}", e))?;
         }
 
         {
             let mut folders_lock = FOLDERS
                 .get()
                 .write()
-                .map_err(|_| "Failed to acquire folders lock")?;
+                .map_err(|e| format!("Failed to acquire folders lock: {}", e))?;
             *folders_lock = new_folders;
+            FileService::write_folders(&folders_lock)
+                .map_err(|e| format!("Failed to write folders: {}", e))?;
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculate_dates() {
+        let worlds = vec![
+            PreviousWorldModel {
+                date_added: None,
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                date_added: None,
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                date_added: Some(
+                    NaiveDateTime::parse_from_str("2024-03-11T10:00:00", "%Y-%m-%dT%H:%M:%S")
+                        .unwrap(),
+                ),
+                ..PreviousWorldModel::default()
+            },
+        ];
+
+        let (earliest, dates) = MigrationService::calculate_dates(&worlds);
+
+        println!("Earliest date: {}", earliest);
+        println!("All dates: {:?}", dates);
+
+        assert_eq!(dates.len(), 3);
+        assert!(
+            dates[1] < dates[2],
+            "null worlds should be set before earliest date"
+        );
+        assert!(dates[0] < dates[1])
+    }
+
+    #[test]
+    fn test_calculate_dates_all_null() {
+        let worlds = vec![
+            PreviousWorldModel {
+                date_added: None,
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                date_added: None,
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                date_added: None,
+                ..PreviousWorldModel::default()
+            },
+        ];
+
+        let (earliest, dates) = MigrationService::calculate_dates(&worlds);
+
+        assert_eq!(dates.len(), 3);
+        assert!(dates[0] < dates[1], "Sequential ordering");
+        assert!(dates[1] < dates[2], "Sequential ordering");
+        assert_eq!(dates[1] - dates[0], Duration::minutes(1));
+    }
+
+    #[test]
+    fn test_calculate_dates_empty() {
+        let worlds: Vec<PreviousWorldModel> = vec![];
+        let (earliest, dates) = MigrationService::calculate_dates(&worlds);
+        assert_eq!(dates.len(), 0);
     }
 }

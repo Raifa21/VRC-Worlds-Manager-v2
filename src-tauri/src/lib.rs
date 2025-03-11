@@ -35,6 +35,10 @@ pub fn run() {
     };
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::default().build())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .target(Target::new(TargetKind::Stdout))
@@ -52,7 +56,11 @@ pub fn run() {
             commands::data::read_data_commands::check_files_loaded,
             commands::data::read_data_commands::detect_old_installation,
             commands::data::read_data_commands::migrate_old_data,
+            commands::data::read_data_commands::pass_paths,
+            commands::data::write_data_commands::set_preferences,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    log::info!("Application started");
 }
