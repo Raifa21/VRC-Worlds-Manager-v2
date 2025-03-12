@@ -27,6 +27,7 @@ import { WorldCardPreview } from '@/components/world-card';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { ConfirmationPopup } from '@/components/confirmation-popup';
 
 export enum CardSize {
   Compact = 'Compact',
@@ -44,6 +45,7 @@ interface SetupLayoutProps {
   isFirstPage?: boolean;
   isLastPage?: boolean;
   isMigrationPage?: boolean;
+  alreadyMigrated?: boolean;
   isLoading?: boolean;
 }
 
@@ -56,6 +58,7 @@ export function SetupLayout({
   isFirstPage = false,
   isLastPage = false,
   isMigrationPage = false,
+  alreadyMigrated = false,
   isLoading = false,
 }: SetupLayoutProps) {
   return (
@@ -90,7 +93,7 @@ export function SetupLayout({
               'Start'
             ) : isLastPage ? (
               'Finish'
-            ) : isMigrationPage ? (
+            ) : isMigrationPage && !alreadyMigrated ? (
               'Skip'
             ) : (
               'Next'
@@ -120,6 +123,8 @@ const WelcomePage: React.FC = () => {
   ]);
   const [isValidPath, setIsValidPath] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [alreadyMigrated, setAlreadyMigrated] = useState<boolean>(false);
+  const [showMigrationPopup, setShowMigrationPopup] = useState(false);
 
   useEffect(() => {
     console.log('Current theme:', preferences.theme);
@@ -148,15 +153,19 @@ const WelcomePage: React.FC = () => {
       }
     }
     if (page === 5) {
-      // Save preferences before moving to next page
       try {
         await invoke('set_preferences', {
           theme: preferences.theme,
           language: preferences.language,
           cardSize: preferences.card_size,
         });
+        await invoke('create_empty_auth');
+        if (!alreadyMigrated) {
+          await invoke('create_empty_files');
+        }
       } catch (e) {
         console.error('Failed to save preferences:', e);
+        setPage(4);
       }
       router.push('/listview');
     }
@@ -169,6 +178,11 @@ const WelcomePage: React.FC = () => {
 
   const handleMigration = async () => {
     setIsLoading(true);
+    if (alreadyMigrated) {
+      setIsLoading(false);
+      setShowMigrationPopup(true);
+      return;
+    }
     try {
       await invoke('migrate_old_data', {
         worldsPath: migrationPaths[0],
@@ -178,6 +192,7 @@ const WelcomePage: React.FC = () => {
         title: 'Success',
         description: 'Data migrated successfully!',
       });
+      setAlreadyMigrated(true);
       handleNext();
     } catch (e) {
       toast({
@@ -208,289 +223,328 @@ const WelcomePage: React.FC = () => {
   };
 
   return (
-    <div className="welcome-page">
-      {page === 1 && (
-        <SetupLayout
-          title="Welcome to VRC World Manager"
-          currentPage={1}
-          onBack={handleBack}
-          onNext={handleNext}
-          isFirstPage={true}
-        >
-          <div className="h-full flex flex-col items-center justify-center space-y-4">
-            <h2 className="text-2xl font-semibold">Welcome!</h2>
-            <p className="text-center text-muted-foreground">
-              It looks like your first time! Let's set up your VRC World Manager
-              preferences.
-            </p>
-            <p className="text-center text-sm text-muted-foreground">
-              Is it not? Please contact us through{' '}
-              <a
-                href={`https://discord.gg/gNzbpux5xW`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
-              >
-                Discord
-              </a>{' '}
-              for support
-            </p>
-          </div>
-        </SetupLayout>
-      )}
-      {page === 2 && (
-        <SetupLayout
-          title="Migration"
-          currentPage={2}
-          onBack={handleBack}
-          onNext={handleNext}
-          isMigrationPage={true}
-        >
-          <div className="flex flex-col space-y-6">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground text-center">
-                If you have used the original VRC World Manager, you can migrate
-                your old data. <br />
-                Your original data will not be modified during migration.
+    <>
+      <ConfirmationPopup
+        open={showMigrationPopup}
+        onOpenChange={setShowMigrationPopup}
+        onConfirm={async () => {
+          setShowMigrationPopup(false);
+          setIsLoading(true);
+          try {
+            await invoke('migrate_old_data', {
+              worldsPath: migrationPaths[0],
+              foldersPath: migrationPaths[1],
+            });
+            toast({
+              title: 'Success',
+              description: 'Data migrated successfully!',
+            });
+            setAlreadyMigrated(true);
+            handleNext();
+          } catch (e) {
+            toast({
+              title: 'Error',
+              description: 'Failed to migrate data: ' + e,
+            });
+            setPage(2);
+          } finally {
+            setIsLoading(false);
+          }
+        }}
+        title="Overwrite Existing Data?"
+        description="You have already migrated your data. Continuing will overwrite your current data. Are you sure?"
+      />
+      <div className="welcome-page">
+        {page === 1 && (
+          <SetupLayout
+            title="Welcome to VRC World Manager"
+            currentPage={1}
+            onBack={handleBack}
+            onNext={handleNext}
+            isFirstPage={true}
+          >
+            <div className="h-full flex flex-col items-center justify-center space-y-4">
+              <h2 className="text-2xl font-semibold">Welcome!</h2>
+              <p className="text-center text-muted-foreground">
+                It looks like your first time! Let's set up your VRC World
+                Manager preferences.
+              </p>
+              <p className="text-center text-sm text-muted-foreground">
+                Is it not? Please contact us through{' '}
+                <a
+                  href={`https://discord.gg/gNzbpux5xW`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                >
+                  Discord
+                </a>{' '}
+                for support
               </p>
             </div>
-
-            <div className="space-y-4">
+          </SetupLayout>
+        )}
+        {page === 2 && (
+          <SetupLayout
+            title="Migration"
+            currentPage={2}
+            onBack={handleBack}
+            onNext={handleNext}
+            isMigrationPage={true}
+            alreadyMigrated={alreadyMigrated}
+          >
+            <div className="flex flex-col space-y-6">
               <div className="space-y-2">
-                <Label>Worlds Data</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    value={migrationPaths[0]}
-                    onChange={(e) =>
-                      setMigrationPaths([e.target.value, migrationPaths[1]])
-                    }
-                    placeholder={defaultPath}
-                    disabled={true}
-                    className="text-muted-foreground"
-                  />
-                  <Button variant="outline" onClick={() => handleFilePick(0)}>
-                    Select
-                  </Button>
-                </div>
-                {!isValidPath && (
-                  <p className="text-sm text-red-500">
-                    {' '}
-                    Could not detect existing files.
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground text-center">
+                  If you have used the original VRC World Manager, you can
+                  migrate your old data. <br />
+                  Your original data will not be modified during migration.
+                </p>
               </div>
 
-              <div className="space-y-2">
-                <Label>Folders Data</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    value={migrationPaths[1]}
-                    onChange={(e) =>
-                      setMigrationPaths([migrationPaths[0], e.target.value])
-                    }
-                    placeholder={defaultPath}
-                    disabled={true}
-                    className="text-muted-foreground"
-                  />
-                  <Button variant="outline" onClick={() => handleFilePick(1)}>
-                    Select
-                  </Button>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Worlds Data</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      value={migrationPaths[0]}
+                      onChange={(e) =>
+                        setMigrationPaths([e.target.value, migrationPaths[1]])
+                      }
+                      placeholder={defaultPath}
+                      disabled={true}
+                      className="text-muted-foreground"
+                    />
+                    <Button variant="outline" onClick={() => handleFilePick(0)}>
+                      Select
+                    </Button>
+                  </div>
+                  {!isValidPath && (
+                    <p className="text-sm text-red-500">
+                      {' '}
+                      Could not detect existing files.
+                    </p>
+                  )}
                 </div>
-                {!isValidPath && (
-                  <p className="text-sm text-red-500">
-                    {' '}
-                    Could not detect existing files.
-                  </p>
-                )}
-              </div>
-            </div>
 
-            <Button
-              onClick={handleMigration}
-              disabled={
-                isLoading || !migrationPaths.every((path) => path !== '')
-              }
-              className="w-full"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Migrating...
-                </>
-              ) : (
-                'Migrate'
+                <div className="space-y-2">
+                  <Label>Folders Data</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      value={migrationPaths[1]}
+                      onChange={(e) =>
+                        setMigrationPaths([migrationPaths[0], e.target.value])
+                      }
+                      placeholder={defaultPath}
+                      disabled={true}
+                      className="text-muted-foreground"
+                    />
+                    <Button variant="outline" onClick={() => handleFilePick(1)}>
+                      Select
+                    </Button>
+                  </div>
+                  {!isValidPath && (
+                    <p className="text-sm text-red-500">
+                      {' '}
+                      Could not detect existing files.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <Button
+                onClick={handleMigration}
+                disabled={
+                  isLoading || !migrationPaths.every((path) => path !== '')
+                }
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Migrating...
+                  </>
+                ) : (
+                  'Migrate'
+                )}
+              </Button>
+              {!alreadyMigrated && (
+                <p className="text-sm text-muted-foreground text-center pb-3">
+                  Skipping will create new empty folders and settings.
+                </p>
               )}
-            </Button>
-            <p className="text-sm text-muted-foreground text-center pb-3">
-              Skipping will create new empty folders and settings.
-            </p>
-          </div>
-        </SetupLayout>
-      )}
-      {page === 3 && (
-        <SetupLayout
-          title="UI Customization"
-          currentPage={3}
-          onBack={handleBack}
-          onNext={handleNext}
-        >
-          <div className="flex flex-col space-y-4">
-            <p className="text-sm text-muted-foreground text-center mb-4">
-              Customize the appearance of VRC World Manager
-            </p>
-            <div className="flex flex-row justify-between">
-              <div className="flex flex-col items-left space-y-4">
-                <div className="flex flex-col space-y-1">
-                  <Label>Worlds</Label>
-                  <div className="text-sm text-gray-500">
-                    Select the design for world previews
+            </div>
+          </SetupLayout>
+        )}
+        {page === 3 && (
+          <SetupLayout
+            title="UI Customization"
+            currentPage={3}
+            onBack={handleBack}
+            onNext={handleNext}
+          >
+            <div className="flex flex-col space-y-4">
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                Customize the appearance of VRC World Manager
+              </p>
+              <div className="flex flex-row justify-between">
+                <div className="flex flex-col items-left space-y-4">
+                  <div className="flex flex-col space-y-1">
+                    <Label>Worlds</Label>
+                    <div className="text-sm text-gray-500">
+                      Select the design for world previews
+                    </div>
                   </div>
-                </div>
-                <Select
-                  defaultValue={preferences.card_size}
-                  onValueChange={(value: CardSize) => {
-                    setSelectedSize(value);
-                    setPreferences({ ...preferences, card_size: value });
-                  }}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Theme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={CardSize.Compact}>Compact</SelectItem>
-                    <SelectItem value={CardSize.Normal}>Normal</SelectItem>
-                    <SelectItem value={CardSize.Expanded}>Expanded</SelectItem>
-                    <SelectItem value={CardSize.Original}>Original</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="max-w-[300px] w-full">
-                <div className="flex justify-center">
-                  <WorldCardPreview
-                    size={selectedSize}
-                    world={{
-                      name: 'World',
-                      thumbnailUrl:
-                        'https://api.vrchat.cloud/api/1/file/file_16e99205-34d4-42f7-8935-657d2b25ce44/5/file',
-                      authorName: 'Author',
-                      lastUpdated: '2025-01-01',
-                      visits: 59,
-                      favorites: 10,
-                      platform: Platform.CrossPlatform,
+                  <Select
+                    defaultValue={preferences.card_size}
+                    onValueChange={(value: CardSize) => {
+                      setSelectedSize(value);
+                      setPreferences({ ...preferences, card_size: value });
                     }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </SetupLayout>
-      )}
-      {page === 4 && (
-        <SetupLayout
-          title="Preferences"
-          currentPage={4}
-          onBack={handleBack}
-          onNext={handleNext}
-        >
-          <div className="flex flex-col space-y-4">
-            <p className="text-sm text-muted-foreground text-center">
-              Customize your preferences
-            </p>
-            <div className="flex flex-col space-y-8 py-6">
-              <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
-                <div className="flex flex-col space-y-1.5">
-                  <Label className="text-base font-medium">Theme</Label>
-                  <div className="text-sm text-gray-500">
-                    Select your preferred theme
-                  </div>
-                </div>
-                <Select
-                  defaultValue={preferences.theme}
-                  onValueChange={(value) => {
-                    setTheme(value);
-                    setPreferences({ ...preferences, theme: value });
-                  }}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Theme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
-                {' '}
-                {/* TODO: add localization */}
-                <div className="flex flex-col space-y-1.5">
-                  <Label className="text-base font-medium">Language</Label>
-                  <div className="text-sm text-gray-500">
-                    Select your preferred language
-                  </div>
-                </div>
-                <Select
-                  defaultValue={preferences.language}
-                  onValueChange={(value) => {
-                    setPreferences({ ...preferences, language: value });
-                  }}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Theme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ja-JP">Japanese</SelectItem>
-                    <SelectItem value="en-US">English(US)</SelectItem>
-                    <SelectItem value="en-UK">English(UK)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        </SetupLayout>
-      )}
-      {page === 5 && (
-        <SetupLayout
-          title="Setup Complete"
-          currentPage={5}
-          onBack={handleBack}
-          onNext={handleNext}
-          isLastPage={true}
-        >
-          <div className="flex flex-col items-center justify-center min-h-[400px]">
-            <div className="text-center max-w-md">
-              <h2 className="text-3xl font-bold">You're All Set!</h2>
-
-              <div className="space-y-8">
-                <p className="text-lg text-muted-foreground mt-4">
-                  Welcome to VRC World Manager. Start exploring and managing
-                  your VRChat worlds.
-                </p>
-
-                <p className="text-base text-muted-foreground">
-                  We hope this tool helps you organize and discover amazing
-                  VRChat worlds.
-                </p>
-              </div>
-
-              <div className="pt-6">
-                <p className="text-sm text-muted-foreground">
-                  Need help? Join our{' '}
-                  <a
-                    href="https://discord.gg/gNzbpux5xW"
-                    className="text-blue-500 hover:underline"
                   >
-                    Discord
-                  </a>{' '}
-                  community.
-                </p>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={CardSize.Compact}>Compact</SelectItem>
+                      <SelectItem value={CardSize.Normal}>Normal</SelectItem>
+                      <SelectItem value={CardSize.Expanded}>
+                        Expanded
+                      </SelectItem>
+                      <SelectItem value={CardSize.Original}>
+                        Original
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="max-w-[300px] w-full">
+                  <div className="flex justify-center">
+                    <WorldCardPreview
+                      size={selectedSize}
+                      world={{
+                        name: 'World',
+                        thumbnailUrl:
+                          'https://api.vrchat.cloud/api/1/file/file_16e99205-34d4-42f7-8935-657d2b25ce44/5/file',
+                        authorName: 'Author',
+                        lastUpdated: '2025-01-01',
+                        visits: 59,
+                        favorites: 10,
+                        platform: Platform.CrossPlatform,
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </SetupLayout>
-      )}
-    </div>
+          </SetupLayout>
+        )}
+        {page === 4 && (
+          <SetupLayout
+            title="Preferences"
+            currentPage={4}
+            onBack={handleBack}
+            onNext={handleNext}
+          >
+            <div className="flex flex-col space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Customize your preferences
+              </p>
+              <div className="flex flex-col space-y-8 py-6">
+                <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label className="text-base font-medium">Theme</Label>
+                    <div className="text-sm text-gray-500">
+                      Select your preferred theme
+                    </div>
+                  </div>
+                  <Select
+                    defaultValue={preferences.theme}
+                    onValueChange={(value) => {
+                      setTheme(value);
+                      setPreferences({ ...preferences, theme: value });
+                    }}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Light</SelectItem>
+                      <SelectItem value="dark">Dark</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
+                  {' '}
+                  {/* TODO: add localization */}
+                  <div className="flex flex-col space-y-1.5">
+                    <Label className="text-base font-medium">Language</Label>
+                    <div className="text-sm text-gray-500">
+                      Select your preferred language
+                    </div>
+                  </div>
+                  <Select
+                    defaultValue={preferences.language}
+                    onValueChange={(value) => {
+                      setPreferences({ ...preferences, language: value });
+                    }}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ja-JP">Japanese</SelectItem>
+                      <SelectItem value="en-US">English(US)</SelectItem>
+                      <SelectItem value="en-UK">English(UK)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </SetupLayout>
+        )}
+        {page === 5 && (
+          <SetupLayout
+            title="Setup Complete"
+            currentPage={5}
+            onBack={handleBack}
+            onNext={handleNext}
+            isLastPage={true}
+          >
+            <div className="flex flex-col items-center justify-center min-h-[400px]">
+              <div className="text-center max-w-md">
+                <h2 className="text-3xl font-bold">You're All Set!</h2>
+
+                <div className="space-y-8">
+                  <p className="text-lg text-muted-foreground mt-4">
+                    Welcome to VRC World Manager. Start exploring and managing
+                    your VRChat worlds.
+                  </p>
+
+                  <p className="text-base text-muted-foreground">
+                    We hope this tool helps you organize and discover amazing
+                    VRChat worlds.
+                  </p>
+                </div>
+
+                <div className="pt-6">
+                  <p className="text-sm text-muted-foreground">
+                    Need help? Join our{' '}
+                    <a
+                      href="https://discord.gg/gNzbpux5xW"
+                      className="text-blue-500 hover:underline"
+                    >
+                      Discord
+                    </a>{' '}
+                    community.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </SetupLayout>
+        )}
+      </div>
+    </>
   );
 };
 

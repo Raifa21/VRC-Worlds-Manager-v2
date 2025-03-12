@@ -1,4 +1,4 @@
-use definitions::{AuthCookies, FolderModel, PreferenceModel, WorldModel};
+use definitions::{AuthCookies, FolderModel, PreferenceModel, WorldModel, InitState};
 use state::InitCell;
 use std::sync::RwLock;
 use tauri_plugin_log::{Target, TargetKind};
@@ -12,7 +12,7 @@ static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
 static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
 static WORLDS: InitCell<RwLock<Vec<WorldModel>>> = InitCell::new();
 static AUTH: InitCell<RwLock<AuthCookies>> = InitCell::new();
-static INITSTATE: InitCell<RwLock<definitions::InitState>> = InitCell::new();
+static INITSTATE: InitCell<RwLock<InitState>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -30,7 +30,7 @@ pub fn run() {
             FOLDERS.set(RwLock::new(vec![]));
             WORLDS.set(RwLock::new(vec![]));
             AUTH.set(RwLock::new(AuthCookies::new()));
-            INITSTATE.set(RwLock::new(definitions::InitState::error(false, e)));
+            INITSTATE.set(RwLock::new(InitState::error(false, e)));
         }
     };
 
@@ -57,7 +57,10 @@ pub fn run() {
             commands::data::read_data_commands::detect_old_installation,
             commands::data::read_data_commands::migrate_old_data,
             commands::data::read_data_commands::pass_paths,
+            commands::data::write_data_commands::create_empty_auth,
+            commands::data::write_data_commands::create_empty_files,
             commands::data::write_data_commands::set_preferences,
+            
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

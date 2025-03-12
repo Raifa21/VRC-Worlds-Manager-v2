@@ -9,13 +9,14 @@ pub async fn require_initial_setup() -> bool {
     //check if the result is already cached
     let mut preferences_lock = PREFERENCES.get().write();
     let preference = preferences_lock.as_mut().unwrap();
-    if preference.first_time {
-        println!("First time run from cache");
-        return true;
+    if !preference.first_time {
+        println!("Not first time, cached result");
+        return false;
     }
 
     // Check for first time run
     let first_time = services::file_service::FileService::check_first_time();
+    println!("First time: {}", first_time);
     if first_time {
         preference.first_time = true;
         return true;

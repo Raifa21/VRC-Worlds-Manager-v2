@@ -1,7 +1,6 @@
 use crate::definitions::AuthCookies;
 use crate::definitions::{FolderModel, PreferenceModel, WorldModel};
 use crate::errors::FileError;
-use crate::services::EncryptionService;
 use directories::BaseDirs;
 use log::debug;
 use serde_json;
@@ -175,6 +174,45 @@ impl FileService {
         let (_, _, _, auth_path) = Self::get_paths();
         let data = serde_json::to_string_pretty(cookies).map_err(|_| FileError::InvalidFile)?;
         fs::write(auth_path, data).map_err(|_| FileError::FileWriteError)
+    }
+
+    /// Writes an empty authentication file to disk
+    /// This is called when the user logs out, or when the app is run for the first time
+    ///
+    /// # Returns
+    /// Ok(()) if the file was created successfully
+    /// 
+    /// # Errors
+    /// Returns a FileError if the file could not be created
+    pub fn create_empty_auth_file() -> Result<(), FileError> {
+        let (_, _, _, auth_path) = Self::get_paths();
+        fs::write(auth_path, "{}").map_err(|_| FileError::FileWriteError)
+    }
+
+    /// Writes an empty worlds file to disk
+    /// This is called when the app is run for the first time and the user does not migrate data
+    /// 
+    /// # Returns
+    /// Ok(()) if the file was created successfully
+    /// 
+    /// # Errors
+    /// Returns a FileError if the file could not be created
+    pub fn create_empty_worlds_file() -> Result<(), FileError> {
+        let (_, _, worlds_path, _) = Self::get_paths();
+        fs::write(worlds_path, "[]").map_err(|_| FileError::FileWriteError)
+    }
+
+    /// Writes an empty folders file to disk
+    /// This is called when the app is run for the first time and the user does not migrate data
+    /// 
+    /// # Returns
+    /// Ok(()) if the file was created successfully
+    /// 
+    /// # Errors
+    /// Returns a FileError if the file could not be created
+    pub fn create_empty_folders_file() -> Result<(), FileError> {
+        let (_, folders_path, _, _) = Self::get_paths();
+        fs::write(folders_path, "[]").map_err(|_| FileError::FileWriteError)
     }
 }
 

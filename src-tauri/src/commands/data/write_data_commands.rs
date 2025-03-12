@@ -1,3 +1,5 @@
+use vrchatapi::models::user;
+
 use crate::definitions::CardSize;
 use crate::services;
 
@@ -12,4 +14,17 @@ pub async fn set_preferences(
         Ok(false) => Err("Failed to set preferences".to_string()),
         Err(e) => Err(e.to_string()),
     }
+}
+
+#[tauri::command]
+pub async fn create_empty_auth() -> Result<(), String> {
+    services::FileService::create_empty_auth_file()
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn create_empty_files() -> Result<(), String> {
+    services::FileService::create_empty_folders_file()
+        .and_then(|_| services::FileService::create_empty_worlds_file())
+        .map_err(|e| e.to_string())
 }

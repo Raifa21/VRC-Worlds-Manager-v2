@@ -92,8 +92,10 @@ impl WorldModel {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FolderModel {
+    #[serde(rename = "name")]
     pub folder_name: String,
-    pub world_ids: Vec<String>, // Only IDs are stored to ensure data consistency
+    #[serde(rename = "worlds")]
+    pub world_ids: Vec<String>,
 }
 
 impl FolderModel {
