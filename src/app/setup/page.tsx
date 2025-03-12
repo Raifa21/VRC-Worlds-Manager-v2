@@ -160,6 +160,7 @@ const WelcomePage: React.FC = () => {
       }
       router.push('/listview');
     }
+    setPage(page + 1);
   };
 
   const handleBack = () => {

@@ -29,10 +29,6 @@ pub fn initialize_app() -> Result<
     let first_time = FileService::check_first_time();
     if first_time {
         return Err("First time run".to_string());
-    } else {
-        let mut preferences_lock = PREFERENCES.get().write();
-        let preference = preferences_lock.as_mut().unwrap();
-        preference.first_time = false;
     }
 
     // Load data from disk
@@ -67,6 +63,7 @@ pub fn set_preferences(
     preference.theme = theme;
     preference.language = language;
     preference.card_size = card_size;
+    preference.first_time = false;
     match FileService::write_preferences(preference) {
         Ok(_) => Ok(true),
         Err(e) => Err(e.to_string()),

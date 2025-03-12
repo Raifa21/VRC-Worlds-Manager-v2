@@ -10,6 +10,7 @@ pub async fn require_initial_setup() -> bool {
     let mut preferences_lock = PREFERENCES.get().write();
     let preference = preferences_lock.as_mut().unwrap();
     if preference.first_time {
+        println!("First time run from cache");
         return true;
     }
 
