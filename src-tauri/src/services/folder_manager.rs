@@ -1,5 +1,8 @@
-use crate::definitions::{FolderModel, WorldModel};
+use vrchatapi::models::World;
+
+use crate::definitions::{FolderModel, WorldDisplayData, WorldModel};
 use crate::errors::{AppError, ConcurrencyError, EntityError};
+use std::collections::HashSet;
 use std::sync::RwLock;
 
 /// Service for managing world/folder operations
@@ -59,7 +62,6 @@ impl FolderManager {
 
     /// Removes a world from a folder
     /// Does not do anything if the world is not in the folder
-    /// If the world is not in any other folder, add to "Unclassified" folder
     ///
     /// # Arguments
     /// * `folder_name` - The name of the folder
@@ -99,38 +101,22 @@ impl FolderManager {
         let folder = folder.unwrap();
         let world = world.unwrap();
 
-        let should_add_to_unclassified = {
-            if world.user_data.folders.contains(&folder_name) {
-                // Remove folder from world's folders
-                if let Some(index) = world
-                    .user_data
-                    .folders
-                    .iter()
-                    .position(|f| f == &folder_name)
-                {
-                    world.user_data.folders.remove(index);
-                }
-
-                // Remove world from folder's world_ids
-                if let Some(index) = folder.world_ids.iter().position(|id| id == &world_id) {
-                    folder.world_ids.remove(index);
-                }
-
-                world.user_data.folders.is_empty()
-            } else {
-                return Err(EntityError::FolderNotFound(folder.folder_name.clone()).into());
+        if world.user_data.folders.contains(&folder_name) {
+            // Remove folder from world's folders
+            if let Some(index) = world
+                .user_data
+                .folders
+                .iter()
+                .position(|f| f == &folder_name)
+            {
+                world.user_data.folders.remove(index);
             }
-        };
-
-        if should_add_to_unclassified {
-            drop(folders_lock);
-            drop(worlds_lock);
-            FolderManager::add_world_to_folder(
-                "Unclassified".to_string(),
-                world_id,
-                folders,
-                worlds,
-            )?;
+            // Remove world from folder's world_ids
+            if let Some(index) = folder.world_ids.iter().position(|id| id == &world_id) {
+                folder.world_ids.remove(index);
+            }
+        } else {
+            return Err(EntityError::FolderNotFound(folder.folder_name.clone()).into());
         }
 
         Ok(())
@@ -229,7 +215,6 @@ impl FolderManager {
 
     /// Delete a folder by name
     /// For each world in the folder, pass to remove_world_from_folder
-    /// Reject deletion if the folder is the "Unclassified" folder
     ///
     ///
     /// # Arguments
@@ -247,13 +232,6 @@ impl FolderManager {
         folders: &RwLock<Vec<FolderModel>>,
         worlds: &RwLock<Vec<WorldModel>>,
     ) -> Result<(), AppError> {
-        if name == "Unclassified" {
-            return Err(EntityError::InvalidOperation(
-                "Cannot delete the 'Unclassified' folder".to_string(),
-            )
-            .into());
-        }
-
         let mut folders_lock = folders
             .write()
             .map_err(|_| ConcurrencyError::PoisonedLock)?;
@@ -321,7 +299,7 @@ impl FolderManager {
         folder_name: String,
         folders: &RwLock<Vec<FolderModel>>,
         worlds: &RwLock<Vec<WorldModel>>,
-    ) -> Result<Vec<WorldModel>, AppError> {
+    ) -> Result<Vec<WorldDisplayData>, AppError> {
         let folders_lock = folders.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
 
         let folder = folders_lock.iter().find(|f| f.folder_name == folder_name);
@@ -332,12 +310,60 @@ impl FolderManager {
                 drop(folders_lock);
                 for world_id in world_ids {
                     let world = Self::get_world(world_id, worlds)?;
-                    folder_worlds.push(world);
+                    folder_worlds.push(world.to_display_data());
                 }
                 Ok(folder_worlds)
             }
             None => Err(EntityError::FolderNotFound(folder_name).into()),
         }
+    }
+
+    /// Get all worlds
+    ///
+    /// # Arguments
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// A vector of world models
+    ///
+    /// # Errors
+    /// Returns an error if the worlds lock is poisoned
+    #[must_use]
+    pub fn get_all_worlds(
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<Vec<WorldDisplayData>, AppError> {
+        let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        println!("All worlds count: {}", worlds_lock.len());
+        let world_ids: HashSet<_> = worlds_lock.iter().map(|w| &w.api_data.world_id).collect();
+        println!("Unique world IDs: {}", world_ids.len());
+        let all_worlds = worlds_lock.iter().map(|w| w.to_display_data()).collect();
+        Ok(all_worlds)
+    }
+
+    /// Get all worlds that are Unclassified
+    /// Check all worlds, and return those that are not in any folder
+    /// This is done by checking if the world's folders list is empty
+    ///
+    /// # Arguments
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// A vector of world models
+    ///
+    /// # Errors
+    /// Returns an error if the worlds lock is poisoned
+    #[must_use]
+    pub fn get_unclassified_worlds(
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<Vec<WorldDisplayData>, AppError> {
+        let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let unclassified_worlds = worlds_lock
+            .iter()
+            .filter(|w| w.user_data.folders.is_empty())
+            .cloned()
+            .map(|w| w.to_display_data())
+            .collect();
+        Ok(unclassified_worlds)
     }
 }
 
@@ -467,11 +493,6 @@ mod tests {
         let result =
             FolderManager::delete_folder("NonExistent".to_string(), &state.folders, &state.worlds);
         assert!(result.is_err());
-
-        // Test delete Unclassified folder
-        let result =
-            FolderManager::delete_folder("Unclassified".to_string(), &state.folders, &state.worlds);
-        assert!(result.is_err());
     }
 
     #[test]
@@ -501,7 +522,6 @@ mod tests {
         let world_id = "test_world".to_string();
         add_test_world_to_state(world_id.clone(), &state.worlds).unwrap();
 
-        let _ = FolderManager::create_folder("Unclassified".to_string(), &state.folders).unwrap();
         let _ = FolderManager::create_folder(folder_name.clone(), &state.folders).unwrap();
 
         let _ = FolderManager::add_world_to_folder(
@@ -542,5 +562,17 @@ mod tests {
         let world_id = "test_world_123".to_string();
         let result = FolderManager::get_world(world_id, &state.worlds);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_unclassified_worlds() {
+        let state = setup_test_state();
+        let world_id = "test_world_123".to_string();
+        add_test_world_to_state(world_id.clone(), &state.worlds).unwrap();
+        let result = FolderManager::get_unclassified_worlds(&state.worlds);
+        if let Err(e) = result.clone() {
+            eprintln!("Error getting unclassified worlds: {}", e);
+        }
+        assert!(result.is_ok());
     }
 }

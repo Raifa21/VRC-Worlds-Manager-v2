@@ -1,5 +1,3 @@
-use vrchatapi::models::user;
-
 use crate::definitions::CardSize;
 use crate::services;
 
@@ -18,8 +16,7 @@ pub async fn set_preferences(
 
 #[tauri::command]
 pub async fn create_empty_auth() -> Result<(), String> {
-    services::FileService::create_empty_auth_file()
-        .map_err(|e| e.to_string())
+    services::FileService::create_empty_auth_file().map_err(|e| e.to_string())
 }
 
 #[tauri::command]

@@ -8,6 +8,7 @@ export enum Platform {
 }
 
 export interface WorldDisplayData {
+  worldId: string;
   name: string;
   thumbnailUrl: string;
   authorName: string;

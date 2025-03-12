@@ -6,7 +6,7 @@ use crate::WORLDS;
 use chrono::{DateTime, Duration, NaiveDateTime};
 use directories::BaseDirs;
 use serde::Deserialize;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 
 pub struct MigrationService;
@@ -246,6 +246,13 @@ impl MigrationService {
             let is_hidden = hidden_world_ids.contains(&old_world.world_id);
             new_worlds.push(Self::convert_to_new_model(old_world, dates[idx], is_hidden));
         }
+
+        let unique_worlds: HashMap<String, WorldModel> = new_worlds
+            .iter()
+            .map(|w| (w.api_data.world_id.clone(), w.clone()))
+            .collect();
+
+        new_worlds = unique_worlds.into_iter().map(|(_, w)| w).collect();
 
         // Process regular folders
         for folder in old_folders {

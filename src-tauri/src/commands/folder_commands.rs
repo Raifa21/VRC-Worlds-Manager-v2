@@ -1,4 +1,4 @@
-use crate::definitions::{FolderModel, WorldModel};
+use crate::definitions::{FolderModel, WorldDisplayData, WorldModel};
 use crate::services::folder_manager::FolderManager;
 use crate::{FOLDERS, WORLDS};
 
@@ -12,6 +12,7 @@ pub async fn get_folders() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 pub async fn create_folder(name: String) -> Result<FolderModel, String> {
+    println!("Creating folder: {}", name);
     FolderManager::create_folder(name, FOLDERS.get()).map_err(|e| {
         eprintln!("Error creating folder: {}", e);
         e.to_string()
@@ -53,9 +54,25 @@ pub async fn remove_world_from_folder(folder_name: String, world_id: String) -> 
 }
 
 #[tauri::command]
-pub async fn get_worlds(folder_name: String) -> Result<Vec<WorldModel>, String> {
+pub async fn get_worlds(folder_name: String) -> Result<Vec<WorldDisplayData>, String> {
     FolderManager::get_worlds(folder_name, FOLDERS.get(), WORLDS.get()).map_err(|e| {
         eprintln!("Error getting worlds: {}", e);
+        e.to_string()
+    })
+}
+
+#[tauri::command]
+pub async fn get_all_worlds() -> Result<Vec<WorldDisplayData>, String> {
+    FolderManager::get_all_worlds(WORLDS.get()).map_err(|e| {
+        eprintln!("Error getting all worlds: {}", e);
+        e.to_string()
+    })
+}
+
+#[tauri::command]
+pub async fn get_unclassified_worlds() -> Result<Vec<WorldDisplayData>, String> {
+    FolderManager::get_unclassified_worlds(WORLDS.get()).map_err(|e| {
+        eprintln!("Error getting unclassified worlds: {}", e);
         e.to_string()
     })
 }

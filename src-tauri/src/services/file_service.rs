@@ -181,7 +181,7 @@ impl FileService {
     ///
     /// # Returns
     /// Ok(()) if the file was created successfully
-    /// 
+    ///
     /// # Errors
     /// Returns a FileError if the file could not be created
     pub fn create_empty_auth_file() -> Result<(), FileError> {
@@ -191,10 +191,10 @@ impl FileService {
 
     /// Writes an empty worlds file to disk
     /// This is called when the app is run for the first time and the user does not migrate data
-    /// 
+    ///
     /// # Returns
     /// Ok(()) if the file was created successfully
-    /// 
+    ///
     /// # Errors
     /// Returns a FileError if the file could not be created
     pub fn create_empty_worlds_file() -> Result<(), FileError> {
@@ -204,10 +204,10 @@ impl FileService {
 
     /// Writes an empty folders file to disk
     /// This is called when the app is run for the first time and the user does not migrate data
-    /// 
+    ///
     /// # Returns
     /// Ok(()) if the file was created successfully
-    /// 
+    ///
     /// # Errors
     /// Returns a FileError if the file could not be created
     pub fn create_empty_folders_file() -> Result<(), FileError> {

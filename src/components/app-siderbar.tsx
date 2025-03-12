@@ -8,6 +8,7 @@ import Image from 'next/image';
 
 import { invoke } from '@tauri-apps/api/core';
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Separator } from '@/components/ui/separator';
 
@@ -25,81 +26,88 @@ import {
   CollapsibleContent,
 } from './ui/collapsible';
 
-interface Folder {
-  folderName: string;
-  worldCount: number;
-}
-
 const sidebarStyles = {
   container:
-    'flex flex-col h-full w-[250px] border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
+    'flex flex-col h-screen w-[250px] border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
   header: 'flex h-14 items-center border-b border-border/40 px-6',
-  nav: 'flex-1 space-y-1 p-4',
+  nav: 'flex-1 space-y-0.5 p-4 pb-0',
   link: 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-accent/50 hover:text-accent-foreground',
   activeLink: 'bg-accent/60 text-accent-foreground',
-  footer: 'mt-auto p-4 border-t border-border/40',
+  footer: 'sticky bottom-0 left-0 mt-auto p-4 border-t border-border/40',
 };
 
-export function AppSidebar() {
-  const [folders, setFolders] = useState<Folder[]>([]);
+interface AppSidebarProps {
+  folders: String[];
+  onFoldersChange: () => void;
+}
 
-  useEffect(() => {
-    loadFolders();
-  }, []);
+export function AppSidebar({ folders, onFoldersChange }: AppSidebarProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const loadFolders = async () => {
-    try {
-      const result = await invoke<Folder[]>('get_folders');
-      setFolders(result);
-    } catch (error) {
-      console.error('Failed to load folders:', error);
-    }
-  };
-
-  const createFolder = async (name: string) => {
-    try {
-      await invoke<Folder>('create_folder', { folderName: name });
-      await loadFolders(); // Reload folders after creating new one
-    } catch (error) {
-      console.error('Failed to create folder:', error);
-    }
-  };
   return (
     <aside className={sidebarStyles.container}>
       <header className={sidebarStyles.header}>
-        <h2 className="text-lg font-semibold">VRC Manager</h2>
+        <h2 className="text-lg font-semibold">VRC World Manager</h2>
       </header>
 
       <nav className={sidebarStyles.nav}>
         <SidebarGroup>
-          <div className="flex items-center gap-3">
+          <div
+            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
+            onClick={() => router.push('/listview?specialFolders=all')}
+          >
             <Image src={Saturn} alt="Saturn" width={24} height={24} />
-            <span>Worlds</span>
+            <span className="text-sm font-medium">All Worlds</span>
           </div>
         </SidebarGroup>
 
-        <Separator className="my-2 bg-border/60" />
-
         <Collapsible defaultOpen className="group/collapsible">
           <SidebarGroup>
-            <SidebarGroupLabel asChild>
-              <CollapsibleTrigger className="flex w-full items-center gap-3">
-                <File className="h-5 w-5" />
-                <span>Folders</span>
-                <ChevronDown className="ml-auto h-5 w-5 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
+            <CollapsibleTrigger className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-all hover:bg-accent/50 hover:text-accent-foreground">
+              <File className="h-5 w-5" />
+              <span className="text-sm font-medium">Folders</span>
+              <ChevronDown className="ml-auto h-5 w-5 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+            </CollapsibleTrigger>
             <CollapsibleContent>
-              {folders.map((folder, index) => (
-                <div key={index}>{folder.folderName}</div>
-              ))}
+              <div className="h-[calc(100vh-356px)] overflow-y-auto">
+                {' '}
+                {/* Reduced height */}
+                <div
+                  className="w-[200px] px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap"
+                  onClick={() =>
+                    router.push('/listview?specialFolders=unclassified')
+                  }
+                >
+                  Unclassified
+                </div>
+                {folders.map((folder, index) => (
+                  <div
+                    key={index}
+                    className="w-[200px] px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap"
+                    onClick={() => router.push(`/listview?folder=${folder}`)}
+                  >
+                    {folder}
+                  </div>
+                ))}
+              </div>
+              <div
+                className={`${sidebarStyles.link} border-t border-border/40`}
+                onClick={() => {
+                  onFoldersChange();
+                  router.push(
+                    `/listview?${searchParams.toString()}&addFolder=true`,
+                  );
+                }}
+              >
+                + Add Folder
+              </div>
             </CollapsibleContent>
           </SidebarGroup>
         </Collapsible>
       </nav>
 
       <footer className={sidebarStyles.footer}>
-        <Separator className="mb-2 bg-border/60" />
         <SidebarGroup>
           <div className="flex items-center gap-3">
             <Info className="h-5 w-5" />

@@ -88,6 +88,53 @@ impl WorldModel {
             },
         }
     }
+
+    pub fn to_display_data(&self) -> WorldDisplayData {
+        WorldDisplayData {
+            world_id: self.api_data.world_id.clone(),
+            name: self.api_data.world_name.clone(),
+            thumbnail_url: self.api_data.image_url.clone(),
+            author_name: self.api_data.author_name.clone(),
+            favorites: self.api_data.favorites,
+            last_updated: self.api_data.last_update.format("%Y-%m-%d").to_string(),
+            visits: self.api_data.visits.unwrap_or(0),
+            platform: if self.api_data.platform.contains(&"pc".to_string())
+                && self.api_data.platform.contains(&"android".to_string())
+            {
+                Platform::CrossPlatform
+            } else if self.api_data.platform.contains(&"android".to_string()) {
+                Platform::Quest
+            } else {
+                Platform::PC
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Platform {
+    #[serde(rename = "PC")]
+    PC,
+    #[serde(rename = "Quest")]
+    Quest,
+    #[serde(rename = "Cross-Platform")]
+    CrossPlatform,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorldDisplayData {
+    #[serde(rename = "worldId")]
+    pub world_id: String,
+    pub name: String,
+    #[serde(rename = "thumbnailUrl")]
+    pub thumbnail_url: String,
+    #[serde(rename = "authorName")]
+    pub author_name: String,
+    pub favorites: i32,
+    #[serde(rename = "lastUpdated")]
+    pub last_updated: String,
+    pub visits: i32,
+    pub platform: Platform,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

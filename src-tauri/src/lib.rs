@@ -1,4 +1,4 @@
-use definitions::{AuthCookies, FolderModel, PreferenceModel, WorldModel, InitState};
+use definitions::{AuthCookies, FolderModel, InitState, PreferenceModel, WorldModel};
 use state::InitCell;
 use std::sync::RwLock;
 use tauri_plugin_log::{Target, TargetKind};
@@ -52,6 +52,9 @@ pub fn run() {
             commands::folder_commands::add_world_to_folder,
             commands::folder_commands::remove_world_from_folder,
             commands::folder_commands::get_worlds,
+            commands::folder_commands::get_all_worlds,
+            commands::folder_commands::get_unclassified_worlds,
+            commands::preferences_commands::get_card_size,
             commands::data::read_data_commands::require_initial_setup,
             commands::data::read_data_commands::check_files_loaded,
             commands::data::read_data_commands::detect_old_installation,
@@ -60,7 +63,6 @@ pub fn run() {
             commands::data::write_data_commands::create_empty_auth,
             commands::data::write_data_commands::create_empty_files,
             commands::data::write_data_commands::set_preferences,
-            
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

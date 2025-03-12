@@ -422,6 +422,7 @@ const WelcomePage: React.FC = () => {
                     <WorldCardPreview
                       size={selectedSize}
                       world={{
+                        worldId: '1',
                         name: 'World',
                         thumbnailUrl:
                           'https://api.vrchat.cloud/api/1/file/file_16e99205-34d4-42f7-8935-657d2b25ce44/5/file',
