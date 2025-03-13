@@ -193,8 +193,11 @@ impl MigrationService {
                 recommended_capacity: None,
                 tags: vec![],
                 publication_date: NaiveDateTime::default(),
-                last_update: NaiveDateTime::parse_from_str(&old_world.last_update, "%m/%d/%Y")
-                    .unwrap_or_else(|_| NaiveDateTime::default()),
+                last_update: NaiveDateTime::parse_from_str(
+                    &format!("{} 00:00:00", old_world.last_update),
+                    "%m/%d/%Y %H:%M:%S",
+                )
+                .unwrap_or_default(),
                 description: old_world.description.clone(),
                 visits: old_world.visits,
                 favorites: old_world.favorites,
@@ -446,5 +449,23 @@ mod tests {
         assert_eq!(result[2].world_id, "5");
         assert_eq!(result[3].world_id, "6");
         assert_eq!(result[4].world_id, "7");
+    }
+
+    #[test]
+    fn test_convert_last_update_date() {
+        let old_world = PreviousWorldModel {
+            last_update: "03/14/2024".to_string(),
+            ..PreviousWorldModel::default()
+        };
+
+        let converted =
+            MigrationService::convert_to_new_model(&old_world, NaiveDateTime::default(), false);
+
+        let expected = NaiveDateTime::new(
+            chrono::NaiveDate::from_ymd_opt(2024, 3, 14).unwrap(),
+            chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+        );
+
+        assert_eq!(converted.api_data.last_update, expected);
     }
 }
