@@ -25,7 +25,7 @@ where
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct PreviousWorldModel {
     #[serde(rename = "ThumbnailImageUrl")]
     thumbnail_image_url: String,
@@ -209,6 +209,42 @@ impl MigrationService {
         }
     }
 
+    fn deduplicate_with_pattern(old_worlds: Vec<PreviousWorldModel>) -> Vec<PreviousWorldModel> {
+        let mut unique_worlds: HashMap<String, (PreviousWorldModel, usize)> = HashMap::new();
+        let mut first_duplicate_idx = None;
+
+        // First pass - find duplicates and their positions
+        for (idx, world) in old_worlds.iter().enumerate() {
+            if let Some((_, first_idx)) = unique_worlds.get(&world.world_id) {
+                if first_duplicate_idx.is_none() {
+                    first_duplicate_idx = Some(idx);
+                    break;
+                }
+            } else {
+                unique_worlds.insert(world.world_id.clone(), (world.clone(), idx));
+            }
+        }
+
+        if let Some(split_idx) = first_duplicate_idx {
+            let duplicated = &old_worlds[..split_idx];
+            let unique = &old_worlds[split_idx..];
+
+            if let Some(end_idx) = unique.iter().position(|w| {
+                duplicated
+                    .iter()
+                    .find(|d| d.world_id == w.world_id)
+                    .is_none()
+            }) {
+                let mut result: Vec<PreviousWorldModel> =
+                    duplicated.iter().rev().map(|w| w.clone()).collect();
+                result.extend(unique[end_idx..].iter().cloned());
+                return result;
+            }
+        }
+
+        old_worlds
+    }
+
     /// Migrates the old VRC World Manager Data to the new location
     /// Called from setup page
     ///
@@ -241,19 +277,14 @@ impl MigrationService {
             }
         }
 
+        // Deduplicate worlds
+        let old_worlds = Self::deduplicate_with_pattern(old_worlds);
+
         // Convert worlds with calculated dates
         for (idx, old_world) in old_worlds.iter().enumerate() {
             let is_hidden = hidden_world_ids.contains(&old_world.world_id);
             new_worlds.push(Self::convert_to_new_model(old_world, dates[idx], is_hidden));
         }
-
-        let unique_worlds: HashMap<String, WorldModel> = new_worlds
-            .iter()
-            .map(|w| (w.api_data.world_id.clone(), w.clone()))
-            .collect();
-
-        new_worlds = unique_worlds.into_iter().map(|(_, w)| w).collect();
-
         // Process regular folders
         for folder in old_folders {
             if folder.name != "Hidden" && folder.name != "Unclassified" {
@@ -366,5 +397,54 @@ mod tests {
         let worlds: Vec<PreviousWorldModel> = vec![];
         let (earliest, dates) = MigrationService::calculate_dates(&worlds);
         assert_eq!(dates.len(), 0);
+    }
+
+    #[test]
+    fn test_deduplicate_with_pattern() {
+        // Create test data with known pattern
+        let test_worlds = vec![
+            PreviousWorldModel {
+                world_id: "5".to_string(),
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                world_id: "4".to_string(),
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                world_id: "3".to_string(),
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                world_id: "5".to_string(),
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                world_id: "4".to_string(),
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                world_id: "3".to_string(),
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                world_id: "6".to_string(),
+                ..PreviousWorldModel::default()
+            },
+            PreviousWorldModel {
+                world_id: "7".to_string(),
+                ..PreviousWorldModel::default()
+            },
+        ];
+
+        let result = MigrationService::deduplicate_with_pattern(test_worlds);
+
+        // Verify results
+        assert_eq!(result.len(), 5); // Should have 5 unique worlds
+        assert_eq!(result[0].world_id, "3");
+        assert_eq!(result[1].world_id, "4");
+        assert_eq!(result[2].world_id, "5");
+        assert_eq!(result[3].world_id, "6");
+        assert_eq!(result[4].world_id, "7");
     }
 }
