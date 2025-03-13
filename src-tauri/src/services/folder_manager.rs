@@ -201,7 +201,7 @@ impl FolderManager {
     pub fn create_folder(
         name: String,
         folders: &RwLock<Vec<FolderModel>>,
-    ) -> Result<FolderModel, AppError> {
+    ) -> Result<String, AppError> {
         let new_name = FolderManager::increment_folder_name(name, folders)?;
 
         let mut folders_lock = folders
@@ -210,7 +210,7 @@ impl FolderManager {
 
         let new_folder = FolderModel::new(new_name);
         folders_lock.push(new_folder.clone());
-        Ok(new_folder)
+        Ok(new_folder.folder_name)
     }
 
     /// Delete a folder by name
@@ -469,11 +469,11 @@ mod tests {
         let name = "Test Folder".to_string();
 
         let result = FolderManager::create_folder(name.clone(), &state.folders).unwrap();
-        assert_eq!(result.folder_name, name);
+        assert_eq!(result, name);
 
         // Test creating duplicate folder
         let result = FolderManager::create_folder(name, &state.folders).unwrap();
-        assert_eq!(result.folder_name, "Test Folder (1)");
+        assert_eq!(result, "Test Folder (1)");
     }
 
     #[test]

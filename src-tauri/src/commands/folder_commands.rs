@@ -11,7 +11,7 @@ pub async fn get_folders() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-pub async fn create_folder(name: String) -> Result<FolderModel, String> {
+pub async fn create_folder(name: String) -> Result<String, String> {
     println!("Creating folder: {}", name);
     FolderManager::create_folder(name, FOLDERS.get()).map_err(|e| {
         eprintln!("Error creating folder: {}", e);

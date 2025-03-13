@@ -15,6 +15,7 @@ export interface WorldDisplayData {
   favorites: number;
   lastUpdated: string;
   visits: number;
+  dateAdded: string;
   platform: Platform;
 }
 
@@ -51,14 +52,16 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
         <div className="p-2 space-y-1">
           <div className="flex items-center justify-between">
             <h3 className="font-medium truncate">{world.name}</h3>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              {world.authorName}
+            </span>
             <div className="flex items-center gap-1">
-              <Heart className="w-3.5 h-3.5" /> {/* Changed from w-4 h-4 */}
+              <Heart className="w-3.5 h-3.5" />
               <span className="text-sm">{world.favorites}</span>
             </div>
           </div>
-          <span className="text-sm text-muted-foreground">
-            {world.authorName}
-          </span>
         </div>
       )}
 

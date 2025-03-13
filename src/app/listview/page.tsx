@@ -20,6 +20,9 @@ export default function ListView() {
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
   const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
+  const [currentFolder, setCurrentFolder] = useState<string | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     const specialFolders = searchParams.get('specialFolders');
@@ -60,6 +63,7 @@ export default function ListView() {
     try {
       const worlds = await invoke<WorldDisplayData[]>('get_all_worlds');
       setWorlds(worlds);
+      setCurrentFolder('All Worlds');
     } catch (error) {
       toast({
         title: 'Error',
@@ -73,6 +77,7 @@ export default function ListView() {
         'get_unclassified_worlds',
       );
       setWorlds(worlds);
+      setCurrentFolder('Unclassified');
     } catch (error) {
       toast({
         title: 'Error',
@@ -83,14 +88,15 @@ export default function ListView() {
 
   const handleCreateFolder = async (name: string) => {
     try {
-      await invoke('create_folder', { name: name });
+      let newName = await invoke<string>('create_folder', { name: name });
       await loadFolders(); // Refresh folders after creation
-      console.log('Folder created:', name);
+      console.log('Folder created:', newName);
       toast({
         title: 'Success',
-        description: `Folder "${name}" created`,
+        description: `Folder "${newName}" created`,
       });
-      router.push(`/listview?folder=${name}`);
+      setCurrentFolder(newName);
+      router.push(`/listview?folder=${newName}`);
     } catch (error) {
       console.log('Failed to create folder:', error);
       toast({
@@ -109,6 +115,7 @@ export default function ListView() {
         folder_name: folder,
       });
       setWorlds(worlds);
+      setCurrentFolder(folder);
     } catch (error) {
       toast({
         title: 'Error',
@@ -127,7 +134,7 @@ export default function ListView() {
     <div className="flex h-screen">
       <AppSidebar folders={folders} onFoldersChange={loadFolders} />
       <div className="flex-1 overflow-auto">
-        <WorldGrid size={cardSize} worlds={worlds} />
+        <WorldGrid size={cardSize} worlds={worlds} folderName={currentFolder} />
       </div>
       <CreateFolderDialog
         open={showCreateFolder}

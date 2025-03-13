@@ -429,6 +429,7 @@ const WelcomePage: React.FC = () => {
                         authorName: 'Author',
                         lastUpdated: '2025-01-01',
                         visits: 59,
+                        dateAdded: '2025-01-01',
                         favorites: 10,
                         platform: Platform.CrossPlatform,
                       }}

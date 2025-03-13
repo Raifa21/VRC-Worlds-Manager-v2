@@ -98,6 +98,7 @@ impl WorldModel {
             favorites: self.api_data.favorites,
             last_updated: self.api_data.last_update.format("%Y-%m-%d").to_string(),
             visits: self.api_data.visits.unwrap_or(0),
+            date_added: self.user_data.date_added.format("%Y-%m-%d").to_string(),
             platform: if self.api_data.platform.contains(&"pc".to_string())
                 && self.api_data.platform.contains(&"android".to_string())
             {
@@ -134,6 +135,8 @@ pub struct WorldDisplayData {
     #[serde(rename = "lastUpdated")]
     pub last_updated: String,
     pub visits: i32,
+    #[serde(rename = "dateAdded")]
+    pub date_added: String,
     pub platform: Platform,
 }
 
