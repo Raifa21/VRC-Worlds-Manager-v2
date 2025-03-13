@@ -30,15 +30,18 @@ export default function ListView() {
     const addFolder = searchParams.get('addFolder');
 
     if (addFolder === 'true') {
+      console.log('Showing create folder dialog');
       setShowCreateFolder(true);
     } else if (specialFolders === 'all') {
+      console.log('Loading all worlds');
       loadAllWorlds();
     } else if (specialFolders === 'unclassified') {
+      console.log('Loading unclassified worlds');
       loadUnclassifiedWorlds();
     } else if (folder) {
-      loadWorlds(folder);
+      console.log('Loading folder:', folder);
+      loadWorlds(decodeURIComponent(folder));
     } else {
-      // This is only when the page is first loaded
       initialize_listview();
     }
   }, [searchParams]);
@@ -88,32 +91,34 @@ export default function ListView() {
 
   const handleCreateFolder = async (name: string) => {
     try {
-      let newName = await invoke<string>('create_folder', { name: name });
-      await loadFolders(); // Refresh folders after creation
-      console.log('Folder created:', newName);
-      toast({
-        title: 'Success',
-        description: `Folder "${newName}" created`,
-      });
-      setCurrentFolder(newName);
-      router.push(`/listview?folder=${newName}`);
+      const newName = await invoke<string>('create_folder', { name: name });
+      await loadFolders();
+      
+      // Batch state updates before navigation
+      await Promise.all([
+        setCurrentFolder(newName),
+        setShowCreateFolder(false),
+      ]);
+
+      // Single navigation after all states are updated
+      router.push(`/listview?folder=${encodeURIComponent(newName)}`);
+      
     } catch (error) {
-      console.log('Failed to create folder:', error);
+      console.error('Failed to create folder:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create folder',
+        description: 'Failed to create folder'
       });
-      const params = new URLSearchParams(searchParams);
-      params.delete('addFolder');
-      router.push(`/listview?${params.toString()}`);
     }
   };
 
   const loadWorlds = async (folder: string) => {
     try {
+      console.log('Folder:', folder);
       const worlds = await invoke<WorldDisplayData[]>('get_worlds', {
-        folder_name: folder,
+        folderName: folder,
       });
+      console.log('Worlds:', worlds);
       setWorlds(worlds);
       setCurrentFolder(folder);
     } catch (error) {
@@ -121,13 +126,12 @@ export default function ListView() {
         title: 'Error',
         description: 'Failed to load worlds',
       });
+      console.log('Failed to load worlds:', error); 
     }
   };
 
   const handleDialogClose = () => {
-    const params = new URLSearchParams(searchParams);
-    params.delete('addFolder');
-    router.push(`/listview?${params.toString()}`);
+    router.push(`/listview?folder=${currentFolder}`);
   };
 
   return (
@@ -139,8 +143,10 @@ export default function ListView() {
       <CreateFolderDialog
         open={showCreateFolder}
         onOpenChange={(open) => {
-          setShowCreateFolder(open);
-          if (!open) handleDialogClose();
+          if (!open) {
+            const params = new URLSearchParams(searchParams);
+            setShowCreateFolder(false);
+          }
         }}
         onConfirm={handleCreateFolder}
       />
