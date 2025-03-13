@@ -70,7 +70,7 @@ export function AppSidebar({ folders, onFoldersChange }: AppSidebarProps) {
               <ChevronDown className="ml-auto h-5 w-5 transition-transform group-data-[state=open]/collapsible:rotate-180" />
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="h-[calc(100vh-356px)] overflow-y-auto">
+              <div className="h-[calc(100vh-380px)] overflow-y-auto">
                 {' '}
                 {/* Reduced height */}
                 <div
