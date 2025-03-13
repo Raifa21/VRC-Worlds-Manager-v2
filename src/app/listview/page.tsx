@@ -93,7 +93,7 @@ export default function ListView() {
     try {
       const newName = await invoke<string>('create_folder', { name: name });
       await loadFolders();
-      
+
       // Batch state updates before navigation
       await Promise.all([
         setCurrentFolder(newName),
@@ -102,12 +102,11 @@ export default function ListView() {
 
       // Single navigation after all states are updated
       router.push(`/listview?folder=${encodeURIComponent(newName)}`);
-      
     } catch (error) {
       console.error('Failed to create folder:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create folder'
+        description: 'Failed to create folder',
       });
     }
   };
@@ -126,7 +125,7 @@ export default function ListView() {
         title: 'Error',
         description: 'Failed to load worlds',
       });
-      console.log('Failed to load worlds:', error); 
+      console.log('Failed to load worlds:', error);
     }
   };
 

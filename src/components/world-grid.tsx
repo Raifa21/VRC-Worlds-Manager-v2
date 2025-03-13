@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SortAsc, SortDesc } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface WorldGridProps {
   size: CardSize;
@@ -30,6 +31,13 @@ type SortOption =
   | 'lastUpdated-asc'
   | 'lastUpdated-desc';
 
+type SortField =
+  | 'name'
+  | 'authorName'
+  | 'favorites'
+  | 'dateAdded'
+  | 'lastUpdated';
+
 export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
   const cardWidths = {
     [CardSize.Compact]: 192, // w-48 = 12rem = 192px
@@ -40,7 +48,8 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
 
   const [cols, setCols] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
+  const [sortField, setSortField] = useState<SortField>('dateAdded');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const calculateCols = () => {
@@ -82,11 +91,30 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
         .includes(searchQuery.toLowerCase()),
   );
 
-  const sortedAndFilteredWorlds = filteredWorlds.sort((a, b) => {
-    const [field, direction] = sortBy.split('-');
-    const multiplier = direction === 'asc' ? 1 : -1;
-
+  const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
     switch (field) {
+      case 'favorites':
+      case 'dateAdded':
+      case 'lastUpdated':
+        return 'desc';
+      default:
+        return 'asc';
+    }
+  };
+
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection(getDefaultDirection(field));
+    }
+  };
+
+  const sortedAndFilteredWorlds = filteredWorlds.sort((a, b) => {
+    const multiplier = sortDirection === 'asc' ? 1 : -1;
+
+    switch (sortField) {
       case 'name':
         return multiplier * a.name.localeCompare(b.name);
       case 'authorName':
@@ -149,30 +177,37 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <Select
-          value={sortBy}
-          onValueChange={(value) => setSortBy(value as SortOption)}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Sort by..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-            <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-            <SelectItem value="authorName-asc">Author (A-Z)</SelectItem>
-            <SelectItem value="authorName-desc">Author (Z-A)</SelectItem>
-            <SelectItem value="favorites-asc">Favorites (Low-High)</SelectItem>
-            <SelectItem value="favorites-desc">Favorites (High-Low)</SelectItem>
-            <SelectItem value="dateAdded-asc">Date Added (Oldest)</SelectItem>
-            <SelectItem value="dateAdded-desc">Date Added (Newest)</SelectItem>
-            <SelectItem value="lastUpdated-asc">
-              Last Updated (Oldest)
-            </SelectItem>
-            <SelectItem value="lastUpdated-desc">
-              Last Updated (Newest)
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select
+            value={sortField}
+            onValueChange={(value) => handleSort(value as SortField)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="authorName">Author</SelectItem>
+              <SelectItem value="favorites">Favorites</SelectItem>
+              <SelectItem value="dateAdded">Date Added</SelectItem>
+              <SelectItem value="lastUpdated">Last Updated</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+            }
+            className="h-10 w-10"
+          >
+            {sortDirection === 'asc' ? (
+              <SortAsc className="h-4 w-4" />
+            ) : (
+              <SortDesc className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </div>
       <div
         className="grid gap-4"

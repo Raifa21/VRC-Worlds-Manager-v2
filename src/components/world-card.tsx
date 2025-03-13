@@ -69,17 +69,19 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
         <div className="p-2 space-y-1">
           <div className="flex items-center justify-between">
             <h3 className="font-medium truncate">{world.name}</h3>
+          </div>
+          <div className="flex items-center text-muted-foreground text-sm justify-between">
+            <span>{world.authorName}</span>
+            <span>Visits: {world.visits}</span>
+          </div>
+          <div className="flex justify-between whitespace-nowrap">
+            <span className="text-sm text-muted-foreground">
+              Updated: {world.lastUpdated}
+            </span>
             <div className="flex items-center gap-1">
-              <Heart className="w-3.5 h-3.5" /> {/* Changed from w-4 h-4 */}
+              <Heart className="w-3.5 h-3.5" />
               <span className="text-sm">{world.favorites}</span>
             </div>
-          </div>
-          <span className="text-sm text-muted-foreground">
-            {world.authorName}
-          </span>
-          <div className="flex justify-between text-sm text-muted-foreground whitespace-nowrap">
-            <span>Updated: {world.lastUpdated}</span>
-            <span>Visits: {world.visits}</span>
           </div>
         </div>
       )}
