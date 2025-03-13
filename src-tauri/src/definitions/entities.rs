@@ -98,7 +98,11 @@ impl WorldModel {
             favorites: self.api_data.favorites,
             last_updated: self.api_data.last_update.format("%Y-%m-%d").to_string(),
             visits: self.api_data.visits.unwrap_or(0),
-            date_added: self.user_data.date_added.format("%Y-%m-%d").to_string(),
+            date_added: self
+                .user_data
+                .date_added
+                .format("%Y-%m-%d %h:%m:%s")
+                .to_string(),
             platform: if self.api_data.platform.contains(&"pc".to_string())
                 && self.api_data.platform.contains(&"android".to_string())
             {

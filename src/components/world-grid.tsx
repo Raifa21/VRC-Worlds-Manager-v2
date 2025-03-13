@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SortAsc, SortDesc } from 'lucide-react';
 
 interface WorldGridProps {
   size: CardSize;
@@ -18,11 +19,16 @@ interface WorldGridProps {
 }
 
 type SortOption =
-  | 'name'
-  | 'authorName'
-  | 'favorites'
-  | 'dateAdded'
-  | 'lastUpdated';
+  | 'name-asc'
+  | 'name-desc'
+  | 'authorName-asc'
+  | 'authorName-desc'
+  | 'favorites-asc'
+  | 'favorites-desc'
+  | 'dateAdded-asc'
+  | 'dateAdded-desc'
+  | 'lastUpdated-asc'
+  | 'lastUpdated-desc';
 
 export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
   const cardWidths = {
@@ -34,7 +40,7 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
 
   const [cols, setCols] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<SortOption>('name');
+  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const calculateCols = () => {
@@ -77,21 +83,56 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
   );
 
   const sortedAndFilteredWorlds = filteredWorlds.sort((a, b) => {
-    switch (sortBy) {
+    const [field, direction] = sortBy.split('-');
+    const multiplier = direction === 'asc' ? 1 : -1;
+
+    switch (field) {
       case 'name':
-        return a.name.localeCompare(b.name);
+        return multiplier * a.name.localeCompare(b.name);
       case 'authorName':
-        return a.authorName.localeCompare(b.authorName);
+        return multiplier * a.authorName.localeCompare(b.authorName);
       case 'favorites':
-        return b.favorites - a.favorites;
-      case 'dateAdded':
-        return (
-          new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime()
-        );
-      case 'lastUpdated':
-        return (
-          new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
-        );
+        return multiplier * (a.favorites - b.favorites);
+      case 'dateAdded': {
+        const getTimestamp = (dateStr: string | null) => {
+          if (!dateStr) return 0;
+          // Extract date and time parts
+          const [datePart, timePart] = dateStr.split(' Dec:');
+          if (!datePart) return 0;
+
+          // Extract base date
+          const dateMatch = datePart.match(/\d{4}-\d{2}-\d{2}/);
+          if (!dateMatch) return 0;
+
+          // Extract time number if it exists
+          const timeNumber = timePart
+            ? parseInt(timePart.replace(/\D/g, ''), 10)
+            : 0;
+
+          // Combine date and time offset
+          const baseTime = Date.parse(dateMatch[0]);
+          return baseTime + timeNumber;
+        };
+
+        const dateA = getTimestamp(a.dateAdded);
+        const dateB = getTimestamp(b.dateAdded);
+
+        console.log('Date comparison:', {
+          rawA: a.dateAdded,
+          rawB: b.dateAdded,
+          timestampA: dateA,
+          timestampB: dateB,
+          result: multiplier * (dateA - dateB),
+        });
+
+        return multiplier * (dateA - dateB);
+      }
+      case 'lastUpdated': {
+        // Parse dates and handle nulls
+        const dateA = a.lastUpdated ? new Date(a.lastUpdated) : new Date(0);
+        const dateB = b.lastUpdated ? new Date(b.lastUpdated) : new Date(0);
+        return multiplier * (dateA.getTime() - dateB.getTime());
+      }
       default:
         return 0;
     }
@@ -116,11 +157,20 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
             <SelectValue placeholder="Sort by..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="authorName">Author</SelectItem>
-            <SelectItem value="favorites">Favorites</SelectItem>
-            <SelectItem value="dateAdded">Date Added</SelectItem>
-            <SelectItem value="lastUpdated">Last Updated</SelectItem>
+            <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+            <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+            <SelectItem value="authorName-asc">Author (A-Z)</SelectItem>
+            <SelectItem value="authorName-desc">Author (Z-A)</SelectItem>
+            <SelectItem value="favorites-asc">Favorites (Low-High)</SelectItem>
+            <SelectItem value="favorites-desc">Favorites (High-Low)</SelectItem>
+            <SelectItem value="dateAdded-asc">Date Added (Oldest)</SelectItem>
+            <SelectItem value="dateAdded-desc">Date Added (Newest)</SelectItem>
+            <SelectItem value="lastUpdated-asc">
+              Last Updated (Oldest)
+            </SelectItem>
+            <SelectItem value="lastUpdated-desc">
+              Last Updated (Newest)
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
