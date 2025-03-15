@@ -33,8 +33,8 @@ pub fn initialize_app() -> Result<
 
     // Load data from disk
     match FileService::load_data() {
-        Ok((preferences, folders, worlds, auth)) => {
-            Ok((preferences, folders, worlds, auth, InitState::success()))
+        Ok((preferences, folders, worlds, cookies)) => {
+            Ok((preferences, folders, worlds, cookies, InitState::success()))
         }
         Err(e) => Err(e.to_string()),
     }

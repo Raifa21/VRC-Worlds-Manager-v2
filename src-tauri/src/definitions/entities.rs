@@ -202,6 +202,48 @@ impl AuthCookies {
             auth_token: None,
         }
     }
+
+    pub fn to_cookie_str(&self) -> Option<String> {
+        let mut cookies = Vec::new();
+
+        // Add auth cookie if available
+        if let Some(token) = &self.auth_token {
+            cookies.push(format!("auth={}", token));
+        }
+
+        // Add 2FA bypass cookie if available
+        if let Some(twofa) = &self.two_factor_auth {
+            cookies.push(format!("twoFactorAuth={}", twofa));
+        }
+
+        if cookies.is_empty() {
+            None
+        } else {
+            Some(cookies.join("; "))
+        }
+    }
+
+    pub fn from_cookie_str(cookie_str: &str) -> Self {
+        let mut auth_token = None;
+        let mut two_factor_auth = None;
+
+        // Split the cookie string into individual cookies
+        for cookie in cookie_str.split("; ") {
+            let mut parts = cookie.split('=');
+            if let (Some(name), Some(value)) = (parts.next(), parts.next()) {
+                match name {
+                    "auth" => auth_token = Some(value.to_string()),
+                    "twoFactorAuth" => two_factor_auth = Some(value.to_string()),
+                    _ => continue,
+                }
+            }
+        }
+
+        AuthCookies {
+            auth_token,
+            two_factor_auth,
+        }
+    }
 }
 
 pub struct InitState {
