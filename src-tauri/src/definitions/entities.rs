@@ -171,9 +171,11 @@ pub enum CardSize {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreferenceModel {
+    #[serde(rename = "firstTime")]
     pub first_time: bool,
     pub theme: String,
     pub language: String,
+    #[serde(rename = "cardSize")]
     pub card_size: CardSize,
 }
 
@@ -190,7 +192,7 @@ impl PreferenceModel {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthCookies {
-    #[serde(rename = "two-factor-auth")]
+    #[serde(rename = "twoFactorAuth")]
     pub two_factor_auth: Option<String>,
     #[serde(rename = "auth")]
     pub auth_token: Option<String>,
