@@ -27,8 +27,10 @@ impl ApiService {
             .cookies(&Url::parse("https://api.vrchat.cloud").unwrap())
             .map(|cookies| cookies.to_str().unwrap_or_default().to_string())
             .unwrap_or_default();
+        println!("Cookies: {}", cookie_str);
         //convert to AuthCookies
         let auth = AuthCookies::from_cookie_str(&cookie_str);
+        println!("Auth: {:?} {:?}", auth.auth_token, auth.two_factor_auth);
         FileService::write_auth(&auth).map_err(|e| e.to_string())
     }
 
@@ -126,14 +128,7 @@ impl ApiService {
         match apis::authentication_api::get_current_user(&config).await {
             Ok(models::EitherUserOrTwoFactor::CurrentUser(me)) => {
                 println!("Username: {}", me.username.unwrap());
-
-                match Self::save_cookie_store(cookie_store.clone())
-                    .await
-                    .map_err(|e| e.to_string())
-                {
-                    Ok(_) => Ok(()),
-                    Err(e) => Err(e),
-                }
+                Ok(())
             }
             Ok(models::EitherUserOrTwoFactor::RequiresTwoFactorAuth(requires_auth)) => {
                 println!("2FA required: {:?}", requires_auth);
