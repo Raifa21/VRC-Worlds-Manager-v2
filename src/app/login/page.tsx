@@ -61,7 +61,7 @@ export default function Login() {
         <div className="space-y-4">
           <Input
             type="text"
-            placeholder="Username"
+            placeholder="Email / Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             onKeyDown={(e) => {
@@ -95,6 +95,18 @@ export default function Login() {
           >
             Login
           </Button>
+
+          <div className="mt-4 p-4 border-2 border-red-500 rounded-md">
+            <p className="text-sm text-center">
+              <span className="font-bold">NOTICE:</span> We DO NOT store your
+              login details. Your credentials are only used to communicate with
+              VRChat&apos;s API, which is required to access world information.
+            </p>
+            <p className="text-xs text-center mt-2">
+              By logging in, you agree to VRChat&apos;s Terms of Service and
+              Community Guidelines.
+            </p>
+          </div>
         </div>
       </div>
 

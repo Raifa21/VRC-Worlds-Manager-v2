@@ -268,4 +268,25 @@ impl ApiService {
             }
         }
     }
+
+    /// Logs the user out
+    /// This clears the authentication cookies
+    ///
+    /// # Arguments
+    /// * `cookie_store` - The cookie store to use for the API
+    ///
+    /// # Returns
+    /// Returns an empty Ok if the logout was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the logout fails
+    pub async fn logout(cookie_store: Arc<Jar>) -> Result<(), String> {
+        let config = Self::create_config(cookie_store.clone());
+        match apis::authentication_api::logout(&config).await {
+            Ok(_) => Self::save_cookie_store(cookie_store.clone())
+                .await
+                .map_err(|e| e.to_string()),
+            Err(e) => Err(format!("Request failed: {}", e)),
+        }
+    }
 }

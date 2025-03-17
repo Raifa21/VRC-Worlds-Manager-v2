@@ -60,6 +60,7 @@ pub fn run() {
             commands::api_commands::try_login,
             commands::api_commands::login_with_credentials,
             commands::api_commands::login_with_2fa,
+            commands::api_commands::logout,
             commands::data::read_data_commands::require_initial_setup,
             commands::data::read_data_commands::check_files_loaded,
             commands::data::read_data_commands::detect_old_installation,

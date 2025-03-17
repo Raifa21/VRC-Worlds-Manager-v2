@@ -18,3 +18,8 @@ pub async fn login_with_credentials(username: String, password: String) -> Resul
 pub async fn login_with_2fa(code: String, two_factor_type: String) -> Result<(), String> {
     ApiService::login_with_2fa(code, COOKIE_STORE.get().clone(), two_factor_type).await
 }
+
+#[tauri::command]
+pub async fn logout() -> Result<(), String> {
+    ApiService::logout(COOKIE_STORE.get().clone()).await
+}
