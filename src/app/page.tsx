@@ -20,7 +20,7 @@ export default function Home() {
 
             // Then check authentication
             try {
-              await invoke('check_auth_token');
+              await invoke('try_login');
               router.push('/listview');
             } catch (authErr) {
               // Auth failed, redirect to login

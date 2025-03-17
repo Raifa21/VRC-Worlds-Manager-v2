@@ -16,6 +16,7 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [twoFactorCodeType, setTwoFactorCodeType] = useState('emailOtp');
   const [show2FA, setShow2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
@@ -27,9 +28,14 @@ export default function Login() {
       });
       router.push('/listview');
     } catch (err) {
-      if (err === 'requires_two_factor_auth') {
+      if (err === 'email-2fa-required') {
         setShow2FA(true);
         setError(null);
+        setTwoFactorCodeType('emailOtp');
+      } else if (err === '2fa-required') {
+        setShow2FA(true);
+        setError(null);
+        setTwoFactorCodeType('totp');
       } else {
         setError((err as string) || 'Invalid credentials');
       }
@@ -38,11 +44,15 @@ export default function Login() {
 
   const handle2FA = async () => {
     try {
-      await invoke('verify_2fa', { code: twoFactorCode });
+      await invoke('verify_2fa', {
+        code: twoFactorCode,
+        two_factor_type: twoFactorCodeType,
+      });
       router.push('/listview');
     } catch (err) {
       setError((err as string) || 'Invalid 2FA code');
     }
+    router.push('/listview');
   };
 
   return (
