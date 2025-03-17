@@ -44,15 +44,14 @@ export default function Login() {
 
   const handle2FA = async () => {
     try {
-      await invoke('verify_2fa', {
+      await invoke('login_with_2fa', {
         code: twoFactorCode,
-        two_factor_type: twoFactorCodeType,
+        twoFactorType: twoFactorCodeType,
       });
       router.push('/listview');
     } catch (err) {
       setError((err as string) || 'Invalid 2FA code');
     }
-    router.push('/listview');
   };
 
   return (
@@ -65,12 +64,28 @@ export default function Login() {
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const passwordInput = document.querySelector(
+                  'input[type="password"]',
+                ) as HTMLInputElement;
+                passwordInput?.focus();
+              }
+            }}
           />
           <Input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleLogin();
+              }
+            }}
+            onPaste={handleLogin}
           />
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <Button
@@ -94,6 +109,12 @@ export default function Login() {
               placeholder="Enter 2FA code"
               value={twoFactorCode}
               onChange={(e) => setTwoFactorCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handle2FA();
+                }
+              }}
             />
             {error && (
               <p className="text-red-500 text-sm text-center">{error}</p>
