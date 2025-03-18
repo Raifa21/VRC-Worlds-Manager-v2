@@ -33,6 +33,7 @@ pub fn run() {
             FOLDERS.set(RwLock::new(vec![]));
             WORLDS.set(RwLock::new(vec![]));
             INITSTATE.set(RwLock::new(InitState::error(false, e)));
+            COOKIE_STORE.set(Arc::new(Jar::default()));
         }
     };
 
@@ -61,6 +62,7 @@ pub fn run() {
             commands::api_commands::login_with_credentials,
             commands::api_commands::login_with_2fa,
             commands::api_commands::logout,
+            commands::api_commands::add_favorite_worlds,
             commands::data::read_data_commands::require_initial_setup,
             commands::data::read_data_commands::check_files_loaded,
             commands::data::read_data_commands::detect_old_installation,

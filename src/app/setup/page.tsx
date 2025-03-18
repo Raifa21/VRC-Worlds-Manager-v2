@@ -167,7 +167,7 @@ const WelcomePage: React.FC = () => {
         console.error('Failed to save preferences:', e);
         setPage(4);
       }
-      router.push('/listview');
+      router.push('/login');
     }
     setPage(page + 1);
   };
