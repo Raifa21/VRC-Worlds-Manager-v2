@@ -1,5 +1,3 @@
-use vrchatapi::models::World;
-
 use crate::definitions::{FolderModel, WorldDisplayData, WorldModel};
 use crate::errors::{AppError, ConcurrencyError, EntityError};
 use std::collections::HashSet;
@@ -365,6 +363,43 @@ impl FolderManager {
             .collect();
         Ok(unclassified_worlds)
     }
+
+    /// Adds worlds to data
+    /// This is called when the api returns a list of worlds
+    /// We check if the world is already in the list
+    /// If it is, we update the world data
+    /// If it is not, we add the world to the list
+    ///
+    /// # Arguments
+    /// * `worlds` - The list of worlds, as a RwLock
+    /// * `new_worlds` - The list of new worlds to add
+    ///
+    /// # Returns
+    /// Ok if the worlds were added successfully
+    ///
+    /// # Errors
+    /// Returns an error if the worlds lock is poisoned
+    pub fn add_worlds(
+        worlds: &RwLock<Vec<WorldModel>>,
+        new_worlds: Vec<WorldModel>,
+    ) -> Result<(), AppError> {
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        for new_world in new_worlds {
+            let world_id = new_world.api_data.world_id.clone();
+            let existing_world = worlds_lock
+                .iter_mut()
+                .find(|w| w.api_data.world_id == world_id);
+            match existing_world {
+                Some(world) => {
+                    world.api_data = new_world.api_data;
+                }
+                None => {
+                    worlds_lock.push(new_world);
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -405,11 +440,15 @@ mod tests {
             NaiveDateTime::new(
                 NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
                 NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
-            ),
+            )
+            .and_local_timezone(chrono::Utc)
+            .unwrap(),
             NaiveDateTime::new(
                 NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
                 NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
-            ),
+            )
+            .and_local_timezone(chrono::Utc)
+            .unwrap(),
             "description".to_string(),
             Some(1),
             1,

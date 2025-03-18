@@ -1,5 +1,7 @@
+use crate::services::FolderManager;
 use crate::ApiService;
 use crate::COOKIE_STORE;
+use crate::WORLDS;
 
 #[tauri::command]
 pub async fn try_login() -> Result<(), String> {
@@ -22,4 +24,17 @@ pub async fn login_with_2fa(code: String, two_factor_type: String) -> Result<(),
 #[tauri::command]
 pub async fn logout() -> Result<(), String> {
     ApiService::logout(COOKIE_STORE.get().clone()).await
+}
+
+#[tauri::command]
+pub async fn add_favorite_worlds() -> Result<(), String> {
+    let worlds = ApiService::get_favorite_worlds(COOKIE_STORE.get().clone()).await;
+    match worlds {
+        Ok(worlds) => {
+            println!("Worlds: {:?}", worlds);
+            FolderManager::add_worlds(WORLDS.get(), worlds).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        Err(e) => Err(e.to_string()),
+    }
 }

@@ -11,6 +11,8 @@ import { AppSidebar } from '@/components/app-siderbar';
 import { WorldDisplayData } from '@/components/world-card';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '../setup/page';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react'; // For the reload icon
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -133,11 +135,52 @@ export default function ListView() {
     router.push(`/listview?folder=${currentFolder}`);
   };
 
+  const handleReload = async () => {
+    try {
+      // First, fetch new favorites
+      await invoke('add_favorite_worlds');
+
+      // Then reload the current view by re-using the current URL parameters
+      const specialFolders = searchParams.get('specialFolders');
+      const folder = searchParams.get('folder');
+
+      // Refresh the current route to trigger useEffect
+      if (specialFolders) {
+        router.refresh();
+      } else if (folder) {
+        router.refresh();
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to reload worlds',
+      });
+      console.error('Failed to reload:', error);
+    }
+  };
+
   return (
     <div className="flex h-screen">
       <AppSidebar folders={folders} onFoldersChange={loadFolders} />
-      <div className="flex-1 overflow-auto">
-        <WorldGrid size={cardSize} worlds={worlds} folderName={currentFolder} />
+      <div className="flex-1 flex flex-col">
+        <div className="p-4 flex justify-between items-center">
+          <h1 className="text-xl font-bold">{currentFolder}</h1>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleReload}
+            className="ml-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <WorldGrid
+            size={cardSize}
+            worlds={worlds}
+            folderName={currentFolder}
+          />
+        </div>
       </div>
       <CreateFolderDialog
         open={showCreateFolder}

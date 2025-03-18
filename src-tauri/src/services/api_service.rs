@@ -1,9 +1,9 @@
 use crate::definitions::AuthCookies;
 use crate::services::file_service::FileService;
+use crate::WorldModel;
 use reqwest::cookie::CookieStore;
 use reqwest::{cookie::Jar, header, Client, Url};
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use vrchatapi::apis;
 use vrchatapi::apis::authentication_api::GetCurrentUserError;
 use vrchatapi::apis::configuration::Configuration;
@@ -41,6 +41,7 @@ impl ApiService {
     ///
     /// # Returns
     /// Returns an Option containing the header value if the cookies contain an auth token
+    #[must_use]
     fn create_cookie_header(cookies: &AuthCookies) -> Option<header::HeaderValue> {
         if let Some(auth) = &cookies.auth_token {
             let cookie_str = if let Some(twofa) = &cookies.two_factor_auth {
@@ -61,6 +62,7 @@ impl ApiService {
     ///
     /// # Returns
     /// Returns the cookie jar as an Arc
+    #[must_use]
     pub fn initialize_with_cookies(cookies: AuthCookies) -> Arc<Jar> {
         let jar = Jar::default();
         let cookie_store = Arc::new(jar);
@@ -81,8 +83,9 @@ impl ApiService {
     ///
     /// # Returns
     /// Returns a new Configuration instance with the cookie store attached
+    #[must_use]
     fn create_config(cookie_store: Arc<Jar>) -> Configuration {
-        let mut config = Configuration::default();
+        let mut config = Configuration::new();
         config.user_agent = Some(String::from(
             "WM (formerly VRC World Manager)/0.0.1 discord:raifa",
         ));
@@ -107,8 +110,7 @@ impl ApiService {
         let config = Self::create_config(cookie_store.clone());
 
         let api_instance = apis::authentication_api::verify_auth_token(&config).await;
-        let result = api_instance.map(|_| ()).map_err(|e| e.to_string());
-        result
+        api_instance.map(|_| ()).map_err(|e| e.to_string())
     }
 
     /// Logs the user in with the authentication cookies
@@ -288,5 +290,65 @@ impl ApiService {
                 .map_err(|e| e.to_string()),
             Err(e) => Err(format!("Request failed: {}", e)),
         }
+    }
+
+    /// Get user's favorite worlds
+    ///
+    /// # Arguments
+    /// * `cookie_store` - The cookie store to use for the API
+    ///
+    /// # Returns
+    /// Returns a Result containing a vector of WorldModel if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn get_favorite_worlds(cookie_store: Arc<Jar>) -> Result<Vec<WorldModel>, String> {
+        let config = Self::create_config(cookie_store.clone());
+        let mut worlds = Vec::new();
+        let mut offset = 0;
+        const PAGE_SIZE: i32 = 100;
+
+        loop {
+            match apis::worlds_api::get_favorited_worlds(
+                &config,
+                None,
+                None,
+                Some(PAGE_SIZE),
+                None,
+                Some(offset),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            .await
+            {
+                Ok(response) => {
+                    // Convert API worlds to our WorldModel
+                    for world in &response {
+                        match WorldModel::from_api_favorite_data(world.clone()) {
+                            Ok(world) => worlds.push(world),
+                            Err(e) => return Err(e.to_string()),
+                        }
+                    }
+
+                    // Check if we received less than PAGE_SIZE worlds
+                    if response.len() < PAGE_SIZE as usize {
+                        break; // No more worlds to fetch
+                    }
+
+                    // Increment offset for next page
+                    offset += PAGE_SIZE;
+                }
+                Err(e) => return Err(format!("Failed to fetch favorite worlds: {}", e)),
+            }
+        }
+
+        Ok(worlds)
     }
 }
