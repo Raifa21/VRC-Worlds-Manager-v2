@@ -386,6 +386,7 @@ impl FolderManager {
         let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
         for new_world in new_worlds {
             let world_id = new_world.api_data.world_id.clone();
+            println!("Adding world: {}", world_id);
             let existing_world = worlds_lock
                 .iter_mut()
                 .find(|w| w.api_data.world_id == world_id);

@@ -144,16 +144,18 @@ export default function ListView() {
       const specialFolders = searchParams.get('specialFolders');
       const folder = searchParams.get('folder');
 
-      // Refresh the current route to trigger useEffect
-      if (specialFolders) {
-        router.refresh();
+      // Re-fetch the data based on current view instead of using router.refresh()
+      if (specialFolders === 'all') {
+        await loadAllWorlds();
+      } else if (specialFolders === 'unclassified') {
+        await loadUnclassifiedWorlds();
       } else if (folder) {
-        router.refresh();
+        await loadWorlds(decodeURIComponent(folder));
       }
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to reload worlds',
+        description: error as string,
       });
       console.error('Failed to reload:', error);
     }

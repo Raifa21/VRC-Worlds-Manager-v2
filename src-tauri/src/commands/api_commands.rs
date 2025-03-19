@@ -28,13 +28,21 @@ pub async fn logout() -> Result<(), String> {
 
 #[tauri::command]
 pub async fn add_favorite_worlds() -> Result<(), String> {
-    let worlds = ApiService::get_favorite_worlds(COOKIE_STORE.get().clone()).await;
-    match worlds {
-        Ok(worlds) => {
-            println!("Worlds: {:?}", worlds);
-            FolderManager::add_worlds(WORLDS.get(), worlds).map_err(|e| e.to_string())?;
-            Ok(())
+    let worlds = match ApiService::get_favorite_worlds(COOKIE_STORE.get().clone()).await {
+        Ok(worlds) => worlds,
+        Err(e) => {
+            println!("Failed to fetch favorite worlds: {}", e);
+            return Err(format!("Failed to fetch favorite worlds: {}", e));
         }
-        Err(e) => Err(e.to_string()),
+    };
+
+    println!("Received worlds: {:#?}", worlds); // Debug print the worlds
+
+    match FolderManager::add_worlds(WORLDS.get(), worlds) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            println!("Failed to add worlds to folder: {}", e);
+            Err(format!("Failed to add worlds to folder: {}", e))
+        }
     }
 }

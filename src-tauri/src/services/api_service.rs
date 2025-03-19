@@ -3,11 +3,12 @@ use crate::services::file_service::FileService;
 use crate::WorldModel;
 use reqwest::cookie::CookieStore;
 use reqwest::{cookie::Jar, header, Client, Url};
+use std::fmt::format;
 use std::sync::Arc;
 use vrchatapi::apis;
 use vrchatapi::apis::authentication_api::GetCurrentUserError;
 use vrchatapi::apis::configuration::Configuration;
-use vrchatapi::models;
+use vrchatapi::models::{self, create_instance_request};
 
 pub struct ApiService;
 
@@ -333,7 +334,7 @@ impl ApiService {
                     for world in &response {
                         match WorldModel::from_api_favorite_data(world.clone()) {
                             Ok(world) => worlds.push(world),
-                            Err(e) => return Err(e.to_string()),
+                            Err(e) => return Err(format!("Failed to parse world: {}", e)),
                         }
                     }
 
@@ -350,5 +351,96 @@ impl ApiService {
         }
 
         Ok(worlds)
+    }
+
+    /// Get a world by its ID
+    ///
+    /// # Arguments
+    /// * `world_id` - The ID of the world to fetch
+    /// * `cookie_store` - The cookie store to use for the API
+    ///
+    /// # Returns
+    /// Returns a Result containing the WorldModel if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn get_world_by_id(
+        world_id: String,
+        cookie_store: Arc<Jar>,
+    ) -> Result<WorldModel, String> {
+        let config = Self::create_config(cookie_store.clone());
+        match apis::worlds_api::get_world(&config, &world_id).await {
+            Ok(world) => match WorldModel::from_api_data(world) {
+                Ok(world) => Ok(world),
+                Err(e) => Err(e.to_string()),
+            },
+            Err(e) => Err(format!("Failed to fetch world: {}", e)),
+        }
+    }
+
+    /// Create a new instance of a world
+    ///
+    /// # Arguments
+    /// * `world_id` - The ID of the world to create an instance of
+    /// * `instance_type` - The type of instance to create
+    /// * `region` - The region to create the instance in
+    /// * `cookie_store` - The cookie store to use for the API
+    ///
+    /// # Returns
+    /// Returns an empty Ok if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    pub async fn create_world_instance(
+        world_id: String,
+        instance_type_str: String,
+        region_str: String,
+        cookie_store: Arc<Jar>,
+    ) -> Result<(), String> {
+        let config = Self::create_config(cookie_store.clone());
+        let mut instance_type = models::InstanceType::Public;
+        let mut region = models::InstanceRegion::Us;
+        let mut invite_only: Option<bool> = None;
+        match instance_type_str.as_str() {
+            "public" => {
+                instance_type = models::InstanceType::Public;
+            }
+            "friends_plus" => {
+                instance_type = models::InstanceType::Hidden;
+            }
+            "friends" => {
+                instance_type = models::InstanceType::Friends;
+            }
+            "invite_plus" => {
+                instance_type = models::InstanceType::Private;
+            }
+            "invite" => {
+                instance_type = models::InstanceType::Private;
+                invite_only = Some(true);
+            }
+            _ => {}
+        }
+        match region_str.as_str() {
+            "us" => {
+                region = models::InstanceRegion::Us;
+            }
+            "use" => {
+                region = models::InstanceRegion::Use;
+            }
+            "eu" => {
+                region = models::InstanceRegion::Eu;
+            }
+            "jp" => {
+                region = models::InstanceRegion::Jp;
+            }
+            _ => {}
+        }
+        let create_instance_request =
+            create_instance_request::CreateInstanceRequest::new(world_id, instance_type, region);
+        match apis::instances_api::create_instance(&config, create_instance_request).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to create world instance: {}", e)),
+        }
     }
 }
