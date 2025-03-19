@@ -1,5 +1,6 @@
-use chrono::NaiveDateTime as DateTime;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use vrchatapi::models;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldApiData {
@@ -20,9 +21,9 @@ pub struct WorldApiData {
 
     pub tags: Vec<String>,
     #[serde(rename = "publicationDate")]
-    pub publication_date: DateTime,
-    #[serde(rename = "updated_at")]
-    pub last_update: DateTime,
+    pub publication_date: DateTime<Utc>,
+    #[serde(rename = "updatedAt")]
+    pub last_update: DateTime<Utc>,
 
     pub description: String,
     pub visits: Option<i32>,
@@ -32,7 +33,8 @@ pub struct WorldApiData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldUserData {
-    pub date_added: DateTime,
+    #[serde(rename = "dateAdded")]
+    pub date_added: DateTime<Utc>,
     pub memo: String,
     pub folders: Vec<String>,
     pub hidden: bool,
@@ -56,8 +58,8 @@ impl WorldModel {
         capacity: i32,
         recommended_capacity: Option<i32>,
         tags: Vec<String>,
-        publication_date: DateTime,
-        last_update: DateTime,
+        publication_date: DateTime<Utc>,
+        last_update: DateTime<Utc>,
         description: String,
         visits: Option<i32>,
         favorites: i32,
@@ -81,7 +83,7 @@ impl WorldModel {
                 platform,
             },
             user_data: WorldUserData {
-                date_added: chrono::Utc::now().naive_utc(),
+                date_added: Utc::now(),
                 memo: "".to_string(),
                 folders: vec![],
                 hidden: false,
@@ -101,7 +103,7 @@ impl WorldModel {
             date_added: self
                 .user_data
                 .date_added
-                .format("%Y-%m-%d %h:%m:%s")
+                .format("%Y-%m-%d %H:%M:%S")
                 .to_string(),
             platform: if self.api_data.platform.contains(&"pc".to_string())
                 && self.api_data.platform.contains(&"android".to_string())
@@ -113,6 +115,102 @@ impl WorldModel {
                 Platform::PC
             },
         }
+    }
+
+    pub fn from_api_data(world: models::World) -> Result<WorldModel, chrono::ParseError> {
+        let publication_date =
+            DateTime::parse_from_rfc3339(&world.publication_date)?.with_timezone(&Utc);
+        let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
+
+        let platform = world
+            .unity_packages
+            .unwrap_or_default() // Handle None case
+            .iter()
+            .filter_map(|package| Some(package.platform.clone())) // Only keep Some values
+            .collect();
+
+        Ok(WorldModel {
+            api_data: WorldApiData {
+                image_url: world.image_url,
+                world_name: world.name,
+                world_id: world.id,
+                author_name: world.author_name,
+                author_id: world.author_id,
+                capacity: world.capacity,
+                recommended_capacity: None,
+                tags: world.tags,
+                publication_date,
+                last_update,
+                description: world.description,
+                visits: Some(world.visits),
+                favorites: world.favorites.unwrap_or(0),
+                platform,
+            },
+            user_data: WorldUserData {
+                date_added: Utc::now(),
+                memo: "".to_string(),
+                folders: vec![],
+                hidden: false,
+            },
+        })
+    }
+
+    pub fn from_api_favorite_data(
+        world: models::FavoritedWorld,
+    ) -> Result<WorldModel, chrono::ParseError> {
+        println!("world: {:?}", world);
+
+        println!("world.publication_date: {:?}", world.publication_date);
+
+        let publication_date = if world.publication_date == "none" {
+            Utc::now()
+        } else {
+            DateTime::parse_from_rfc3339(&world.publication_date)
+                .map_err(|e| {
+                    println!("Failed to parse publication_date: {}", e);
+                    e
+                })?
+                .with_timezone(&Utc)
+        };
+
+        println!("publication_date: {:?}", publication_date);
+
+        println!("world.updated_at: {:?}", world.updated_at);
+
+        let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
+
+        println!("last_update: {:?}", last_update);
+
+        let platform: Vec<String> = world
+            .unity_packages
+            .iter()
+            .map(|package| package.platform.clone())
+            .collect();
+
+        Ok(WorldModel {
+            api_data: WorldApiData {
+                image_url: world.image_url,
+                world_name: world.name,
+                world_id: world.id,
+                author_name: world.author_name,
+                author_id: world.author_id,
+                capacity: world.capacity,
+                recommended_capacity: None,
+                tags: world.tags,
+                publication_date,
+                last_update,
+                description: world.description,
+                visits: world.visits,
+                favorites: world.favorites,
+                platform,
+            },
+            user_data: WorldUserData {
+                date_added: Utc::now(),
+                memo: "".to_string(),
+                folders: vec![],
+                hidden: false,
+            },
+        })
     }
 }
 
