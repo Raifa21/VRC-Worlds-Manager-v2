@@ -1,6 +1,6 @@
 mod entities;
 
 pub use entities::{
-    AuthCookies, CardSize, FolderModel, InitState, PreferenceModel, WorldApiData, WorldDisplayData,
-    WorldModel, WorldUserData,
+    AuthCookies, AuthState, CardSize, FolderModel, InitState, PreferenceModel, WorldApiData,
+    WorldDisplayData, WorldModel, WorldUserData,
 };

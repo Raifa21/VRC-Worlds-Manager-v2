@@ -1,4 +1,4 @@
-use definitions::{FolderModel, InitState, PreferenceModel, WorldModel};
+use definitions::{AuthState, FolderModel, InitState, PreferenceModel, WorldModel};
 use reqwest::cookie::Jar;
 use services::ApiService;
 use state::InitCell;
@@ -14,7 +14,7 @@ static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
 static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
 static WORLDS: InitCell<RwLock<Vec<WorldModel>>> = InitCell::new();
 static INITSTATE: InitCell<RwLock<InitState>> = InitCell::new();
-static COOKIE_STORE: InitCell<Arc<Jar>> = InitCell::new();
+static AUTH_STATE: InitCell<RwLock<AuthState>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,7 +24,9 @@ pub fn run() {
             PREFERENCES.set(RwLock::new(preferences));
             FOLDERS.set(RwLock::new(folders));
             WORLDS.set(RwLock::new(worlds));
-            COOKIE_STORE.set(services::ApiService::initialize_with_cookies(cookies));
+            AUTH_STATE.set(RwLock::new(AuthState::with_cookie_store(
+                services::ApiService::initialize_with_cookies(cookies),
+            )));
 
             INITSTATE.set(RwLock::new(init_state));
         }
@@ -33,7 +35,7 @@ pub fn run() {
             FOLDERS.set(RwLock::new(vec![]));
             WORLDS.set(RwLock::new(vec![]));
             INITSTATE.set(RwLock::new(InitState::error(false, e)));
-            COOKIE_STORE.set(Arc::new(Jar::default()));
+            AUTH_STATE.set(RwLock::new(AuthState::new()));
         }
     };
 
@@ -62,7 +64,8 @@ pub fn run() {
             commands::api_commands::login_with_credentials,
             commands::api_commands::login_with_2fa,
             commands::api_commands::logout,
-            commands::api_commands::add_favorite_worlds,
+            commands::api_commands::get_favorite_worlds,
+            commands::api_commands::create_instance,
             commands::data::read_data_commands::require_initial_setup,
             commands::data::read_data_commands::check_files_loaded,
             commands::data::read_data_commands::detect_old_installation,

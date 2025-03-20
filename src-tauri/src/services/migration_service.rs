@@ -192,7 +192,7 @@ impl MigrationService {
                 capacity: old_world.capacity,
                 recommended_capacity: None,
                 tags: vec![],
-                publication_date: Utc::now(), // Or some default date if needed
+                publication_date: None,
                 last_update: {
                     let parts: Vec<&str> = old_world.last_update.split('/').collect();
                     if parts.len() == 3 {

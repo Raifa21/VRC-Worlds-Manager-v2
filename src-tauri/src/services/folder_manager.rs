@@ -438,12 +438,14 @@ mod tests {
             1,
             Some(1),
             vec!["Test Tag".to_string()],
-            NaiveDateTime::new(
-                NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-                NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
-            )
-            .and_local_timezone(chrono::Utc)
-            .unwrap(),
+            Some(
+                NaiveDateTime::new(
+                    NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                    NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+                )
+                .and_local_timezone(chrono::Utc)
+                .unwrap(),
+            ),
             NaiveDateTime::new(
                 NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
                 NaiveTime::from_hms_opt(0, 0, 0).unwrap(),

@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
+use reqwest::cookie::Jar;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use vrchatapi::models;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,7 +23,7 @@ pub struct WorldApiData {
 
     pub tags: Vec<String>,
     #[serde(rename = "publicationDate")]
-    pub publication_date: DateTime<Utc>,
+    pub publication_date: Option<DateTime<Utc>>,
     #[serde(rename = "updatedAt")]
     pub last_update: DateTime<Utc>,
 
@@ -58,7 +60,7 @@ impl WorldModel {
         capacity: i32,
         recommended_capacity: Option<i32>,
         tags: Vec<String>,
-        publication_date: DateTime<Utc>,
+        publication_date: Option<DateTime<Utc>>,
         last_update: DateTime<Utc>,
         description: String,
         visits: Option<i32>,
@@ -118,8 +120,18 @@ impl WorldModel {
     }
 
     pub fn from_api_data(world: models::World) -> Result<WorldModel, chrono::ParseError> {
-        let publication_date =
-            DateTime::parse_from_rfc3339(&world.publication_date)?.with_timezone(&Utc);
+        let publication_date = if world.publication_date == "none" {
+            None
+        } else {
+            Some(
+                DateTime::parse_from_rfc3339(&world.publication_date)
+                    .map_err(|e| {
+                        println!("Failed to parse publication_date: {}", e);
+                        e
+                    })?
+                    .with_timezone(&Utc),
+            )
+        };
         let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
 
         let platform = world
@@ -163,14 +175,16 @@ impl WorldModel {
         println!("world.publication_date: {:?}", world.publication_date);
 
         let publication_date = if world.publication_date == "none" {
-            Utc::now()
+            None
         } else {
-            DateTime::parse_from_rfc3339(&world.publication_date)
-                .map_err(|e| {
-                    println!("Failed to parse publication_date: {}", e);
-                    e
-                })?
-                .with_timezone(&Utc)
+            Some(
+                DateTime::parse_from_rfc3339(&world.publication_date)
+                    .map_err(|e| {
+                        println!("Failed to parse publication_date: {}", e);
+                        e
+                    })?
+                    .with_timezone(&Utc),
+            )
         };
 
         println!("publication_date: {:?}", publication_date);
@@ -342,6 +356,28 @@ impl AuthCookies {
         AuthCookies {
             auth_token,
             two_factor_auth,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AuthState {
+    pub user_id: Option<String>,
+    pub cookie_store: Arc<Jar>,
+}
+
+impl AuthState {
+    pub fn new() -> Self {
+        Self {
+            user_id: None,
+            cookie_store: Arc::new(Jar::default()),
+        }
+    }
+
+    pub fn with_cookie_store(cookie_store: Arc<Jar>) -> Self {
+        Self {
+            user_id: None,
+            cookie_store,
         }
     }
 }

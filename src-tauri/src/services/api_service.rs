@@ -131,6 +131,7 @@ impl ApiService {
         match apis::authentication_api::get_current_user(&config).await {
             Ok(models::EitherUserOrTwoFactor::CurrentUser(me)) => {
                 println!("Username: {}", me.username.unwrap());
+
                 Ok(())
             }
             Ok(models::EitherUserOrTwoFactor::RequiresTwoFactorAuth(requires_auth)) => {
@@ -386,6 +387,7 @@ impl ApiService {
     /// * `instance_type` - The type of instance to create
     /// * `region` - The region to create the instance in
     /// * `cookie_store` - The cookie store to use for the API
+    /// * `user_id` - The ID of the user to create the instance for
     ///
     /// # Returns
     /// Returns an empty Ok if the request was successful
@@ -397,11 +399,12 @@ impl ApiService {
         instance_type_str: String,
         region_str: String,
         cookie_store: Arc<Jar>,
+        user_id: Option<String>,
     ) -> Result<(), String> {
         let config = Self::create_config(cookie_store.clone());
         let mut instance_type = models::InstanceType::Public;
         let mut region = models::InstanceRegion::Us;
-        let mut invite_only: Option<bool> = None;
+        let mut can_request_invite = false;
         match instance_type_str.as_str() {
             "public" => {
                 instance_type = models::InstanceType::Public;
@@ -414,10 +417,10 @@ impl ApiService {
             }
             "invite_plus" => {
                 instance_type = models::InstanceType::Private;
+                can_request_invite = true;
             }
             "invite" => {
                 instance_type = models::InstanceType::Private;
-                invite_only = Some(true);
             }
             _ => {}
         }
@@ -436,8 +439,11 @@ impl ApiService {
             }
             _ => {}
         }
-        let create_instance_request =
+        let mut create_instance_request =
             create_instance_request::CreateInstanceRequest::new(world_id, instance_type, region);
+        create_instance_request.can_request_invite = Some(can_request_invite);
+        create_instance_request.owner_id = Some(user_id);
+
         match apis::instances_api::create_instance(&config, create_instance_request).await {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("Failed to create world instance: {}", e)),
