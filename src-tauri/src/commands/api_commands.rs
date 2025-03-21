@@ -1,3 +1,5 @@
+use crate::definitions::WorldApiData;
+use crate::definitions::WorldDetails;
 use crate::services::FolderManager;
 use crate::ApiService;
 use crate::AUTH_STATE;
@@ -6,9 +8,6 @@ use crate::WORLDS;
 #[tauri::command]
 pub async fn try_login() -> Result<(), String> {
     let cookie_store = AUTH_STATE.get().read().unwrap().cookie_store.clone();
-    if let Err(e) = ApiService::check_auth_token(cookie_store.clone()).await {
-        return Err(e.to_string());
-    }
     ApiService::login_with_token(cookie_store).await
 }
 
@@ -45,6 +44,28 @@ pub async fn get_favorite_worlds() -> Result<(), String> {
 
     match FolderManager::add_worlds(WORLDS.get(), worlds) {
         Ok(_) => Ok(()),
+        Err(e) => {
+            println!("Failed to add worlds to folder: {}", e);
+            Err(format!("Failed to add worlds to folder: {}", e))
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn get_world(world_id: String) -> Result<WorldDetails, String> {
+    let cookie_store = AUTH_STATE.get().read().unwrap().cookie_store.clone();
+    let world_copy = WORLDS.get().read().unwrap().clone();
+    let worlds = match ApiService::get_world_by_id(world_id, cookie_store, world_copy).await {
+        Ok(worlds) => worlds,
+        Err(e) => {
+            println!("Failed to fetch worlds: {}", e);
+            return Err(format!("Failed to fetch worlds: {}", e));
+        }
+    };
+
+    println!("Received worlds: {:#?}", worlds);
+    match FolderManager::add_worlds(WORLDS.get(), vec![worlds.clone()]) {
+        Ok(_) => Ok(worlds.to_world_details()),
         Err(e) => {
             println!("Failed to add worlds to folder: {}", e);
             Err(format!("Failed to add worlds to folder: {}", e))

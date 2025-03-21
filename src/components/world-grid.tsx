@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { SortAsc, SortDesc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {WorldDetailPopup} from './world-detail-popup'
 
 interface WorldGridProps {
   size: CardSize;
@@ -47,6 +48,8 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
   };
 
   const [cols, setCols] = useState(1);
+  const [showWorld, setShowWorld] = useState(false);
+  const [worldId, setWorldId] = useState('')
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -163,6 +166,12 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
     }
   });
 
+  const openDetailedView = (id : string) => {
+    setWorldId(id);
+    setShowWorld(true);
+  };
+  
+
   return (
     <div ref={containerRef} className="space-y-4 p-4">
       {folderName && <h1 className="text-2xl font-semibold">{folderName}</h1>}
@@ -213,9 +222,26 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
         }}
       >
         {sortedAndFilteredWorlds.map((world) => (
-          <WorldCardPreview key={world.worldId} size={size} world={world} />
+          <div 
+            key={world.worldId} 
+            onClick={() =>
+              openDetailedView(world.worldId)
+            }
+          >
+            <WorldCardPreview size={size} world={world}/>
+          </div>
+          
         ))}
       </div>
+      <WorldDetailPopup 
+        open={showWorld} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowWorld(false);
+          }
+        }}
+        worldId = {worldId}
+        />
     </div>
   );
 }

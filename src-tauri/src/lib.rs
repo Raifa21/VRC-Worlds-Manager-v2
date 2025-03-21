@@ -2,7 +2,7 @@ use definitions::{AuthState, FolderModel, InitState, PreferenceModel, WorldModel
 use reqwest::cookie::Jar;
 use services::ApiService;
 use state::InitCell;
-use std::sync::{Arc, RwLock};
+use std::sync::RwLock;
 use tauri_plugin_log::{Target, TargetKind};
 
 mod commands;
@@ -27,7 +27,6 @@ pub fn run() {
             AUTH_STATE.set(RwLock::new(AuthState::with_cookie_store(
                 services::ApiService::initialize_with_cookies(cookies),
             )));
-
             INITSTATE.set(RwLock::new(init_state));
         }
         Err(e) => {
@@ -66,6 +65,7 @@ pub fn run() {
             commands::api_commands::logout,
             commands::api_commands::get_favorite_worlds,
             commands::api_commands::create_instance,
+            commands::api_commands::get_world,
             commands::data::read_data_commands::require_initial_setup,
             commands::data::read_data_commands::check_files_loaded,
             commands::data::read_data_commands::detect_old_installation,

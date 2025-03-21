@@ -33,13 +33,143 @@ pub struct WorldApiData {
     pub platform: Vec<String>,
 }
 
+impl WorldApiData {
+    pub fn from_api_favorite_data(
+        world: models::FavoritedWorld,
+    ) -> Result<WorldApiData, chrono::ParseError> {
+        println!("world: {:?}", world);
+
+        println!("world.publication_date: {:?}", world.publication_date);
+
+        let publication_date = if world.publication_date == "none" {
+            None
+        } else {
+            Some(
+                DateTime::parse_from_rfc3339(&world.publication_date)
+                    .map_err(|e| {
+                        println!("Failed to parse publication_date: {}", e);
+                        e
+                    })?
+                    .with_timezone(&Utc),
+            )
+        };
+
+        println!("publication_date: {:?}", publication_date);
+
+        println!("world.updated_at: {:?}", world.updated_at);
+
+        let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
+
+        println!("last_update: {:?}", last_update);
+
+        let platform: Vec<String> = world
+            .unity_packages
+            .iter()
+            .map(|package| package.platform.clone())
+            .collect();
+
+        Ok(WorldApiData {
+            image_url: world.image_url,
+            world_name: world.name,
+            world_id: world.id,
+            author_name: world.author_name,
+            author_id: world.author_id,
+            capacity: world.capacity,
+            recommended_capacity: None,
+            tags: world.tags,
+            publication_date,
+            last_update,
+            description: world.description,
+            visits: world.visits,
+            favorites: world.favorites,
+            platform,
+        })
+    }
+    pub fn from_api_data(world: models::World) -> Result<WorldApiData, chrono::ParseError> {
+        let publication_date = if world.publication_date == "none" {
+            None
+        } else {
+            Some(
+                DateTime::parse_from_rfc3339(&world.publication_date)
+                    .map_err(|e| {
+                        println!("Failed to parse publication_date: {}", e);
+                        e
+                    })?
+                    .with_timezone(&Utc),
+            )
+        };
+        let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
+
+        let platform = world
+            .unity_packages
+            .unwrap_or_default() // Handle None case
+            .iter()
+            .filter_map(|package| Some(package.platform.clone())) // Only keep Some values
+            .collect();
+
+        Ok(WorldApiData {
+            image_url: world.image_url,
+            world_name: world.name,
+            world_id: world.id,
+            author_name: world.author_name,
+            author_id: world.author_id,
+            capacity: world.capacity,
+            recommended_capacity: None,
+            tags: world.tags,
+            publication_date,
+            last_update,
+            description: world.description,
+            visits: Some(world.visits),
+            favorites: world.favorites.unwrap_or(0),
+            platform,
+        })
+    }
+
+    pub fn to_world_details(&self) -> WorldDetails {
+        WorldDetails {
+            world_id: self.world_id.clone(),
+            name: self.world_name.clone(),
+            thumbnail_url: self.image_url.clone(),
+            author_name: self.author_name.clone(),
+            author_id: self.author_id.clone(),
+            favorites: self.favorites,
+            last_updated: self.last_update.format("%Y-%m-%d").to_string(),
+            visits: self.visits.unwrap_or(0),
+            platform: if self.platform.contains(&"pc".to_string())
+                && self.platform.contains(&"android".to_string())
+            {
+                Platform::CrossPlatform
+            } else if self.platform.contains(&"android".to_string()) {
+                Platform::Quest
+            } else {
+                Platform::PC
+            },
+            description: self.description.clone(),
+            tags: self.tags.clone(),
+            capacity: self.capacity,
+            recommended_capacity: self.recommended_capacity,
+            publication_date: self.publication_date,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldUserData {
     #[serde(rename = "dateAdded")]
     pub date_added: DateTime<Utc>,
+    #[serde(rename = "lastChecked")]
+    pub last_checked: DateTime<Utc>,
     pub memo: String,
     pub folders: Vec<String>,
     pub hidden: bool,
+}
+
+impl WorldUserData {
+    pub fn needs_update(&self) -> bool {
+        let now = Utc::now();
+        let duration = now.signed_duration_since(self.last_checked);
+        duration.num_hours() >= 4
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,41 +181,12 @@ pub struct WorldModel {
 }
 
 impl WorldModel {
-    pub fn new(
-        image_url: String,
-        world_name: String,
-        world_id: String,
-        author_name: String,
-        author_id: String,
-        capacity: i32,
-        recommended_capacity: Option<i32>,
-        tags: Vec<String>,
-        publication_date: Option<DateTime<Utc>>,
-        last_update: DateTime<Utc>,
-        description: String,
-        visits: Option<i32>,
-        favorites: i32,
-        platform: Vec<String>,
-    ) -> Self {
+    pub fn new(api_data: WorldApiData) -> Self {
         Self {
-            api_data: WorldApiData {
-                image_url,
-                world_name,
-                world_id,
-                author_name,
-                author_id,
-                capacity,
-                recommended_capacity,
-                tags,
-                publication_date,
-                last_update,
-                description,
-                visits,
-                favorites,
-                platform,
-            },
+            api_data,
             user_data: WorldUserData {
                 date_added: Utc::now(),
+                last_checked: Utc::now(),
                 memo: "".to_string(),
                 folders: vec![],
                 hidden: false,
@@ -118,114 +219,6 @@ impl WorldModel {
             },
         }
     }
-
-    pub fn from_api_data(world: models::World) -> Result<WorldModel, chrono::ParseError> {
-        let publication_date = if world.publication_date == "none" {
-            None
-        } else {
-            Some(
-                DateTime::parse_from_rfc3339(&world.publication_date)
-                    .map_err(|e| {
-                        println!("Failed to parse publication_date: {}", e);
-                        e
-                    })?
-                    .with_timezone(&Utc),
-            )
-        };
-        let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
-
-        let platform = world
-            .unity_packages
-            .unwrap_or_default() // Handle None case
-            .iter()
-            .filter_map(|package| Some(package.platform.clone())) // Only keep Some values
-            .collect();
-
-        Ok(WorldModel {
-            api_data: WorldApiData {
-                image_url: world.image_url,
-                world_name: world.name,
-                world_id: world.id,
-                author_name: world.author_name,
-                author_id: world.author_id,
-                capacity: world.capacity,
-                recommended_capacity: None,
-                tags: world.tags,
-                publication_date,
-                last_update,
-                description: world.description,
-                visits: Some(world.visits),
-                favorites: world.favorites.unwrap_or(0),
-                platform,
-            },
-            user_data: WorldUserData {
-                date_added: Utc::now(),
-                memo: "".to_string(),
-                folders: vec![],
-                hidden: false,
-            },
-        })
-    }
-
-    pub fn from_api_favorite_data(
-        world: models::FavoritedWorld,
-    ) -> Result<WorldModel, chrono::ParseError> {
-        println!("world: {:?}", world);
-
-        println!("world.publication_date: {:?}", world.publication_date);
-
-        let publication_date = if world.publication_date == "none" {
-            None
-        } else {
-            Some(
-                DateTime::parse_from_rfc3339(&world.publication_date)
-                    .map_err(|e| {
-                        println!("Failed to parse publication_date: {}", e);
-                        e
-                    })?
-                    .with_timezone(&Utc),
-            )
-        };
-
-        println!("publication_date: {:?}", publication_date);
-
-        println!("world.updated_at: {:?}", world.updated_at);
-
-        let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
-
-        println!("last_update: {:?}", last_update);
-
-        let platform: Vec<String> = world
-            .unity_packages
-            .iter()
-            .map(|package| package.platform.clone())
-            .collect();
-
-        Ok(WorldModel {
-            api_data: WorldApiData {
-                image_url: world.image_url,
-                world_name: world.name,
-                world_id: world.id,
-                author_name: world.author_name,
-                author_id: world.author_id,
-                capacity: world.capacity,
-                recommended_capacity: None,
-                tags: world.tags,
-                publication_date,
-                last_update,
-                description: world.description,
-                visits: world.visits,
-                favorites: world.favorites,
-                platform,
-            },
-            user_data: WorldUserData {
-                date_added: Utc::now(),
-                memo: "".to_string(),
-                folders: vec![],
-                hidden: false,
-            },
-        })
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -254,6 +247,31 @@ pub struct WorldDisplayData {
     #[serde(rename = "dateAdded")]
     pub date_added: String,
     pub platform: Platform,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorldDetails {
+    #[serde(rename = "worldId")]
+    pub world_id: String,
+    pub name: String,
+    #[serde(rename = "thumbnailUrl")]
+    pub thumbnail_url: String,
+    #[serde(rename = "authorName")]
+    pub author_name: String,
+    #[serde(rename = "authorId")]
+    pub author_id: String,
+    pub favorites: i32,
+    #[serde(rename = "lastUpdated")]
+    pub last_updated: String,
+    pub visits: i32,
+    pub platform: Platform,
+    pub description: String,
+    pub tags: Vec<String>,
+    pub capacity: i32,
+    #[serde(rename = "recommendedCapacity")]
+    pub recommended_capacity: Option<i32>,
+    #[serde(rename = "publicationDate")]
+    pub publication_date: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
