@@ -49,10 +49,10 @@ export function WorldDetailPopup({
   useEffect(() => {
     const fetchWorldDetails = async () => {
       if (!open) return;
-      
+
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const details = await invoke<WorldDetails>('get_world', { worldId });
         setWorldDetails(details);
@@ -74,61 +74,67 @@ export function WorldDetailPopup({
             {isLoading ? 'Loading...' : worldDetails?.name || 'World Details'}
           </DialogTitle>
         </DialogHeader>
-        
-        {error && (
-          <div className="text-red-500 text-sm">{error}</div>
-        )}
-        
+
+        {error && <div className="text-red-500 text-sm">{error}</div>}
+
         {isLoading ? (
           <div className="flex items-center justify-center p-4">
             <span>Loading world details...</span>
           </div>
-        ) : worldDetails && (
-          <div className="grid gap-4 py-4">
-            <div className="aspect-video relative overflow-hidden rounded-lg">
-              <img 
-                src={worldDetails.thumbnailUrl} 
-                alt={worldDetails.name}
-                className="object-cover w-full h-full"
-              />
+        ) : (
+          worldDetails && (
+            <div className="grid gap-4 py-4">
+              <div className="aspect-video relative overflow-hidden rounded-lg">
+                <img
+                  src={worldDetails.thumbnailUrl}
+                  alt={worldDetails.name}
+                  className="object-cover w-full h-full"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 gap-2 text-sm">
+                <div className="font-semibold">Author</div>
+                <div className="col-span-3">{worldDetails.authorName}</div>
+
+                <div className="font-semibold">Platform</div>
+                <div className="col-span-3">
+                  {worldDetails.platform.includes('pc') &&
+                  worldDetails.platform.includes('android')
+                    ? 'Cross-Platform'
+                    : worldDetails.platform.includes('android')
+                      ? 'Quest'
+                      : 'PC'}
+                </div>
+
+                <div className="font-semibold">Capacity</div>
+                <div className="col-span-3">
+                  {worldDetails.recommendedCapacity ?? 0} (max:{' '}
+                  {worldDetails.capacity})
+                </div>
+
+                <div className="font-semibold">Stats</div>
+                <div className="col-span-3">
+                  ❤️ {worldDetails.favorites} • 👥 {worldDetails.visits ?? 0}
+                </div>
+
+                <div className="font-semibold">Updated</div>
+                <div className="col-span-3">
+                  {new Date(worldDetails.lastUpdated).toLocaleString()}
+                </div>
+
+                {worldDetails.description && (
+                  <>
+                    <div className="font-semibold">Description</div>
+                    <div className="col-span-3 whitespace-pre-wrap">
+                      {worldDetails.description}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-            
-            <div className="grid grid-cols-4 gap-2 text-sm">
-              <div className="font-semibold">Author</div>
-              <div className="col-span-3">{worldDetails.authorName}</div>
-              
-              <div className="font-semibold">Platform</div>
-              <div className="col-span-3">
-                {worldDetails.platform.includes('pc') && worldDetails.platform.includes('android')
-                  ? 'Cross-Platform'
-                  : worldDetails.platform.includes('android')
-                  ? 'Quest'
-                  : 'PC'}
-              </div>
-              
-              <div className="font-semibold">Capacity</div>
-              <div className="col-span-3">
-                {worldDetails.recommendedCapacity ?? 0} (max: {worldDetails.capacity})
-              </div>
-              
-              <div className="font-semibold">Stats</div>
-              <div className="col-span-3">
-                ❤️ {worldDetails.favorites} • 👥 {worldDetails.visits ?? 0}
-              </div>
-              
-              <div className="font-semibold">Updated</div>
-              <div className="col-span-3">{new Date(worldDetails.lastUpdated).toLocaleString()}</div>
-              
-              {worldDetails.description && (
-                <>
-                  <div className="font-semibold">Description</div>
-                  <div className="col-span-3 whitespace-pre-wrap">{worldDetails.description}</div>
-                </>
-              )}
-            </div>
-          </div>
+          )
         )}
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
