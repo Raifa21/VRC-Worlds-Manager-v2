@@ -44,18 +44,31 @@ impl ApiService {
     #[must_use]
     pub fn initialize_with_cookies(cookies: AuthCookies) -> Arc<Jar> {
         let jar = Jar::default();
-        jar.set_cookies(
-            &mut [HeaderValue::from_str(&format!(
-                "auth={}, twoFactorAuth={}",
-                cookies.auth_token.unwrap_or_default(),
-                cookies.two_factor_auth.unwrap_or_default()
-            ))
-            .expect("Cookie not okay")]
-            .iter(),
-            &Url::parse("https://api.vrchat.cloud").expect("Url not okay"),
-        );
+        let vrchat_url = Url::parse("https://api.vrchat.cloud").expect("Url not okay");
+
+        // Set auth cookie if present
+        if let Some(auth) = cookies.auth_token {
+            jar.set_cookies(
+                &mut [
+                    HeaderValue::from_str(&format!("auth={}", auth)).expect("Auth cookie not okay")
+                ]
+                .iter(),
+                &vrchat_url,
+            );
+        }
+
+        // Set 2FA cookie if present
+        if let Some(twofa) = cookies.two_factor_auth {
+            jar.set_cookies(
+                &mut [HeaderValue::from_str(&format!("twoFactorAuth={}", twofa))
+                    .expect("2FA cookie not okay")]
+                .iter(),
+                &vrchat_url,
+            );
+        }
 
         let cookie_store = Arc::new(jar);
+        println!("Cookies set: {:?}", cookie_store);
         cookie_store
     }
 
@@ -338,6 +351,7 @@ impl ApiService {
     ) -> Result<WorldApiData, String> {
         if let Some(existing_world) = worlds.iter().find(|w| w.api_data.world_id == world_id) {
             if !existing_world.user_data.needs_update() {
+                println!("World already exists in cache");
                 return Ok(existing_world.api_data.clone());
             }
         }
