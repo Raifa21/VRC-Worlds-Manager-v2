@@ -1,10 +1,9 @@
-use crate::definitions::AuthCookies;
+use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
 use crate::services::file_service::FileService;
-use crate::WorldModel;
 use reqwest::cookie::CookieStore;
 use reqwest::{cookie::Jar, header, Client, Url};
-use std::fmt::format;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+use tauri::http::HeaderValue;
 use vrchatapi::apis;
 use vrchatapi::apis::authentication_api::GetCurrentUserError;
 use vrchatapi::apis::configuration::Configuration;
@@ -35,27 +34,6 @@ impl ApiService {
         FileService::write_auth(&auth).map_err(|e| e.to_string())
     }
 
-    /// Creates a cookie header from an AuthCookies struct
-    ///
-    /// # Arguments
-    /// * `cookies` - The AuthCookies struct to create the header from
-    ///
-    /// # Returns
-    /// Returns an Option containing the header value if the cookies contain an auth token
-    #[must_use]
-    fn create_cookie_header(cookies: &AuthCookies) -> Option<header::HeaderValue> {
-        if let Some(auth) = &cookies.auth_token {
-            let cookie_str = if let Some(twofa) = &cookies.two_factor_auth {
-                format!("auth={}; twoFactorAuth={}", auth, twofa)
-            } else {
-                format!("auth={}", auth)
-            };
-            header::HeaderValue::from_str(&cookie_str).ok()
-        } else {
-            None
-        }
-    }
-
     /// Initializes the API service with the provided cookies
     ///
     /// # Arguments
@@ -66,14 +44,18 @@ impl ApiService {
     #[must_use]
     pub fn initialize_with_cookies(cookies: AuthCookies) -> Arc<Jar> {
         let jar = Jar::default();
+        jar.set_cookies(
+            &mut [HeaderValue::from_str(&format!(
+                "auth={}, twoFactorAuth={}",
+                cookies.auth_token.unwrap_or_default(),
+                cookies.two_factor_auth.unwrap_or_default()
+            ))
+            .expect("Cookie not okay")]
+            .iter(),
+            &Url::parse("https://api.vrchat.cloud").expect("Url not okay"),
+        );
+
         let cookie_store = Arc::new(jar);
-        let cookie = ApiService::create_cookie_header(&cookies);
-        if let Some(cookie) = cookie {
-            cookie_store.add_cookie_str(
-                &cookie.to_str().unwrap(),
-                &Url::parse("https://api.vrchat.cloud").expect("Url not okay"),
-            );
-        }
         cookie_store
     }
 
@@ -91,27 +73,10 @@ impl ApiService {
             "WM (formerly VRC World Manager)/0.0.1 discord:raifa",
         ));
         config.client = Client::builder()
-            .cookie_provider(cookie_store)
+            .cookie_provider(cookie_store.clone())
             .build()
             .unwrap();
         config
-    }
-
-    /// Checks if the authentication token is valid
-    ///
-    /// # Arguments
-    /// * `cookie_store` - The cookie store to use for the API
-    ///
-    /// # Returns
-    /// Returns an empty Ok if the user is authenticated
-    ///
-    /// # Errors
-    /// Returns a string error message if authentication fails
-    pub async fn check_auth_token(cookie_store: Arc<Jar>) -> Result<(), String> {
-        let config = Self::create_config(cookie_store.clone());
-
-        let api_instance = apis::authentication_api::verify_auth_token(&config).await;
-        api_instance.map(|_| ()).map_err(|e| e.to_string())
     }
 
     /// Logs the user in with the authentication cookies
@@ -127,11 +92,9 @@ impl ApiService {
     /// Returns a string error message if the login fails
     pub async fn login_with_token(cookie_store: Arc<Jar>) -> Result<(), String> {
         let config = Self::create_config(cookie_store.clone());
-
         match apis::authentication_api::get_current_user(&config).await {
             Ok(models::EitherUserOrTwoFactor::CurrentUser(me)) => {
                 println!("Username: {}", me.username.unwrap());
-
                 Ok(())
             }
             Ok(models::EitherUserOrTwoFactor::RequiresTwoFactorAuth(requires_auth)) => {
@@ -141,9 +104,11 @@ impl ApiService {
             Err(vrchatapi::apis::Error::ResponseError(response_content)) => {
                 match response_content.entity {
                     Some(GetCurrentUserError::Status401(error)) => {
+                        println!("Error: {:?}", error);
                         Err(error.error.unwrap().message.unwrap())
                     }
                     Some(GetCurrentUserError::UnknownValue(_)) => {
+                        println!("Unknown error");
                         Err("An unknown error occurred".to_string())
                     }
                     None => Err("No response content".to_string()),
@@ -300,12 +265,12 @@ impl ApiService {
     /// * `cookie_store` - The cookie store to use for the API
     ///
     /// # Returns
-    /// Returns a Result containing a vector of WorldModel if the request was successful
+    /// Returns a Result containing a vector of WorldApiData if the request was successful
     ///
     /// # Errors
     /// Returns a string error message if the request fails
     #[must_use]
-    pub async fn get_favorite_worlds(cookie_store: Arc<Jar>) -> Result<Vec<WorldModel>, String> {
+    pub async fn get_favorite_worlds(cookie_store: Arc<Jar>) -> Result<Vec<WorldApiData>, String> {
         let config = Self::create_config(cookie_store.clone());
         let mut worlds = Vec::new();
         let mut offset = 0;
@@ -331,9 +296,9 @@ impl ApiService {
             .await
             {
                 Ok(response) => {
-                    // Convert API worlds to our WorldModel
+                    // Convert API worlds to our WorldApiData struct
                     for world in &response {
-                        match WorldModel::from_api_favorite_data(world.clone()) {
+                        match WorldApiData::from_api_favorite_data(world.clone()) {
                             Ok(world) => worlds.push(world),
                             Err(e) => return Err(format!("Failed to parse world: {}", e)),
                         }
@@ -369,10 +334,17 @@ impl ApiService {
     pub async fn get_world_by_id(
         world_id: String,
         cookie_store: Arc<Jar>,
-    ) -> Result<WorldModel, String> {
+        worlds: Vec<WorldModel>,
+    ) -> Result<WorldApiData, String> {
+        if let Some(existing_world) = worlds.iter().find(|w| w.api_data.world_id == world_id) {
+            if !existing_world.user_data.needs_update() {
+                return Ok(existing_world.api_data.clone());
+            }
+        }
+
         let config = Self::create_config(cookie_store.clone());
         match apis::worlds_api::get_world(&config, &world_id).await {
-            Ok(world) => match WorldModel::from_api_data(world) {
+            Ok(world) => match WorldApiData::from_api_data(world) {
                 Ok(world) => Ok(world),
                 Err(e) => Err(e.to_string()),
             },
