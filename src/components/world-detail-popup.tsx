@@ -68,7 +68,7 @@ export function WorldDetailPopup({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isLoading ? 'Loading...' : worldDetails?.name || 'World Details'}
@@ -134,12 +134,6 @@ export function WorldDetailPopup({
             </div>
           )
         )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

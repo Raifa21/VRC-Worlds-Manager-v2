@@ -107,6 +107,11 @@ impl WorldApiData {
             .filter_map(|package| Some(package.platform.clone())) // Only keep Some values
             .collect();
 
+        let recommended_capacity = if world.recommended_capacity == 0 {
+            None
+        } else {
+            Some(world.recommended_capacity)
+        };
         Ok(WorldApiData {
             image_url: world.image_url,
             world_name: world.name,
@@ -114,7 +119,7 @@ impl WorldApiData {
             author_name: world.author_name,
             author_id: world.author_id,
             capacity: world.capacity,
-            recommended_capacity: None,
+            recommended_capacity: recommended_capacity,
             tags: world.tags,
             publication_date,
             last_update,
