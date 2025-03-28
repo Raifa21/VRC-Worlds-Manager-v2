@@ -1,6 +1,4 @@
-use vrchatapi::models::World;
-
-use crate::definitions::{FolderModel, WorldDisplayData, WorldModel};
+use crate::definitions::{FolderModel, WorldApiData, WorldDisplayData, WorldModel};
 use crate::errors::{AppError, ConcurrencyError, EntityError};
 use std::collections::HashSet;
 use std::sync::RwLock;
@@ -365,6 +363,45 @@ impl FolderManager {
             .collect();
         Ok(unclassified_worlds)
     }
+
+    /// Adds worlds to data
+    /// This is called when the api returns a list of worlds
+    /// We check if the world is already in the list
+    /// If it is, we update the world data
+    /// If it is not, we add the world to the list
+    ///
+    /// # Arguments
+    /// * `worlds` - The list of worlds, as a RwLock
+    /// * `new_worlds` - The list of new worlds to add
+    ///
+    /// # Returns
+    /// Ok if the worlds were added successfully
+    ///
+    /// # Errors
+    /// Returns an error if the worlds lock is poisoned
+    pub fn add_worlds(
+        worlds: &RwLock<Vec<WorldModel>>,
+        new_worlds: Vec<WorldApiData>,
+    ) -> Result<(), AppError> {
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        for new_world in new_worlds {
+            let world_id = new_world.world_id.clone();
+            println!("Adding world: {}", world_id);
+            let existing_world = worlds_lock
+                .iter_mut()
+                .find(|w| w.api_data.world_id == world_id);
+            match existing_world {
+                Some(world) => {
+                    world.api_data = new_world;
+                    world.user_data.last_checked = chrono::Utc::now();
+                }
+                None => {
+                    worlds_lock.push(WorldModel::new(new_world));
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -393,28 +430,34 @@ mod tests {
         world_id: String,
         worlds: &RwLock<Vec<WorldModel>>,
     ) -> Result<(), AppError> {
-        let world = WorldModel::new(
-            "".to_string(),
-            "".to_string(),
-            world_id,
-            "Test World".to_string(),
-            "Test Description".to_string(),
-            1,
-            Some(1),
-            vec!["Test Tag".to_string()],
-            NaiveDateTime::new(
+        let world = WorldModel::new(WorldApiData {
+            world_id: world_id.clone(),
+            world_name: "Test World".to_string(),
+            description: "Test Description".to_string(),
+            author_name: "Test Author".to_string(),
+            author_id: "test_author".to_string(),
+            tags: vec!["Test Tag".to_string()],
+            publication_date: Some(
+                NaiveDateTime::new(
+                    NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                    NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+                )
+                .and_local_timezone(chrono::Utc)
+                .unwrap(),
+            ),
+            last_update: NaiveDateTime::new(
                 NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
                 NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
-            ),
-            NaiveDateTime::new(
-                NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-                NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
-            ),
-            "description".to_string(),
-            Some(1),
-            1,
-            vec!["platform".to_string()],
-        );
+            )
+            .and_local_timezone(chrono::Utc)
+            .unwrap(),
+            image_url: "".to_string(),
+            capacity: 0,
+            recommended_capacity: Some(0),
+            visits: Some(0),
+            favorites: 0,
+            platform: vec!["platform".to_string()],
+        });
         let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
         worlds_lock.push(world);
         Ok(())

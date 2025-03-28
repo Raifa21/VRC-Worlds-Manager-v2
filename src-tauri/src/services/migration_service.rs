@@ -3,7 +3,7 @@ use crate::services::EncryptionService;
 use crate::services::FileService;
 use crate::FOLDERS;
 use crate::WORLDS;
-use chrono::{DateTime, Duration, NaiveDateTime};
+use chrono::{DateTime, Duration, Utc};
 use directories::BaseDirs;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -11,14 +11,14 @@ use std::fs;
 
 pub struct MigrationService;
 
-fn deserialize_datetime<'de, D>(deserializer: D) -> Result<Option<NaiveDateTime>, D::Error>
+fn deserialize_datetime<'de, D>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error>
 where
     D: serde::de::Deserializer<'de>,
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
     if let Some(s) = s {
         DateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S%.f%:z")
-            .map(|dt| Some(dt.naive_utc()))
+            .map(|dt| Some(dt.with_timezone(&Utc)))
             .map_err(serde::de::Error::custom)
     } else {
         Ok(None)
@@ -48,7 +48,7 @@ struct PreviousWorldModel {
     #[serde(rename = "Favorites")]
     favorites: i32,
     #[serde(rename = "DateAdded", deserialize_with = "deserialize_datetime")]
-    date_added: Option<NaiveDateTime>,
+    date_added: Option<DateTime<Utc>>,
     #[serde(rename = "Platform")]
     platform: Option<Vec<String>>,
     #[serde(rename = "UserMemo")]
@@ -152,12 +152,12 @@ impl MigrationService {
         serde_json::from_str(&decrypted).map_err(|e| format!("Failed to parse folders: {}", e))
     }
 
-    fn calculate_dates(worlds: &[PreviousWorldModel]) -> (NaiveDateTime, Vec<NaiveDateTime>) {
+    fn calculate_dates(worlds: &[PreviousWorldModel]) -> (DateTime<Utc>, Vec<DateTime<Utc>>) {
         let earliest_date = worlds
             .iter()
             .filter_map(|w| w.date_added)
             .min()
-            .unwrap_or_else(|| chrono::Utc::now().naive_utc());
+            .unwrap_or_else(|| Utc::now());
 
         let null_count = worlds.iter().filter(|w| w.date_added.is_none()).count();
 
@@ -179,7 +179,7 @@ impl MigrationService {
 
     fn convert_to_new_model(
         old_world: &PreviousWorldModel,
-        date: NaiveDateTime,
+        date: DateTime<Utc>,
         hidden: bool,
     ) -> WorldModel {
         WorldModel {
@@ -192,12 +192,28 @@ impl MigrationService {
                 capacity: old_world.capacity,
                 recommended_capacity: None,
                 tags: vec![],
-                publication_date: NaiveDateTime::default(),
-                last_update: NaiveDateTime::parse_from_str(
-                    &format!("{} 00:00:00", old_world.last_update),
-                    "%m/%d/%Y %H:%M:%S",
-                )
-                .unwrap_or_default(),
+                publication_date: None,
+                last_update: {
+                    let parts: Vec<&str> = old_world.last_update.split('/').collect();
+                    if parts.len() == 3 {
+                        // Parse mm/dd/yyyy format
+                        let month: u32 = parts[0].parse().unwrap_or(1);
+                        let day: u32 = parts[1].parse().unwrap_or(1);
+                        let year: i32 = parts[2].parse().unwrap_or(2024);
+
+                        // Create DateTime<Utc> directly
+                        DateTime::from_naive_utc_and_offset(
+                            chrono::NaiveDateTime::new(
+                                chrono::NaiveDate::from_ymd_opt(year, month, day)
+                                    .unwrap_or_default(),
+                                chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap_or_default(),
+                            ),
+                            Utc,
+                        )
+                    } else {
+                        Utc::now()
+                    }
+                },
                 description: old_world.description.clone(),
                 visits: old_world.visits,
                 favorites: old_world.favorites,
@@ -205,6 +221,13 @@ impl MigrationService {
             },
             user_data: WorldUserData {
                 date_added: date,
+                last_checked: DateTime::from_naive_utc_and_offset(
+                    chrono::NaiveDateTime::new(
+                        chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap_or_default(),
+                        chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap_or_default(),
+                    ),
+                    Utc,
+                ),
                 memo: old_world.user_memo.clone().unwrap_or_default(),
                 folders: Vec::new(),
                 hidden,
@@ -232,14 +255,12 @@ impl MigrationService {
             let duplicated = &old_worlds[..split_idx];
             let unique = &old_worlds[split_idx..];
 
-            if let Some(end_idx) = unique.iter().position(|w| {
-                duplicated
-                    .iter()
-                    .find(|d| d.world_id == w.world_id)
-                    .is_none()
-            }) {
+            if let Some(end_idx) = unique
+                .iter()
+                .position(|w| !duplicated.iter().any(|d| d.world_id == w.world_id))
+            {
                 let mut result: Vec<PreviousWorldModel> =
-                    duplicated.iter().rev().map(|w| w.clone()).collect();
+                    duplicated.iter().rev().cloned().collect();
                 result.extend(unique[end_idx..].iter().cloned());
                 return result;
             }
@@ -286,7 +307,8 @@ impl MigrationService {
         // Convert worlds with calculated dates
         for (idx, old_world) in old_worlds.iter().enumerate() {
             let is_hidden = hidden_world_ids.contains(&old_world.world_id);
-            new_worlds.push(Self::convert_to_new_model(old_world, dates[idx], is_hidden));
+            let utc_date = DateTime::from_naive_utc_and_offset(dates[idx].naive_utc(), chrono::Utc);
+            new_worlds.push(Self::convert_to_new_model(old_world, utc_date, is_hidden));
         }
         // Process regular folders
         for folder in old_folders {
@@ -318,7 +340,6 @@ impl MigrationService {
             FileService::write_worlds(&worlds_lock)
                 .map_err(|e| format!("Failed to write worlds: {}", e))?;
         }
-
         {
             let mut folders_lock = FOLDERS
                 .get()
@@ -349,10 +370,13 @@ mod tests {
                 ..PreviousWorldModel::default()
             },
             PreviousWorldModel {
-                date_added: Some(
-                    NaiveDateTime::parse_from_str("2024-03-11T10:00:00", "%Y-%m-%dT%H:%M:%S")
-                        .unwrap(),
-                ),
+                date_added: Some(DateTime::from_naive_utc_and_offset(
+                    chrono::NaiveDateTime::new(
+                        chrono::NaiveDate::from_ymd_opt(2024, 3, 11).unwrap(),
+                        chrono::NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
+                    ),
+                    Utc,
+                )),
                 ..PreviousWorldModel::default()
             },
         ];
@@ -459,11 +483,14 @@ mod tests {
         };
 
         let converted =
-            MigrationService::convert_to_new_model(&old_world, NaiveDateTime::default(), false);
+            MigrationService::convert_to_new_model(&old_world, DateTime::default(), false);
 
-        let expected = NaiveDateTime::new(
-            chrono::NaiveDate::from_ymd_opt(2024, 3, 14).unwrap(),
-            chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+        let expected: DateTime<Utc> = DateTime::from_naive_utc_and_offset(
+            chrono::NaiveDate::from_ymd_opt(2024, 3, 14)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap(),
+            chrono::Utc,
         );
 
         assert_eq!(converted.api_data.last_update, expected);

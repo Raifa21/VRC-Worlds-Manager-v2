@@ -11,20 +11,29 @@ export default function Home() {
     const checkFirstTime = async () => {
       const isFirstTime = await invoke('require_initial_setup');
       if (isFirstTime) {
-        // Handle first time setup
         router.push('/setup');
       } else {
-        const checkFilesLoaded = async () => {
+        const checkFilesAndAuth = async () => {
           try {
+            // First check if files are loaded
             await invoke('check_files_loaded');
-            router.push('/listview');
+
+            // Then check authentication
+            try {
+              await invoke('try_login');
+              router.push('/listview');
+            } catch (authErr) {
+              // Auth failed, redirect to login
+              router.push('/login');
+            }
           } catch (err) {
+            // File loading failed
             router.push(
               `${'/error/read_data_error'}?${encodeURIComponent(String(err))}`,
             );
           }
         };
-        checkFilesLoaded();
+        checkFilesAndAuth();
       }
     };
     checkFirstTime();

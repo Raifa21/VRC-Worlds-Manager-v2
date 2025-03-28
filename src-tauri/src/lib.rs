@@ -1,4 +1,6 @@
-use definitions::{AuthCookies, FolderModel, InitState, PreferenceModel, WorldModel};
+use definitions::{AuthState, FolderModel, InitState, PreferenceModel, WorldModel};
+use reqwest::cookie::Jar;
+use services::ApiService;
 use state::InitCell;
 use std::sync::RwLock;
 use tauri_plugin_log::{Target, TargetKind};
@@ -11,26 +13,28 @@ mod services;
 static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
 static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
 static WORLDS: InitCell<RwLock<Vec<WorldModel>>> = InitCell::new();
-static AUTH: InitCell<RwLock<AuthCookies>> = InitCell::new();
 static INITSTATE: InitCell<RwLock<InitState>> = InitCell::new();
+static AUTH_STATE: InitCell<RwLock<AuthState>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     match services::initialize_service::initialize_app() {
-        Ok((preferences, folders, worlds, auth, init_state)) => {
+        Ok((preferences, folders, worlds, cookies, init_state)) => {
             PREFERENCES.set(RwLock::new(preferences));
             FOLDERS.set(RwLock::new(folders));
             WORLDS.set(RwLock::new(worlds));
-            AUTH.set(RwLock::new(auth));
+            AUTH_STATE.set(RwLock::new(AuthState::with_cookie_store(
+                services::ApiService::initialize_with_cookies(cookies),
+            )));
             INITSTATE.set(RwLock::new(init_state));
         }
         Err(e) => {
             PREFERENCES.set(RwLock::new(PreferenceModel::new()));
             FOLDERS.set(RwLock::new(vec![]));
             WORLDS.set(RwLock::new(vec![]));
-            AUTH.set(RwLock::new(AuthCookies::new()));
             INITSTATE.set(RwLock::new(InitState::error(false, e)));
+            AUTH_STATE.set(RwLock::new(AuthState::new()));
         }
     };
 
@@ -55,6 +59,13 @@ pub fn run() {
             commands::folder_commands::get_all_worlds,
             commands::folder_commands::get_unclassified_worlds,
             commands::preferences_commands::get_card_size,
+            commands::api_commands::try_login,
+            commands::api_commands::login_with_credentials,
+            commands::api_commands::login_with_2fa,
+            commands::api_commands::logout,
+            commands::api_commands::get_favorite_worlds,
+            commands::api_commands::create_instance,
+            commands::api_commands::get_world,
             commands::data::read_data_commands::require_initial_setup,
             commands::data::read_data_commands::check_files_loaded,
             commands::data::read_data_commands::detect_old_installation,

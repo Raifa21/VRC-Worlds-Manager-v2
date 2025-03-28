@@ -19,10 +19,10 @@ pub async fn require_initial_setup() -> bool {
     println!("First time: {}", first_time);
     if first_time {
         preference.first_time = true;
-        return true;
+        true
     } else {
         preference.first_time = false;
-        return false;
+        false
     }
 }
 

@@ -79,7 +79,7 @@ impl FileService {
     /// Calls read_config and read_file to load data from disk
     ///
     /// # Returns
-    /// Returns the authentication cookies, folders, and worlds
+    /// Returns the preferences, folders, and worlds
     ///
     /// # Errors
     /// Returns a FileError if any file is not found, cannot be decrypted, or is invalid
@@ -93,12 +93,17 @@ impl FileService {
         ),
         FileError,
     > {
-        let (config_path, folders_path, worlds_path, auth_path) = Self::get_paths();
+        let (config_path, folders_path, worlds_path, cookies_path) = Self::get_paths();
 
+        println!("Reading files");
         let preferences = Self::read_file(&config_path)?;
+        println!("Preferences: {:?}", preferences);
         let folders = Self::read_file(&folders_path)?;
+        println!("Folders: {:?}", folders);
         let worlds = Self::read_file(&worlds_path)?;
-        let cookies = Self::read_file(&auth_path)?;
+        println!("Worlds: {:?}", worlds);
+        let cookies = Self::read_file(&cookies_path)?;
+        println!("Cookies: {:?}", cookies);
 
         Ok((preferences, folders, worlds, cookies))
     }

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { SortAsc, SortDesc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { WorldDetailPopup } from './world-detail-popup';
 
 interface WorldGridProps {
   size: CardSize;
@@ -47,6 +48,8 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
   };
 
   const [cols, setCols] = useState(1);
+  const [showWorld, setShowWorld] = useState(false);
+  const [worldId, setWorldId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -124,47 +127,49 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
       case 'dateAdded': {
         const getTimestamp = (dateStr: string | null) => {
           if (!dateStr) return 0;
-          // Extract date and time parts
-          const [datePart, timePart] = dateStr.split(' Dec:');
-          if (!datePart) return 0;
 
-          // Extract base date
-          const dateMatch = datePart.match(/\d{4}-\d{2}-\d{2}/);
-          if (!dateMatch) return 0;
-
-          // Extract time number if it exists
-          const timeNumber = timePart
-            ? parseInt(timePart.replace(/\D/g, ''), 10)
-            : 0;
-
-          // Combine date and time offset
-          const baseTime = Date.parse(dateMatch[0]);
-          return baseTime + timeNumber;
+          try {
+            const date = new Date(dateStr);
+            return date.getTime();
+          } catch (error) {
+            console.error('Error parsing date:', dateStr, error);
+            return 0;
+          }
         };
 
         const dateA = getTimestamp(a.dateAdded);
         const dateB = getTimestamp(b.dateAdded);
 
-        console.log('Date comparison:', {
-          rawA: a.dateAdded,
-          rawB: b.dateAdded,
-          timestampA: dateA,
-          timestampB: dateB,
-          result: multiplier * (dateA - dateB),
-        });
-
         return multiplier * (dateA - dateB);
       }
       case 'lastUpdated': {
-        // Parse dates and handle nulls
-        const dateA = a.lastUpdated ? new Date(a.lastUpdated) : new Date(0);
-        const dateB = b.lastUpdated ? new Date(b.lastUpdated) : new Date(0);
-        return multiplier * (dateA.getTime() - dateB.getTime());
+        const getTimestamp = (dateStr: string | null) => {
+          if (!dateStr) return 0;
+
+          try {
+            const date = new Date(dateStr);
+            return date.getTime();
+          } catch (error) {
+            console.error('Error parsing date:', dateStr, error);
+            return 0;
+          }
+        };
+        const dateA = getTimestamp(a.lastUpdated);
+        const dateB = getTimestamp(b.lastUpdated);
+        console.log('Date A:', a.lastUpdated, 'Date B:', b.lastUpdated);
+        console.log('Date A:', dateA, 'Date B:', dateB);
+
+        return multiplier * (dateA - dateB);
       }
       default:
         return 0;
     }
   });
+
+  const openDetailedView = (id: string) => {
+    setWorldId(id);
+    setShowWorld(true);
+  };
 
   return (
     <div ref={containerRef} className="space-y-4 p-4">
@@ -216,9 +221,23 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
         }}
       >
         {sortedAndFilteredWorlds.map((world) => (
-          <WorldCardPreview key={world.worldId} size={size} world={world} />
+          <div
+            key={world.worldId}
+            onClick={() => openDetailedView(world.worldId)}
+          >
+            <WorldCardPreview size={size} world={world} />
+          </div>
         ))}
       </div>
+      <WorldDetailPopup
+        open={showWorld}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowWorld(false);
+          }
+        }}
+        worldId={worldId}
+      />
     </div>
   );
 }
