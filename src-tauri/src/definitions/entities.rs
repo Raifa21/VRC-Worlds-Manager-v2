@@ -140,7 +140,7 @@ impl WorldApiData {
             favorites: self.favorites,
             last_updated: self.last_update.format("%Y-%m-%d").to_string(),
             visits: self.visits.unwrap_or(0),
-            platform: if self.platform.contains(&"pc".to_string())
+            platform: if self.platform.contains(&"standalonewindows".to_string())
                 && self.platform.contains(&"android".to_string())
             {
                 Platform::CrossPlatform
@@ -213,7 +213,10 @@ impl WorldModel {
                 .date_added
                 .format("%Y-%m-%d %H:%M:%S")
                 .to_string(),
-            platform: if self.api_data.platform.contains(&"pc".to_string())
+            platform: if self
+                .api_data
+                .platform
+                .contains(&"standalonewindows".to_string())
                 && self.api_data.platform.contains(&"android".to_string())
             {
                 Platform::CrossPlatform
