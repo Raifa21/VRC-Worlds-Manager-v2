@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -8,8 +9,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Separator } from '@/components/ui/separator';
+import QPc from '@/../public/icons/VennColorQPc.svg';
+import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
+import QQ from '@/../public/icons/VennColorQQ.svg';
 
 interface WorldDetailDialogProps {
   open: boolean;
@@ -83,7 +88,7 @@ export function WorldDetailPopup({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="min-w-[80vw] min-h-[80vh]">
+      <DialogContent className="min-w-[80vw] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isLoading ? 'Loading...' : 'World Details'}
@@ -100,13 +105,22 @@ export function WorldDetailPopup({
           worldDetails && (
             <div className="flex flex-col gap-4">
               <div className="flex gap-4 py-4">
-                <div className="w-2/3">
+                <div className="w-3/5">
                   <div className="aspect-video relative overflow-hidden rounded-lg mb-4">
                     <a
                       href={`https://vrchat.com/home/world/${worldDetails.worldId}`}
                       target="_blank"
                       rel="noreferrer"
                     >
+                      <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1">
+                        {worldDetails.platform == Platform.CrossPlatform ? (
+                          <Image src={QPcQ} alt="Cross-platform" width={35} />
+                        ) : worldDetails.platform == Platform.PC ? (
+                          <Image src={QPc} alt="PC" width={35} />
+                        ) : (
+                          <Image src={QQ} alt="Quest" width={35} />
+                        )}
+                      </div>
                       <img
                         src={worldDetails.thumbnailUrl}
                         alt={worldDetails.name}
@@ -130,86 +144,95 @@ export function WorldDetailPopup({
                   </div>
                 </div>
                 {/* Right section - 1/3 width */}
-                <div className="w-1/3">
+                <div className="w-2/5">
                   <div className="text-sm font-semibold mb-2">
                     Create Instance
                   </div>
-
-                  <div className="space-y-4">
-                    <RadioGroup
-                      value={selectedInstanceType}
-                      onValueChange={(value) =>
-                        setSelectedInstanceType(value as InstanceType)
-                      }
-                      className="grid grid-cols-2 gap-2"
-                    >
-                      {[
-                        { value: 'public', label: 'Public' },
-                        { value: 'group', label: 'Group' },
-                        { value: 'friends+', label: 'Friends+' },
-                        { value: 'friends', label: 'Friends' },
-                        { value: 'invite+', label: 'Invite+' },
-                        { value: 'invite', label: 'Invite' },
-                      ].map(({ value, label }) => (
-                        <div
-                          key={value}
-                          className="flex items-center space-x-2 rounded-md border p-2"
-                        >
-                          <RadioGroupItem
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Instance Type
+                      </Label>
+                      <ToggleGroup
+                        type="single"
+                        value={selectedInstanceType}
+                        onValueChange={(value) => {
+                          if (value)
+                            setSelectedInstanceType(value as InstanceType);
+                        }}
+                        className="grid grid-cols-2 gap-2"
+                      >
+                        {[
+                          { value: 'public', label: 'Public' },
+                          { value: 'group', label: 'Group' },
+                          { value: 'friends+', label: 'Friends+' },
+                          { value: 'friends', label: 'Friends' },
+                          { value: 'invite+', label: 'Invite+' },
+                          { value: 'invite', label: 'Invite' },
+                        ].map(({ value, label }) => (
+                          <ToggleGroupItem
+                            key={value}
                             value={value}
-                            id={`instance-${value}`}
-                          />
-                          <Label htmlFor={`instance-${value}`}>{label}</Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
+                            aria-label={label}
+                            className="border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary"
+                          >
+                            {label}
+                          </ToggleGroupItem>
+                        ))}
+                      </ToggleGroup>
+                    </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Region</Label>
-                      <RadioGroup
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Region
+                      </Label>
+                      <ToggleGroup
+                        type="single"
                         value={selectedRegion}
-                        onValueChange={(value) =>
-                          setSelectedRegion(value as Region)
-                        }
+                        onValueChange={(value) => {
+                          if (value) setSelectedRegion(value as Region);
+                        }}
                         className="flex gap-2"
                       >
                         {['USW', 'USE', 'EU', 'JP'].map((region) => (
-                          <div
+                          <ToggleGroupItem
                             key={region}
-                            className="flex items-center space-x-2 rounded-md border p-2"
+                            value={region}
+                            aria-label={region}
+                            className="flex-1 border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary"
                           >
-                            <RadioGroupItem
-                              value={region}
-                              id={`region-${region}`}
-                            />
-                            <Label htmlFor={`region-${region}`}>{region}</Label>
-                          </div>
+                            {region}
+                          </ToggleGroupItem>
                         ))}
-                      </RadioGroup>
+                      </ToggleGroup>
                     </div>
 
-                    <Button
-                      className="w-full"
-                      onClick={() => {
-                        // TODO: Implement instance creation
-                        console.log(
-                          `Creating ${selectedInstanceType} instance in ${selectedRegion}`,
-                        );
-                      }}
-                    >
-                      Create Instance
-                    </Button>
+                    <div className="pt-2">
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          // TODO: Implement instance creation
+                          console.log(
+                            `Creating ${selectedInstanceType} instance in ${selectedRegion}`,
+                          );
+                        }}
+                      >
+                        Create Instance
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-4 py-4">
-                <div className="flex flex-col gap-4 py-4 w-2/3">
+              <Separator className="my-4" />
+              <div className="flex gap-4">
+                <div className="flex flex-col gap-4 w-2/3">
                   <div>
                     <div className="text-sm font-semibold mb-2">
                       Description
                     </div>
                     <div className="text-sm">{worldDetails.description}</div>
                   </div>
+                  <Separator className="my-2" />
                   <div>
                     <div className="text-sm font-semibold mb-2">Tags</div>
                     <div className="flex flex-wrap gap-2">
@@ -226,7 +249,8 @@ export function WorldDetailPopup({
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-4 py-4 w-1/3">
+                <Separator orientation="vertical" />
+                <div className="flex flex-col gap-4 w-1/3">
                   <div>
                     <div className="text-sm font-semibold mb-2">Details</div>
                     <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
