@@ -328,7 +328,7 @@ impl PreferenceModel {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AuthCookies {
     #[serde(rename = "twoFactorAuth")]
     pub two_factor_auth: Option<String>,

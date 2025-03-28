@@ -5,6 +5,7 @@ use state::InitCell;
 use std::sync::RwLock;
 use tauri_plugin_log::{Target, TargetKind};
 
+mod api;
 mod commands;
 mod definitions;
 mod errors;
