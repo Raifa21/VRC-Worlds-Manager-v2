@@ -1,5 +1,9 @@
 import { CardSize } from '@/app/setup/page';
 import { Heart } from 'lucide-react';
+import Image from 'next/image';
+import QPc from '@/../public/icons/VennColorQPc.svg';
+import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
+import QQ from '@/../public/icons/VennColorQQ.svg';
 
 export enum Platform {
   PC = 'PC',
@@ -36,6 +40,17 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
     <div
       className={`border rounded-lg shadow hover:shadow-md transition-all duration-300 ${sizeClasses[size]}`}
     >
+      <div className="relative w-full">
+        <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1">
+          {world.platform == Platform.CrossPlatform ? (
+            <Image src={QPcQ} alt="Cross-platform" width={24} height={24} />
+          ) : world.platform == Platform.PC ? (
+            <Image src={QPc} alt="PC" width={24} height={24} />
+          ) : (
+            <Image src={QQ} alt="Quest" width={24} height={24} />
+          )}
+        </div>
+      </div>
       <img
         src={world.thumbnailUrl}
         alt={world.name}

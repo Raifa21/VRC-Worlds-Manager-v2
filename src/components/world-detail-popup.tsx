@@ -143,7 +143,6 @@ export function WorldDetailPopup({
                     </a>
                   </div>
                 </div>
-                {/* Right section - 1/3 width */}
                 <div className="w-2/5">
                   <div className="text-sm font-semibold mb-2">
                     Create Instance
