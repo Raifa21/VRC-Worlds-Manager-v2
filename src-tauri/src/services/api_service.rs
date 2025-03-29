@@ -1,15 +1,14 @@
 use crate::api;
-use crate::api::world::FavoriteWorld;
 use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
 use crate::services::file_service::FileService;
 use reqwest::cookie::CookieStore;
-use reqwest::{cookie::Jar, header, Client, Url};
-use std::sync::{Arc, RwLock};
+use reqwest::{cookie::Jar, Client, Url};
+use std::sync::Arc;
 use tauri::http::HeaderValue;
 use vrchatapi::apis;
 use vrchatapi::apis::authentication_api::GetCurrentUserError;
 use vrchatapi::apis::configuration::Configuration;
-use vrchatapi::models::{self, create_instance_request, FavoritedWorld};
+use vrchatapi::models::{self, create_instance_request};
 
 pub struct ApiService;
 
@@ -145,13 +144,11 @@ impl ApiService {
     /// # Errors
     /// Returns a string error message if the logout fails
     pub async fn logout(cookie_store: Arc<Jar>) -> Result<(), String> {
-        let config = Self::create_config(cookie_store.clone());
-        match apis::authentication_api::logout(&config).await {
-            Ok(_) => Self::save_cookie_store(cookie_store.clone())
-                .await
-                .map_err(|e| e.to_string()),
-            Err(e) => Err(format!("Request failed: {}", e)),
-        }
+        api::auth::logout(&cookie_store).await.map_err(|e| {
+            let err = format!("Failed to logout from VRChat: {}", e);
+            println!("{}", err);
+            err
+        })
     }
 
     /// Get user's favorite worlds

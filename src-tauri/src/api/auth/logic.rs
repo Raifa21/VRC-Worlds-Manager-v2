@@ -2,7 +2,7 @@ use std::{str::FromStr, sync::Arc};
 
 use base64::{prelude::BASE64_STANDARD, Engine};
 use reqwest::{
-    cookie::{self, CookieStore},
+    cookie::{self, CookieStore, Jar},
     Response, StatusCode,
 };
 
@@ -179,5 +179,24 @@ impl VRChatAPIClientAuthenticator {
             ))),
             Err(e) => Err(format!("Failed to read response text: {}", e.to_string())),
         }
+    }
+}
+
+pub async fn logout(jar: &Arc<Jar>) -> Result<(), String> {
+    let client = get_reqwest_client(&jar);
+
+    let result = client
+        .put(format!("{}/logout", API_BASE_URL))
+        .send()
+        .await
+        .expect("Failed to send login request");
+
+    if result.status() == StatusCode::OK {
+        return Ok(());
+    }
+
+    match result.text().await {
+        Ok(text) => Err(format!("Failed to logout: {}", text)),
+        Err(e) => Err(format!("Failed to read response text: {}", e.to_string())),
     }
 }
