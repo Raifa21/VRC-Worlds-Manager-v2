@@ -1,10 +1,6 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::definitions::AuthCookies;
-
-pub const API_BASE_URL: &str = "https://api.vrchat.cloud/api/1";
-
-const USER_AGENT: &str = "WM (formerly VRC World Manager)/0.0.1 discord:raifa";
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum VRChatAuthStatus {
@@ -15,7 +11,8 @@ pub enum VRChatAuthStatus {
     UnknownError(String),
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum VRChatAuthPhase {
     None,
     TwoFactorAuth,

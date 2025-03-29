@@ -3,14 +3,16 @@ use std::{str::FromStr, sync::Arc};
 use base64::{prelude::BASE64_STANDARD, Engine};
 use reqwest::{
     cookie::{self, CookieStore},
-    header::USER_AGENT,
     Response, StatusCode,
 };
 
-use crate::definitions::AuthCookies;
+use crate::{
+    api::common::{get_reqwest_client, API_BASE_URL},
+    definitions::AuthCookies,
+};
 
 use super::definitions::{
-    RequiresTwoFactorAuth, TwoFactorAuthVerified, VRChatAuthPhase, VRChatAuthStatus, API_BASE_URL,
+    RequiresTwoFactorAuth, TwoFactorAuthVerified, VRChatAuthPhase, VRChatAuthStatus,
 };
 
 pub struct VRChatAPIClientAuthenticator {
@@ -24,12 +26,7 @@ pub struct VRChatAPIClientAuthenticator {
 impl VRChatAPIClientAuthenticator {
     pub fn new<T: AsRef<str>>(username: T) -> Self {
         let cookie = Arc::new(cookie::Jar::default());
-
-        let client = reqwest::ClientBuilder::new()
-            .user_agent(USER_AGENT)
-            .cookie_provider(cookie.clone())
-            .build()
-            .expect("Failed to create reqwest client");
+        let client = get_reqwest_client(&cookie);
 
         VRChatAPIClientAuthenticator {
             client,

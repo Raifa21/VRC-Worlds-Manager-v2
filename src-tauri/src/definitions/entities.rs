@@ -335,6 +335,7 @@ pub struct AuthCookies {
     #[serde(rename = "auth")]
     pub auth_token: Option<String>,
 }
+
 impl AuthCookies {
     pub fn new() -> Self {
         Self {
@@ -342,6 +343,7 @@ impl AuthCookies {
             auth_token: None,
         }
     }
+
     pub fn from_cookie_str(cookie_str: &str) -> Self {
         let mut auth_token = None;
         let mut two_factor_auth = None;
@@ -362,6 +364,25 @@ impl AuthCookies {
             auth_token,
             two_factor_auth,
         }
+    }
+}
+
+impl Into<Jar> for AuthCookies {
+    fn into(self) -> Jar {
+        let mut jar = Jar::default();
+        if let Some(auth_token) = self.auth_token {
+            jar.add_cookie_str(
+                &format!("auth={}", auth_token),
+                &reqwest::Url::parse("http://localhost").unwrap(),
+            );
+        }
+        if let Some(two_factor_auth) = self.two_factor_auth {
+            jar.add_cookie_str(
+                &format!("twoFactorAuth={}", two_factor_auth),
+                &reqwest::Url::parse("http://localhost").unwrap(),
+            );
+        }
+        jar
     }
 }
 

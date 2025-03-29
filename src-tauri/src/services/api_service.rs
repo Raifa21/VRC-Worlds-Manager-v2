@@ -1,3 +1,5 @@
+use crate::api;
+use crate::api::world::FavoriteWorld;
 use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
 use crate::services::file_service::FileService;
 use reqwest::cookie::CookieStore;
@@ -7,7 +9,7 @@ use tauri::http::HeaderValue;
 use vrchatapi::apis;
 use vrchatapi::apis::authentication_api::GetCurrentUserError;
 use vrchatapi::apis::configuration::Configuration;
-use vrchatapi::models::{self, create_instance_request};
+use vrchatapi::models::{self, create_instance_request, FavoritedWorld};
 
 pub struct ApiService;
 
@@ -131,126 +133,6 @@ impl ApiService {
         }
     }
 
-    /// Logs the user in with the provided credentials
-    ///
-    /// # Arguments
-    /// * `username` - The username to log in with
-    /// * `password` - The password to log in with
-    /// * `cookie_store` - The cookie store to use for the API
-    ///
-    /// # Returns
-    /// Returns an empty Ok if the login was successful
-    ///
-    /// # Errors
-    /// Returns the following error messages:
-    /// * "2fa-required" if 2FA is required
-    /// * "Invalid username or password" if the credentials are incorrect
-    /// * "An unknown error occurred" if an unknown error occurred
-    /// * "No response content" if no response content was received
-    /// * "Request failed: {error}" if the request failed for any other reason
-    pub async fn login_with_credentials(
-        username: String,
-        password: String,
-        cookie_store: Arc<Jar>,
-    ) -> Result<(), String> {
-        let mut config = Self::create_config(cookie_store.clone());
-        config.basic_auth = Some((username, Some(password)));
-
-        match apis::authentication_api::get_current_user(&config).await {
-            Ok(models::EitherUserOrTwoFactor::CurrentUser(me)) => {
-                println!("Username: {}", me.username.unwrap());
-
-                match Self::save_cookie_store(cookie_store.clone())
-                    .await
-                    .map_err(|e| e.to_string())
-                {
-                    Ok(_) => Ok(()),
-                    Err(e) => Err(e),
-                }
-            }
-            Ok(models::EitherUserOrTwoFactor::RequiresTwoFactorAuth(requires_auth)) => {
-                println!("2FA required: {:?}", requires_auth);
-                if requires_auth
-                    .requires_two_factor_auth
-                    .contains(&String::from("emailOtp"))
-                {
-                    Err("email-2fa-required".to_string())
-                } else {
-                    Err("2fa-required".to_string())
-                }
-            }
-            Err(vrchatapi::apis::Error::ResponseError(response_content)) => {
-                match response_content.entity {
-                    Some(GetCurrentUserError::Status401(error)) => {
-                        Err(error.error.unwrap().message.unwrap())
-                    }
-                    Some(GetCurrentUserError::UnknownValue(_)) => {
-                        Err("An unknown error occurred".to_string())
-                    }
-                    None => Err("No response content".to_string()),
-                }
-            }
-            Err(e) => Err(format!("Request failed: {}", e)),
-        }
-    }
-
-    /// Logs the user in with the provided 2FA code, when 2FA is required
-    /// This is called after login_with_credentials returns "2fa-required"
-    ///
-    /// # Arguments
-    /// * `code` - The 2FA code to log in with
-    /// *  `cookie_store` - The cookie store to use for the API
-    ///     
-    /// # Returns
-    /// Returns an empty Ok if the login was successful
-    ///
-    /// # Errors
-    /// Returns a string error message if the login fails
-    pub async fn login_with_2fa(
-        code: String,
-        cookie_store: Arc<Jar>,
-        two_factor_auth_type: String,
-    ) -> Result<(), String> {
-        let config = Self::create_config(cookie_store.clone());
-        if two_factor_auth_type == "emailOtp" {
-            match apis::authentication_api::verify2_fa_email_code(
-                &config,
-                models::TwoFactorEmailCode::new(code),
-            )
-            .await
-            {
-                Ok(_) => {
-                    match Self::save_cookie_store(cookie_store.clone())
-                        .await
-                        .map_err(|e| e.to_string())
-                    {
-                        Ok(_) => Ok(()),
-                        Err(e) => Err(e),
-                    }
-                }
-                Err(e) => Err(format!("Request failed: {}", e)),
-            }
-        } else {
-            match apis::authentication_api::verify2_fa(
-                &config,
-                models::TwoFactorAuthCode::new(code),
-            )
-            .await
-            {
-                Ok(_) => {
-                    match Self::save_cookie_store(cookie_store.clone())
-                        .await
-                        .map_err(|e| e.to_string())
-                    {
-                        Ok(_) => Ok(()),
-                        Err(e) => Err(e),
-                    }
-                }
-                Err(e) => Err(format!("Request failed: {}", e)),
-            }
-        }
-    }
-
     /// Logs the user out
     /// This clears the authentication cookies
     ///
@@ -284,48 +166,24 @@ impl ApiService {
     /// Returns a string error message if the request fails
     #[must_use]
     pub async fn get_favorite_worlds(cookie_store: Arc<Jar>) -> Result<Vec<WorldApiData>, String> {
-        let config = Self::create_config(cookie_store.clone());
-        let mut worlds = Vec::new();
-        let mut offset = 0;
-        const PAGE_SIZE: i32 = 100;
+        let mut worlds = vec![];
 
-        loop {
-            match apis::worlds_api::get_favorited_worlds(
-                &config,
-                None,
-                None,
-                Some(PAGE_SIZE),
-                None,
-                Some(offset),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )
-            .await
-            {
-                Ok(response) => {
-                    // Convert API worlds to our WorldApiData struct
-                    for world in &response {
-                        match WorldApiData::from_api_favorite_data(world.clone()) {
-                            Ok(world) => worlds.push(world),
-                            Err(e) => return Err(format!("Failed to parse world: {}", e)),
-                        }
-                    }
+        let result = api::world::get_favorite_worlds(cookie_store).await;
 
-                    // Check if we received less than PAGE_SIZE worlds
-                    if response.len() < PAGE_SIZE as usize {
-                        break; // No more worlds to fetch
-                    }
+        let favorite_worlds = match result {
+            Ok(worlds) => worlds,
+            Err(e) => {
+                return Err(format!(
+                    "Failed to parse favorite worlds: {}",
+                    e.to_string()
+                ))
+            }
+        };
 
-                    // Increment offset for next page
-                    offset += PAGE_SIZE;
-                }
-                Err(e) => return Err(format!("Failed to fetch favorite worlds: {}", e)),
+        for world in favorite_worlds {
+            match world.try_into() {
+                Ok(world_data) => worlds.push(world_data),
+                Err(e) => return Err(format!("Failed to parse world: {}", e)),
             }
         }
 

@@ -138,7 +138,7 @@ export default function ListView() {
   const handleReload = async () => {
     try {
       // First, fetch new favorites
-      await invoke('add_favorite_worlds');
+      await invoke('get_favorite_worlds');
 
       // Then reload the current view by re-using the current URL parameters
       const specialFolders = searchParams.get('specialFolders');

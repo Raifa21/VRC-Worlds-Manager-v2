@@ -1,3 +1,4 @@
+mod common;
+
 pub mod auth;
-pub mod entities;
-pub mod worlds;
+pub mod world;

@@ -1,3 +1,4 @@
+use api::auth::VRChatAPIClientAuthenticator;
 use definitions::{AuthState, FolderModel, InitState, PreferenceModel, WorldModel};
 use reqwest::cookie::Jar;
 use services::ApiService;
@@ -16,6 +17,7 @@ static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
 static WORLDS: InitCell<RwLock<Vec<WorldModel>>> = InitCell::new();
 static INITSTATE: InitCell<RwLock<InitState>> = InitCell::new();
 static AUTH_STATE: InitCell<RwLock<AuthState>> = InitCell::new();
+static AUTHENTICATOR: InitCell<tokio::sync::RwLock<VRChatAPIClientAuthenticator>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

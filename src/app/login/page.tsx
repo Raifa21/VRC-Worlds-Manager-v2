@@ -22,33 +22,49 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      await invoke('login_with_credentials', {
+      const result: string = await invoke('login_with_credentials', {
         username: username,
         password: password,
       });
-      router.push('/listview');
-    } catch (err) {
-      if (err === 'email-2fa-required') {
-        setShow2FA(true);
-        setError(null);
-        setTwoFactorCodeType('emailOtp');
-      } else if (err === '2fa-required') {
+
+      console.log(result);
+
+      if (result === 'loggedIn') {
+        router.push('/listview');
+      } else if (result === 'twoFactorAuth') {
         setShow2FA(true);
         setError(null);
         setTwoFactorCodeType('totp');
-      } else {
-        setError((err as string) || 'Invalid credentials');
+      } else if (result === 'email2FA') {
+        setShow2FA(true);
+        setError(null);
+        setTwoFactorCodeType('emailOtp');
       }
+    } catch (err) {
+      setError((err as string) || 'Invalid credentials');
     }
   };
 
   const handle2FA = async () => {
     try {
-      await invoke('login_with_2fa', {
+      const result: string = await invoke('login_with_2fa', {
         code: twoFactorCode,
         twoFactorType: twoFactorCodeType,
       });
-      router.push('/listview');
+
+      console.log(result);
+
+      if (result === 'loggedIn') {
+        router.push('/listview');
+      } else if (result === 'twoFactorAuth') {
+        setShow2FA(true);
+        setError(null);
+        setTwoFactorCodeType('totp');
+      } else if (result === 'email2FA') {
+        setShow2FA(true);
+        setError(null);
+        setTwoFactorCodeType('emailOtp');
+      }
     } catch (err) {
       setError((err as string) || 'Invalid 2FA code');
     }
@@ -85,7 +101,9 @@ export default function Login() {
                 handleLogin();
               }
             }}
-            onPaste={handleLogin}
+            // // パスワードが正しくてもペースト時はログインに失敗するためコメントアウト
+            // // ペーストした結果が setPassword されるよりも先にログイン試行が走るため？
+            // onPaste={handleLogin}
           />
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <Button
