@@ -22,6 +22,7 @@ export function CreateFolderDialog({
 }: CreateFolderDialogProps) {
   const [folderName, setFolderName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
 
   const handleSubmit = async () => {
     if (!folderName) return;
@@ -46,7 +47,21 @@ export function CreateFolderDialog({
           value={folderName}
           onChange={(e) => setFolderName(e.target.value)}
           placeholder="Enter folder name"
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+          onKeyDown={(e) => {
+            console.log('Key pressed:', e.key);
+            if (e.key === 'Enter' && !isComposing) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+          onCompositionStart={(e) => {
+            setIsComposing(true);
+          }}
+          onCompositionEnd={(e) => {
+            setTimeout(() => {
+              setIsComposing(false);
+            }, 0);
+          }}
         />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
