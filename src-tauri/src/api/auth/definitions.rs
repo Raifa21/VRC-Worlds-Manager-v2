@@ -11,7 +11,7 @@ pub enum VRChatAuthStatus {
     UnknownError(String),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum VRChatAuthPhase {
     None,

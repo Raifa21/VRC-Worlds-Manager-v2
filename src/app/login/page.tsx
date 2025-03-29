@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { commands } from '@/lib/bindings';
 
 export default function Login() {
   const router = useRouter();
@@ -21,46 +22,49 @@ export default function Login() {
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
   const handleLogin = async () => {
-    try {
-      const result: string = await invoke('login_with_credentials', {
-        username: username,
-        password: password,
-      });
+    const result = await commands.loginWithCredentials(username, password);
 
-      console.log(result);
+    if (result.status === 'error') {
+      setError(result.error || 'Invalid credentials');
+      return;
+    }
 
-      if (result === 'loggedIn') {
-        router.push('/listview');
-      } else if (result === 'twoFactorAuth') {
-        setShow2FA(true);
-        setError(null);
-        setTwoFactorCodeType('totp');
-      } else if (result === 'email2FA') {
-        setShow2FA(true);
-        setError(null);
-        setTwoFactorCodeType('emailOtp');
-      }
-    } catch (err) {
-      setError((err as string) || 'Invalid credentials');
+    const status = result.data;
+
+    if (status === 'loggedIn') {
+      router.push('/listview');
+    } else if (status === 'twoFactorAuth') {
+      setShow2FA(true);
+      setError(null);
+      setTwoFactorCodeType('totp');
+    } else if (status === 'email2FA') {
+      setShow2FA(true);
+      setError(null);
+      setTwoFactorCodeType('emailOtp');
     }
   };
 
   const handle2FA = async () => {
     try {
-      const result: string = await invoke('login_with_2fa', {
-        code: twoFactorCode,
-        twoFactorType: twoFactorCodeType,
-      });
+      const result = await commands.loginWith2fa(
+        twoFactorCode,
+        twoFactorCodeType,
+      );
 
-      console.log(result);
+      if (result.status === 'error') {
+        setError(result.error || 'Invalid 2FA code');
+        return;
+      }
 
-      if (result === 'loggedIn') {
+      const status = result.data;
+
+      if (status === 'loggedIn') {
         router.push('/listview');
-      } else if (result === 'twoFactorAuth') {
+      } else if (status === 'twoFactorAuth') {
         setShow2FA(true);
         setError(null);
         setTwoFactorCodeType('totp');
-      } else if (result === 'email2FA') {
+      } else if (status === 'email2FA') {
         setShow2FA(true);
         setError(null);
         setTwoFactorCodeType('emailOtp');

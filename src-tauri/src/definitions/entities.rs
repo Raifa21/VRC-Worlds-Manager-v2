@@ -229,7 +229,7 @@ impl WorldModel {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub enum Platform {
     #[serde(rename = "PC")]
     PC,
@@ -239,7 +239,7 @@ pub enum Platform {
     CrossPlatform,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct WorldDisplayData {
     #[serde(rename = "worldId")]
     pub world_id: String,
@@ -257,7 +257,7 @@ pub struct WorldDisplayData {
     pub platform: Platform,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct WorldDetails {
     #[serde(rename = "worldId")]
     pub world_id: String,
@@ -299,7 +299,7 @@ impl FolderModel {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub enum CardSize {
     Compact,  // Small preview
     Normal,   // Standard size

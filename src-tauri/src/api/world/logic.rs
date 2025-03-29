@@ -18,13 +18,23 @@ pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
         .await
         .expect("Failed to get favorite worlds");
 
-    let parsed: Vec<FavoriteWorldParser> = match result.json().await {
+    let text = result.text().await;
+
+    if let Err(e) = text {
+        return Err(format!("Failed to get favorite worlds: {}", e.to_string()));
+    }
+
+    let text = text.unwrap();
+
+    let parsed: Vec<FavoriteWorldParser> = match serde_json::from_str(&text) {
         Ok(worlds) => worlds,
         Err(e) => {
+            println!("Failed to parse favorite worlds: {}", e.to_string());
+            println!("Response: {}", text);
             return Err(format!(
                 "Failed to parse favorite worlds: {}",
                 e.to_string()
-            ))
+            ));
         }
     };
 

@@ -2,6 +2,7 @@ use crate::definitions::CardSize;
 use crate::services;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_preferences(
     theme: String,
     language: String,
@@ -15,11 +16,13 @@ pub async fn set_preferences(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn create_empty_auth() -> Result<(), String> {
     services::FileService::create_empty_auth_file().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn create_empty_files() -> Result<(), String> {
     services::FileService::create_empty_folders_file()
         .and_then(|_| services::FileService::create_empty_worlds_file())

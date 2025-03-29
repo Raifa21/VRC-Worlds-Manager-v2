@@ -1,13 +1,10 @@
 use std::sync::Arc;
 
-use reqwest::cookie::Jar;
 use tokio::sync::RwLock;
 
-use crate::api;
 use crate::api::auth::VRChatAPIClientAuthenticator;
 use crate::api::auth::VRChatAuthPhase;
 use crate::api::auth::VRChatAuthStatus;
-use crate::definitions::WorldApiData;
 use crate::definitions::WorldDetails;
 use crate::services::FileService;
 use crate::services::FolderManager;
@@ -17,12 +14,14 @@ use crate::AUTH_STATE;
 use crate::WORLDS;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn try_login() -> Result<(), String> {
     let cookie_store = AUTH_STATE.get().read().unwrap().cookie_store.clone();
     ApiService::login_with_token(cookie_store).await
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn login_with_credentials(
     username: String,
     password: String,
@@ -64,6 +63,7 @@ pub async fn login_with_credentials(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn login_with_2fa(
     code: String,
     two_factor_type: String,
@@ -109,12 +109,14 @@ pub async fn login_with_2fa(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn logout() -> Result<(), String> {
     let cookie_store = AUTH_STATE.get().read().unwrap().cookie_store.clone();
     ApiService::logout(cookie_store).await
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_favorite_worlds() -> Result<(), String> {
     let cookie_store = AUTH_STATE.get().read().unwrap().cookie_store.clone();
     let worlds = match ApiService::get_favorite_worlds(cookie_store).await {
@@ -137,6 +139,7 @@ pub async fn get_favorite_worlds() -> Result<(), String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_world(world_id: String) -> Result<WorldDetails, String> {
     let cookie_store = AUTH_STATE.get().read().unwrap().cookie_store.clone();
     let world_copy = WORLDS.get().read().unwrap().clone();
@@ -159,6 +162,7 @@ pub async fn get_world(world_id: String) -> Result<WorldDetails, String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn create_instance(
     world_id: String,
     instance_type: String,

@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { ConfirmationPopup } from '@/components/confirmation-popup';
+import { commands } from '@/lib/bindings';
 
 export enum CardSize {
   Compact = 'Compact',
@@ -153,20 +154,29 @@ const WelcomePage: React.FC = () => {
       }
     }
     if (page === 5) {
-      try {
-        await invoke('set_preferences', {
-          theme: preferences.theme,
-          language: preferences.language,
-          cardSize: preferences.card_size,
+      const result = await commands.setPreferences(
+        preferences.theme,
+        preferences.language,
+        preferences.card_size,
+      );
+
+      if (result.status === 'error') {
+        toast({
+          title: 'Error',
+          description: 'Failed to save preferences: ' + result.error,
         });
-        await invoke('create_empty_auth');
-        if (!alreadyMigrated) {
-          await invoke('create_empty_files');
-        }
-      } catch (e) {
-        console.error('Failed to save preferences:', e);
+
+        console.error('Failed to save preferences:', result.error);
         setPage(4);
+        return;
       }
+
+      await commands.createEmptyAuth();
+
+      if (!alreadyMigrated) {
+        await commands.createEmptyFiles();
+      }
+
       router.push('/login');
     }
     setPage(page + 1);
@@ -178,28 +188,34 @@ const WelcomePage: React.FC = () => {
 
   const handleMigration = async () => {
     setIsLoading(true);
+
     if (alreadyMigrated) {
       setIsLoading(false);
       setShowMigrationPopup(true);
       return;
     }
+
     try {
-      await invoke('migrate_old_data', {
-        worldsPath: migrationPaths[0],
-        foldersPath: migrationPaths[1],
-      });
+      const result = await commands.migrateOldData(
+        migrationPaths[0],
+        migrationPaths[1],
+      );
+
+      if (result.status === 'error') {
+        toast({
+          title: 'Error',
+          description: 'Failed to migrate data: ' + result.error,
+        });
+        setPage(2);
+        return;
+      }
+
       toast({
         title: 'Success',
         description: 'Data migrated successfully!',
       });
       setAlreadyMigrated(true);
       handleNext();
-    } catch (e) {
-      toast({
-        title: 'Error',
-        description: 'Failed to migrate data: ' + e,
-      });
-      setPage(2);
     } finally {
       setIsLoading(false);
     }
@@ -231,22 +247,26 @@ const WelcomePage: React.FC = () => {
           setShowMigrationPopup(false);
           setIsLoading(true);
           try {
-            await invoke('migrate_old_data', {
-              worldsPath: migrationPaths[0],
-              foldersPath: migrationPaths[1],
-            });
+            const result = await commands.migrateOldData(
+              migrationPaths[0],
+              migrationPaths[1],
+            );
+
+            if (result.status === 'error') {
+              toast({
+                title: 'Error',
+                description: 'Failed to migrate data: ' + result.error,
+              });
+              setPage(2);
+              return;
+            }
+
             toast({
               title: 'Success',
               description: 'Data migrated successfully!',
             });
             setAlreadyMigrated(true);
             handleNext();
-          } catch (e) {
-            toast({
-              title: 'Error',
-              description: 'Failed to migrate data: ' + e,
-            });
-            setPage(2);
           } finally {
             setIsLoading(false);
           }

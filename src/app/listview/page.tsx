@@ -13,6 +13,7 @@ import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '../setup/page';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react'; // For the reload icon
+import { commands } from '@/lib/bindings';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -136,28 +137,30 @@ export default function ListView() {
   };
 
   const handleReload = async () => {
-    try {
-      // First, fetch new favorites
-      await invoke('get_favorite_worlds');
+    const result = await commands.getFavoriteWorlds();
 
-      // Then reload the current view by re-using the current URL parameters
-      const specialFolders = searchParams.get('specialFolders');
-      const folder = searchParams.get('folder');
+    if (result.status === 'error') {
+      const error = result.error;
 
-      // Re-fetch the data based on current view instead of using router.refresh()
-      if (specialFolders === 'all') {
-        await loadAllWorlds();
-      } else if (specialFolders === 'unclassified') {
-        await loadUnclassifiedWorlds();
-      } else if (folder) {
-        await loadWorlds(decodeURIComponent(folder));
-      }
-    } catch (error) {
       toast({
         title: 'Error',
         description: error as string,
       });
       console.error('Failed to reload:', error);
+      return;
+    }
+
+    // Then reload the current view by re-using the current URL parameters
+    const specialFolders = searchParams.get('specialFolders');
+    const folder = searchParams.get('folder');
+
+    // Re-fetch the data based on current view instead of using router.refresh()
+    if (specialFolders === 'all') {
+      await loadAllWorlds();
+    } else if (specialFolders === 'unclassified') {
+      await loadUnclassifiedWorlds();
+    } else if (folder) {
+      await loadWorlds(decodeURIComponent(folder));
     }
   };
 

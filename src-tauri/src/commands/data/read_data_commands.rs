@@ -5,6 +5,7 @@ use directories::BaseDirs;
 /// Checks if the app is being run for the first time
 /// As this is called every time / is loaded from the frontend, cache result in the state
 #[tauri::command]
+#[specta::specta]
 pub async fn require_initial_setup() -> bool {
     //check if the result is already cached
     let mut preferences_lock = PREFERENCES.get().write();
@@ -34,6 +35,7 @@ pub async fn require_initial_setup() -> bool {
 /// # Errors
 /// Returns a tuple containing a boolean indicating if the files have been loaded, and an error message
 #[tauri::command]
+#[specta::specta]
 pub async fn check_files_loaded() -> Result<bool, String> {
     let init_state_lock = crate::INITSTATE.get().read();
     let init_state = init_state_lock.as_ref().unwrap();
@@ -44,6 +46,7 @@ pub async fn check_files_loaded() -> Result<bool, String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn detect_old_installation() -> Result<(String, String), String> {
     MigrationService::detect_old_installation()
 }
@@ -57,6 +60,7 @@ pub async fn detect_old_installation() -> Result<(String, String), String> {
 /// # Errors
 /// Returns an error message if the path to the local app data directory could not be found
 #[tauri::command]
+#[specta::specta]
 pub async fn pass_paths() -> Result<String, String> {
     let base_dirs = BaseDirs::new().ok_or("Could not get base directories")?;
     base_dirs
@@ -69,6 +73,7 @@ pub async fn pass_paths() -> Result<String, String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn migrate_old_data(worlds_path: String, folders_path: String) -> Result<(), String> {
     MigrationService::migrate_old_data(worlds_path, folders_path)
         .await
