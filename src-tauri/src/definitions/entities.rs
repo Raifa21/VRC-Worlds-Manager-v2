@@ -369,17 +369,17 @@ impl AuthCookies {
 
 impl Into<Jar> for AuthCookies {
     fn into(self) -> Jar {
-        let mut jar = Jar::default();
+        let jar = Jar::default();
         if let Some(auth_token) = self.auth_token {
             jar.add_cookie_str(
                 &format!("auth={}", auth_token),
-                &reqwest::Url::parse("http://localhost").unwrap(),
+                &reqwest::Url::parse("https://api.vrchat.cloud").unwrap(),
             );
         }
         if let Some(two_factor_auth) = self.two_factor_auth {
             jar.add_cookie_str(
                 &format!("twoFactorAuth={}", two_factor_auth),
-                &reqwest::Url::parse("http://localhost").unwrap(),
+                &reqwest::Url::parse("http://api.vrchat.cloud").unwrap(),
             );
         }
         jar
