@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { ConfirmationPopup } from '@/components/confirmation-popup';
+import { MigrationConfirmationPopup } from '@/components/migration-confirmation-popup';
 import { commands } from '@/lib/bindings';
 
 export enum CardSize {
@@ -65,11 +66,11 @@ export function SetupLayout({
   return (
     <div className="container max-w-2xl mx-auto p-4">
       <Progress value={currentPage * 25 - 25} className="mb-8" />
-      <Card className="h-[450px]">
+      <Card className="h-[480px]">
         <CardHeader>
           <CardTitle>{title}</CardTitle>
         </CardHeader>
-        <CardContent className="h-[325px]">{children}</CardContent>
+        <CardContent className="h-[355px]">{children}</CardContent>
         <CardFooter className="flex justify-between">
           <Button
             onClick={onBack}
@@ -122,10 +123,17 @@ const WelcomePage: React.FC = () => {
     '',
     '',
   ]);
-  const [isValidPath, setIsValidPath] = useState<boolean>(false);
+  const [pathValidation, setPathValidation] = useState<[boolean, boolean]>([
+    false,
+    false,
+  ]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [alreadyMigrated, setAlreadyMigrated] = useState<boolean>(false);
   const [showMigrationPopup, setShowMigrationPopup] = useState(false);
+  const [hasExistingData, setHasExistingData] = useState<[boolean, boolean]>([
+    false,
+    false,
+  ]);
 
   useEffect(() => {
     console.log('Current theme:', preferences.theme);
@@ -134,6 +142,13 @@ const WelcomePage: React.FC = () => {
   const handleNext = async () => {
     if (page === 1) {
       try {
+        const hasDataResult = await commands.checkExistingData();
+        if (hasDataResult.status === 'ok') {
+          setHasExistingData(hasDataResult.data);
+        } else {
+          console.error('Failed to fetch existing data:', hasDataResult.error);
+        }
+
         const [worldsPath, foldersPath] = await invoke<[string, string]>(
           'detect_old_installation',
         );
@@ -141,7 +156,7 @@ const WelcomePage: React.FC = () => {
         console.log('Detected old installation:', worldsPath, foldersPath);
         console.log('Default path:', defaultPath);
         setMigrationPaths([worldsPath, foldersPath]);
-        setIsValidPath(true);
+        setPathValidation([true, true]);
       } catch (e) {
         try {
           const defPath = await invoke<string>('pass_paths');
@@ -150,7 +165,7 @@ const WelcomePage: React.FC = () => {
           console.error('Failed to get paths:', e);
         }
         console.error('Failed to detect old installation:', e);
-        setIsValidPath(false);
+        setPathValidation([false, false]);
       }
     }
     if (page === 5) {
@@ -189,7 +204,7 @@ const WelcomePage: React.FC = () => {
   const handleMigration = async () => {
     setIsLoading(true);
 
-    if (alreadyMigrated) {
+    if (hasExistingData[0] || hasExistingData[1]) {
       setIsLoading(false);
       setShowMigrationPopup(true);
       return;
@@ -199,6 +214,7 @@ const WelcomePage: React.FC = () => {
       const result = await commands.migrateOldData(
         migrationPaths[0],
         migrationPaths[1],
+        [false, false],
       );
 
       if (result.status === 'error') {
@@ -213,6 +229,7 @@ const WelcomePage: React.FC = () => {
       toast({
         title: 'Success',
         description: 'Data migrated successfully!',
+        duration: 300,
       });
       setAlreadyMigrated(true);
       handleNext();
@@ -235,21 +252,31 @@ const WelcomePage: React.FC = () => {
       const newPaths: [string, string] = [...migrationPaths];
       newPaths[index] = selected as string;
       setMigrationPaths(newPaths);
+
+      const newValidation: [boolean, boolean] = [...pathValidation];
+      newValidation[index] = true;
+      setPathValidation(newValidation);
+
+      console.log('Selected path:', selected);
     }
   };
 
   return (
     <>
-      <ConfirmationPopup
+      <MigrationConfirmationPopup
         open={showMigrationPopup}
         onOpenChange={setShowMigrationPopup}
-        onConfirm={async () => {
+        hasExistingData={hasExistingData}
+        isLoading={isLoading}
+        onConfirm={async (keepExisting) => {
           setShowMigrationPopup(false);
           setIsLoading(true);
           try {
+            // Pass the inverse of keepExisting since we want to overwrite when not keeping
             const result = await commands.migrateOldData(
               migrationPaths[0],
               migrationPaths[1],
+              [!keepExisting[0], !keepExisting[1]],
             );
 
             if (result.status === 'error') {
@@ -271,8 +298,6 @@ const WelcomePage: React.FC = () => {
             setIsLoading(false);
           }
         }}
-        title="Overwrite Existing Data?"
-        description="You have already migrated your data. Continuing will overwrite your current data. Are you sure?"
       />
       <div className="welcome-page">
         {page === 1 && (
@@ -283,24 +308,30 @@ const WelcomePage: React.FC = () => {
             onNext={handleNext}
             isFirstPage={true}
           >
-            <div className="h-full flex flex-col items-center justify-center space-y-4">
-              <h2 className="text-2xl font-semibold">Welcome!</h2>
-              <p className="text-center text-muted-foreground">
-                It looks like your first time! Let's set up your VRC World
-                Manager preferences.
-              </p>
-              <p className="text-center text-sm text-muted-foreground">
-                Is it not? Please contact us through{' '}
-                <a
-                  href={`https://discord.gg/gNzbpux5xW`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline"
-                >
-                  Discord
-                </a>{' '}
-                for support
-              </p>
+            <div className="h-full flex flex-col items-center justify-center space-y-6">
+              <h2 className="text-2xl font-semibold">
+                Thank you for installing!
+              </h2>
+              <div className="space-y-4 text-center">
+                <p className="text-muted-foreground">
+                  Since this is your first time here, let's take a moment to set
+                  up
+                  <br />
+                  VRC World Manager just the way you like it.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Not your first time? Please contact us through{' '}
+                  <a
+                    href="https://discord.gg/gNzbpux5xW"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    Discord
+                  </a>{' '}
+                  for support.
+                </p>
+              </div>
             </div>
           </SetupLayout>
         )}
@@ -339,12 +370,13 @@ const WelcomePage: React.FC = () => {
                       Select
                     </Button>
                   </div>
-                  {!isValidPath && (
-                    <p className="text-sm text-red-500">
-                      {' '}
-                      Could not detect existing files.
-                    </p>
-                  )}
+                  <div className="h-3">
+                    {!pathValidation[0] && (
+                      <p className="text-sm text-red-500">
+                        Could not detect existing worlds file.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -363,19 +395,22 @@ const WelcomePage: React.FC = () => {
                       Select
                     </Button>
                   </div>
-                  {!isValidPath && (
-                    <p className="text-sm text-red-500">
-                      {' '}
-                      Could not detect existing files.
-                    </p>
-                  )}
+                  <div className="h-3">
+                    {!pathValidation[1] && (
+                      <p className="text-sm text-red-500">
+                        Could not detect existing folders file.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
               <Button
                 onClick={handleMigration}
                 disabled={
-                  isLoading || !migrationPaths.every((path) => path !== '')
+                  isLoading ||
+                  !migrationPaths.every((path) => path !== '') ||
+                  !pathValidation.some((isValid) => isValid)
                 }
                 className="w-full"
               >
@@ -388,9 +423,10 @@ const WelcomePage: React.FC = () => {
                   'Migrate'
                 )}
               </Button>
-              {!alreadyMigrated && (
+
+              {!alreadyMigrated && !hasExistingData && (
                 <p className="text-sm text-muted-foreground text-center pb-3">
-                  Skipping will create new empty folders and settings.
+                  Skipping will create new empty folders, if one does not exist.
                 </p>
               )}
             </div>

@@ -51,6 +51,12 @@ pub async fn detect_old_installation() -> Result<(String, String), String> {
     MigrationService::detect_old_installation()
 }
 
+#[tauri::command]
+#[specta::specta]
+pub async fn check_existing_data() -> Result<(bool, bool), String> {
+    MigrationService::check_existing_data().map_err(|e| e.to_string())
+}
+
 /// Passes the paths to the frontend
 /// Gets the path to the local app data directory
 ///
@@ -74,8 +80,12 @@ pub async fn pass_paths() -> Result<String, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn migrate_old_data(worlds_path: String, folders_path: String) -> Result<(), String> {
-    MigrationService::migrate_old_data(worlds_path, folders_path)
+pub async fn migrate_old_data(
+    worlds_path: String,
+    folders_path: String,
+    dont_overwrite: [bool; 2],
+) -> Result<(), String> {
+    MigrationService::migrate_old_data(worlds_path, folders_path, dont_overwrite)
         .await
         .map_err(|e| e.to_string())
 }

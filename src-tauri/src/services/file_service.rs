@@ -181,43 +181,49 @@ impl FileService {
         fs::write(auth_path, data).map_err(|_| FileError::FileWriteError)
     }
 
-    /// Writes an empty authentication file to disk
-    /// This is called when the user logs out, or when the app is run for the first time
+    /// Creates an empty authentication file if it doesn't exist
     ///
     /// # Returns
-    /// Ok(()) if the file was created successfully
+    /// Ok(()) if the file was created successfully or already exists
     ///
     /// # Errors
     /// Returns a FileError if the file could not be created
     pub fn create_empty_auth_file() -> Result<(), FileError> {
         let (_, _, _, auth_path) = Self::get_paths();
-        fs::write(auth_path, "{}").map_err(|_| FileError::FileWriteError)
+        if !auth_path.exists() {
+            fs::write(auth_path, "{}").map_err(|_| FileError::FileWriteError)?;
+        }
+        Ok(())
     }
 
-    /// Writes an empty worlds file to disk
-    /// This is called when the app is run for the first time and the user does not migrate data
+    /// Creates an empty worlds file if it doesn't exist
     ///
     /// # Returns
-    /// Ok(()) if the file was created successfully
+    /// Ok(()) if the file was created successfully or already exists
     ///
     /// # Errors
     /// Returns a FileError if the file could not be created
     pub fn create_empty_worlds_file() -> Result<(), FileError> {
         let (_, _, worlds_path, _) = Self::get_paths();
-        fs::write(worlds_path, "[]").map_err(|_| FileError::FileWriteError)
+        if !worlds_path.exists() {
+            fs::write(worlds_path, "[]").map_err(|_| FileError::FileWriteError)?;
+        }
+        Ok(())
     }
 
-    /// Writes an empty folders file to disk
-    /// This is called when the app is run for the first time and the user does not migrate data
+    /// Creates an empty folders file if it doesn't exist
     ///
     /// # Returns
-    /// Ok(()) if the file was created successfully
+    /// Ok(()) if the file was created successfully or already exists
     ///
     /// # Errors
     /// Returns a FileError if the file could not be created
     pub fn create_empty_folders_file() -> Result<(), FileError> {
         let (_, folders_path, _, _) = Self::get_paths();
-        fs::write(folders_path, "[]").map_err(|_| FileError::FileWriteError)
+        if !folders_path.exists() {
+            fs::write(folders_path, "[]").map_err(|_| FileError::FileWriteError)?;
+        }
+        Ok(())
     }
 }
 
@@ -264,5 +270,29 @@ mod tests {
         assert!(!folders_path.exists());
         assert!(!worlds_path.exists());
         assert!(!auth_path.exists());
+    }
+
+    #[test]
+    fn test_create_empty_files_does_not_overwrite() {
+        let temp = setup_test_dir();
+        let (_, folders_path, worlds_path, auth_path) = FileService::get_paths();
+
+        // Create files with content
+        fs::write(&folders_path, r#"["test"]"#).unwrap();
+        fs::write(&worlds_path, r#"["test"]"#).unwrap();
+        fs::write(&auth_path, r#"{"test": "test"}"#).unwrap();
+
+        // Try to create empty files
+        FileService::create_empty_folders_file().unwrap();
+        FileService::create_empty_worlds_file().unwrap();
+        FileService::create_empty_auth_file().unwrap();
+
+        // Verify content wasn't overwritten
+        assert_eq!(fs::read_to_string(&folders_path).unwrap(), r#"["test"]"#);
+        assert_eq!(fs::read_to_string(&worlds_path).unwrap(), r#"["test"]"#);
+        assert_eq!(
+            fs::read_to_string(&auth_path).unwrap(),
+            r#"{"test": "test"}"#
+        );
     }
 }

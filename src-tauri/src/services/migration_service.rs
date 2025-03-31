@@ -121,6 +121,19 @@ impl MigrationService {
         }
     }
 
+    /// checks if worlds and folders data already exists, to avoid overwriting
+    ///
+    /// # Returns
+    /// Returns a boolean indicating if the worlds and folders data already exists
+    ///
+    /// # Errors
+    /// Returns an error message if the worlds and folders data could not be checked
+    pub fn check_existing_data() -> Result<(bool, bool), String> {
+        let (_, folders_path, worlds_path, _) = FileService::get_paths();
+
+        Ok((folders_path.exists(), worlds_path.exists()))
+    }
+
     async fn read_data_files(
         path_to_worlds: &str,
         path_to_folders: &str,
@@ -281,6 +294,7 @@ impl MigrationService {
     pub async fn migrate_old_data(
         path_to_worlds: String,
         path_to_folders: String,
+        dont_overwrite: [bool; 2], // [worlds, folders]
     ) -> Result<(), String> {
         let (worlds_content, folders_content) =
             Self::read_data_files(&path_to_worlds, &path_to_folders).await?;
@@ -301,37 +315,43 @@ impl MigrationService {
             }
         }
 
-        // Deduplicate worlds
-        let old_worlds = Self::deduplicate_with_pattern(old_worlds);
-
-        // Convert worlds with calculated dates
-        for (idx, old_world) in old_worlds.iter().enumerate() {
-            let is_hidden = hidden_world_ids.contains(&old_world.world_id);
-            let utc_date = DateTime::from_naive_utc_and_offset(dates[idx].naive_utc(), chrono::Utc);
-            new_worlds.push(Self::convert_to_new_model(old_world, utc_date, is_hidden));
-        }
-        // Process regular folders
-        for folder in old_folders {
-            if folder.name != "Hidden" && folder.name != "Unclassified" {
-                let world_ids: Vec<String> =
-                    folder.worlds.iter().map(|w| w.world_id.clone()).collect();
-
-                // Add folder name to corresponding worlds
-                for world in new_worlds.iter_mut() {
-                    if world_ids.contains(&world.api_data.world_id) {
-                        world.user_data.folders.push(folder.name.clone());
-                    }
-                }
-
-                new_folders.push(FolderModel {
-                    folder_name: folder.name,
-                    world_ids,
-                });
+        // Deduplicate and convert worlds only if we're not keeping existing worlds
+        if !dont_overwrite[0] {
+            let old_worlds = Self::deduplicate_with_pattern(old_worlds);
+            for (idx, old_world) in old_worlds.iter().enumerate() {
+                let is_hidden = hidden_world_ids.contains(&old_world.world_id);
+                let utc_date =
+                    DateTime::from_naive_utc_and_offset(dates[idx].naive_utc(), chrono::Utc);
+                new_worlds.push(Self::convert_to_new_model(old_world, utc_date, is_hidden));
             }
         }
 
-        // Store migrated data
-        {
+        // Process folders only if we're not keeping existing folders
+        if !dont_overwrite[1] {
+            for folder in old_folders {
+                if folder.name != "Hidden" && folder.name != "Unclassified" {
+                    let world_ids: Vec<String> =
+                        folder.worlds.iter().map(|w| w.world_id.clone()).collect();
+
+                    // Add folder name to corresponding worlds if we're also migrating worlds
+                    if !dont_overwrite[0] {
+                        for world in new_worlds.iter_mut() {
+                            if world_ids.contains(&world.api_data.world_id) {
+                                world.user_data.folders.push(folder.name.clone());
+                            }
+                        }
+                    }
+
+                    new_folders.push(FolderModel {
+                        folder_name: folder.name,
+                        world_ids,
+                    });
+                }
+            }
+        }
+
+        // Store migrated data, respecting dont_overwrite flags
+        if !dont_overwrite[0] {
             let mut worlds_lock = WORLDS
                 .get()
                 .write()
@@ -340,7 +360,8 @@ impl MigrationService {
             FileService::write_worlds(&worlds_lock)
                 .map_err(|e| format!("Failed to write worlds: {}", e))?;
         }
-        {
+
+        if !dont_overwrite[1] {
             let mut folders_lock = FOLDERS
                 .get()
                 .write()
