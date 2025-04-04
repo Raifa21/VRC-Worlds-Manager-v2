@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import { commands } from '@/lib/bindings';
 
 export default function Home() {
@@ -40,5 +41,10 @@ export default function Home() {
     checkFirstTime();
   }, []);
 
-  return <div>Redirecting...</div>;
+  return (
+    <div className="h-screen w-screen flex flex-col items-center justify-center gap-4">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <p className="text-sm text-muted-foreground">Loading...</p>
+    </div>
+  );
 }
