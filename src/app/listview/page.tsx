@@ -43,7 +43,7 @@ export default function ListView() {
       loadUnclassifiedWorlds();
     } else if (folder) {
       console.log('Loading folder:', folder);
-      loadWorlds(decodeURIComponent(folder));
+      loadFolderContents(decodeURIComponent(folder));
     } else {
       initialize_listview();
     }
@@ -114,7 +114,7 @@ export default function ListView() {
     }
   };
 
-  const loadWorlds = async (folder: string) => {
+  const loadFolderContents = async (folder: string) => {
     try {
       console.log('Folder:', folder);
       const worlds = await invoke<WorldDisplayData[]>('get_worlds', {
@@ -130,10 +130,6 @@ export default function ListView() {
       });
       console.log('Failed to load worlds:', error);
     }
-  };
-
-  const handleDialogClose = () => {
-    router.push(`/listview?folder=${currentFolder}`);
   };
 
   const handleReload = async () => {
@@ -160,7 +156,32 @@ export default function ListView() {
     } else if (specialFolders === 'unclassified') {
       await loadUnclassifiedWorlds();
     } else if (folder) {
-      await loadWorlds(decodeURIComponent(folder));
+      await loadFolderContents(decodeURIComponent(folder));
+    }
+  };
+
+  const refreshCurrentView = async () => {
+    try {
+      console.log('Refreshing current view');
+      console.log('Current folder:', currentFolder);
+      switch (currentFolder) {
+        case 'All Worlds':
+          await loadAllWorlds();
+          break;
+        case 'Unclassified':
+          await loadUnclassifiedWorlds();
+          break;
+        default:
+          if (currentFolder) {
+            await loadFolderContents(currentFolder);
+          }
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh worlds',
+        duration: 3000,
+      });
     }
   };
 
@@ -184,6 +205,7 @@ export default function ListView() {
             size={cardSize}
             worlds={worlds}
             folderName={currentFolder}
+            onWorldChange={refreshCurrentView}
           />
         </div>
       </div>

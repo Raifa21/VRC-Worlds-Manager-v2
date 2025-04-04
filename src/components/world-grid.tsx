@@ -18,6 +18,7 @@ interface WorldGridProps {
   size: CardSize;
   worlds: WorldDisplayData[];
   folderName?: string;
+  onWorldChange?: () => Promise<void>;
 }
 
 type SortOption =
@@ -39,7 +40,12 @@ type SortField =
   | 'dateAdded'
   | 'lastUpdated';
 
-export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
+export function WorldGrid({
+  size,
+  worlds,
+  folderName,
+  onWorldChange,
+}: WorldGridProps) {
   const cardWidths = {
     [CardSize.Compact]: 192, // w-48 = 12rem = 192px
     [CardSize.Normal]: 208, // w-52 = 13rem = 208px
@@ -234,6 +240,9 @@ export function WorldGrid({ size, worlds, folderName }: WorldGridProps) {
         onOpenChange={(open) => {
           if (!open) {
             setShowWorld(false);
+            if (onWorldChange) {
+              onWorldChange();
+            }
           }
         }}
         worldId={worldId}
