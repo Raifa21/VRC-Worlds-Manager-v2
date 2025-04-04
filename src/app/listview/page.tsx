@@ -1,11 +1,9 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
-import { useRouter } from 'next/navigation';
 import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-siderbar';
 import { WorldDisplayData } from '@/components/world-card';
@@ -15,52 +13,61 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
 
+// enum for special folders
+export enum SpecialFolders {
+  All = 'all',
+  Unclassified = 'unclassified',
+  Discover = 'discover',
+}
+
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const { toast } = useToast();
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
   const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
-  const [currentFolder, setCurrentFolder] = useState<string | undefined>(
-    undefined,
+  const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
+    SpecialFolders.All,
   );
 
   useEffect(() => {
-    const specialFolders = searchParams.get('specialFolders');
-    const folder = searchParams.get('folder');
-    const addFolder = searchParams.get('addFolder');
+    loadAllWorlds();
+  }, []);
 
-    if (addFolder === 'true') {
-      console.log('Showing create folder dialog');
-      setShowCreateFolder(true);
-    } else if (specialFolders === 'all') {
-      console.log('Loading all worlds');
-      loadAllWorlds();
-    } else if (specialFolders === 'unclassified') {
-      console.log('Loading unclassified worlds');
-      loadUnclassifiedWorlds();
-    } else if (folder) {
-      console.log('Loading folder:', folder);
-      loadFolderContents(decodeURIComponent(folder));
-    } else {
-      initialize_listview();
-    }
-  }, [searchParams]);
+  const handleAddFolder = () => {
+    setShowCreateFolder(true);
+  };
 
-  const initialize_listview = async () => {
+  const handleSelectFolder = async (
+    type:
+      | SpecialFolders.All
+      | SpecialFolders.Discover
+      | SpecialFolders.Unclassified
+      | 'folder',
+    folderName?: string,
+  ) => {
     try {
-      console.log('Initializing listview');
-      await invoke<String[]>('get_folders');
-      loadFolders();
-      const cardSize = await invoke<CardSize>('get_card_size');
-      setCardSize(cardSize);
-      router.push(`/listview?specialFolders=all`);
+      switch (type) {
+        case SpecialFolders.All:
+          await loadAllWorlds();
+          break;
+        case SpecialFolders.Discover:
+          // Handle discover folder if needed
+          break;
+        case SpecialFolders.Unclassified:
+          await loadUnclassifiedWorlds();
+          break;
+        case 'folder':
+          if (folderName) {
+            await loadFolderContents(folderName);
+          }
+          break;
+      }
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to load folders',
+        description: 'Failed to load worlds',
+        duration: 3000,
       });
     }
   };
@@ -69,7 +76,7 @@ export default function ListView() {
     try {
       const worlds = await invoke<WorldDisplayData[]>('get_all_worlds');
       setWorlds(worlds);
-      setCurrentFolder('All Worlds');
+      setCurrentFolder(SpecialFolders.All);
     } catch (error) {
       toast({
         title: 'Error',
@@ -83,7 +90,7 @@ export default function ListView() {
         'get_unclassified_worlds',
       );
       setWorlds(worlds);
-      setCurrentFolder('Unclassified');
+      setCurrentFolder(SpecialFolders.Unclassified);
     } catch (error) {
       toast({
         title: 'Error',
@@ -103,8 +110,8 @@ export default function ListView() {
         setShowCreateFolder(false),
       ]);
 
-      // Single navigation after all states are updated
-      router.push(`/listview?folder=${encodeURIComponent(newName)}`);
+      // Navigate to the new folder
+      await loadFolderContents(newName);
     } catch (error) {
       console.error('Failed to create folder:', error);
       toast({
@@ -146,17 +153,12 @@ export default function ListView() {
       return;
     }
 
-    // Then reload the current view by re-using the current URL parameters
-    const specialFolders = searchParams.get('specialFolders');
-    const folder = searchParams.get('folder');
-
-    // Re-fetch the data based on current view instead of using router.refresh()
-    if (specialFolders === 'all') {
+    if (currentFolder === SpecialFolders.All) {
       await loadAllWorlds();
-    } else if (specialFolders === 'unclassified') {
+    } else if (currentFolder === SpecialFolders.Unclassified) {
       await loadUnclassifiedWorlds();
-    } else if (folder) {
-      await loadFolderContents(decodeURIComponent(folder));
+    } else if (currentFolder) {
+      await loadFolderContents(currentFolder);
     }
   };
 
@@ -165,10 +167,10 @@ export default function ListView() {
       console.log('Refreshing current view');
       console.log('Current folder:', currentFolder);
       switch (currentFolder) {
-        case 'All Worlds':
+        case SpecialFolders.All:
           await loadAllWorlds();
           break;
-        case 'Unclassified':
+        case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
           break;
         default:
@@ -187,7 +189,13 @@ export default function ListView() {
 
   return (
     <div className="flex h-screen">
-      <AppSidebar folders={folders} onFoldersChange={loadFolders} />
+      <AppSidebar
+        folders={folders}
+        onFoldersChange={loadFolders}
+        onAddFolder={handleAddFolder}
+        onSelectFolder={handleSelectFolder}
+        selectedFolder={currentFolder}
+      />
       <div className="flex-1 flex flex-col">
         <div className="p-4 flex justify-between items-center">
           <h1 className="text-xl font-bold">{currentFolder}</h1>
@@ -213,7 +221,6 @@ export default function ListView() {
         open={showCreateFolder}
         onOpenChange={(open) => {
           if (!open) {
-            const params = new URLSearchParams(searchParams);
             setShowCreateFolder(false);
           }
         }}
