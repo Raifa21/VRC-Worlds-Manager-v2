@@ -178,63 +178,70 @@ export function WorldGrid({
   };
 
   return (
-    <div ref={containerRef} className="space-y-4 p-4">
-      {folderName && <h1 className="text-2xl font-semibold">{folderName}</h1>}
-      <div className="flex items-center gap-4">
-        <Input
-          type="search"
-          placeholder="Search worlds..."
-          className="max-w-sm"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <div className="flex items-center gap-2">
-          <Select
-            value={sortField}
-            onValueChange={(value) => handleSort(value as SortField)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sort by..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="authorName">Author</SelectItem>
-              <SelectItem value="favorites">Favorites</SelectItem>
-              <SelectItem value="dateAdded">Date Added</SelectItem>
-              <SelectItem value="lastUpdated">Last Updated</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() =>
-              setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-            }
-            className="h-10 w-10"
-          >
-            {sortDirection === 'asc' ? (
-              <SortAsc className="h-4 w-4" />
-            ) : (
-              <SortDesc className="h-4 w-4" />
-            )}
-          </Button>
+    <div ref={containerRef} className="h-full flex flex-col">
+      <div className="sticky top-0 z-10 bg-background">
+        <div className="p-4 flex items-center gap-4">
+          <Input
+            type="search"
+            placeholder="Search worlds..."
+            className="w-[calc(80vw-380px)]"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <div className="flex items-center gap-2">
+            <Select
+              value={sortField}
+              onValueChange={(value) => handleSort(value as SortField)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="authorName">Author</SelectItem>
+                <SelectItem value="favorites">Favorites</SelectItem>
+                <SelectItem value="dateAdded">Date Added</SelectItem>
+                <SelectItem value="lastUpdated">Last Updated</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+              }
+              className="h-10 w-10"
+            >
+              {sortDirection === 'asc' ? (
+                <SortAsc className="h-4 w-4" />
+              ) : (
+                <SortDesc className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
-      <div
-        className="grid gap-4"
-        style={{
-          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        }}
-      >
-        {sortedAndFilteredWorlds.map((world) => (
+
+      <div className="flex-1 overflow-auto">
+        <div className="p-4">
           <div
-            key={world.worldId}
-            onClick={() => openDetailedView(world.worldId)}
+            className="grid gap-4"
+            style={{
+              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            }}
           >
-            <WorldCardPreview size={size} world={world} />
+            {sortedAndFilteredWorlds.map((world) => (
+              <div
+                key={world.worldId}
+                onClick={() => openDetailedView(world.worldId)}
+              >
+                <WorldCardPreview size={size} world={world} />
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
+
       <WorldDetailPopup
         open={showWorld}
         onOpenChange={(open) => {
