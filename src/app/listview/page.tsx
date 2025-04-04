@@ -15,9 +15,9 @@ import { commands } from '@/lib/bindings';
 
 // enum for special folders
 export enum SpecialFolders {
-  All = 'all',
-  Unclassified = 'unclassified',
-  Discover = 'discover',
+  All = 'All Worlds',
+  Unclassified = 'Unclassified Worlds',
+  Discover = 'Discover Worlds',
 }
 
 export default function ListView() {

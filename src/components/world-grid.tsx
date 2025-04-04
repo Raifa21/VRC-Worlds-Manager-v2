@@ -225,7 +225,7 @@ export function WorldGrid({
       <div className="flex-1 overflow-auto">
         <div className="p-4">
           <div
-            className="grid gap-4"
+            className="grid gap-4 justify-items-center"
             style={{
               gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
             }}
