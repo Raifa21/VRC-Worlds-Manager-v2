@@ -4,6 +4,7 @@ import Gear from '@/../public/icons/Gear.svg';
 import Logout from '@/../public/icons/Logout.svg';
 import Saturn from '@/../public/icons/Saturn.svg';
 import { Info, FileQuestion, History, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { SpecialFolders } from '@/app/listview/page';
 import Image from 'next/image';
 
@@ -50,6 +51,7 @@ export function AppSidebar({
   onSelectFolder,
   selectedFolder,
 }: AppSidebarProps) {
+  const router = useRouter();
   return (
     <aside className={sidebarStyles.container}>
       <header className={sidebarStyles.header}>
@@ -66,9 +68,9 @@ export function AppSidebar({
             <Image src={Saturn} alt="Saturn" width={18} height={18} />
             <span className="text-sm font-medium">All Worlds</span>
           </div>
-          </SidebarGroup>
-          <Separator className="my-2" />
-          <SidebarGroup>
+        </SidebarGroup>
+        <Separator className="my-2" />
+        <SidebarGroup>
           <div
             className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
             onClick={() => onSelectFolder(SpecialFolders.Discover)}
@@ -83,9 +85,9 @@ export function AppSidebar({
             <FileQuestion className="h-5 w-5" />
             <span className="text-sm font-medium">Unclassified Worlds</span>
           </div>
-          </SidebarGroup>
-          <Separator className="my-2" />
-          <SidebarGroup>
+        </SidebarGroup>
+        <Separator className="my-2" />
+        <SidebarGroup>
           <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
             <span className="text-sm font-medium">Folders</span>
           </div>
@@ -117,25 +119,22 @@ export function AppSidebar({
       <footer className={sidebarStyles.footer}>
         <SidebarGroup>
           <div
-              className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-              onClick={() => onSelectFolder(SpecialFolders.Discover)}
-            >
+            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
+            onClick={() => router.push('/about')}
+          >
             <Info className="h-5 w-5" />
             <span>About</span>
           </div>
           <div
             className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => onSelectFolder(SpecialFolders.Discover)}
+            onClick={() => router.push('/settings')}
           >
             <div className="h-5 w-5 flex items-center justify-center">
               <Image src={Gear} alt="Settings" width={18} height={18} />
             </div>
             <span>Settings</span>
           </div>
-          <div
-            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => onSelectFolder(SpecialFolders.Discover)}
-          >
+          <div className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3">
             <div className="h-5 w-5 flex items-center justify-center">
               <Image src={Logout} alt="Logout" width={18} height={18} />
             </div>
