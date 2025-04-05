@@ -97,13 +97,17 @@ impl FileService {
 
         println!("Reading files");
         let preferences = Self::read_file(&config_path)?;
-        println!("Preferences: {:?}", preferences);
-        let folders = Self::read_file(&folders_path)?;
-        println!("Folders: {:?}", folders);
-        let worlds = Self::read_file(&worlds_path)?;
-        println!("Worlds: {:?}", worlds);
+        let folders: Vec<FolderModel> = Self::read_file(&folders_path)?;
+        let mut worlds: Vec<WorldModel> = Self::read_file(&worlds_path)?;
         let cookies = Self::read_file(&cookies_path)?;
-        println!("Cookies: {:?}", cookies);
+
+        for world in worlds.iter_mut() {
+            world.user_data.folders = folders
+                .iter()
+                .filter(|folder| folder.world_ids.contains(&world.api_data.world_id))
+                .map(|folder| folder.folder_name.clone())
+                .collect();
+        }
 
         Ok((preferences, folders, worlds, cookies))
     }
@@ -160,7 +164,18 @@ impl FileService {
         let (_, _, worlds_path, _) = Self::get_paths();
         println!("worlds_path: {:?}", worlds_path);
         debug!("worlds_path: {:?}", worlds_path);
-        let data = serde_json::to_string_pretty(worlds).map_err(|_| FileError::InvalidFile)?;
+
+        let worlds_to_write: Vec<WorldModel> = worlds
+            .iter()
+            .map(|world| {
+                let mut world = world.clone();
+                world.user_data.folders.clear();
+                world
+            })
+            .collect();
+
+        let data =
+            serde_json::to_string_pretty(&worlds_to_write).map_err(|_| FileError::InvalidFile)?;
         fs::write(worlds_path, data).map_err(|_| FileError::FileWriteError)
     }
 

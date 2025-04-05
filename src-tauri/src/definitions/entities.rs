@@ -165,6 +165,7 @@ pub struct WorldUserData {
     #[serde(rename = "lastChecked")]
     pub last_checked: DateTime<Utc>,
     pub memo: String,
+    #[serde(skip_serializing)]
     pub folders: Vec<String>,
     pub hidden: bool,
 }
