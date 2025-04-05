@@ -192,7 +192,7 @@ const WelcomePage: React.FC = () => {
         await commands.createEmptyFiles();
       }
 
-      router.push('/login');
+      router.push('/');
     }
     setPage(page + 1);
   };
