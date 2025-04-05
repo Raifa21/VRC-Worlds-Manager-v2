@@ -3,13 +3,14 @@ use crate::errors::{AppError, ConcurrencyError, EntityError};
 use std::collections::HashSet;
 use std::sync::RwLock;
 
+use super::FileService;
+
 /// Service for managing world/folder operations
 #[derive(Debug)]
 pub struct FolderManager;
 
 impl FolderManager {
     /// Adds a world to a folder
-    /// Updates existing world data if the world is already in the folder
     ///
     /// # Arguments
     /// * `folder_name` - The name of the folder
@@ -55,6 +56,8 @@ impl FolderManager {
             folder.world_ids.push(world_id.clone());
             world.user_data.folders.push(folder_name.clone());
         }
+        FileService::write_folders(&*folders_lock)?;
+        FileService::write_worlds(&*worlds_lock)?;
         Ok(())
     }
 
@@ -116,7 +119,34 @@ impl FolderManager {
         } else {
             return Err(EntityError::FolderNotFound(folder.folder_name.clone()).into());
         }
+        FileService::write_folders(&*folders_lock)?;
+        FileService::write_worlds(&*worlds_lock)?;
+        Ok(())
+    }
 
+    /// Hide a world
+    /// This is done by setting the hidden flag to true
+    /// # Arguments
+    /// * `world_id` - The ID of the world to hide
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// Ok if the world was hidden successfully
+    ///
+    /// # Errors
+    /// Returns an error if the world is not found
+    /// Returns an error if the worlds lock is poisoned
+    pub fn hide_world(world_id: String, worlds: &RwLock<Vec<WorldModel>>) -> Result<(), AppError> {
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let world = worlds_lock
+            .iter_mut()
+            .find(|w| w.api_data.world_id == world_id);
+        if world.is_none() {
+            return Err(EntityError::WorldNotFound(world_id).into());
+        }
+        let world = world.unwrap();
+        world.user_data.hidden = true;
+        FileService::write_worlds(&*worlds_lock)?;
         Ok(())
     }
 
@@ -208,6 +238,7 @@ impl FolderManager {
 
         let new_folder = FolderModel::new(new_name);
         folders_lock.push(new_folder.clone());
+        FileService::write_folders(&*folders_lock)?;
         Ok(new_folder.folder_name)
     }
 
@@ -239,6 +270,7 @@ impl FolderManager {
             Some(index) => {
                 let world_ids = folders_lock[index].world_ids.clone();
                 folders_lock.remove(index);
+                FileService::write_folders(&*folders_lock)?;
                 drop(folders_lock);
                 for world_id in world_ids {
                     FolderManager::remove_world_from_folder(
@@ -252,6 +284,39 @@ impl FolderManager {
             }
             None => Err(EntityError::FolderNotFound(name).into()),
         }
+    }
+
+    /// Move a folder to a new position in the list
+    ///
+    /// # Arguments
+    /// * `folder_name` - The name of the folder to move
+    /// * `new_index` - The new index for the folder
+    /// * `folders` - The list of folders, as a RwLock
+    ///
+    /// # Returns
+    /// Ok if the folder was moved successfully
+    ///
+    /// # Errors
+    /// Returns an error if the folder is not found
+    pub fn move_folder(
+        folder_name: String,
+        new_index: usize,
+        folders: &RwLock<Vec<FolderModel>>,
+    ) -> Result<(), AppError> {
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+
+        let current_index = folders_lock
+            .iter()
+            .position(|f| f.folder_name == folder_name)
+            .ok_or_else(|| EntityError::FolderNotFound(folder_name))?;
+        // Remove from current position and insert at new position
+        let folder = folders_lock.remove(current_index);
+        folders_lock.insert(new_index, folder);
+
+        FileService::write_folders(&*folders_lock)?;
+        Ok(())
     }
 
     /// Get a world by its ID
@@ -340,7 +405,7 @@ impl FolderManager {
 
     /// Get all worlds that are Unclassified
     /// Check all worlds, and return those that are not in any folder
-    /// This is done by checking if the world's folders list is empty
+    /// This is done by checking if the world's folders list is empty, and the hidden flag is false
     ///
     /// # Arguments
     /// * `worlds` - The list of worlds, as a RwLock
@@ -357,17 +422,42 @@ impl FolderManager {
         let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
         let unclassified_worlds = worlds_lock
             .iter()
-            .filter(|w| w.user_data.folders.is_empty())
+            .filter(|w| w.user_data.folders.is_empty() && w.user_data.hidden == false)
             .cloned()
             .map(|w| w.to_display_data())
             .collect();
         Ok(unclassified_worlds)
     }
+    /// Get all worlds that are Hidden
+    /// Check all worlds, and return those that are in any folder
+    /// This is done by checking if the world's folders list is empty, and the hidden flag is true
+    ///
+    /// # Arguments
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// A vector of world models
+    ///
+    /// # Errors
+    /// Returns an error if the worlds lock is poisoned
+    #[must_use]
+    pub fn get_hidden_worlds(
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<Vec<WorldDisplayData>, AppError> {
+        let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let hidden_worlds = worlds_lock
+            .iter()
+            .filter(|w| w.user_data.hidden == true)
+            .cloned()
+            .map(|w| w.to_display_data())
+            .collect();
+        Ok(hidden_worlds)
+    }
 
     /// Adds worlds to data
     /// This is called when the api returns a list of worlds
     /// We check if the world is already in the list
-    /// If it is, we update the world data
+    /// If it is, we update the world data and set the last checked time
     /// If it is not, we add the world to the list
     ///
     /// # Arguments
@@ -400,6 +490,7 @@ impl FolderManager {
                 }
             }
         }
+        FileService::write_worlds(&*worlds_lock)?;
         Ok(())
     }
 }
@@ -617,5 +708,29 @@ mod tests {
             eprintln!("Error getting unclassified worlds: {}", e);
         }
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_folder() {
+        let state = setup_test_state();
+
+        // Create test folders
+        let folder1 = FolderManager::create_folder("Folder 1".to_string(), &state.folders).unwrap();
+        let folder2 = FolderManager::create_folder("Folder 2".to_string(), &state.folders).unwrap();
+        let folder3 = FolderManager::create_folder("Folder 3".to_string(), &state.folders).unwrap();
+
+        // Test moving folder to new position
+        let result = FolderManager::move_folder(folder2.clone(), 0, &state.folders);
+        assert!(result.is_ok());
+
+        // Verify new order
+        let folders = FolderManager::get_folders(&state.folders).unwrap();
+        assert_eq!(folders[0], folder2);
+        assert_eq!(folders[1], folder1);
+        assert_eq!(folders[2], folder3);
+
+        // Test moving non-existent folder
+        let result = FolderManager::move_folder("NonExistent".to_string(), 0, &state.folders);
+        assert!(result.is_err());
     }
 }

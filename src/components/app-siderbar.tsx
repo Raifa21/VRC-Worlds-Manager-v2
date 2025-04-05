@@ -1,12 +1,14 @@
 'use client';
 
 import Gear from '@/../public/icons/Gear.svg';
-import Logout from '@/../public/icons/Logout.svg';
 import Saturn from '@/../public/icons/Saturn.svg';
 import { Info, FileQuestion, History, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SpecialFolders } from '@/app/listview/page';
 import Image from 'next/image';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { commands } from '@/lib/bindings';
+import { useState, useEffect } from 'react';
 
 import { Separator } from '@/components/ui/separator';
 
@@ -18,7 +20,6 @@ import {
   SidebarFooter,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { on } from 'events';
 
 const sidebarStyles = {
   container:
@@ -57,6 +58,35 @@ export function AppSidebar({
   onSelectSettings,
 }: AppSidebarProps) {
   const router = useRouter();
+  const [localFolders, setLocalFolders] = useState<string[]>(folders);
+
+  // Update local folders when prop changes
+  useEffect(() => {
+    setLocalFolders(folders);
+  }, [folders]);
+
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination) return;
+
+    const { source, destination } = result;
+    const newFolders = Array.from(localFolders);
+    const [movedFolder] = newFolders.splice(source.index, 1);
+    newFolders.splice(destination.index, 0, movedFolder);
+
+    // Update local state immediately
+    setLocalFolders(newFolders);
+
+    try {
+      await commands.moveFolder(movedFolder, destination.index);
+      // Only refresh if needed (in case of error or sync issues)
+      await onFoldersChange();
+    } catch (error) {
+      // Revert on error
+      setLocalFolders(folders);
+      console.error('Failed to reorder folders:', error);
+    }
+  };
+
   return (
     <aside className={sidebarStyles.container}>
       <header className={sidebarStyles.header}>
@@ -67,7 +97,7 @@ export function AppSidebar({
       <nav className={sidebarStyles.nav}>
         <SidebarGroup>
           <div
-            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
+            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
             onClick={() => onSelectFolder(SpecialFolders.All)}
           >
             <Image src={Saturn} alt="Saturn" width={18} height={18} />
@@ -77,14 +107,14 @@ export function AppSidebar({
         <Separator className="my-2" />
         <SidebarGroup>
           <div
-            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
+            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
             onClick={() => onSelectFolder(SpecialFolders.Discover)}
           >
             <History className="h-5 w-5" />
             <span className="text-sm font-medium">Recently Visited</span>
           </div>
           <div
-            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
+            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
             onClick={() => onSelectFolder(SpecialFolders.Unclassified)}
           >
             <FileQuestion className="h-5 w-5" />
@@ -96,20 +126,37 @@ export function AppSidebar({
           <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
             <span className="text-sm font-medium">Folders</span>
           </div>
-          <div className="h-[calc(100vh-417px)] overflow-y-auto pl-8">
-            {folders.map((folder, index) => (
-              <div
-                key={index}
-                className="w-[193px] px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap"
-                onClick={() => onSelectFolder('folder', folder)}
-              >
-                {folder}
-              </div>
-            ))}
-          </div>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="folders">
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="h-[calc(100vh-417px)] overflow-y-auto pl-8"
+                >
+                  {localFolders.map((folder, index) => (
+                    <Draggable key={folder} draggableId={folder} index={index}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className="w-[193px] px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap"
+                          onClick={() => onSelectFolder('folder', folder)}
+                        >
+                          {folder}
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
           <Separator className="my-2" />
           <div
-            className={`${sidebarStyles.link}`}
+            className={`${sidebarStyles.link} cursor-pointer`}
             onClick={() => {
               onAddFolder();
             }}
@@ -123,14 +170,14 @@ export function AppSidebar({
       <footer className={sidebarStyles.footer}>
         <SidebarGroup>
           <div
-            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
+            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
             onClick={() => onSelectAbout()}
           >
             <Info className="h-5 w-5" />
             <span>About</span>
           </div>
           <div
-            className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
+            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
             onClick={() => router.push('/settings')}
           >
             <div className="h-5 w-5 flex items-center justify-center">

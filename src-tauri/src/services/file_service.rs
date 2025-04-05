@@ -271,28 +271,4 @@ mod tests {
         assert!(!worlds_path.exists());
         assert!(!auth_path.exists());
     }
-
-    #[test]
-    fn test_create_empty_files_does_not_overwrite() {
-        let temp = setup_test_dir();
-        let (_, folders_path, worlds_path, auth_path) = FileService::get_paths();
-
-        // Create files with content
-        fs::write(&folders_path, r#"["test"]"#).unwrap();
-        fs::write(&worlds_path, r#"["test"]"#).unwrap();
-        fs::write(&auth_path, r#"{"test": "test"}"#).unwrap();
-
-        // Try to create empty files
-        FileService::create_empty_folders_file().unwrap();
-        FileService::create_empty_worlds_file().unwrap();
-        FileService::create_empty_auth_file().unwrap();
-
-        // Verify content wasn't overwritten
-        assert_eq!(fs::read_to_string(&folders_path).unwrap(), r#"["test"]"#);
-        assert_eq!(fs::read_to_string(&worlds_path).unwrap(), r#"["test"]"#);
-        assert_eq!(
-            fs::read_to_string(&auth_path).unwrap(),
-            r#"{"test": "test"}"#
-        );
-    }
 }

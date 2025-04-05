@@ -7,14 +7,17 @@ use tauri_specta::{collect_commands, Builder};
 
 pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
+        folder_commands::add_world_to_folder,
+        folder_commands::remove_world_from_folder,
+        folder_commands::hide_world,
         folder_commands::get_folders,
         folder_commands::create_folder,
         folder_commands::delete_folder,
-        folder_commands::add_world_to_folder,
-        folder_commands::remove_world_from_folder,
+        folder_commands::move_folder,
         folder_commands::get_worlds,
         folder_commands::get_all_worlds,
         folder_commands::get_unclassified_worlds,
+        folder_commands::get_hidden_worlds,
         preferences_commands::get_card_size,
         api_commands::try_login,
         api_commands::login_with_credentials,

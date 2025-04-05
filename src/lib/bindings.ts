@@ -5,36 +5,6 @@
 /** user-defined commands **/
 
 export const commands = {
-  async getFolders(): Promise<Result<string[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_folders') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async createFolder(name: string): Promise<Result<string, string>> {
-    try {
-      return {
-        status: 'ok',
-        data: await TAURI_INVOKE('create_folder', { name }),
-      };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async deleteFolder(name: string): Promise<Result<null, string>> {
-    try {
-      return {
-        status: 'ok',
-        data: await TAURI_INVOKE('delete_folder', { name }),
-      };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
   async addWorldToFolder(
     folderName: string,
     worldId: string,
@@ -69,6 +39,61 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async hideWorld(worldId: string): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('hide_world', { worldId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getFolders(): Promise<Result<string[], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_folders') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async createFolder(name: string): Promise<Result<string, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('create_folder', { name }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async deleteFolder(name: string): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('delete_folder', { name }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async moveFolder(
+    folderName: string,
+    newIndex: number,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('move_folder', { folderName, newIndex }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getWorlds(
     folderName: string,
   ): Promise<Result<WorldDisplayData[], string>> {
@@ -96,6 +121,14 @@ export const commands = {
         status: 'ok',
         data: await TAURI_INVOKE('get_unclassified_worlds'),
       };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getHiddenWorlds(): Promise<Result<WorldDisplayData[], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_hidden_worlds') };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: 'error', error: e as any };
