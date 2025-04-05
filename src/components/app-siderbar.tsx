@@ -18,6 +18,7 @@ import {
   SidebarFooter,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
+import { on } from 'events';
 
 const sidebarStyles = {
   container:
@@ -42,6 +43,8 @@ interface AppSidebarProps {
     folderName?: string,
   ) => Promise<void>;
   selectedFolder?: string;
+  onSelectAbout: () => void;
+  onSelectSettings: () => void;
 }
 
 export function AppSidebar({
@@ -50,6 +53,8 @@ export function AppSidebar({
   onAddFolder,
   onSelectFolder,
   selectedFolder,
+  onSelectAbout,
+  onSelectSettings,
 }: AppSidebarProps) {
   const router = useRouter();
   return (
@@ -91,7 +96,7 @@ export function AppSidebar({
           <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
             <span className="text-sm font-medium">Folders</span>
           </div>
-          <div className="h-[calc(100vh-453px)] overflow-y-auto pl-8">
+          <div className="h-[calc(100vh-417px)] overflow-y-auto pl-8">
             {folders.map((folder, index) => (
               <div
                 key={index}
@@ -106,7 +111,6 @@ export function AppSidebar({
           <div
             className={`${sidebarStyles.link}`}
             onClick={() => {
-              onFoldersChange();
               onAddFolder();
             }}
           >
@@ -120,7 +124,7 @@ export function AppSidebar({
         <SidebarGroup>
           <div
             className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => router.push('/about')}
+            onClick={() => onSelectAbout()}
           >
             <Info className="h-5 w-5" />
             <span>About</span>
@@ -133,12 +137,6 @@ export function AppSidebar({
               <Image src={Gear} alt="Settings" width={18} height={18} />
             </div>
             <span>Settings</span>
-          </div>
-          <div className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3">
-            <div className="h-5 w-5 flex items-center justify-center">
-              <Image src={Logout} alt="Logout" width={18} height={18} />
-            </div>
-            <span>Logout</span>
           </div>
         </SidebarGroup>
       </footer>
