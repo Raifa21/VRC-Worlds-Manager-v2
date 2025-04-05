@@ -232,6 +232,7 @@ export function WorldGrid({
           >
             {sortedAndFilteredWorlds.map((world) => (
               <div
+                className="cursor-pointer"
                 key={world.worldId}
                 onClick={() => openDetailedView(world.worldId)}
               >
