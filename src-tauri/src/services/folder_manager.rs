@@ -57,7 +57,6 @@ impl FolderManager {
             world.user_data.folders.push(folder_name.clone());
         }
         FileService::write_folders(&*folders_lock)?;
-        FileService::write_worlds(&*worlds_lock)?;
         Ok(())
     }
 
@@ -120,7 +119,6 @@ impl FolderManager {
             return Err(EntityError::FolderNotFound(folder.folder_name.clone()).into());
         }
         FileService::write_folders(&*folders_lock)?;
-        FileService::write_worlds(&*worlds_lock)?;
         Ok(())
     }
 
