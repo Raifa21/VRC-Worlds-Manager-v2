@@ -165,17 +165,7 @@ impl FileService {
         println!("worlds_path: {:?}", worlds_path);
         debug!("worlds_path: {:?}", worlds_path);
 
-        let worlds_to_write: Vec<WorldModel> = worlds
-            .iter()
-            .map(|world| {
-                let mut world = world.clone();
-                world.user_data.folders.clear();
-                world
-            })
-            .collect();
-
-        let data =
-            serde_json::to_string_pretty(&worlds_to_write).map_err(|_| FileError::InvalidFile)?;
+        let data = serde_json::to_string_pretty(&worlds).map_err(|_| FileError::InvalidFile)?;
         fs::write(worlds_path, data).map_err(|_| FileError::FileWriteError)
     }
 
