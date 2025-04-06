@@ -55,6 +55,7 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
         src={world.thumbnailUrl}
         alt={world.name}
         className="w-full h-2/3 object-cover rounded-t-lg"
+        draggable="false"
       />
 
       {size === CardSize.Compact && (
