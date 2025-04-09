@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use reqwest::cookie::Jar;
+use serde::Deserialize;
 
 use crate::api::common::{get_reqwest_client, API_BASE_URL};
 
@@ -82,6 +83,44 @@ pub async fn get_recently_visited_worlds<J: Into<Arc<Jar>>>(
     };
 
     Ok(worlds)
+}
+
+#[derive(Deserialize)]
+struct GetWorldByIdResponse {
+    world: VRChatWorld,
+}
+
+pub async fn get_world_by_id<J: Into<Arc<Jar>>, S: AsRef<str>>(
+    cookie: J,
+    id: S,
+) -> Result<VRChatWorld, String> {
+    let cookie_jar: Arc<Jar> = cookie.into();
+    let client = get_reqwest_client(&cookie_jar);
+
+    let result = client
+        .get(format!("{}/worlds/{}", API_BASE_URL, id.as_ref()))
+        .send()
+        .await
+        .expect("Failed to get world by ID");
+
+    let text = result.text().await;
+
+    if let Err(e) = text {
+        return Err(format!("Failed to get world by ID: {}", e.to_string()));
+    }
+
+    let text = text.unwrap();
+
+    let world: GetWorldByIdResponse = match serde_json::from_str(&text) {
+        Ok(world) => world,
+        Err(e) => {
+            println!("Failed to parse vrchat world: {}", e.to_string());
+            println!("Response: {}", text);
+            return Err(format!("Failed to parse vrchat world: {}", e.to_string()));
+        }
+    };
+
+    Ok(world.world)
 }
 
 pub async fn search_worlds<J: Into<Arc<Jar>>>(
