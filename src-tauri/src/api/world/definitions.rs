@@ -1,5 +1,5 @@
 use chrono::DateTime;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::definitions::WorldApiData;
 
@@ -186,6 +186,105 @@ pub struct VRChatWorld {
     pub unity_packages: Vec<UnityPackage>,
     #[serde(rename = "updated_at")]
     pub updated_at: String,
+}
+
+#[derive(Default, Debug, PartialEq, Serialize)]
+pub struct WorldSearchParameters {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sort: Option<SearchWorldSort>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub platform: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub search: Option<String>,
+}
+
+pub struct WorldSearchParametersBuilder {
+    pub sort: Option<SearchWorldSort>,
+    pub tag: Option<String>,
+    pub platform: Option<String>,
+    pub search: Option<String>,
+}
+
+impl WorldSearchParametersBuilder {
+    pub fn new() -> Self {
+        Self {
+            sort: None,
+            tag: None,
+            platform: None,
+            search: None,
+        }
+    }
+
+    pub fn sort(mut self, sort: SearchWorldSort) -> Self {
+        self.sort = Some(sort);
+        self
+    }
+
+    pub fn tag<S: AsRef<str>>(mut self, tag: S) -> Self {
+        self.tag = Some(tag.as_ref().to_string());
+        self
+    }
+
+    pub fn platform<S: AsRef<str>>(mut self, platform: S) -> Self {
+        self.platform = Some(platform.as_ref().to_string());
+        self
+    }
+
+    pub fn search<S: AsRef<str>>(mut self, search: S) -> Self {
+        self.search = Some(search.as_ref().to_string());
+        self
+    }
+
+    pub fn build(self) -> WorldSearchParameters {
+        WorldSearchParameters {
+            sort: self.sort,
+            tag: self.tag,
+            platform: self.platform,
+            search: self.search,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Serialize)]
+pub enum SearchWorldSort {
+    #[serde(rename = "popularity")]
+    Popularity,
+    #[serde(rename = "heat")]
+    Heat,
+    #[serde(rename = "trust")]
+    Trust,
+    #[serde(rename = "shuffle")]
+    Shuffle,
+    #[serde(rename = "random")]
+    Random,
+    #[serde(rename = "favorites")]
+    Favorites,
+    #[serde(rename = "reportScore")]
+    ReportScore,
+    #[serde(rename = "reportCount")]
+    ReportCount,
+    #[serde(rename = "publicationDate")]
+    PublicationDate,
+    #[serde(rename = "labsPublicationDate")]
+    LabsPublicationDate,
+    #[serde(rename = "created")]
+    Created,
+    #[serde(rename = "_created_at")]
+    CreatedAt,
+    #[serde(rename = "updated")]
+    Updated,
+    #[serde(rename = "_updated_at")]
+    UpdatedAt,
+    #[serde(rename = "order")]
+    Order,
+    #[serde(rename = "relevance")]
+    Relevance,
+    #[serde(rename = "magic")]
+    Magic,
+    #[serde(rename = "name")]
+    Name,
 }
 
 #[cfg(test)]
