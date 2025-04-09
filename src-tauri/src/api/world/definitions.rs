@@ -148,6 +148,46 @@ pub enum FavoriteWorldParser {
     HiddenWorld(HiddenWorld),
 }
 
+#[derive(Default, Debug, PartialEq, Deserialize)]
+pub struct VRChatWorld {
+    #[serde(rename = "authorId")]
+    pub author_id: String,
+    #[serde(rename = "authorName")]
+    pub author_name: String,
+    #[serde(rename = "capacity")]
+    pub capacity: i32,
+    #[serde(rename = "recommendedCapacity")]
+    pub recommended_capacity: Option<i32>,
+    #[serde(rename = "created_at")]
+    pub created_at: String,
+    #[serde(rename = "favorites")]
+    pub favorites: i32,
+    #[serde(rename = "visits")]
+    pub visits: Option<i32>,
+    #[serde(rename = "heat")]
+    pub heat: i32,
+    #[serde(rename = "id")]
+    pub id: String,
+    #[serde(rename = "imageUrl")]
+    pub image_url: String,
+    #[serde(rename = "name")]
+    pub name: String,
+    #[serde(rename = "popularity")]
+    pub popularity: i32,
+    #[serde(rename = "publicationDate")]
+    pub publication_date: String,
+    #[serde(rename = "releaseStatus")]
+    pub release_status: ReleaseStatus,
+    #[serde(rename = "tags")]
+    pub tags: Vec<String>,
+    #[serde(rename = "thumbnailImageUrl")]
+    pub thumbnail_image_url: String,
+    #[serde(rename = "unityPackages")]
+    pub unity_packages: Vec<UnityPackage>,
+    #[serde(rename = "updated_at")]
+    pub updated_at: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
