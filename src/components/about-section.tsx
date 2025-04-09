@@ -2,27 +2,51 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import patreonData from '@/data/patreons.json';
+import { useEffect, useState } from 'react';
 import { UserProfile } from '@/components/user-profile';
 import { ExternalLink, Heart } from 'lucide-react';
 import { SiGithub, SiDiscord } from '@icons-pack/react-simple-icons';
+import { useToast } from '@/hooks/use-toast';
 
 export function AboutSection() {
-  // Sort names within their tier groups
-  const platinumNames = patreonData.platinumSupporter.sort();
-  const goldNames = patreonData.goldSupporter.sort();
-  const silverNames = patreonData.silverSupporter.sort();
-  const bronzeNames = patreonData.bronzeSupporter.sort();
-  const basicNames = patreonData.basicSupporter.sort();
+  const [orderedSupporters, setOrderedSupporters] = useState<string[]>([]);
+  const { toast } = useToast();
 
-  // Combine in tier order
-  const orderedSupporters = [
-    ...platinumNames,
-    ...goldNames,
-    ...silverNames,
-    ...bronzeNames,
-    ...basicNames,
-  ];
+  useEffect(() => {
+    async function fetchPatreonData() {
+      try {
+        const response = await fetch(
+          'https://data.raifaworks.com/patreons.json',
+        );
+        const patreonData = await response.json();
+
+        // Sort names within their tier groups
+        const platinumNames = patreonData.platinumSupporter.sort();
+        const goldNames = patreonData.goldSupporter.sort();
+        const silverNames = patreonData.silverSupporter.sort();
+        const bronzeNames = patreonData.bronzeSupporter.sort();
+        const basicNames = patreonData.basicSupporter.sort();
+
+        // Combine in tier order
+        setOrderedSupporters([
+          ...platinumNames,
+          ...goldNames,
+          ...silverNames,
+          ...bronzeNames,
+          ...basicNames,
+        ]);
+      } catch (error) {
+        console.error('Failed to fetch patreon data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch Patreon data.',
+          variant: 'destructive',
+        });
+      }
+    }
+
+    fetchPatreonData();
+  }, []);
 
   return (
     <div className="container mx-auto relative pb-8">
@@ -41,13 +65,13 @@ export function AboutSection() {
                 <div className="space-x-4 flex flex-row">
                   <UserProfile
                     name="Raifa"
-                    iconUrl=""
+                    iconUrl="https://data.raifaworks.com/icons/raifa.jpg"
                     xUsername="raifa_trtr"
                     githubUsername="Raifa21"
                   />
                   <UserProfile
                     name="siloneco"
-                    iconUrl=""
+                    iconUrl="https://data.raifaworks.com/icons/siloneco.jpg"
                     xUsername="siloneco_vrc"
                     githubUsername="siloneco"
                   />
@@ -60,7 +84,7 @@ export function AboutSection() {
                 <div className="space-x-4 flex flex-row">
                   <UserProfile
                     name="じゃんくま"
-                    iconUrl=""
+                    iconUrl="https://data.raifaworks.com/icons/jan_kuma.jpg"
                     xUsername="Jan_kumaVRC"
                   />
                 </div>
