@@ -480,8 +480,7 @@ const WelcomePage: React.FC = () => {
                       world={{
                         worldId: '1',
                         name: 'World',
-                        thumbnailUrl:
-                          'https://api.vrchat.cloud/api/1/file/file_16e99205-34d4-42f7-8935-657d2b25ce44/5/file',
+                        thumbnailUrl: 'public/icons/1.png',
                         authorName: 'Author',
                         lastUpdated: '2025-01-01',
                         visits: 59,
