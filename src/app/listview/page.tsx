@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
-import { HideWorldDialog } from '@/components/hide-world-dialog';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
 
 // enum for special folders
@@ -29,11 +28,6 @@ export default function ListView() {
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showHideWorld, setShowHideWorld] = useState(false);
-  const [selectedWorldId, setSelectedWorldId] = useState<string[] | null>(null);
-  const [selectedWorldName, setSelectedWorldName] = useState<string[] | null>(
-    null,
-  );
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
   const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
@@ -199,12 +193,6 @@ export default function ListView() {
     }
   };
 
-  const showHideWorldPopup = async (worldId: string[], worldName: string[]) => {
-    setSelectedWorldId(worldId);
-    setSelectedWorldName(worldName);
-    setShowHideWorld(true);
-  };
-
   const handleHideWorld = async (worldId: string[], worldName: string[]) => {
     try {
       for (const id of worldId) {
@@ -359,7 +347,7 @@ export default function ListView() {
             folderName={currentFolder}
             onWorldChange={refreshCurrentView}
             onRemoveFromFolder={removeWorldsFromFolder}
-            onHideWorld={showHideWorldPopup}
+            onHideWorld={handleHideWorld}
             onOpenWorldDetails={handleOpenWorldDetails}
           />
         </div>
@@ -398,26 +386,6 @@ export default function ListView() {
           }
         }}
         worldId={selectedWorldForDetails ? selectedWorldForDetails : ''}
-      />
-      <HideWorldDialog
-        open={showHideWorld}
-        onOpenChange={(open) => {
-          setShowHideWorld(open);
-          if (!open) {
-            setSelectedWorldId(null);
-            setSelectedWorldName(null);
-          }
-        }}
-        onConfirm={async () => {
-          if (selectedWorldId && selectedWorldName) {
-            await handleHideWorld(selectedWorldId, selectedWorldName);
-            setShowHideWorld(false);
-            setSelectedWorldId(null);
-            setSelectedWorldName(null);
-          }
-        }}
-        worldName={selectedWorldName}
-        worldId={selectedWorldId}
       />
     </div>
   );

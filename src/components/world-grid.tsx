@@ -17,8 +17,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SortAsc, SortDesc } from 'lucide-react';
+import { SortAsc, SortDesc, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogCancel,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import * as Portal from '@radix-ui/react-portal';
 
 interface WorldGridProps {
   size: CardSize;
@@ -78,6 +89,11 @@ export function WorldGrid({
   } | null>(null);
   const [showHideDialog, setShowHideDialog] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [dialogAction, setDialogAction] = useState<{
+    type: 'remove' | 'hide';
+    worldId: string;
+    worldName?: string;
+  } | null>(null);
 
   const calculateCols = () => {
     const cardWidth = cardWidths[size];
@@ -254,10 +270,7 @@ export function WorldGrid({
             }}
           >
             {sortedAndFilteredWorlds.map((world) => (
-              <ContextMenu
-                key={world.worldId}
-                onOpenChange={setContextMenuOpen}
-              >
+              <ContextMenu key={world.worldId}>
                 <ContextMenuTrigger asChild>
                   <div className="w-fit h-fit">
                     <div
@@ -268,39 +281,34 @@ export function WorldGrid({
                     </div>
                   </div>
                 </ContextMenuTrigger>
-                <ContextMenuContent
-                  onInteractOutside={() => setContextMenuOpen(false)}
-                  onEscapeKeyDown={() => {
-                    setContextMenuOpen(false);
-                    setShowWorld(false);
-                  }}
-                >
-                  <ContextMenuItem
-                    onSelect={() => {
-                      setContextMenuOpen(false);
-                      onOpenWorldDetails(world.worldId);
-                    }}
-                  >
-                    View Details
-                  </ContextMenuItem>
+                <ContextMenuContent>
                   {!isSpecialFolder && (
                     <ContextMenuItem
-                      onSelect={() => {
-                        setContextMenuOpen(false);
-                        onRemoveFromFolder([world.worldId]);
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setDialogAction({
+                          type: 'remove',
+                          worldId: world.worldId,
+                        });
                       }}
+                      className="text-destructive"
                     >
                       Remove from Folder
                     </ContextMenuItem>
                   )}
+
                   <ContextMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
-                      setContextMenuOpen(false);
-                      setSelectedWorld({ id: world.worldId, name: world.name });
-                      setShowHideDialog(true);
+                      setDialogAction({
+                        type: 'hide',
+                        worldId: world.worldId,
+                        worldName: world.name,
+                      });
                     }}
+                    className="text-destructive"
                   >
+                    <EyeOff className="mr-2 h-4 w-4" />
                     Hide World
                   </ContextMenuItem>
                 </ContextMenuContent>
@@ -309,6 +317,76 @@ export function WorldGrid({
           </div>
         </div>
       </div>
+
+      {/* Portaled AlertDialogs */}
+      <Portal.Root>
+        <AlertDialog
+          open={dialogAction?.type === 'remove'}
+          onOpenChange={(open) => !open && setDialogAction(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove from Folder</AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>This will remove this world from the current folder.</p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDialogAction(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (dialogAction?.worldId) {
+                    onRemoveFromFolder([dialogAction.worldId]);
+                  }
+                  setDialogAction(null);
+                }}
+              >
+                Remove
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+          open={dialogAction?.type === 'hide'}
+          onOpenChange={(open) => !open && setDialogAction(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hide World</AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>This hides this world from all folders.</p>
+                <p className="text-muted-foreground">
+                  You can find the world in the "Hidden Folder" in settings to
+                  revert.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDialogAction(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (dialogAction?.worldId && dialogAction?.worldName) {
+                    onHideWorld(
+                      [dialogAction.worldId],
+                      [dialogAction.worldName],
+                    );
+                  }
+                  setDialogAction(null);
+                }}
+              >
+                Hide World
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </Portal.Root>
     </div>
   );
 }
