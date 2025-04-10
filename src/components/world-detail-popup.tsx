@@ -19,7 +19,7 @@ import QQ from '@/../public/icons/VennColorQQ.svg';
 interface WorldDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  worldId: String;
+  worldId: string;
 }
 
 export enum Platform {

@@ -1,8 +1,15 @@
 import { WorldCardPreview, WorldDisplayData, Platform } from './world-card';
 import { CardSize } from '@/app/setup/page';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { toRomaji } from 'wanakana';
+import { SpecialFolders } from '@/app/listview/page';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import {
   Select,
   SelectContent,
@@ -12,13 +19,15 @@ import {
 } from '@/components/ui/select';
 import { SortAsc, SortDesc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { WorldDetailPopup } from './world-detail-popup';
 
 interface WorldGridProps {
   size: CardSize;
   worlds: WorldDisplayData[];
-  folderName?: string;
-  onWorldChange?: () => Promise<void>;
+  folderName: string | SpecialFolders;
+  onWorldChange: () => Promise<void>;
+  onRemoveFromFolder: (worldId: string[]) => void;
+  onHideWorld: (worldId: string[], worldName: string[]) => void;
+  onOpenWorldDetails: (worldId: string) => void;
 }
 
 type SortOption =
@@ -45,6 +54,9 @@ export function WorldGrid({
   worlds,
   folderName,
   onWorldChange,
+  onRemoveFromFolder,
+  onHideWorld,
+  onOpenWorldDetails,
 }: WorldGridProps) {
   const cardWidths = {
     [CardSize.Compact]: 192, // w-48 = 12rem = 192px
@@ -59,6 +71,12 @@ export function WorldGrid({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [selectedWorld, setSelectedWorld] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [showHideDialog, setShowHideDialog] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const calculateCols = () => {
@@ -177,6 +195,11 @@ export function WorldGrid({
     setShowWorld(true);
   };
 
+  // Check if current folder is a special folder
+  const isSpecialFolder = useMemo(() => {
+    return Object.values(SpecialFolders).includes(folderName as SpecialFolders);
+  }, [folderName]);
+
   return (
     <div ref={containerRef} className="h-full flex flex-col">
       <div className="sticky top-0 z-10 bg-background">
@@ -231,30 +254,61 @@ export function WorldGrid({
             }}
           >
             {sortedAndFilteredWorlds.map((world) => (
-              <div
-                className="cursor-pointer"
+              <ContextMenu
                 key={world.worldId}
-                onClick={() => openDetailedView(world.worldId)}
+                onOpenChange={setContextMenuOpen}
               >
-                <WorldCardPreview size={size} world={world} />
-              </div>
+                <ContextMenuTrigger asChild>
+                  <div className="w-fit h-fit">
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => onOpenWorldDetails(world.worldId)}
+                    >
+                      <WorldCardPreview size={size} world={world} />
+                    </div>
+                  </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent
+                  onInteractOutside={() => setContextMenuOpen(false)}
+                  onEscapeKeyDown={() => {
+                    setContextMenuOpen(false);
+                    setShowWorld(false);
+                  }}
+                >
+                  <ContextMenuItem
+                    onSelect={() => {
+                      setContextMenuOpen(false);
+                      onOpenWorldDetails(world.worldId);
+                    }}
+                  >
+                    View Details
+                  </ContextMenuItem>
+                  {!isSpecialFolder && (
+                    <ContextMenuItem
+                      onSelect={() => {
+                        setContextMenuOpen(false);
+                        onRemoveFromFolder([world.worldId]);
+                      }}
+                    >
+                      Remove from Folder
+                    </ContextMenuItem>
+                  )}
+                  <ContextMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setContextMenuOpen(false);
+                      setSelectedWorld({ id: world.worldId, name: world.name });
+                      setShowHideDialog(true);
+                    }}
+                  >
+                    Hide World
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             ))}
           </div>
         </div>
       </div>
-
-      <WorldDetailPopup
-        open={showWorld}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowWorld(false);
-            if (onWorldChange) {
-              onWorldChange();
-            }
-          }
-        }}
-        worldId={worldId}
-      />
     </div>
   );
 }

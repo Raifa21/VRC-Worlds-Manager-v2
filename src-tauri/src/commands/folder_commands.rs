@@ -34,10 +34,22 @@ pub async fn remove_world_from_folder(folder_name: String, world_id: String) -> 
 #[tauri::command]
 #[specta::specta]
 pub async fn hide_world(world_id: String) -> Result<(), String> {
-    match FolderManager::hide_world(world_id, WORLDS.get()) {
+    match FolderManager::hide_world(world_id, FOLDERS.get(), WORLDS.get()) {
         Ok(_) => Ok(()),
         Err(e) => {
             eprintln!("Error hiding world: {}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn unhide_world(world_id: String) -> Result<(), String> {
+    match FolderManager::unhide_world(world_id, FOLDERS.get(), WORLDS.get()) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            eprintln!("Error unhiding world: {}", e);
             Err(e.to_string())
         }
     }

@@ -10,6 +10,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         folder_commands::add_world_to_folder,
         folder_commands::remove_world_from_folder,
         folder_commands::hide_world,
+        folder_commands::unhide_world,
         folder_commands::get_folders,
         folder_commands::create_folder,
         folder_commands::delete_folder,

@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
+import { HideWorldDialog } from '@/components/hide-world-dialog';
+import { WorldDetailPopup } from '@/components/world-detail-popup';
 
 // enum for special folders
 export enum SpecialFolders {
@@ -27,19 +29,24 @@ export default function ListView() {
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHideWorld, setShowHideWorld] = useState(false);
+  const [selectedWorldId, setSelectedWorldId] = useState<string[] | null>(null);
+  const [selectedWorldName, setSelectedWorldName] = useState<string[] | null>(
+    null,
+  );
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
   const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
     SpecialFolders.All,
   );
+  const [showWorldDetails, setShowWorldDetails] = useState(false);
+  const [selectedWorldForDetails, setSelectedWorldForDetails] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     loadAllWorlds();
   }, []);
-
-  const handleAddFolder = () => {
-    setShowCreateFolder(true);
-  };
 
   const handleSelectFolder = async (
     type:
@@ -192,6 +199,136 @@ export default function ListView() {
     }
   };
 
+  const showHideWorldPopup = async (worldId: string[], worldName: string[]) => {
+    setSelectedWorldId(worldId);
+    setSelectedWorldName(worldName);
+    setShowHideWorld(true);
+  };
+
+  const handleHideWorld = async (worldId: string[], worldName: string[]) => {
+    try {
+      for (const id of worldId) {
+        await commands.hideWorld(id);
+      }
+
+      toast({
+        title: 'Worlds hidden',
+        description: (
+          <div className="flex w-full items-center justify-between gap-2">
+            <span>
+              {worldName.length > 1
+                ? `Hidden "${worldName[0]}" and ${worldName.length - 1} more worlds`
+                : `Hidden "${worldName[0]}"`}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  for (const id of worldId) {
+                    await commands.unhideWorld(id);
+                  }
+                  await refreshCurrentView();
+                  toast({
+                    title: 'Restored',
+                    description: 'Worlds restored from hidden',
+                  });
+                } catch (error) {
+                  console.error('Failed to restore worlds:', error);
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to restore worlds',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+            >
+              Undo
+            </Button>
+          </div>
+        ),
+        duration: 3000,
+        className: 'relative',
+        style: {
+          '--progress': '100%',
+        } as React.CSSProperties,
+      });
+
+      await refreshCurrentView();
+    } catch (error) {
+      console.error('Failed to hide world:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to hide world',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const removeWorldsFromFolder = async (worldIds: string[]) => {
+    try {
+      // Store the world IDs for potential undo
+      const removedWorlds = worldIds;
+
+      for (const id of worldIds) {
+        await commands.removeWorldFromFolder(currentFolder, id);
+      }
+      toast({
+        title: 'Worlds removed',
+        description: (
+          <div className="flex w-full items-center justify-between gap-2">
+            <span>Removed from {currentFolder}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  // Restore the worlds
+                  for (const id of removedWorlds) {
+                    await commands.addWorldToFolder(currentFolder, id);
+                  }
+                  await refreshCurrentView();
+                  toast({
+                    title: 'Restored',
+                    description: 'Worlds restored to folder',
+                  });
+                } catch (error) {
+                  console.error('Failed to restore worlds:', error);
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to restore worlds',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+            >
+              Undo
+            </Button>
+          </div>
+        ),
+        duration: 3000,
+        className: 'relative',
+        style: {
+          '--progress': '100%',
+        } as React.CSSProperties,
+      });
+
+      await refreshCurrentView();
+    } catch (error) {
+      console.error('Failed to remove worlds:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove worlds from folder',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleOpenWorldDetails = (worldId: string) => {
+    setSelectedWorldForDetails(worldId);
+    setShowWorldDetails(true);
+  };
+
   const renderMainContent = () => {
     if (showAbout) {
       return <AboutSection />;
@@ -221,6 +358,9 @@ export default function ListView() {
             worlds={worlds}
             folderName={currentFolder}
             onWorldChange={refreshCurrentView}
+            onRemoveFromFolder={removeWorldsFromFolder}
+            onHideWorld={showHideWorldPopup}
+            onOpenWorldDetails={handleOpenWorldDetails}
           />
         </div>
       </>
@@ -232,7 +372,7 @@ export default function ListView() {
       <AppSidebar
         folders={folders}
         onFoldersChange={loadFolders}
-        onAddFolder={handleAddFolder}
+        onAddFolder={() => setShowCreateFolder(true)}
         onSelectFolder={handleSelectFolder}
         selectedFolder={currentFolder}
         onSelectAbout={() => setShowAbout(true)}
@@ -247,6 +387,37 @@ export default function ListView() {
           }
         }}
         onConfirm={handleCreateFolder}
+      />
+      <WorldDetailPopup
+        open={showWorldDetails}
+        onOpenChange={(open) => {
+          setShowWorldDetails(open);
+          if (!open) {
+            setSelectedWorldForDetails(null);
+            refreshCurrentView();
+          }
+        }}
+        worldId={selectedWorldForDetails ? selectedWorldForDetails : ''}
+      />
+      <HideWorldDialog
+        open={showHideWorld}
+        onOpenChange={(open) => {
+          setShowHideWorld(open);
+          if (!open) {
+            setSelectedWorldId(null);
+            setSelectedWorldName(null);
+          }
+        }}
+        onConfirm={async () => {
+          if (selectedWorldId && selectedWorldName) {
+            await handleHideWorld(selectedWorldId, selectedWorldName);
+            setShowHideWorld(false);
+            setSelectedWorldId(null);
+            setSelectedWorldName(null);
+          }
+        }}
+        worldName={selectedWorldName}
+        worldId={selectedWorldId}
       />
     </div>
   );

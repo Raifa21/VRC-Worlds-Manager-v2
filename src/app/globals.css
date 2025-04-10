@@ -151,3 +151,44 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Toast progress animation */
+.toast-progress {
+  position: relative;
+}
+
+.toast-progress::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: var(--progress);
+  height: 2px;
+  background: hsl(var(--primary));
+  animation: toast-progress 3s linear;
+}
+
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* Add animation to the toast */
+.toast-enter {
+  animation: toast-enter 0.2s ease-out;
+}
+
+@keyframes toast-enter {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

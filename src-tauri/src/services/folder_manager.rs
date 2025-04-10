@@ -124,8 +124,11 @@ impl FolderManager {
 
     /// Hide a world
     /// This is done by setting the hidden flag to true
+    /// Remove the world from all folders
+    ///
     /// # Arguments
     /// * `world_id` - The ID of the world to hide
+    /// * `folders` - The list of folders, as a RwLock
     /// * `worlds` - The list of worlds, as a RwLock
     ///
     /// # Returns
@@ -134,7 +137,11 @@ impl FolderManager {
     /// # Errors
     /// Returns an error if the world is not found
     /// Returns an error if the worlds lock is poisoned
-    pub fn hide_world(world_id: String, worlds: &RwLock<Vec<WorldModel>>) -> Result<(), AppError> {
+    pub fn hide_world(
+        world_id: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<(), AppError> {
         let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
         let world = worlds_lock
             .iter_mut()
@@ -144,7 +151,78 @@ impl FolderManager {
         }
         let world = world.unwrap();
         world.user_data.hidden = true;
+
+        let folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let folders_to_remove: Vec<String> = folders_lock
+            .iter()
+            .filter(|folder| folder.world_ids.contains(&world_id))
+            .map(|folder| folder.folder_name.clone())
+            .collect();
+        drop(folders_lock);
         FileService::write_worlds(&*worlds_lock)?;
+        drop(worlds_lock);
+
+        for folder_name in folders_to_remove {
+            FolderManager::remove_world_from_folder(
+                folder_name,
+                world_id.clone(),
+                folders,
+                worlds,
+            )?;
+        }
+
+        Ok(())
+    }
+
+    /// Unhide a world
+    /// This is done by setting the hidden flag to false
+    /// If the world.user_data.folders contains any folders, we add the world back to the folders
+    ///
+    ///
+    /// # Arguments
+    /// * `world_id` - The ID of the world to unhide
+    /// * `folders` - The list of folders, as a RwLock
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// Ok if the world was unhidden successfully
+    ///
+    /// # Errors
+    /// Returns an error if the world is not found
+    /// Returns an error if the worlds lock is poisoned
+    pub fn unhide_world(
+        world_id: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<(), AppError> {
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let world = worlds_lock
+            .iter_mut()
+            .find(|w| w.api_data.world_id == world_id);
+        if world.is_none() {
+            return Err(EntityError::WorldNotFound(world_id).into());
+        }
+        let world = world.unwrap();
+        world.user_data.hidden = false;
+
+        let folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let folders_to_add: Vec<String> = folders_lock
+            .iter()
+            .filter(|folder| world.user_data.folders.contains(&folder.folder_name))
+            .map(|folder| folder.folder_name.clone())
+            .collect();
+        drop(folders_lock);
+        FileService::write_worlds(&*worlds_lock)?;
+        drop(worlds_lock);
+
+        for folder_name in folders_to_add {
+            FolderManager::add_world_to_folder(folder_name, world_id.clone(), folders, worlds)?;
+        }
+
         Ok(())
     }
 
@@ -318,7 +396,6 @@ impl FolderManager {
     }
 
     /// Get a world by its ID
-    /// TODO: move this to world_manager.rs
     ///
     /// # Arguments
     /// * world_id - The ID of the world
@@ -380,6 +457,7 @@ impl FolderManager {
     }
 
     /// Get all worlds
+    /// Hidden worlds are excluded.
     ///
     /// # Arguments
     /// * `worlds` - The list of worlds, as a RwLock
@@ -394,9 +472,11 @@ impl FolderManager {
         worlds: &RwLock<Vec<WorldModel>>,
     ) -> Result<Vec<WorldDisplayData>, AppError> {
         let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
-        println!("All worlds count: {}", worlds_lock.len());
-        let world_ids: HashSet<_> = worlds_lock.iter().map(|w| &w.api_data.world_id).collect();
-        println!("Unique world IDs: {}", world_ids.len());
+        let worlds_lock = worlds_lock
+            .iter()
+            .filter(|w| w.user_data.hidden == false)
+            .cloned()
+            .collect::<Vec<WorldModel>>();
         let all_worlds = worlds_lock.iter().map(|w| w.to_display_data()).collect();
         Ok(all_worlds)
     }
@@ -428,7 +508,7 @@ impl FolderManager {
     }
     /// Get all worlds that are Hidden
     /// Check all worlds, and return those that are in any folder
-    /// This is done by checking if the world's folders list is empty, and the hidden flag is true
+    /// This is done by checking if the hidden flag is true
     ///
     /// # Arguments
     /// * `worlds` - The list of worlds, as a RwLock
