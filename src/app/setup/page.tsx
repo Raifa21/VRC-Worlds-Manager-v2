@@ -192,7 +192,7 @@ const WelcomePage: React.FC = () => {
         await commands.createEmptyFiles();
       }
 
-      router.push('/');
+      router.push('/login');
     }
     setPage(page + 1);
   };
@@ -480,9 +480,9 @@ const WelcomePage: React.FC = () => {
                       world={{
                         worldId: '1',
                         name: 'World',
-                        thumbnailUrl: 'public/icons/1.png',
+                        thumbnailUrl: 'icons/1.png',
                         authorName: 'Author',
-                        lastUpdated: '2025-01-01',
+                        lastUpdated: '2025-02-28',
                         visits: 59,
                         dateAdded: '2025-01-01',
                         favorites: 10,
