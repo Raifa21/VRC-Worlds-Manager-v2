@@ -15,11 +15,18 @@ import { Separator } from '@/components/ui/separator';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
+import { ChevronRight } from 'lucide-react';
 
 interface WorldDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   worldId: string;
+  onCreateInstance: (
+    worldId: string,
+    instanceType: Exclude<InstanceType, 'group'>,
+    region: Region,
+  ) => void;
+  onCreateGroupInstance: (worldId: string, region: Region) => void;
 }
 
 export enum Platform {
@@ -45,19 +52,21 @@ export interface WorldDetails {
   publicationDate?: string;
 }
 
-type InstanceType =
+export type InstanceType =
   | 'public'
   | 'group'
   | 'friends+'
   | 'friends'
   | 'invite+'
   | 'invite';
-type Region = 'USW' | 'USE' | 'EU' | 'JP';
+export type Region = 'USW' | 'USE' | 'EU' | 'JP';
 
 export function WorldDetailPopup({
   open,
   onOpenChange,
   worldId,
+  onCreateInstance,
+  onCreateGroupInstance,
 }: WorldDetailDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [worldDetails, setWorldDetails] = useState<WorldDetails | null>(null);
@@ -149,12 +158,9 @@ export function WorldDetailPopup({
                   </div>
                 </div>
                 <div className="w-2/5">
-                  <div className="text-sm font-semibold mb-2">
-                    Create Instance
-                  </div>
-                  <div className="space-y-6">
+                  <div className="space-y-3">
                     <div>
-                      <Label className="text-sm font-medium mb-2 block">
+                      <Label className="text-sm font-medium mb-1 block">
                         Instance Type
                       </Label>
                       <ToggleGroup
@@ -168,7 +174,15 @@ export function WorldDetailPopup({
                       >
                         {[
                           { value: 'public', label: 'Public' },
-                          { value: 'group', label: 'Group' },
+                          {
+                            value: 'group',
+                            label: (
+                              <div className="flex items-center justify-between w-full gap-2">
+                                <div className="flex-1 text-center">Group</div>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground flex-none" />
+                              </div>
+                            ),
+                          },
                           { value: 'friends+', label: 'Friends+' },
                           { value: 'friends', label: 'Friends' },
                           { value: 'invite+', label: 'Invite+' },
@@ -177,7 +191,9 @@ export function WorldDetailPopup({
                           <ToggleGroupItem
                             key={value}
                             value={value}
-                            aria-label={label}
+                            aria-label={
+                              typeof label === 'string' ? label : value
+                            }
                             className="border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary"
                           >
                             {label}
@@ -187,7 +203,7 @@ export function WorldDetailPopup({
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium mb-2 block">
+                      <Label className="text-sm font-medium mb-1 block">
                         Region
                       </Label>
                       <ToggleGroup
@@ -215,13 +231,23 @@ export function WorldDetailPopup({
                       <Button
                         className="w-full"
                         onClick={() => {
-                          // TODO: Implement instance creation
-                          console.log(
-                            `Creating ${selectedInstanceType} instance in ${selectedRegion}`,
-                          );
+                          if (selectedInstanceType === 'group') {
+                            onCreateGroupInstance(worldId, selectedRegion);
+                          } else {
+                            onCreateInstance(
+                              worldId,
+                              selectedInstanceType as Exclude<
+                                InstanceType,
+                                'group'
+                              >,
+                              selectedRegion,
+                            );
+                          }
                         }}
                       >
-                        Create Instance
+                        {selectedInstanceType === 'group'
+                          ? 'Select Group'
+                          : 'Create Instance'}
                       </Button>
                     </div>
                   </div>

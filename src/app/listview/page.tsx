@@ -15,6 +15,7 @@ import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
 import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
+import { InstanceType, Region } from '@/components/world-detail-popup';
 
 // enum for special folders
 export enum SpecialFolders {
@@ -420,6 +421,39 @@ export default function ListView() {
     setShowWorldDetails(true);
   };
 
+  const createInstance = async (
+    worldId: string,
+    instanceType: Exclude<InstanceType, 'group'>,
+    region: Region,
+  ) => {
+    try {
+      const result = await commands.createInstance(
+        worldId,
+        instanceType,
+        region,
+      );
+
+      if (result.status === 'error') {
+        const error = result.error;
+        toast({
+          title: 'Error',
+          description: error as string,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      await refreshCurrentView();
+    } catch (error) {
+      console.error('Failed to create instance:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create instance',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const renderMainContent = () => {
     if (showAbout) {
       return <AboutSection />;
@@ -493,6 +527,8 @@ export default function ListView() {
           }
         }}
         worldId={selectedWorldForDetails ? selectedWorldForDetails : ''}
+        onCreateInstance={createInstance}
+        onCreateGroupInstance={createGroupInstance}
       />
       <AddToFolderDialog
         open={showFolderDialog}
