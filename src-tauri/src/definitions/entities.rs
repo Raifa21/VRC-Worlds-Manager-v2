@@ -389,28 +389,6 @@ impl Into<Jar> for AuthCookies {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct AuthState {
-    pub user_id: Option<String>,
-    pub cookie_store: Arc<Jar>,
-}
-
-impl AuthState {
-    pub fn new() -> Self {
-        Self {
-            user_id: None,
-            cookie_store: Arc::new(Jar::default()),
-        }
-    }
-
-    pub fn with_cookie_store(cookie_store: Arc<Jar>) -> Self {
-        Self {
-            user_id: None,
-            cookie_store,
-        }
-    }
-}
-
 pub struct InitState {
     pub success: bool,
     pub message: String,

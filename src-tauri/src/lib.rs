@@ -1,6 +1,6 @@
 use api::auth::VRChatAPIClientAuthenticator;
 use commands::generate_tauri_specta_builder;
-use definitions::{AuthState, FolderModel, InitState, PreferenceModel, WorldModel};
+use definitions::{FolderModel, InitState, PreferenceModel, WorldModel};
 use reqwest::cookie::Jar;
 use services::ApiService;
 use specta_typescript::{BigIntExportBehavior, Typescript};
@@ -18,7 +18,6 @@ static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
 static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
 static WORLDS: InitCell<RwLock<Vec<WorldModel>>> = InitCell::new();
 static INITSTATE: InitCell<RwLock<InitState>> = InitCell::new();
-static AUTH_STATE: InitCell<RwLock<AuthState>> = InitCell::new();
 static AUTHENTICATOR: InitCell<tokio::sync::RwLock<VRChatAPIClientAuthenticator>> = InitCell::new();
 
 /// Application entry point for all platforms
@@ -29,9 +28,6 @@ pub fn run() {
             PREFERENCES.set(RwLock::new(preferences));
             FOLDERS.set(RwLock::new(folders));
             WORLDS.set(RwLock::new(worlds));
-            AUTH_STATE.set(RwLock::new(AuthState::with_cookie_store(
-                services::ApiService::initialize_with_cookies(cookies),
-            )));
             INITSTATE.set(RwLock::new(init_state));
         }
         Err(e) => {
@@ -39,9 +35,19 @@ pub fn run() {
             FOLDERS.set(RwLock::new(vec![]));
             WORLDS.set(RwLock::new(vec![]));
             INITSTATE.set(RwLock::new(InitState::error(false, e)));
-            AUTH_STATE.set(RwLock::new(AuthState::new()));
         }
     };
+
+    match services::ApiService::initialize_with_cookies(cookies) {
+        Ok(cookie_store) => {
+            AUTHENTICATOR.set(RwLock::new(
+                VRChatAPIClientAuthenticator::from_cookie_store(cookie_store),
+            ));
+        }
+        Err(e) => {
+            log::error!("Failed to initialize API service: {}", e);
+        }
+    }
 
     let builder = generate_tauri_specta_builder();
 

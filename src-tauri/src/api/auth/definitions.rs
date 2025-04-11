@@ -2,9 +2,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::definitions::AuthCookies;
 
+#[derive(Deserialize, Debug, PartialEq, Eq)]
+pub struct CurrentUser {
+    pub id: String,
+    #[serde(rename = "displayName")]
+    pub username: String,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum VRChatAuthStatus {
-    Success(AuthCookies),
+    Success(AuthCookies, CurrentUser),
     RequiresEmail2FA,
     Requires2FA,
     InvalidCredentials,

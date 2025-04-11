@@ -5,6 +5,7 @@ use reqwest::{
     cookie::{self, CookieStore, Jar},
     Response, StatusCode,
 };
+use vrchatapi::models::current_user;
 
 use crate::{
     api::common::{get_reqwest_client, API_BASE_URL},
@@ -12,7 +13,7 @@ use crate::{
 };
 
 use super::definitions::{
-    RequiresTwoFactorAuth, TwoFactorAuthVerified, VRChatAuthPhase, VRChatAuthStatus,
+    CurrentUser, RequiresTwoFactorAuth, TwoFactorAuthVerified, VRChatAuthPhase, VRChatAuthStatus,
 };
 
 pub struct VRChatAPIClientAuthenticator {
@@ -34,6 +35,75 @@ impl VRChatAPIClientAuthenticator {
             username: username.as_ref().to_string(),
             phase: VRChatAuthPhase::None,
         }
+    }
+
+    pub fn from_cookie_store(cookie_store: Arc<Jar>) -> Self {
+        let client = get_reqwest_client(&cookie_store);
+
+        VRChatAPIClientAuthenticator {
+            client,
+            cookie: cookie_store,
+            username: String::new(),
+            phase: VRChatAuthPhase::None,
+        }
+    }
+
+    pub async fn verify_token(&mut self) -> Result<VRChatAuthStatus, String> {
+        let result = self
+            .client
+            .get(format!("{}/auth/user", API_BASE_URL))
+            .send()
+            .await
+            .map_err(|e| format!("Failed to send auth request: {}", e))?;
+
+        if result.status() == StatusCode::UNAUTHORIZED {
+            self.cookie = Arc::new(Jar::default());
+            return Ok(VRChatAuthStatus::InvalidCredentials);
+        }
+
+        if result.status() == StatusCode::OK {
+            let text = result
+                .text()
+                .await
+                .map_err(|e| format!("Failed to read response: {}", e))?;
+
+            if let Ok(requires_2fa) = serde_json::from_str::<RequiresTwoFactorAuth>(&text) {
+                let email_otp = requires_2fa
+                    .requires_two_factor_auth
+                    .contains(&"emailOtp".to_string());
+
+                self.phase = if email_otp {
+                    VRChatAuthPhase::Email2FA
+                } else {
+                    VRChatAuthPhase::TwoFactorAuth
+                };
+
+                return Ok(if email_otp {
+                    VRChatAuthStatus::RequiresEmail2FA
+                } else {
+                    VRChatAuthStatus::Requires2FA
+                });
+            }
+
+            let current_user = serde_json::from_str::<CurrentUser>(&text)
+                .map_err(|e| format!("Failed to parse user data: {}", e))?;
+
+            let url = reqwest::Url::from_str(API_BASE_URL).unwrap();
+            let cookie_str = self
+                .cookie
+                .cookies(&url)
+                .map(|c| c.to_str().unwrap_or_default().to_string())
+                .unwrap_or_default();
+
+            let auth_cookies = AuthCookies::from_cookie_str(&cookie_str);
+            self.phase = VRChatAuthPhase::LoggedIn;
+
+            return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
+        }
+
+        Ok(VRChatAuthStatus::UnknownError(
+            "Unexpected response from server".to_string(),
+        ))
     }
 
     pub async fn login_with_password<T: AsRef<str>>(
@@ -76,6 +146,9 @@ impl VRChatAPIClientAuthenticator {
                 }
             }
 
+            let current_user = serde_json::from_str::<CurrentUser>(&text)
+                .map_err(|e| format!("Failed to parse user data: {}", e))?;
+
             let url = reqwest::Url::from_str(API_BASE_URL).unwrap();
             let header_value = self.cookie.cookies(&url);
             let cookie_str = header_value.as_ref().unwrap().to_str().unwrap();
@@ -83,7 +156,7 @@ impl VRChatAPIClientAuthenticator {
             let auth_cookies = AuthCookies::from_cookie_str(cookie_str);
 
             self.phase = VRChatAuthPhase::LoggedIn;
-            return Ok(VRChatAuthStatus::Success(auth_cookies));
+            return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 
         match result.text().await {
@@ -153,14 +226,20 @@ impl VRChatAPIClientAuthenticator {
         response: Response,
     ) -> Result<VRChatAuthStatus, String> {
         if response.status() == StatusCode::OK {
-            let verified = match response.json::<TwoFactorAuthVerified>().await {
-                Ok(verified) => verified,
-                Err(e) => return Err(format!("Failed to parse response: {}", e.to_string())),
-            };
+            let text = response
+                .text()
+                .await
+                .map_err(|e| format!("Failed to read response text: {}", e))?;
+
+            let verified = serde_json::from_str::<TwoFactorAuthVerified>(&text)
+                .map_err(|e| format!("Failed to parse response: {}", e.to_string()))?;
 
             if !verified.is_verified {
                 return Ok(VRChatAuthStatus::InvalidCredentials);
             }
+
+            let current_user = serde_json::from_str::<CurrentUser>(&text)
+                .map_err(|e| format!("Failed to parse user data: {}", e))?;
 
             let url = reqwest::Url::from_str(API_BASE_URL).unwrap();
             let header_value = self.cookie.cookies(&url);
@@ -169,7 +248,7 @@ impl VRChatAPIClientAuthenticator {
             let auth_cookies = AuthCookies::from_cookie_str(cookie_str);
 
             self.phase = VRChatAuthPhase::LoggedIn;
-            return Ok(VRChatAuthStatus::Success(auth_cookies));
+            return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 
         match response.text().await {

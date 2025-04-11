@@ -1,14 +1,10 @@
-use crate::api;
+use crate::api::{auth, group, instance, world};
 use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
 use crate::services::file_service::FileService;
 use reqwest::cookie::CookieStore;
 use reqwest::{cookie::Jar, Client, Url};
 use std::sync::Arc;
 use tauri::http::HeaderValue;
-use vrchatapi::apis;
-use vrchatapi::apis::authentication_api::GetCurrentUserError;
-use vrchatapi::apis::configuration::Configuration;
-use vrchatapi::models::{self, create_instance_request};
 
 pub struct ApiService;
 
@@ -68,29 +64,7 @@ impl ApiService {
             );
         }
 
-        let cookie_store = Arc::new(jar);
-        println!("Cookies set: {:?}", cookie_store);
-        cookie_store
-    }
-
-    /// Creates a new configuration with the provided cookie store
-    ///
-    /// # Arguments
-    /// * `cookie_store` - The cookie store to use for the configuration
-    ///
-    /// # Returns
-    /// Returns a new Configuration instance with the cookie store attached
-    #[must_use]
-    fn create_config(cookie_store: Arc<Jar>) -> Configuration {
-        let mut config = Configuration::new();
-        config.user_agent = Some(String::from(
-            "WM (formerly VRC World Manager)/0.0.1 discord:raifa",
-        ));
-        config.client = Client::builder()
-            .cookie_provider(cookie_store.clone())
-            .build()
-            .unwrap();
-        config
+        Arc::new(jar)
     }
 
     /// Logs the user in with the authentication cookies
@@ -105,30 +79,19 @@ impl ApiService {
     /// # Errors
     /// Returns a string error message if the login fails
     pub async fn login_with_token(cookie_store: Arc<Jar>) -> Result<(), String> {
-        let config = Self::create_config(cookie_store.clone());
-        match apis::authentication_api::get_current_user(&config).await {
-            Ok(models::EitherUserOrTwoFactor::CurrentUser(me)) => {
-                println!("Username: {}", me.username.unwrap());
+        let mut new_auth = auth::VRChatAPIClientAuthenticator::from_cookie_store(cookie_store);
+        match new_auth.verify_token().await {
+            Ok(user) => {
+                println!("Username: {}", user.username);
                 Ok(())
             }
-            Ok(models::EitherUserOrTwoFactor::RequiresTwoFactorAuth(requires_auth)) => {
-                println!("2FA required: {:?}", requires_auth);
-                Err("2fa-required".to_string())
-            }
-            Err(vrchatapi::apis::Error::ResponseError(response_content)) => {
-                match response_content.entity {
-                    Some(GetCurrentUserError::Status401(error)) => {
-                        println!("Error: {:?}", error);
-                        Err(error.error.unwrap().message.unwrap())
-                    }
-                    Some(GetCurrentUserError::UnknownValue(_)) => {
-                        println!("Unknown error");
-                        Err("An unknown error occurred".to_string())
-                    }
-                    None => Err("No response content".to_string()),
+            Err(e) => {
+                if e.contains("2FA") {
+                    Err("2fa-required".to_string())
+                } else {
+                    Err(format!("Login failed: {}", e))
                 }
             }
-            Err(e) => Err(format!("Request failed: {}", e)),
         }
     }
 
@@ -221,12 +184,12 @@ impl ApiService {
         }
     }
 
-    /// Create a new instance of a world
+    /// Creates a new instance of a world
     ///
     /// # Arguments
     /// * `world_id` - The ID of the world to create an instance of
-    /// * `instance_type` - The type of instance to create
-    /// * `region` - The region to create the instance in
+    /// * `instance_type_str` - The type of instance to create
+    /// * `region_str` - The region to create the instance in
     /// * `cookie_store` - The cookie store to use for the API
     /// * `user_id` - The ID of the user to create the instance for
     ///
@@ -235,6 +198,7 @@ impl ApiService {
     ///
     /// # Errors
     /// Returns a string error message if the request fails
+    #[must_use]
     pub async fn create_world_instance(
         world_id: String,
         instance_type_str: String,
@@ -242,51 +206,41 @@ impl ApiService {
         cookie_store: Arc<Jar>,
         user_id: Option<String>,
     ) -> Result<(), String> {
-        let config = Self::create_config(cookie_store.clone());
-        let mut instance_type = models::InstanceType::Public;
-        let mut region = models::InstanceRegion::Us;
-        let mut can_request_invite = false;
-        match instance_type_str.as_str() {
-            "public" => {
-                instance_type = models::InstanceType::Public;
-            }
-            "friends_plus" => {
-                instance_type = models::InstanceType::Hidden;
-            }
-            "friends" => {
-                instance_type = models::InstanceType::Friends;
-            }
-            "invite_plus" => {
-                instance_type = models::InstanceType::Private;
-                can_request_invite = true;
-            }
-            "invite" => {
-                instance_type = models::InstanceType::Private;
-            }
-            _ => {}
-        }
-        match region_str.as_str() {
-            "us" => {
-                region = models::InstanceRegion::Us;
-            }
-            "use" => {
-                region = models::InstanceRegion::Use;
-            }
-            "eu" => {
-                region = models::InstanceRegion::Eu;
-            }
-            "jp" => {
-                region = models::InstanceRegion::Jp;
-            }
-            _ => {}
-        }
-        let mut create_instance_request =
-            create_instance_request::CreateInstanceRequest::new(world_id, instance_type, region);
-        create_instance_request.can_request_invite = Some(can_request_invite);
-        create_instance_request.owner_id = Some(user_id);
+        // Convert region string to InstanceRegion enum
+        let region = match region_str.as_str() {
+            "us" => instance::InstanceRegion::UsWest,
+            "use" => instance::InstanceRegion::UsEast,
+            "eu" => instance::InstanceRegion::EU,
+            "jp" => instance::InstanceRegion::JP,
+            _ => return Err("Invalid region".to_string()),
+        };
 
-        match apis::instances_api::create_instance(&config, create_instance_request).await {
-            Ok(_) => Ok(()),
+        // Create instance type based on string and user_id
+        let instance_type = match instance_type_str.as_str() {
+            "public" => instance::InstanceType::Public,
+            "friends_plus" => user_id
+                .map(instance::InstanceType::friends_plus)
+                .ok_or_else(|| "User ID required for friends+ instance".to_string())?,
+            "friends" => user_id
+                .map(instance::InstanceType::friends_only)
+                .ok_or_else(|| "User ID required for friends instance".to_string())?,
+            "invite_plus" => user_id
+                .map(instance::InstanceType::invite_plus)
+                .ok_or_else(|| "User ID required for invite+ instance".to_string())?,
+            "invite" => user_id
+                .map(instance::InstanceType::invite_only)
+                .ok_or_else(|| "User ID required for invite instance".to_string())?,
+            _ => return Err("Invalid instance type".to_string()),
+        };
+
+        // Create request using builder
+        let request =
+            instance::CreateInstanceRequestBuilder::new(instance_type, world_id, region, false)
+                .build();
+
+        // Call API endpoint
+        match instance::create_instance(cookie_store, request).await {
+            Ok(_instance) => Ok(()),
             Err(e) => Err(format!("Failed to create world instance: {}", e)),
         }
     }

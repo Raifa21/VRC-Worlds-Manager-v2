@@ -10,7 +10,6 @@ use crate::services::FileService;
 use crate::services::FolderManager;
 use crate::ApiService;
 use crate::AUTHENTICATOR;
-use crate::AUTH_STATE;
 use crate::WORLDS;
 
 #[tauri::command]
@@ -170,5 +169,4 @@ pub async fn create_instance(
 ) -> Result<(), String> {
     let cookie_store = AUTH_STATE.get().read().unwrap().cookie_store.clone();
     let user_id = AUTH_STATE.get().read().unwrap().user_id.clone();
-    ApiService::create_world_instance(world_id, instance_type, region, cookie_store, user_id).await
 }
