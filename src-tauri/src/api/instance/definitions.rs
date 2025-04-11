@@ -135,12 +135,6 @@ impl CreateInstanceRequestBuilder {
                 ),
             };
 
-        let closed_at = if is_public {
-            None
-        } else {
-            Some("1970-01-01T00:00:00.000Z".into())
-        };
-
         CreateInstanceRequest {
             world_id: self.world_id,
             instance_type,
@@ -149,7 +143,6 @@ impl CreateInstanceRequestBuilder {
             role_ids,
             group_access_type,
             queue_enabled: self.queue_enabled,
-            closed_at,
             can_request_invite,
             invite_only: false,
         }
@@ -172,8 +165,6 @@ pub struct CreateInstanceRequest {
     pub group_access_type: String,
     #[serde(rename = "queueEnabled")]
     pub queue_enabled: bool,
-    #[serde(rename = "closedAt", skip_serializing_if = "Option::is_none")]
-    pub closed_at: Option<String>,
     #[serde(rename = "canRequestInvite")]
     pub can_request_invite: bool,
     #[serde(rename = "inviteOnly")]
