@@ -88,7 +88,7 @@ export function WorldDetailPopup({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="min-w-[80vw] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="min-w-[80vw] h-[70vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isLoading ? 'Loading...' : 'World Details'}
@@ -105,12 +105,13 @@ export function WorldDetailPopup({
           worldDetails && (
             <div className="flex flex-col gap-4">
               <div className="flex gap-4 py-4">
-                <div className="w-3/5">
-                  <div className="aspect-video relative overflow-hidden rounded-lg mb-4">
+                <div className="w-[60%]">
+                  <div className="h-[calc(60vh-125px)] relative overflow-hidden rounded-lg mb-4 bg-black">
                     <a
                       href={`https://vrchat.com/home/world/${worldDetails.worldId}`}
                       target="_blank"
                       rel="noreferrer"
+                      className="block h-full"
                     >
                       <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1">
                         {worldDetails.platform == Platform.CrossPlatform ? (
@@ -125,10 +126,14 @@ export function WorldDetailPopup({
                         src={worldDetails.thumbnailUrl}
                         alt={worldDetails.name}
                         className="object-cover w-full h-full"
+                        style={{
+                          backgroundColor: 'black',
+                          maxWidth: '100%', // Add max-width constraint
+                        }}
                       />
                     </a>
                   </div>
-                  <div className="text-md font-semibold">
+                  <div className="text-md font-semibold cursor-default">
                     {worldDetails.name}
                   </div>
                   <div className="text-sm text-gray-500">
@@ -240,7 +245,8 @@ export function WorldDetailPopup({
                         .map((tag) => (
                           <span
                             key={tag}
-                            className="inline-flex items-center px-1.5 py-0.5 text-xs bg-gray-500 text-white rounded-full"
+                            className="inline-block px-1.5 py-0.5 text-xs bg-gray-500 text-white rounded-full max-w-[250px] whitespace-nowrap overflow-hidden text-ellipsis cursor-default"
+                            title={tag.replace('author_tag_', '')}
                           >
                             {tag.replace('author_tag_', '')}
                           </span>
