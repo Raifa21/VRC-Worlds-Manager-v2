@@ -27,7 +27,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogCancel,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import * as Portal from '@radix-ui/react-portal';
 
@@ -93,6 +92,12 @@ export function WorldGrid({
     type: 'remove' | 'hide';
     worldId: string;
     worldName?: string;
+  } | null>(null);
+  const [dialogConfig, setDialogConfig] = useState<{
+    type: 'remove' | 'hide';
+    worldId: string;
+    worldName?: string;
+    isOpen: boolean;
   } | null>(null);
 
   const calculateCols = () => {
@@ -216,6 +221,25 @@ export function WorldGrid({
     return Object.values(SpecialFolders).includes(folderName as SpecialFolders);
   }, [folderName]);
 
+  const handleDialogAction = (
+    action: 'remove' | 'hide',
+    worldId: string,
+    worldName?: string,
+  ) => {
+    setDialogConfig({
+      type: action,
+      worldId,
+      worldName,
+      isOpen: true,
+    });
+  };
+
+  const handleDialogClose = () => {
+    setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
+    // Allow animation to complete before clearing state
+    setTimeout(() => setDialogConfig(null), 150);
+  };
+
   return (
     <div ref={containerRef} className="h-full flex flex-col">
       <div className="sticky top-0 z-10 bg-background">
@@ -286,10 +310,7 @@ export function WorldGrid({
                     <ContextMenuItem
                       onSelect={(e) => {
                         e.preventDefault();
-                        setDialogAction({
-                          type: 'remove',
-                          worldId: world.worldId,
-                        });
+                        handleDialogAction('remove', world.worldId);
                       }}
                       className="text-destructive"
                     >
@@ -300,11 +321,7 @@ export function WorldGrid({
                   <ContextMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
-                      setDialogAction({
-                        type: 'hide',
-                        worldId: world.worldId,
-                        worldName: world.name,
-                      });
+                      handleDialogAction('hide', world.worldId, world.name);
                     }}
                     className="text-destructive"
                   >
@@ -320,72 +337,58 @@ export function WorldGrid({
 
       {/* Portaled AlertDialogs */}
       <Portal.Root>
-        <AlertDialog
-          open={dialogAction?.type === 'remove'}
-          onOpenChange={(open) => !open && setDialogAction(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remove from Folder</AlertDialogTitle>
-              <AlertDialogDescription className="space-y-2">
-                <p>This will remove this world from the current folder.</p>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setDialogAction(null)}>
-                Cancel
-              </AlertDialogCancel>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  if (dialogAction?.worldId) {
-                    onRemoveFromFolder([dialogAction.worldId]);
-                  }
-                  setDialogAction(null);
-                }}
-              >
-                Remove
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <AlertDialog
-          open={dialogAction?.type === 'hide'}
-          onOpenChange={(open) => !open && setDialogAction(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Hide World</AlertDialogTitle>
-              <AlertDialogDescription className="space-y-2">
-                <p>This hides this world from all folders.</p>
-                <p className="text-muted-foreground">
-                  You can find the world in the "Hidden Folder" in settings to
-                  revert.
-                </p>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setDialogAction(null)}>
-                Cancel
-              </AlertDialogCancel>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  if (dialogAction?.worldId && dialogAction?.worldName) {
-                    onHideWorld(
-                      [dialogAction.worldId],
-                      [dialogAction.worldName],
-                    );
-                  }
-                  setDialogAction(null);
-                }}
-              >
-                Hide World
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {dialogConfig && (
+          <AlertDialog
+            open={dialogConfig.isOpen}
+            onOpenChange={(open) => {
+              if (!open) handleDialogClose();
+            }}
+          >
+            <AlertDialogContent onEscapeKeyDown={handleDialogClose}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {dialogConfig.type === 'remove'
+                    ? 'Remove from Folder'
+                    : 'Hide World'}
+                </AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  {dialogConfig.type === 'remove' ? (
+                    <p>This will remove this world from the current folder.</p>
+                  ) : (
+                    <>
+                      <p>This hides this world from all folders.</p>
+                      <p className="text-muted-foreground">
+                        You can find the world in the "Hidden Folder" in
+                        settings to revert.
+                      </p>
+                    </>
+                  )}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleDialogClose}>
+                  Cancel
+                </AlertDialogCancel>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (dialogConfig.type === 'remove') {
+                      onRemoveFromFolder([dialogConfig.worldId]);
+                    } else if (dialogConfig.worldName) {
+                      onHideWorld(
+                        [dialogConfig.worldId],
+                        [dialogConfig.worldName],
+                      );
+                    }
+                    handleDialogClose();
+                  }}
+                >
+                  {dialogConfig.type === 'remove' ? 'Remove' : 'Hide World'}
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </Portal.Root>
     </div>
   );
