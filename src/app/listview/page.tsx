@@ -14,6 +14,7 @@ import { RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
+import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 
 // enum for special folders
 export enum SpecialFolders {
@@ -37,6 +38,10 @@ export default function ListView() {
   const [selectedWorldForDetails, setSelectedWorldForDetails] = useState<
     string | null
   >(null);
+  const [showFolderDialog, setShowFolderDialog] = useState(false);
+  const [selectedWorldsForFolder, setSelectedWorldsForFolder] = useState<
+    WorldDisplayData[]
+  >([]);
 
   useEffect(() => {
     loadAllWorlds();
@@ -199,16 +204,15 @@ export default function ListView() {
         await commands.hideWorld(id);
       }
 
-      const toastMessage =
-        worldName.length > 1
-          ? `Hidden "${worldName[0]}" and ${worldName.length - 1} more world${worldName.length - 1 > 1 ? 's' : ''}`
-          : `Hidden "${worldName[0]}"`;
-
       toast({
         title: 'Worlds hidden',
         description: (
           <div className="flex w-full items-center justify-between gap-2">
-            <span>{toastMessage}</span>
+            <span>
+              {worldName.length > 1
+                ? `Hidden "${worldName[0]}" and ${worldName.length - 1} more worlds`
+                : `Hidden "${worldName[0]}"`}
+            </span>
             <Button
               variant="outline"
               size="sm"
@@ -256,32 +260,24 @@ export default function ListView() {
 
   const removeWorldsFromFolder = async (worldIds: string[]) => {
     try {
-      // Get world names before removal
-      const worldNames = worldIds
-        .map((id) => worlds.find((w) => w.worldId === id)?.name || '')
-        .filter(Boolean);
-
-      const toastMessage =
-        worldNames.length > 1
-          ? `Removed "${worldNames[0]}" and ${worldNames.length - 1} more world${worldNames.length - 1 > 1 ? 's' : ''} from ${currentFolder}`
-          : `Removed "${worldNames[0]}" from ${currentFolder}`;
+      // Store the world IDs for potential undo
+      const removedWorlds = worldIds;
 
       for (const id of worldIds) {
         await commands.removeWorldFromFolder(currentFolder, id);
       }
-
       toast({
         title: 'Worlds removed',
         description: (
           <div className="flex w-full items-center justify-between gap-2">
-            <span>{toastMessage}</span>
+            <span>Removed from {currentFolder}</span>
             <Button
               variant="outline"
               size="sm"
               onClick={async () => {
                 try {
                   // Restore the worlds
-                  for (const id of worldIds) {
+                  for (const id of removedWorlds) {
                     await commands.addWorldToFolder(currentFolder, id);
                   }
                   await refreshCurrentView();
@@ -316,6 +312,104 @@ export default function ListView() {
       toast({
         title: 'Error',
         description: 'Failed to remove worlds from folder',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleAddToFolders = async (
+    worldsToAdd: WorldDisplayData[],
+    foldersToAdd: string[],
+    foldersToRemove: string[],
+  ) => {
+    try {
+      // Store original state for each world-folder combination
+      const originalStates = worldsToAdd.map((world) => ({
+        worldId: world.worldId,
+        worldName: world.name,
+        addedTo: foldersToAdd.filter(
+          (folder) => !world.folders.includes(folder),
+        ),
+        removedFrom: foldersToRemove.filter((folder) =>
+          world.folders.includes(folder),
+        ),
+      }));
+
+      // Perform changes...
+      for (const folder of foldersToAdd) {
+        for (const world of worldsToAdd) {
+          await commands.addWorldToFolder(folder, world.worldId);
+        }
+      }
+
+      for (const folder of foldersToRemove) {
+        for (const world of worldsToAdd) {
+          await commands.removeWorldFromFolder(folder, world.worldId);
+        }
+      }
+
+      toast({
+        title: 'Folders updated',
+        description: (
+          <div className="flex w-full items-center justify-between gap-2">
+            <span>
+              {worldsToAdd.length > 1
+                ? `Updated folders for "${worldsToAdd[0].name}" and ${worldsToAdd.length - 1} more worlds`
+                : `Updated folders for "${worldsToAdd[0].name}"`}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  // Undo changes per world
+                  for (const state of originalStates) {
+                    // Remove from folders that were added
+                    for (const folder of state.addedTo) {
+                      await commands.removeWorldFromFolder(
+                        folder,
+                        state.worldId,
+                      );
+                    }
+                    // Add back to folders that were removed
+                    for (const folder of state.removedFrom) {
+                      await commands.addWorldToFolder(folder, state.worldId);
+                    }
+                  }
+                  await refreshCurrentView();
+                  toast({
+                    title: 'Restored',
+                    description: 'Folder changes undone',
+                  });
+                } catch (error) {
+                  console.error('Failed to undo folder changes:', error);
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to undo folder changes',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+            >
+              Undo
+            </Button>
+          </div>
+        ),
+        duration: 3000,
+        className: 'relative',
+        style: {
+          '--progress': '100%',
+        } as React.CSSProperties,
+      });
+
+      await refreshCurrentView();
+      setShowFolderDialog(false);
+      setSelectedWorldsForFolder([]);
+    } catch (error) {
+      console.error('Failed to update folders:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update folders',
         variant: 'destructive',
       });
     }
@@ -358,6 +452,10 @@ export default function ListView() {
             onRemoveFromFolder={removeWorldsFromFolder}
             onHideWorld={handleHideWorld}
             onOpenWorldDetails={handleOpenWorldDetails}
+            onShowFolderDialog={(worlds) => {
+              setSelectedWorldsForFolder(worlds);
+              setShowFolderDialog(true);
+            }}
           />
         </div>
       </>
@@ -395,6 +493,19 @@ export default function ListView() {
           }
         }}
         worldId={selectedWorldForDetails ? selectedWorldForDetails : ''}
+      />
+      <AddToFolderDialog
+        open={showFolderDialog}
+        onOpenChange={setShowFolderDialog}
+        selectedWorlds={selectedWorldsForFolder}
+        folders={folders}
+        onConfirm={(foldersToAdd, foldersToRemove) =>
+          handleAddToFolders(
+            selectedWorldsForFolder,
+            foldersToAdd,
+            foldersToRemove,
+          )
+        }
       />
     </div>
   );

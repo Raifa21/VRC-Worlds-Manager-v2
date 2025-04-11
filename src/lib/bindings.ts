@@ -394,6 +394,7 @@ export type WorldDisplayData = {
   visits: number;
   dateAdded: string;
   platform: Platform;
+  folders: string[];
 };
 
 /** tauri-specta globals **/

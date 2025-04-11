@@ -29,6 +29,8 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import * as Portal from '@radix-ui/react-portal';
+import { createPortal } from 'react-dom';
+import { AddToFolderDialog } from './add-to-folder-dialog';
 
 interface WorldGridProps {
   size: CardSize;
@@ -38,6 +40,8 @@ interface WorldGridProps {
   onRemoveFromFolder: (worldId: string[]) => void;
   onHideWorld: (worldId: string[], worldName: string[]) => void;
   onOpenWorldDetails: (worldId: string) => void;
+  onAddToFolder?: (worldIds: string[], folderName: string) => void;
+  onShowFolderDialog: (worlds: WorldDisplayData[]) => void;
 }
 
 type SortOption =
@@ -67,6 +71,8 @@ export function WorldGrid({
   onRemoveFromFolder,
   onHideWorld,
   onOpenWorldDetails,
+  onAddToFolder,
+  onShowFolderDialog,
 }: WorldGridProps) {
   const cardWidths = {
     [CardSize.Compact]: 192, // w-48 = 12rem = 192px
@@ -90,6 +96,7 @@ export function WorldGrid({
   } | null>(null);
   const [selectedWorlds, setSelectedWorlds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
 
   const calculateCols = () => {
     const cardWidth = cardWidths[size];
@@ -278,6 +285,12 @@ export function WorldGrid({
     setSelectedWorlds(new Set());
   };
 
+  const handleAddToFolder = (folder: string) => {
+    onAddToFolder?.(Array.from(selectedWorlds), folder);
+    clearSelection();
+    setIsSelectionMode(false);
+  };
+
   return (
     <div ref={containerRef} className="h-full flex flex-col">
       <div className="sticky top-0 z-10 bg-background">
@@ -351,18 +364,19 @@ export function WorldGrid({
             }}
           >
             {sortedAndFilteredWorlds.map((world) => (
-              <ContextMenu key={world.worldId}>
+              <ContextMenu
+                key={world.worldId}
+                onOpenChange={setContextMenuOpen}
+              >
                 <ContextMenuTrigger asChild>
                   <div
+                    id={world.worldId}
                     className={`relative w-fit h-fit group rounded-lg ${
                       selectedWorlds.has(world.worldId)
                         ? 'ring-2 ring-primary'
                         : ''
                     }`}
                     onClick={(e) => handleClick(world.worldId, e)}
-                    onDoubleClick={() =>
-                      !isSelectionMode && onOpenWorldDetails(world.worldId)
-                    }
                   >
                     <WorldCardPreview size={size} world={world} />
                     {isSelectionMode && (
@@ -380,10 +394,28 @@ export function WorldGrid({
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
+                  <ContextMenuItem
+                    onSelect={(e) => {
+                      const worldsToMove =
+                        selectedWorlds.size > 0 &&
+                        selectedWorlds.has(world.worldId)
+                          ? Array.from(selectedWorlds).map(
+                              (id) => worlds.find((w) => w.worldId === id)!,
+                            )
+                          : [world];
+                      onShowFolderDialog(worldsToMove);
+                    }}
+                  >
+                    Move{' '}
+                    {selectedWorlds.size > 1 &&
+                    selectedWorlds.has(world.worldId)
+                      ? `${selectedWorlds.size} worlds`
+                      : 'world'}{' '}
+                    to folder
+                  </ContextMenuItem>
                   {!isSpecialFolder && (
                     <ContextMenuItem
                       onSelect={(e) => {
-                        e.preventDefault();
                         const worldsToRemove =
                           selectedWorlds.size > 0 &&
                           selectedWorlds.has(world.worldId)
@@ -404,7 +436,6 @@ export function WorldGrid({
 
                   <ContextMenuItem
                     onSelect={(e) => {
-                      e.preventDefault();
                       const worldsToHide =
                         selectedWorlds.size > 0 &&
                         selectedWorlds.has(world.worldId)

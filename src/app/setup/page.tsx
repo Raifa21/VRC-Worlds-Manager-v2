@@ -487,6 +487,7 @@ const WelcomePage: React.FC = () => {
                         dateAdded: '2025-01-01',
                         favorites: 10,
                         platform: Platform.CrossPlatform,
+                        folders: [],
                       }}
                     />
                   </div>

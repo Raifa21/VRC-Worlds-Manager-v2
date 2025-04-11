@@ -21,6 +21,7 @@ export interface WorldDisplayData {
   visits: number;
   dateAdded: string;
   platform: Platform;
+  folders: string[];
 }
 
 interface WorldCardPreviewProps {

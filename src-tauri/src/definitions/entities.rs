@@ -226,6 +226,7 @@ impl WorldModel {
             } else {
                 Platform::PC
             },
+            folders: self.user_data.folders.clone(),
         }
     }
 }
@@ -256,6 +257,7 @@ pub struct WorldDisplayData {
     #[serde(rename = "dateAdded")]
     pub date_added: String,
     pub platform: Platform,
+    pub folders: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
