@@ -16,27 +16,27 @@ impl InstanceType {
     pub fn public() -> Self {
         InstanceType::Public
     }
-    pub fn friends_plus(owner_user_id: String) -> Self {
-        InstanceType::FriendsPlus(owner_user_id)
+    pub fn friends_plus<S: AsRef<str>>(owner_user_id: S) -> Self {
+        InstanceType::FriendsPlus(owner_user_id.as_ref().to_string())
     }
-    pub fn friends_only(owner_user_id: String) -> Self {
-        InstanceType::FriendsOnly(owner_user_id)
+    pub fn friends_only<S: AsRef<str>>(owner_user_id: S) -> Self {
+        InstanceType::FriendsOnly(owner_user_id.as_ref().to_string())
     }
-    pub fn invite_plus(owner_user_id: String) -> Self {
-        InstanceType::InvitePlus(owner_user_id)
+    pub fn invite_plus<S: AsRef<str>>(owner_user_id: S) -> Self {
+        InstanceType::InvitePlus(owner_user_id.as_ref().to_string())
     }
-    pub fn invite_only(owner_user_id: String) -> Self {
-        InstanceType::InviteOnly(owner_user_id)
+    pub fn invite_only<S: AsRef<str>>(owner_user_id: S) -> Self {
+        InstanceType::InviteOnly(owner_user_id.as_ref().to_string())
     }
-    pub fn group_public(group_id: String) -> Self {
-        InstanceType::GroupPublic(group_id)
+    pub fn group_public<S: AsRef<str>>(group_id: S) -> Self {
+        InstanceType::GroupPublic(group_id.as_ref().to_string())
     }
-    pub fn group_plus(group_id: String) -> Self {
-        InstanceType::GroupPlus(group_id)
+    pub fn group_plus<S: AsRef<str>>(group_id: S) -> Self {
+        InstanceType::GroupPlus(group_id.as_ref().to_string())
     }
-    pub fn group_only(group_id: String, allowed_roles: Option<Vec<String>>) -> Self {
+    pub fn group_only<S: AsRef<str>>(group_id: S, allowed_roles: Option<Vec<String>>) -> Self {
         InstanceType::GroupOnly(GroupOnlyInstanceConfig {
-            group_id,
+            group_id: group_id.as_ref().to_string(),
             allowed_roles,
         })
     }
@@ -144,7 +144,6 @@ impl CreateInstanceRequestBuilder {
             group_access_type,
             queue_enabled: self.queue_enabled,
             can_request_invite,
-            invite_only: false,
         }
     }
 }
@@ -167,8 +166,6 @@ pub struct CreateInstanceRequest {
     pub queue_enabled: bool,
     #[serde(rename = "canRequestInvite")]
     pub can_request_invite: bool,
-    #[serde(rename = "inviteOnly")]
-    pub invite_only: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -185,7 +182,7 @@ pub struct Instance {
     #[serde(rename = "region")]
     pub region: InstanceRegion,
     #[serde(rename = "shortName")]
-    pub short_name: String,
+    pub short_name: Option<String>,
     #[serde(rename = "worldId")]
     pub world_id: String,
 }
