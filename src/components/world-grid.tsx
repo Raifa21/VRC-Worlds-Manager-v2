@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SortAsc, SortDesc, EyeOff } from 'lucide-react';
+import { SortAsc, SortDesc, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -81,24 +81,15 @@ export function WorldGrid({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [contextMenuOpen, setContextMenuOpen] = useState(false);
-  const [selectedWorld, setSelectedWorld] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [showHideDialog, setShowHideDialog] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dialogAction, setDialogAction] = useState<{
-    type: 'remove' | 'hide';
-    worldId: string;
-    worldName?: string;
-  } | null>(null);
   const [dialogConfig, setDialogConfig] = useState<{
     type: 'remove' | 'hide';
     worldId: string;
     worldName?: string;
     isOpen: boolean;
   } | null>(null);
+  const [selectedWorlds, setSelectedWorlds] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const calculateCols = () => {
     const cardWidth = cardWidths[size];
@@ -128,6 +119,20 @@ export function WorldGrid({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [size]);
+
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        (isSelectionMode || selectedWorlds.size > 0)
+      ) {
+        clearSelection();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscKey);
+    return () => window.removeEventListener('keydown', handleEscKey);
+  }, [isSelectionMode, selectedWorlds]);
 
   const filteredWorlds = worlds.filter(
     (world) =>
@@ -211,33 +216,66 @@ export function WorldGrid({
     }
   });
 
-  const openDetailedView = (id: string) => {
-    setWorldId(id);
-    setShowWorld(true);
-  };
-
   // Check if current folder is a special folder
   const isSpecialFolder = useMemo(() => {
     return Object.values(SpecialFolders).includes(folderName as SpecialFolders);
   }, [folderName]);
 
-  const handleDialogAction = (
-    action: 'remove' | 'hide',
-    worldId: string,
-    worldName?: string,
-  ) => {
-    setDialogConfig({
-      type: action,
-      worldId,
-      worldName,
-      isOpen: true,
-    });
-  };
-
   const handleDialogClose = () => {
     setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
     // Allow animation to complete before clearing state
     setTimeout(() => setDialogConfig(null), 150);
+  };
+
+  const handleSelect = (worldId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setSelectedWorlds((prev) => {
+      const newSelection = new Set(prev);
+      if (event.shiftKey && prev.size > 0) {
+        // Keep existing shift+click range selection
+        const worldIds = sortedAndFilteredWorlds.map((w) => w.worldId);
+        const lastSelected = Array.from(prev)[prev.size - 1];
+        const lastIndex = worldIds.indexOf(lastSelected);
+        const currentIndex = worldIds.indexOf(worldId);
+        const [start, end] = [
+          Math.min(lastIndex, currentIndex),
+          Math.max(lastIndex, currentIndex),
+        ];
+
+        for (let i = start; i <= end; i++) {
+          newSelection.add(worldIds[i]);
+        }
+      } else if (event.ctrlKey || event.metaKey) {
+        // Keep existing ctrl/cmd+click toggle
+        if (newSelection.has(worldId)) {
+          newSelection.delete(worldId);
+        } else {
+          newSelection.add(worldId);
+        }
+      } else {
+        // Modified single click behavior - toggle selection
+        if (newSelection.has(worldId)) {
+          newSelection.delete(worldId);
+        } else {
+          newSelection.add(worldId);
+        }
+      }
+      return newSelection;
+    });
+  };
+
+  const handleClick = (worldId: string, event: React.MouseEvent) => {
+    if (isSelectionMode || event.ctrlKey || event.metaKey || event.shiftKey) {
+      handleSelect(worldId, event);
+    } else {
+      onOpenWorldDetails(worldId);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedWorlds(new Set());
   };
 
   return (
@@ -252,6 +290,25 @@ export function WorldGrid({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className="flex items-center gap-2">
+            <Button
+              variant={isSelectionMode ? 'secondary' : 'ghost'}
+              size="icon"
+              onClick={() => {
+                if (isSelectionMode) {
+                  clearSelection();
+                  setIsSelectionMode(false);
+                } else {
+                  setIsSelectionMode(true);
+                }
+              }}
+              className="h-10 w-10"
+            >
+              {isSelectionMode ? (
+                <CheckSquare className="h-4 w-4" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
+            </Button>
             <Select
               value={sortField}
               onValueChange={(value) => handleSort(value as SortField)}
@@ -296,13 +353,30 @@ export function WorldGrid({
             {sortedAndFilteredWorlds.map((world) => (
               <ContextMenu key={world.worldId}>
                 <ContextMenuTrigger asChild>
-                  <div className="w-fit h-fit">
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => onOpenWorldDetails(world.worldId)}
-                    >
-                      <WorldCardPreview size={size} world={world} />
-                    </div>
+                  <div
+                    className={`relative w-fit h-fit group rounded-lg ${
+                      selectedWorlds.has(world.worldId)
+                        ? 'ring-2 ring-primary'
+                        : ''
+                    }`}
+                    onClick={(e) => handleClick(world.worldId, e)}
+                    onDoubleClick={() =>
+                      !isSelectionMode && onOpenWorldDetails(world.worldId)
+                    }
+                  >
+                    <WorldCardPreview size={size} world={world} />
+                    {isSelectionMode && (
+                      <div className="absolute top-2 left-2 z-10">
+                        {selectedWorlds.has(world.worldId) ? (
+                          <>
+                            <Square className="w-5 h-5 text-primary" />
+                            <div className="absolute inset-[4px] bg-primary rounded-sm" />
+                          </>
+                        ) : (
+                          <Square className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
@@ -310,23 +384,47 @@ export function WorldGrid({
                     <ContextMenuItem
                       onSelect={(e) => {
                         e.preventDefault();
-                        handleDialogAction('remove', world.worldId);
+                        const worldsToRemove =
+                          selectedWorlds.size > 0 &&
+                          selectedWorlds.has(world.worldId)
+                            ? Array.from(selectedWorlds)
+                            : [world.worldId];
+                        onRemoveFromFolder(worldsToRemove);
                       }}
                       className="text-destructive"
                     >
-                      Remove from Folder
+                      Remove{' '}
+                      {selectedWorlds.size > 1 &&
+                      selectedWorlds.has(world.worldId)
+                        ? `${selectedWorlds.size} worlds`
+                        : 'world'}{' '}
+                      from folder
                     </ContextMenuItem>
                   )}
 
                   <ContextMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
-                      handleDialogAction('hide', world.worldId, world.name);
+                      const worldsToHide =
+                        selectedWorlds.size > 0 &&
+                        selectedWorlds.has(world.worldId)
+                          ? Array.from(selectedWorlds)
+                          : [world.worldId];
+                      const worldNames = worldsToHide
+                        .map(
+                          (id) =>
+                            worlds.find((w) => w.worldId === id)?.name || '',
+                        )
+                        .filter(Boolean);
+                      onHideWorld(worldsToHide, worldNames);
                     }}
                     className="text-destructive"
                   >
-                    <EyeOff className="mr-2 h-4 w-4" />
-                    Hide World
+                    Hide{' '}
+                    {selectedWorlds.size > 1 &&
+                    selectedWorlds.has(world.worldId)
+                      ? `${selectedWorlds.size} worlds`
+                      : 'world'}
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>

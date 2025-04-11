@@ -199,15 +199,16 @@ export default function ListView() {
         await commands.hideWorld(id);
       }
 
+      const toastMessage =
+        worldName.length > 1
+          ? `Hidden "${worldName[0]}" and ${worldName.length - 1} more world${worldName.length - 1 > 1 ? 's' : ''}`
+          : `Hidden "${worldName[0]}"`;
+
       toast({
         title: 'Worlds hidden',
         description: (
           <div className="flex w-full items-center justify-between gap-2">
-            <span>
-              {worldName.length > 1
-                ? `Hidden "${worldName[0]}" and ${worldName.length - 1} more worlds`
-                : `Hidden "${worldName[0]}"`}
-            </span>
+            <span>{toastMessage}</span>
             <Button
               variant="outline"
               size="sm"
@@ -255,24 +256,32 @@ export default function ListView() {
 
   const removeWorldsFromFolder = async (worldIds: string[]) => {
     try {
-      // Store the world IDs for potential undo
-      const removedWorlds = worldIds;
+      // Get world names before removal
+      const worldNames = worldIds
+        .map((id) => worlds.find((w) => w.worldId === id)?.name || '')
+        .filter(Boolean);
+
+      const toastMessage =
+        worldNames.length > 1
+          ? `Removed "${worldNames[0]}" and ${worldNames.length - 1} more world${worldNames.length - 1 > 1 ? 's' : ''} from ${currentFolder}`
+          : `Removed "${worldNames[0]}" from ${currentFolder}`;
 
       for (const id of worldIds) {
         await commands.removeWorldFromFolder(currentFolder, id);
       }
+
       toast({
         title: 'Worlds removed',
         description: (
           <div className="flex w-full items-center justify-between gap-2">
-            <span>Removed from {currentFolder}</span>
+            <span>{toastMessage}</span>
             <Button
               variant="outline"
               size="sm"
               onClick={async () => {
                 try {
                   // Restore the worlds
-                  for (const id of removedWorlds) {
+                  for (const id of worldIds) {
                     await commands.addWorldToFolder(currentFolder, id);
                   }
                   await refreshCurrentView();
