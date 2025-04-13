@@ -1,4 +1,4 @@
-use crate::api::group::GroupInstanceCreatePermission;
+use crate::api::group::GroupInstancePermissionInfo;
 use crate::api::group::UserGroup;
 use crate::definitions::WorldDetails;
 use crate::services::FolderManager;
@@ -140,9 +140,8 @@ pub async fn get_user_groups() -> Result<Vec<UserGroup>, String> {
 #[specta::specta]
 pub async fn get_permission_for_create_group_instance(
     group_id: String,
-) -> Result<GroupInstanceCreatePermission, String> {
+) -> Result<GroupInstancePermissionInfo, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
-
     let permission =
         match ApiService::get_permission_for_create_group_instance(cookie_store, group_id).await {
             Ok(permission) => permission,

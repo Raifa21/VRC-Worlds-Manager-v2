@@ -467,7 +467,7 @@ impl ApiService {
     pub async fn get_permission_for_create_group_instance(
         cookie_store: Arc<Jar>,
         group_id: String,
-    ) -> Result<group::GroupInstanceCreatePermission, String> {
+    ) -> Result<group::GroupInstancePermissionInfo, String> {
         match group::get_permission_for_create_group_instance(cookie_store, &group_id).await {
             Ok(permission) => Ok(permission),
             Err(e) => Err(format!("Failed to fetch group instance permission: {}", e)),
