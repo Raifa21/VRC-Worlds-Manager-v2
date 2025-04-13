@@ -10,7 +10,7 @@ use crate::WORLDS;
 #[tauri::command]
 #[specta::specta]
 pub async fn try_login() -> Result<(), String> {
-    ApiService::login_with_token(AUTHENTICATOR.get()).await
+    ApiService::login_with_token(AUTHENTICATOR.get(), INITSTATE.get()).await
 }
 
 #[tauri::command]
@@ -99,7 +99,7 @@ pub async fn create_world_instance(
     region_str: String,
 ) -> Result<(), String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
-    let user_id = INITSTATE.get().read().unwrap().user_id.clone();
+    let user_id = INITSTATE.get().read().await.user_id.clone();
 
     let result = ApiService::create_world_instance(
         world_id,
@@ -123,7 +123,7 @@ pub async fn create_world_instance(
 #[specta::specta]
 pub async fn get_user_groups() -> Result<Vec<UserGroup>, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
-    let user_id = INITSTATE.get().read().unwrap().user_id.clone();
+    let user_id = INITSTATE.get().read().await.user_id.clone();
 
     let groups = match ApiService::get_user_groups(cookie_store, user_id).await {
         Ok(groups) => groups,

@@ -102,6 +102,11 @@ impl TryInto<WorldApiData> for FavoriteWorld {
             .map(|package| package.platform.clone())
             .collect();
 
+        let recommended_capacity = match self.recommended_capacity {
+            Some(capacity) if capacity > 0 => Some(capacity),
+            _ => None,
+        };
+
         Ok(WorldApiData {
             image_url: self.image_url,
             world_name: self.name,
@@ -109,7 +114,7 @@ impl TryInto<WorldApiData> for FavoriteWorld {
             author_name: self.author_name,
             author_id: self.author_id,
             capacity: self.capacity,
-            recommended_capacity: None,
+            recommended_capacity,
             tags: self.tags,
             publication_date,
             last_update,
@@ -146,6 +151,101 @@ pub struct HiddenWorld {
 pub enum FavoriteWorldParser {
     World(FavoriteWorld),
     HiddenWorld(HiddenWorld),
+}
+
+#[derive(Default, Debug, PartialEq, Eq, Deserialize)]
+pub struct WorldDetails {
+    #[serde(rename = "authorId")]
+    pub author_id: String,
+    #[serde(rename = "authorName")]
+    pub author_name: String,
+    #[serde(rename = "capacity")]
+    pub capacity: i32,
+    #[serde(rename = "description", default)]
+    pub description: String,
+    #[serde(rename = "recommendedCapacity", default)]
+    pub recommended_capacity: i32,
+    #[serde(rename = "created_at")]
+    pub created_at: String,
+    #[serde(rename = "favorites")]
+    pub favorites: i32,
+    #[serde(rename = "visits", skip_serializing_if = "Option::is_none")]
+    pub visits: Option<i32>,
+    #[serde(rename = "id")]
+    pub id: String,
+    #[serde(rename = "imageUrl")]
+    pub image_url: String,
+    #[serde(rename = "name")]
+    pub name: String,
+    #[serde(rename = "publicationDate")]
+    pub publication_date: String,
+    #[serde(rename = "releaseStatus")]
+    pub release_status: ReleaseStatus,
+    #[serde(rename = "tags")]
+    pub tags: Vec<String>,
+    #[serde(rename = "thumbnailImageUrl")]
+    pub thumbnail_image_url: String,
+    #[serde(rename = "unityPackages")]
+    pub unity_packages: Vec<UnityPackage>,
+    #[serde(rename = "updated_at")]
+    pub updated_at: String,
+    #[serde(rename = "version")]
+    pub version: i32,
+}
+
+impl TryInto<WorldApiData> for WorldDetails {
+    type Error = chrono::ParseError;
+
+    fn try_into(self) -> Result<WorldApiData, Self::Error> {
+        println!("world: {:?}", self);
+
+        println!("world.publication_date: {:?}", self.publication_date);
+
+        let publication_date = if self.publication_date == "none" {
+            None
+        } else {
+            Some(
+                DateTime::parse_from_rfc3339(&self.publication_date)
+                    .map_err(|e| {
+                        println!("Failed to parse publication_date: {}", e);
+                        e
+                    })?
+                    .with_timezone(&chrono::Utc),
+            )
+        };
+
+        println!("publication_date: {:?}", publication_date);
+
+        println!("world.updated_at: {:?}", self.updated_at);
+
+        let last_update =
+            DateTime::parse_from_rfc3339(&self.updated_at)?.with_timezone(&chrono::Utc);
+
+        println!("last_update: {:?}", last_update);
+
+        let platform: Vec<String> = self
+            .unity_packages
+            .iter()
+            .map(|package| package.platform.clone())
+            .collect();
+
+        Ok(WorldApiData {
+            image_url: self.image_url,
+            world_name: self.name,
+            world_id: self.id,
+            author_name: self.author_name,
+            author_id: self.author_id,
+            capacity: self.capacity,
+            recommended_capacity: Some(self.recommended_capacity),
+            tags: self.tags,
+            publication_date,
+            last_update,
+            description: self.description,
+            visits: self.visits,
+            favorites: self.favorites,
+            platform,
+        })
+    }
 }
 
 #[derive(Default, Debug, PartialEq, Deserialize)]

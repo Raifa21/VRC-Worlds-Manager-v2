@@ -2,6 +2,7 @@ use crate::api::auth::VRChatAPIClientAuthenticator;
 use crate::api::{auth, group, instance, world};
 use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
 use crate::services::file_service::FileService;
+use crate::InitState;
 use crate::INITSTATE;
 use reqwest::cookie::CookieStore;
 use reqwest::{cookie::Jar, Client, Url};
@@ -82,14 +83,17 @@ impl ApiService {
     /// Returns a string error message if the login fails
     pub async fn login_with_token(
         auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
+        init: &tokio::sync::RwLock<InitState>,
     ) -> Result<(), String> {
         let mut auth_lock = auth.write().await;
+        let mut init_lock = init.write().await;
         match auth_lock.verify_token().await {
             Ok(auth::VRChatAuthStatus::Success(cookies, user)) => {
                 // Store cookies and update AUTHENTICATOR state
                 FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
                 println!("Username: {}, ID: {}", user.username, user.id);
                 auth_lock.update_user_info(user.username);
+                init_lock.user_id = user.id.clone();
                 Ok(())
             }
             Ok(auth::VRChatAuthStatus::Requires2FA) => Err("2fa-required".to_string()),
@@ -135,7 +139,7 @@ impl ApiService {
                 FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
                 println!("Username: {}, ID: {}", user.username, user.id);
                 auth_lock.update_user_info(user.username);
-                INITSTATE.get().write().unwrap().user_id = user.id.clone();
+                INITSTATE.get().write().await.user_id = user.id.clone();
 
                 // Save the cookie store to disk
                 let cookie_store = Self::initialize_with_cookies(cookies);
@@ -174,7 +178,7 @@ impl ApiService {
                 FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
                 println!("Username: {}, ID: {}", user.username, user.id);
                 auth_lock.update_user_info(user.username);
-                INITSTATE.get().write().unwrap().user_id = user.id.clone();
+                INITSTATE.get().write().await.user_id = user.id.clone();
 
                 // Save the cookie store to disk
                 let cookie_store = Self::initialize_with_cookies(cookies);
@@ -220,7 +224,7 @@ impl ApiService {
                 FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
                 println!("Username: {}, ID: {}", user.username, user.id);
                 auth_lock.update_user_info(user.username);
-                INITSTATE.get().write().unwrap().user_id = user.id.clone();
+                INITSTATE.get().write().await.user_id = user.id.clone();
 
                 // Save the cookie store to disk
                 let cookie_store = Self::initialize_with_cookies(cookies);
@@ -272,7 +276,7 @@ impl ApiService {
         FileService::write_auth(&AuthCookies::new()).map_err(|e| e.to_string())?;
 
         // Reset INITSTATE
-        INITSTATE.get().write().unwrap().user_id = String::new();
+        INITSTATE.get().write().await.user_id = String::new();
 
         // Reset authenticator
         drop(authenticator);
@@ -344,7 +348,7 @@ impl ApiService {
         }
 
         match world::get_world_by_id(cookie_store, &world_id).await {
-            Ok(world) => match world::FavoriteWorld::try_into(world) {
+            Ok(world) => match world::WorldDetails::try_into(world) {
                 Ok(world_data) => Ok(world_data),
                 Err(e) => Err(e.to_string()),
             },
@@ -374,21 +378,25 @@ impl ApiService {
         cookie_store: Arc<Jar>,
         user_id: String,
     ) -> Result<(), String> {
+        println!(
+            "Creating instance: {} {} {}",
+            world_id, instance_type_str, region_str
+        );
         // Convert region string to InstanceRegion enum
         let region = match region_str.as_str() {
-            "us" => instance::InstanceRegion::UsWest,
-            "use" => instance::InstanceRegion::UsEast,
-            "eu" => instance::InstanceRegion::EU,
-            "jp" => instance::InstanceRegion::JP,
+            "US" => instance::InstanceRegion::UsWest,
+            "USE" => instance::InstanceRegion::UsEast,
+            "EU" => instance::InstanceRegion::EU,
+            "JP" => instance::InstanceRegion::JP,
             _ => return Err("Invalid region".to_string()),
         };
-
+        println!("ID: {:?}", user_id.clone());
         // Create instance type based on string and user_id
         let instance_type = match instance_type_str.as_str() {
             "public" => instance::InstanceType::Public,
-            "friends_plus" => instance::InstanceType::friends_plus(user_id),
+            "friends+" => instance::InstanceType::friends_plus(user_id),
             "friends" => instance::InstanceType::friends_only(user_id),
-            "invite_plus" => instance::InstanceType::invite_plus(user_id),
+            "invite+" => instance::InstanceType::invite_plus(user_id),
             "invite" => instance::InstanceType::invite_only(user_id),
             _ => return Err("Invalid instance type".to_string()),
         };
@@ -409,7 +417,7 @@ impl ApiService {
     ///
     /// # Arguments
     /// * `cookie_store` - The cookie store to use for the API
-    /// * `init` - The InitState to obtain the user ID from
+    /// * `user_id` - The ID of the user to get the groups for
     ///
     /// # Returns
     /// Returns a Result containing a vector of UserGroup if the request was successful
@@ -475,20 +483,24 @@ impl ApiService {
         queue_enabled: bool,
         cookie_store: Arc<Jar>,
     ) -> Result<(), String> {
+        println!(
+            "Creating group instance: {} {} {} {} {:?}",
+            world_id, group_id, instance_type_str, region_str, allowed_roles
+        );
         // Convert region string to InstanceRegion enum
         let region = match region_str.as_str() {
-            "us" => instance::InstanceRegion::UsWest,
-            "use" => instance::InstanceRegion::UsEast,
-            "eu" => instance::InstanceRegion::EU,
-            "jp" => instance::InstanceRegion::JP,
+            "US" => instance::InstanceRegion::UsWest,
+            "USE" => instance::InstanceRegion::UsEast,
+            "EU" => instance::InstanceRegion::EU,
+            "JP" => instance::InstanceRegion::JP,
             _ => return Err("Invalid region".to_string()),
         };
 
         // Create instance type based on string
         let instance_type = match instance_type_str.as_str() {
             "public" => instance::InstanceType::GroupPublic(group_id.clone()),
-            "plus" => instance::InstanceType::GroupPlus(group_id.clone()),
-            "only" => {
+            "group+" => instance::InstanceType::GroupPlus(group_id.clone()),
+            "group" => {
                 if let Some(roles) = allowed_roles {
                     let config = instance::GroupOnlyInstanceConfig {
                         group_id: group_id.clone(),

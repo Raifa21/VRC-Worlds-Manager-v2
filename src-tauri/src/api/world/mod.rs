@@ -4,6 +4,7 @@ mod logic;
 pub use definitions::FavoriteWorld;
 pub use definitions::SearchWorldSort;
 pub use definitions::VRChatWorld;
+pub use definitions::WorldDetails;
 pub use definitions::WorldSearchParameters;
 pub use definitions::WorldSearchParametersBuilder;
 

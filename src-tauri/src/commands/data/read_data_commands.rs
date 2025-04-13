@@ -38,7 +38,7 @@ pub async fn require_initial_setup() -> bool {
 #[specta::specta]
 pub async fn check_files_loaded() -> Result<bool, String> {
     let init_state_lock = crate::INITSTATE.get().read();
-    let init_state = init_state_lock.as_ref().unwrap();
+    let init_state = init_state_lock.await;
     match init_state.success {
         true => Ok(true),
         false => Err(init_state.message.clone()),

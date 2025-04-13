@@ -17,18 +17,18 @@ mod services;
 static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
 static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
 static WORLDS: InitCell<RwLock<Vec<WorldModel>>> = InitCell::new();
-static INITSTATE: InitCell<RwLock<InitState>> = InitCell::new();
+static INITSTATE: InitCell<tokio::sync::RwLock<InitState>> = InitCell::new();
 static AUTHENTICATOR: InitCell<tokio::sync::RwLock<VRChatAPIClientAuthenticator>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub async fn run() {
+pub fn run() {
     match services::initialize_service::initialize_app() {
         Ok((preferences, folders, worlds, cookies, init_state)) => {
             PREFERENCES.set(RwLock::new(preferences));
             FOLDERS.set(RwLock::new(folders));
             WORLDS.set(RwLock::new(worlds));
-            INITSTATE.set(RwLock::new(init_state));
+            INITSTATE.set(tokio::sync::RwLock::new(init_state));
             let cookie_store = ApiService::initialize_with_cookies(cookies.clone());
             AUTHENTICATOR.set(tokio::sync::RwLock::new(
                 VRChatAPIClientAuthenticator::from_cookie_store(cookie_store),
@@ -38,7 +38,7 @@ pub async fn run() {
             PREFERENCES.set(RwLock::new(PreferenceModel::new()));
             FOLDERS.set(RwLock::new(vec![]));
             WORLDS.set(RwLock::new(vec![]));
-            INITSTATE.set(RwLock::new(InitState::error(e)));
+            INITSTATE.set(tokio::sync::RwLock::new(InitState::error(e)));
             AUTHENTICATOR.set(tokio::sync::RwLock::new(VRChatAPIClientAuthenticator::new(
                 String::new(),
             )));
