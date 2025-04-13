@@ -1,6 +1,7 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use specta::Type;
 
-#[derive(Clone, Default, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Deserialize, Serialize, Type)]
 pub struct UserGroup {
     #[serde(rename = "id")]
     pub id: String,
@@ -33,7 +34,7 @@ pub struct UserGroup {
     pub mutual_group: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Default)]
+#[derive(Clone, Default, Debug, PartialEq, Deserialize, Serialize, Type)]
 pub enum GroupMemberVisibility {
     #[serde(rename = "visible")]
     #[default]
@@ -44,7 +45,7 @@ pub enum GroupMemberVisibility {
     Hidden,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize, Type)]
 pub enum GroupInstanceCreatePermission {
     Allowed(GroupInstanceCreateAllowedType),
     NotAllowed,
@@ -72,7 +73,7 @@ impl GroupInstanceCreatePermission {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize, Type)]
 pub struct GroupInstanceCreateAllowedType {
     pub normal: bool,
     pub plus: bool,

@@ -285,7 +285,7 @@ impl ApiService {
     /// Get user's favorite worlds
     ///
     /// # Arguments
-    /// * `auth` - The VRChatAPIClientAuthenticator to use for the request
+    /// * `cookie_store` - The cookie store to use for the API
     ///
     /// # Returns
     /// Returns a Result containing a vector of WorldApiData if the request was successful
@@ -293,12 +293,8 @@ impl ApiService {
     /// # Errors
     /// Returns a string error message if the request fails
     #[must_use]
-    pub async fn get_favorite_worlds(
-        auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
-    ) -> Result<Vec<WorldApiData>, String> {
+    pub async fn get_favorite_worlds(cookie_store: Arc<Jar>) -> Result<Vec<WorldApiData>, String> {
         let mut worlds = vec![];
-
-        let cookie_store = auth.read().await.get_cookies();
 
         let result = world::get_favorite_worlds(cookie_store).await;
 
@@ -327,6 +323,7 @@ impl ApiService {
     /// # Arguments
     /// * `world_id` - The ID of the world to fetch
     /// * `cookie_store` - The cookie store to use for the API
+    /// * `worlds` - A vector of WorldModel to check for existing worlds
     ///
     /// # Returns
     /// Returns a Result containing the WorldModel if the request was successful
@@ -336,23 +333,19 @@ impl ApiService {
     #[must_use]
     pub async fn get_world_by_id(
         world_id: String,
-        auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
-        worlds: &RwLock<Vec<WorldModel>>,
+        cookie_store: Arc<Jar>,
+        worlds: Vec<WorldModel>,
     ) -> Result<WorldApiData, String> {
-        let worlds_lock = worlds.read().unwrap();
-
-        if let Some(existing_world) = worlds_lock.iter().find(|w| w.api_data.world_id == world_id) {
+        if let Some(existing_world) = worlds.iter().find(|w| w.api_data.world_id == world_id) {
             if !existing_world.user_data.needs_update() {
                 println!("World already exists in cache");
                 return Ok(existing_world.api_data.clone());
             }
         }
 
-        let cookie_store = auth.read().await.get_cookies();
-
         match world::get_world_by_id(cookie_store, &world_id).await {
-            Ok(world) => match WorldApiData::from_api_data(world) {
-                Ok(world) => Ok(world),
+            Ok(world) => match world::FavoriteWorld::try_into(world) {
+                Ok(world_data) => Ok(world_data),
                 Err(e) => Err(e.to_string()),
             },
             Err(e) => Err(format!("Failed to fetch world: {}", e)),
@@ -379,7 +372,7 @@ impl ApiService {
         instance_type_str: String,
         region_str: String,
         cookie_store: Arc<Jar>,
-        user_id: Option<String>,
+        user_id: String,
     ) -> Result<(), String> {
         // Convert region string to InstanceRegion enum
         let region = match region_str.as_str() {
@@ -393,18 +386,10 @@ impl ApiService {
         // Create instance type based on string and user_id
         let instance_type = match instance_type_str.as_str() {
             "public" => instance::InstanceType::Public,
-            "friends_plus" => user_id
-                .map(instance::InstanceType::friends_plus)
-                .ok_or_else(|| "User ID required for friends+ instance".to_string())?,
-            "friends" => user_id
-                .map(instance::InstanceType::friends_only)
-                .ok_or_else(|| "User ID required for friends instance".to_string())?,
-            "invite_plus" => user_id
-                .map(instance::InstanceType::invite_plus)
-                .ok_or_else(|| "User ID required for invite+ instance".to_string())?,
-            "invite" => user_id
-                .map(instance::InstanceType::invite_only)
-                .ok_or_else(|| "User ID required for invite instance".to_string())?,
+            "friends_plus" => instance::InstanceType::friends_plus(user_id),
+            "friends" => instance::InstanceType::friends_only(user_id),
+            "invite_plus" => instance::InstanceType::invite_plus(user_id),
+            "invite" => instance::InstanceType::invite_only(user_id),
             _ => return Err("Invalid instance type".to_string()),
         };
 
@@ -417,6 +402,119 @@ impl ApiService {
         match instance::create_instance(cookie_store, request).await {
             Ok(_instance) => Ok(()),
             Err(e) => Err(format!("Failed to create world instance: {}", e)),
+        }
+    }
+
+    /// Gets the user's groups
+    ///
+    /// # Arguments
+    /// * `cookie_store` - The cookie store to use for the API
+    /// * `init` - The InitState to obtain the user ID from
+    ///
+    /// # Returns
+    /// Returns a Result containing a vector of UserGroup if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn get_user_groups(
+        cookie_store: Arc<Jar>,
+        user_id: String,
+    ) -> Result<Vec<group::UserGroup>, String> {
+        match group::get_user_groups(cookie_store, &user_id).await {
+            Ok(groups) => Ok(groups),
+            Err(e) => Err(format!("Failed to fetch user groups: {}", e)),
+        }
+    }
+
+    /// Gets the permission for creating a group instance
+    ///
+    /// # Arguments
+    /// * `cookie_store` - The cookie store to use for the API
+    /// * `group_id` - The ID of the group to get the permission for
+    ///
+    /// # Returns
+    /// Returns a Result containing the group instance create permission if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn get_permission_for_create_group_instance(
+        cookie_store: Arc<Jar>,
+        group_id: String,
+    ) -> Result<group::GroupInstanceCreatePermission, String> {
+        match group::get_permission_for_create_group_instance(cookie_store, &group_id).await {
+            Ok(permission) => Ok(permission),
+            Err(e) => Err(format!("Failed to fetch group instance permission: {}", e)),
+        }
+    }
+
+    /// Creates a new group instance
+    ///
+    /// # Arguments
+    /// * `world_id` - The ID of the world to create an instance of
+    /// * `group_id` - The ID of the group to create the instance for
+    /// * `instance_type_str` - The type of instance to create
+    /// * `allowed_roles` - The allowed roles for the instance
+    /// * `region_str` - The region to create the instance in
+    /// * `queue_enabled` - Whether the instance should have a queue
+    /// * `cookie_store` - The cookie store to use for the API
+    ///
+    /// # Returns
+    /// Returns an empty Ok if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn create_group_instance(
+        world_id: String,
+        group_id: String,
+        instance_type_str: String,
+        allowed_roles: Option<Vec<String>>,
+        region_str: String,
+        queue_enabled: bool,
+        cookie_store: Arc<Jar>,
+    ) -> Result<(), String> {
+        // Convert region string to InstanceRegion enum
+        let region = match region_str.as_str() {
+            "us" => instance::InstanceRegion::UsWest,
+            "use" => instance::InstanceRegion::UsEast,
+            "eu" => instance::InstanceRegion::EU,
+            "jp" => instance::InstanceRegion::JP,
+            _ => return Err("Invalid region".to_string()),
+        };
+
+        // Create instance type based on string
+        let instance_type = match instance_type_str.as_str() {
+            "public" => instance::InstanceType::GroupPublic(group_id.clone()),
+            "plus" => instance::InstanceType::GroupPlus(group_id.clone()),
+            "only" => {
+                if let Some(roles) = allowed_roles {
+                    let config = instance::GroupOnlyInstanceConfig {
+                        group_id: group_id.clone(),
+                        allowed_roles: Some(roles),
+                    };
+                    instance::InstanceType::GroupOnly(config)
+                } else {
+                    return Err("Allowed roles required for group-only instance".to_string());
+                }
+            }
+            _ => return Err("Invalid instance type".to_string()),
+        };
+
+        // Create request using builder
+        let request = instance::CreateInstanceRequestBuilder::new(
+            instance_type,
+            world_id,
+            region,
+            queue_enabled,
+        )
+        .build();
+
+        // Call API endpoint
+        match instance::create_instance(cookie_store, request).await {
+            Ok(_instance) => Ok(()),
+            Err(e) => Err(format!("Failed to create group instance: {}", e)),
         }
     }
 }

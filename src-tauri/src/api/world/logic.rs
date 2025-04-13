@@ -87,13 +87,13 @@ pub async fn get_recently_visited_worlds<J: Into<Arc<Jar>>>(
 
 #[derive(Deserialize)]
 struct GetWorldByIdResponse {
-    world: VRChatWorld,
+    world: FavoriteWorld,
 }
 
 pub async fn get_world_by_id<J: Into<Arc<Jar>>, S: AsRef<str>>(
     cookie: J,
     id: S,
-) -> Result<VRChatWorld, String> {
+) -> Result<FavoriteWorld, String> {
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
 
