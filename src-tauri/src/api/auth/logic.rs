@@ -20,7 +20,6 @@ pub struct VRChatAPIClientAuthenticator {
     client: reqwest::Client,
     cookie: Arc<cookie::Jar>,
     username: String,
-
     phase: VRChatAuthPhase,
 }
 
@@ -46,6 +45,15 @@ impl VRChatAPIClientAuthenticator {
             username: String::new(),
             phase: VRChatAuthPhase::None,
         }
+    }
+
+    pub fn update_user_info(&mut self, username: String) {
+        self.username = username;
+        self.phase = VRChatAuthPhase::LoggedIn;
+    }
+
+    pub fn get_cookies(&self) -> Arc<Jar> {
+        self.cookie.clone()
     }
 
     pub async fn verify_token(&mut self) -> Result<VRChatAuthStatus, String> {

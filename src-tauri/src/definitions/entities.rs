@@ -392,6 +392,7 @@ impl Into<Jar> for AuthCookies {
 pub struct InitState {
     pub success: bool,
     pub message: String,
+    pub user_id: String,
 }
 
 impl InitState {
@@ -399,13 +400,15 @@ impl InitState {
         Self {
             success: true,
             message: "".to_string(),
+            user_id: "".to_string(),
         }
     }
 
-    pub fn error(data_loaded: bool, message: String) -> Self {
+    pub fn error(message: String) -> Self {
         Self {
             success: false,
             message: message,
+            user_id: "".to_string(),
         }
     }
 }

@@ -22,32 +22,28 @@ static AUTHENTICATOR: InitCell<tokio::sync::RwLock<VRChatAPIClientAuthenticator>
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+pub async fn run() {
     match services::initialize_service::initialize_app() {
         Ok((preferences, folders, worlds, cookies, init_state)) => {
             PREFERENCES.set(RwLock::new(preferences));
             FOLDERS.set(RwLock::new(folders));
             WORLDS.set(RwLock::new(worlds));
             INITSTATE.set(RwLock::new(init_state));
+            let cookie_store = ApiService::initialize_with_cookies(cookies.clone());
+            AUTHENTICATOR.set(tokio::sync::RwLock::new(
+                VRChatAPIClientAuthenticator::from_cookie_store(cookie_store),
+            ));
         }
         Err(e) => {
             PREFERENCES.set(RwLock::new(PreferenceModel::new()));
             FOLDERS.set(RwLock::new(vec![]));
             WORLDS.set(RwLock::new(vec![]));
-            INITSTATE.set(RwLock::new(InitState::error(false, e)));
+            INITSTATE.set(RwLock::new(InitState::error(e)));
+            AUTHENTICATOR.set(tokio::sync::RwLock::new(VRChatAPIClientAuthenticator::new(
+                String::new(),
+            )));
         }
     };
-
-    match services::ApiService::initialize_with_cookies(cookies) {
-        Ok(cookie_store) => {
-            AUTHENTICATOR.set(RwLock::new(
-                VRChatAPIClientAuthenticator::from_cookie_store(cookie_store),
-            ));
-        }
-        Err(e) => {
-            log::error!("Failed to initialize API service: {}", e);
-        }
-    }
 
     let builder = generate_tauri_specta_builder();
 

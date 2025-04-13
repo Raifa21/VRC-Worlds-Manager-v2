@@ -1,9 +1,11 @@
+use crate::api::auth::VRChatAPIClientAuthenticator;
 use crate::api::{auth, group, instance, world};
 use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
 use crate::services::file_service::FileService;
+use crate::INITSTATE;
 use reqwest::cookie::CookieStore;
 use reqwest::{cookie::Jar, Client, Url};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tauri::http::HeaderValue;
 
 pub struct ApiService;
@@ -71,53 +73,219 @@ impl ApiService {
     /// This is used to restore the user's session
     ///
     /// # Arguments
-    /// * `cookie_store` - The cookie store to use for the API
+    /// * `auth` - The VRChatAPIClientAuthenticator to use for the login
     ///
     /// # Returns
-    /// Returns an empty Ok if the login was successful
+    /// Returns a Result containing the VRChatAPIClientAuthenticator if the login was successful
     ///
     /// # Errors
     /// Returns a string error message if the login fails
-    pub async fn login_with_token(cookie_store: Arc<Jar>) -> Result<(), String> {
-        let mut new_auth = auth::VRChatAPIClientAuthenticator::from_cookie_store(cookie_store);
-        match new_auth.verify_token().await {
-            Ok(user) => {
-                println!("Username: {}", user.username);
+    pub async fn login_with_token(
+        auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
+    ) -> Result<(), String> {
+        let mut auth_lock = auth.write().await;
+        match auth_lock.verify_token().await {
+            Ok(auth::VRChatAuthStatus::Success(cookies, user)) => {
+                // Store cookies and update AUTHENTICATOR state
+                FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
+                println!("Username: {}, ID: {}", user.username, user.id);
+                auth_lock.update_user_info(user.username);
                 Ok(())
             }
+            Ok(auth::VRChatAuthStatus::Requires2FA) => Err("2fa-required".to_string()),
+            Ok(auth::VRChatAuthStatus::RequiresEmail2FA) => Err("2fa-required".to_string()),
+            Ok(auth::VRChatAuthStatus::InvalidCredentials) => {
+                Err("Invalid credentials".to_string())
+            }
+            Ok(auth::VRChatAuthStatus::UnknownError(e)) => Err(format!("Login failed: {}", e)),
+            Err(e) => Err(format!("Login failed: {}", e)),
+        }
+    }
+
+    /// Logs the user in with the provided credentials
+    ///     
+    /// # Arguments
+    /// * `username` - The username of the user
+    /// * `password` - The password of the user
+    /// * `auth` - The VRChatAPIClientAuthenticator to use for the login
+    ///
+    /// # Returns
+    /// Returns a Result containing the VRChatAPIClientAuthenticator if the login was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the login fails
+    pub async fn login_with_credentials(
+        username: String,
+        password: String,
+        auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
+    ) -> Result<(), String> {
+        let mut auth_lock = auth.write().await;
+        *auth_lock = VRChatAPIClientAuthenticator::new(username.clone());
+        let result = auth_lock.login_with_password(&password).await;
+
+        if result.is_err() {
+            return Err(format!("Login failed: {}", result.as_ref().err().unwrap()));
+        }
+
+        let status = result.unwrap();
+
+        match status {
+            auth::VRChatAuthStatus::Success(cookies, user) => {
+                // Store cookies and update AUTHENTICATOR state
+                FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
+                println!("Username: {}, ID: {}", user.username, user.id);
+                auth_lock.update_user_info(user.username);
+                INITSTATE.get().write().unwrap().user_id = user.id.clone();
+
+                // Save the cookie store to disk
+                let cookie_store = Self::initialize_with_cookies(cookies);
+                Self::save_cookie_store(cookie_store)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                Ok(())
+            }
+            auth::VRChatAuthStatus::Requires2FA => Err("2fa-required".to_string()),
+            auth::VRChatAuthStatus::RequiresEmail2FA => Err("2fa-required".to_string()),
+            auth::VRChatAuthStatus::InvalidCredentials => Err("Invalid credentials".to_string()),
+            auth::VRChatAuthStatus::UnknownError(e) => Err(format!("Login failed: {}", e)),
+        }
+    }
+
+    /// Logs the user in with the provided 2FA code
+    /// This is used to complete the login process
+    ///
+    /// # Arguments
+    /// * `code` - The 2FA code to use for the login
+    /// * `auth` - The VRChatAPIClientAuthenticator to use for the login
+    ///
+    /// # Returns
+    /// Returns a Result containing the VRChatAPIClientAuthenticator if the login was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the login fails
+    pub async fn login_with_2fa(
+        code: String,
+        auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
+    ) -> Result<(), String> {
+        let mut auth_lock = auth.write().await;
+        match auth_lock.login_with_2fa(&code).await {
+            Ok(auth::VRChatAuthStatus::Success(cookies, user)) => {
+                // Store cookies and update AUTHENTICATOR state
+                FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
+                println!("Username: {}, ID: {}", user.username, user.id);
+                auth_lock.update_user_info(user.username);
+                INITSTATE.get().write().unwrap().user_id = user.id.clone();
+
+                // Save the cookie store to disk
+                let cookie_store = Self::initialize_with_cookies(cookies);
+                Self::save_cookie_store(cookie_store)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                Ok(())
+            }
+            Ok(auth::VRChatAuthStatus::Requires2FA) => Err("2fa-required".to_string()),
+            Ok(auth::VRChatAuthStatus::RequiresEmail2FA) => Err("2fa-required".to_string()),
+            Ok(auth::VRChatAuthStatus::InvalidCredentials) => {
+                Err("Invalid credentials".to_string())
+            }
+            Ok(auth::VRChatAuthStatus::UnknownError(e)) => Err(format!("Login failed: {}", e)),
             Err(e) => {
-                if e.contains("2FA") {
-                    Err("2fa-required".to_string())
-                } else {
-                    Err(format!("Login failed: {}", e))
-                }
+                let err = format!("Login failed: {}", e);
+                println!("{}", err);
+                Err(err)
+            }
+        }
+    }
+
+    /// Logs the user in with the provided email 2FA code
+    /// This is used to complete the login process
+    ///
+    /// # Arguments
+    /// * `code` - The email 2FA code to use for the login
+    /// * `auth` - The VRChatAPIClientAuthenticator to use for the login
+    ///
+    /// # Returns
+    /// Returns a Result containing the VRChatAPIClientAuthenticator if the login was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the login fails
+    pub async fn login_with_email_2fa(
+        code: String,
+        auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
+    ) -> Result<(), String> {
+        let mut auth_lock = auth.write().await;
+        match auth_lock.login_with_email_2fa(&code).await {
+            Ok(auth::VRChatAuthStatus::Success(cookies, user)) => {
+                // Store cookies and update AUTHENTICATOR state
+                FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
+                println!("Username: {}, ID: {}", user.username, user.id);
+                auth_lock.update_user_info(user.username);
+                INITSTATE.get().write().unwrap().user_id = user.id.clone();
+
+                // Save the cookie store to disk
+                let cookie_store = Self::initialize_with_cookies(cookies);
+                Self::save_cookie_store(cookie_store)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                Ok(())
+            }
+            Ok(auth::VRChatAuthStatus::Requires2FA) => Err("2fa-required".to_string()),
+            Ok(auth::VRChatAuthStatus::RequiresEmail2FA) => Err("2fa-required".to_string()),
+            Ok(auth::VRChatAuthStatus::InvalidCredentials) => {
+                Err("Invalid credentials".to_string())
+            }
+            Ok(auth::VRChatAuthStatus::UnknownError(e)) => Err(format!("Login failed: {}", e)),
+            Err(e) => {
+                let err = format!("Login failed: {}", e);
+                println!("{}", err);
+                Err(err)
             }
         }
     }
 
     /// Logs the user out
     /// This clears the authentication cookies
+    /// Also clears local storage
     ///
     /// # Arguments
-    /// * `cookie_store` - The cookie store to use for the API
+    /// * `auth` - The VRChatAPIClientAuthenticator to use for the logout
     ///
     /// # Returns
-    /// Returns an empty Ok if the logout was successful
+    /// Returns a Result containing an empty Ok if the logout was successful
     ///
     /// # Errors
     /// Returns a string error message if the logout fails
-    pub async fn logout(cookie_store: Arc<Jar>) -> Result<(), String> {
-        api::auth::logout(&cookie_store).await.map_err(|e| {
+    pub async fn logout(
+        auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
+    ) -> Result<(), String> {
+        let authenticator = auth.read().await;
+        let cookie_store = authenticator.get_cookies();
+
+        // Call the API logout endpoint
+        auth::logout(&cookie_store).await.map_err(|e| {
             let err = format!("Failed to logout from VRChat: {}", e);
             println!("{}", err);
             err
-        })
+        })?;
+
+        // Clear cookies from disk
+        FileService::write_auth(&AuthCookies::new()).map_err(|e| e.to_string())?;
+
+        // Reset INITSTATE
+        INITSTATE.get().write().unwrap().user_id = String::new();
+
+        // Reset authenticator
+        drop(authenticator);
+        let mut auth_lock = auth.write().await;
+        *auth_lock = VRChatAPIClientAuthenticator::new(String::new());
+
+        Ok(())
     }
 
     /// Get user's favorite worlds
     ///
     /// # Arguments
-    /// * `cookie_store` - The cookie store to use for the API
+    /// * `auth` - The VRChatAPIClientAuthenticator to use for the request
     ///
     /// # Returns
     /// Returns a Result containing a vector of WorldApiData if the request was successful
@@ -125,10 +293,14 @@ impl ApiService {
     /// # Errors
     /// Returns a string error message if the request fails
     #[must_use]
-    pub async fn get_favorite_worlds(cookie_store: Arc<Jar>) -> Result<Vec<WorldApiData>, String> {
+    pub async fn get_favorite_worlds(
+        auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
+    ) -> Result<Vec<WorldApiData>, String> {
         let mut worlds = vec![];
 
-        let result = api::world::get_favorite_worlds(cookie_store).await;
+        let cookie_store = auth.read().await.get_cookies();
+
+        let result = world::get_favorite_worlds(cookie_store).await;
 
         let favorite_worlds = match result {
             Ok(worlds) => worlds,
@@ -164,18 +336,21 @@ impl ApiService {
     #[must_use]
     pub async fn get_world_by_id(
         world_id: String,
-        cookie_store: Arc<Jar>,
-        worlds: Vec<WorldModel>,
+        auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
+        worlds: &RwLock<Vec<WorldModel>>,
     ) -> Result<WorldApiData, String> {
-        if let Some(existing_world) = worlds.iter().find(|w| w.api_data.world_id == world_id) {
+        let worlds_lock = worlds.read().unwrap();
+
+        if let Some(existing_world) = worlds_lock.iter().find(|w| w.api_data.world_id == world_id) {
             if !existing_world.user_data.needs_update() {
                 println!("World already exists in cache");
                 return Ok(existing_world.api_data.clone());
             }
         }
 
-        let config = Self::create_config(cookie_store.clone());
-        match apis::worlds_api::get_world(&config, &world_id).await {
+        let cookie_store = auth.read().await.get_cookies();
+
+        match world::get_world_by_id(cookie_store, &world_id).await {
             Ok(world) => match WorldApiData::from_api_data(world) {
                 Ok(world) => Ok(world),
                 Err(e) => Err(e.to_string()),
