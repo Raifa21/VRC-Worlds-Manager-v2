@@ -1,5 +1,5 @@
 use crate::api::auth::VRChatAPIClientAuthenticator;
-use crate::api::{auth, group, instance, world};
+use crate::api::{auth, group, instance, invite, world};
 use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
 use crate::services::file_service::FileService;
 use crate::InitState;
@@ -356,6 +356,17 @@ impl ApiService {
         }
     }
 
+    async fn invite_self_to_instance(
+        cookie_store: Arc<Jar>,
+        world_id: String,
+        instance_id: String,
+    ) -> Result<(), String> {
+        match invite::invite_self_to_instance(cookie_store, &world_id, &instance_id).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to invite self to instance: {}", e)),
+        }
+    }
+
     /// Creates a new instance of a world
     ///
     /// # Arguments
@@ -407,8 +418,14 @@ impl ApiService {
                 .build();
 
         // Call API endpoint
-        match instance::create_instance(cookie_store, request).await {
-            Ok(_instance) => Ok(()),
+        match instance::create_instance(cookie_store.clone(), request).await {
+            Ok(_instance) => {
+                // Invite self to the instance
+                let instance_id = _instance.instance_id.clone();
+                let world_id = _instance.world_id.clone();
+                Self::invite_self_to_instance(cookie_store, world_id, instance_id).await?;
+                Ok(())
+            }
             Err(e) => Err(format!("Failed to create world instance: {}", e)),
         }
     }
@@ -524,8 +541,14 @@ impl ApiService {
         .build();
 
         // Call API endpoint
-        match instance::create_instance(cookie_store, request).await {
-            Ok(_instance) => Ok(()),
+        match instance::create_instance(cookie_store.clone(), request).await {
+            Ok(_instance) => {
+                // Invite self to the instance
+                let instance_id = _instance.instance_id.clone();
+                let world_id = _instance.world_id.clone();
+                Self::invite_self_to_instance(cookie_store, world_id, instance_id).await?;
+                Ok(())
+            }
             Err(e) => Err(format!("Failed to create group instance: {}", e)),
         }
     }
