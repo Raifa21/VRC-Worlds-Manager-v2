@@ -197,7 +197,7 @@ impl VRChatAPIClientAuthenticator {
             .body(format!(r#"{{"code":"{}"}}"#, code))
             .send()
             .await
-            .expect("Failed to send login request");
+            .map_err(|e| format!("Failed to send login request: {}", e))?;
 
         self.process_2fa_response(response).await
     }
@@ -219,7 +219,7 @@ impl VRChatAPIClientAuthenticator {
             .body(format!(r#"{{"code":"{}"}}"#, code))
             .send()
             .await
-            .expect("Failed to send login request");
+            .map_err(|e| format!("Failed to send login request: {}", e))?;
 
         self.process_2fa_response(response).await
     }
@@ -279,7 +279,7 @@ pub async fn logout(jar: &Arc<Jar>) -> Result<(), String> {
         .put(format!("{}/logout", API_BASE_URL))
         .send()
         .await
-        .expect("Failed to send login request");
+        .map_err(|e| format!("Failed to send logout request: {}", e))?;
 
     if result.status() == StatusCode::OK {
         return Ok(());

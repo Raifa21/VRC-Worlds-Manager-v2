@@ -19,7 +19,7 @@ pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
         .get(format!("{}/worlds/favorites", API_BASE_URL))
         .send()
         .await
-        .expect("Failed to get favorite worlds");
+        .map_err(|e| e.to_string())?;
 
     let text = result.text().await;
 
@@ -62,7 +62,7 @@ pub async fn get_recently_visited_worlds<J: Into<Arc<Jar>>>(
         .get(format!("{}/worlds/recent", API_BASE_URL))
         .send()
         .await
-        .expect("Failed to get recently visited worlds");
+        .map_err(|e| format!("Failed to get recently visited worlds: {}", e.to_string()))?;
 
     let text = result.text().await;
 
@@ -98,7 +98,7 @@ pub async fn get_world_by_id<J: Into<Arc<Jar>>, S: AsRef<str>>(
         .get(format!("{}/worlds/{}", API_BASE_URL, id.as_ref()))
         .send()
         .await
-        .expect("Failed to get world by ID");
+        .map_err(|e| format!("Failed to get world by ID: {}", e.to_string()))?;
 
     let text = result.text().await;
 
