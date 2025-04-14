@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "vrc-worlds-manager",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.raifaworks.vrc-worlds-manager",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
@@ -26,7 +26,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": "nsis",
     "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",

@@ -83,7 +83,6 @@ impl CreateInstanceRequestBuilder {
     }
 
     pub fn build(self) -> CreateInstanceRequest {
-
         let (instance_type, owner_id, role_ids, group_access_type, can_request_invite) =
             match self.instance_type {
                 InstanceType::Public => ("public".into(), None, vec![], "members".into(), false),
