@@ -38,7 +38,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI5NDRGQjVEOTcwOUE4RDUKUldUVnFBbVhYZnRFS2R6OVVHalozZEdNTVhCV21ZNDZhSFpMZ3dYRHAwd3d3UmhyYnBUMEZJSHgK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVDNTJCMzNBMzVGQzk4MEYKUldRUG1QdzFPck5TWEE5UjZxUDc0ZDVwZThnM29RODlpNzl6bDhZbzA0YllQa3FUb1k5Qy93c28K",
       "endpoints": ["https://releases.raifaworks.com/vrc-worlds-manager/latest.json"]
     }
   }
