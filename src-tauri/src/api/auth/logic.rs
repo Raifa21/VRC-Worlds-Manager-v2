@@ -254,8 +254,10 @@ impl VRChatAPIClientAuthenticator {
 
             let url = reqwest::Url::from_str(API_BASE_URL).unwrap();
             let header_value = self.cookie.cookies(&url);
-            let cookie_str = header_value.as_ref().unwrap().to_str().unwrap();
-
+            let cookie_str = match header_value.as_ref() {
+                Some(value) => value.to_str().map_err(|e| format!("Failed to convert cookie to string: {}", e))?,
+                None => return Err("No cookies found in the response".to_string()),
+            };
             let auth_cookies = AuthCookies::from_cookie_str(cookie_str);
 
             self.phase = VRChatAuthPhase::LoggedIn;
