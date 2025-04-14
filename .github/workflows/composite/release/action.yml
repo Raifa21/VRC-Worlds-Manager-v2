@@ -45,7 +45,7 @@ runs:
     - run: npm --version
       shell: bash
 
-    - run: npm install npm ci
+    - run: npm ci
       shell: bash
 
     - uses: dtolnay/rust-toolchain@stable
