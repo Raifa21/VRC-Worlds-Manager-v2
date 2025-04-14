@@ -305,6 +305,22 @@ export function WorldGrid({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className="flex items-center gap-2">
+
+            <Select
+              value={sortField}
+              onValueChange={(value) => handleSort(value as SortField)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="authorName">Author</SelectItem>
+                <SelectItem value="favorites">Favorites</SelectItem>
+                <SelectItem value="dateAdded">Date Added</SelectItem>
+                <SelectItem value="lastUpdated">Last Updated</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               variant={isSelectionMode ? 'secondary' : 'ghost'}
               size="icon"
@@ -324,21 +340,6 @@ export function WorldGrid({
                 <Square className="h-4 w-4" />
               )}
             </Button>
-            <Select
-              value={sortField}
-              onValueChange={(value) => handleSort(value as SortField)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="authorName">Author</SelectItem>
-                <SelectItem value="favorites">Favorites</SelectItem>
-                <SelectItem value="dateAdded">Date Added</SelectItem>
-                <SelectItem value="lastUpdated">Last Updated</SelectItem>
-              </SelectContent>
-            </Select>
             <Button
               variant="ghost"
               size="icon"
