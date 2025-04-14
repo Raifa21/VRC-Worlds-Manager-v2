@@ -154,9 +154,6 @@ impl VRChatAPIClientAuthenticator {
                 }
             }
 
-            let current_user = serde_json::from_str::<CurrentUser>(&text)
-                .map_err(|e| format!("Failed to parse user data: {}", e))?;
-
             let url = reqwest::Url::from_str(API_BASE_URL).unwrap();
             let header_value = self.cookie.cookies(&url);
             let cookie_str = header_value.as_ref().unwrap().to_str().unwrap();
@@ -164,6 +161,10 @@ impl VRChatAPIClientAuthenticator {
             let auth_cookies = AuthCookies::from_cookie_str(cookie_str);
 
             self.phase = VRChatAuthPhase::LoggedIn;
+            let current_user = CurrentUser {
+                id: String::new(),
+                username: String::new(),
+            };
             return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 
@@ -246,9 +247,6 @@ impl VRChatAPIClientAuthenticator {
                 return Ok(VRChatAuthStatus::InvalidCredentials);
             }
 
-            let current_user = serde_json::from_str::<CurrentUser>(&text)
-                .map_err(|e| format!("Failed to parse user data: {}", e))?;
-
             let url = reqwest::Url::from_str(API_BASE_URL).unwrap();
             let header_value = self.cookie.cookies(&url);
             let cookie_str = header_value.as_ref().unwrap().to_str().unwrap();
@@ -256,6 +254,11 @@ impl VRChatAPIClientAuthenticator {
             let auth_cookies = AuthCookies::from_cookie_str(cookie_str);
 
             self.phase = VRChatAuthPhase::LoggedIn;
+
+            let current_user = CurrentUser {
+                id: String::new(),
+                username: String::new(),
+            };
             return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 

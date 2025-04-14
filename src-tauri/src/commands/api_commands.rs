@@ -27,12 +27,16 @@ pub async fn login_with_2fa(code: String, two_factor_type: String) -> Result<(),
     if two_factor_type == "emailOtp" {
         ApiService::login_with_email_2fa(code, AUTHENTICATOR.get())
             .await
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
     } else {
         ApiService::login_with_2fa(code, AUTHENTICATOR.get())
             .await
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
     }
+    // call login_with_token to set user id information
+    ApiService::login_with_token(AUTHENTICATOR.get(), INITSTATE.get())
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

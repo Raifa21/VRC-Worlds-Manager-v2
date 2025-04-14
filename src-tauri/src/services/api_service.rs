@@ -137,9 +137,6 @@ impl ApiService {
             auth::VRChatAuthStatus::Success(cookies, user) => {
                 // Store cookies and update AUTHENTICATOR state
                 FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
-                println!("Username: {}, ID: {}", user.username, user.id);
-                auth_lock.update_user_info(user.username);
-                INITSTATE.get().write().await.user_id = user.id.clone();
 
                 // Save the cookie store to disk
                 let cookie_store = Self::initialize_with_cookies(cookies);
@@ -176,9 +173,6 @@ impl ApiService {
             Ok(auth::VRChatAuthStatus::Success(cookies, user)) => {
                 // Store cookies and update AUTHENTICATOR state
                 FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
-                println!("Username: {}, ID: {}", user.username, user.id);
-                auth_lock.update_user_info(user.username);
-                INITSTATE.get().write().await.user_id = user.id.clone();
 
                 // Save the cookie store to disk
                 let cookie_store = Self::initialize_with_cookies(cookies);
@@ -395,7 +389,7 @@ impl ApiService {
         );
         // Convert region string to InstanceRegion enum
         let region = match region_str.as_str() {
-            "US" => instance::InstanceRegion::UsWest,
+            "USW" => instance::InstanceRegion::UsWest,
             "USE" => instance::InstanceRegion::UsEast,
             "EU" => instance::InstanceRegion::EU,
             "JP" => instance::InstanceRegion::JP,
@@ -506,7 +500,7 @@ impl ApiService {
         );
         // Convert region string to InstanceRegion enum
         let region = match region_str.as_str() {
-            "US" => instance::InstanceRegion::UsWest,
+            "USW" => instance::InstanceRegion::UsWest,
             "USE" => instance::InstanceRegion::UsEast,
             "EU" => instance::InstanceRegion::EU,
             "JP" => instance::InstanceRegion::JP,
@@ -525,7 +519,11 @@ impl ApiService {
                     };
                     instance::InstanceType::GroupOnly(config)
                 } else {
-                    return Err("Allowed roles required for group-only instance".to_string());
+                    let config = instance::GroupOnlyInstanceConfig {
+                        group_id: group_id.clone(),
+                        allowed_roles: None,
+                    };
+                    instance::InstanceType::GroupOnly(config)
                 }
             }
             _ => return Err("Invalid instance type".to_string()),

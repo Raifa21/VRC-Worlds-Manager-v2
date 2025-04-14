@@ -113,6 +113,8 @@ pub struct GroupRole {
     pub group_id: String,
     pub name: String,
     pub permissions: Vec<GroupPermission>,
+    #[serde(rename = "isManagementRole")]
+    pub is_management_role: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Type)]

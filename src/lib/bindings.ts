@@ -164,7 +164,7 @@ export const commands = {
   async loginWithCredentials(
     username: string,
     password: string,
-  ): Promise<Result<VRChatAuthPhase, string>> {
+  ): Promise<Result<null, string>> {
     try {
       return {
         status: 'ok',
@@ -181,7 +181,7 @@ export const commands = {
   async loginWith2fa(
     code: string,
     twoFactorType: string,
-  ): Promise<Result<VRChatAuthPhase, string>> {
+  ): Promise<Result<null, string>> {
     try {
       return {
         status: 'ok',
@@ -208,18 +208,29 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async createInstance(
+  async getWorld(worldId: string): Promise<Result<WorldDetails, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_world', { worldId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async createWorldInstance(
     worldId: string,
-    instanceType: string,
-    region: string,
+    instanceTypeStr: string,
+    regionStr: string,
   ): Promise<Result<null, string>> {
     try {
       return {
         status: 'ok',
-        data: await TAURI_INVOKE('create_instance', {
+        data: await TAURI_INVOKE('create_world_instance', {
           worldId,
-          instanceType,
-          region,
+          instanceTypeStr,
+          regionStr,
         }),
       };
     } catch (e) {
@@ -227,11 +238,48 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async getWorld(worldId: string): Promise<Result<WorldDetails, string>> {
+  async getUserGroups(): Promise<Result<UserGroup[], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_user_groups') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getPermissionForCreateGroupInstance(
+    groupId: string,
+  ): Promise<Result<GroupInstancePermissionInfo, string>> {
     try {
       return {
         status: 'ok',
-        data: await TAURI_INVOKE('get_world', { worldId }),
+        data: await TAURI_INVOKE('get_permission_for_create_group_instance', {
+          groupId,
+        }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async createGroupInstance(
+    worldId: string,
+    groupId: string,
+    instanceTypeStr: string,
+    allowedRoles: string[] | null,
+    regionStr: string,
+    queueEnabled: boolean,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('create_group_instance', {
+          worldId,
+          groupId,
+          instanceTypeStr,
+          allowedRoles,
+          regionStr,
+          queueEnabled,
+        }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -362,12 +410,68 @@ export const commands = {
 /** user-defined types **/
 
 export type CardSize = 'Compact' | 'Normal' | 'Expanded' | 'Original';
+export type GroupInstanceCreateAllowedType = {
+  normal: boolean;
+  plus: boolean;
+  public: boolean;
+  restricted: boolean;
+};
+export type GroupInstanceCreatePermission =
+  | { Allowed: GroupInstanceCreateAllowedType }
+  | 'NotAllowed';
+export type GroupInstancePermissionInfo = {
+  permission: GroupInstanceCreatePermission;
+  roles: GroupRole[];
+};
+export type GroupMemberVisibility = 'visible' | 'friends' | 'hidden';
+export type GroupPermission =
+  | '*'
+  | 'group-announcement-manage'
+  | 'group-audit-view'
+  | 'group-bans-manage'
+  | 'group-data-manage'
+  | 'group-default-role-manage'
+  | 'group-galleries-manage'
+  | 'group-instance-age-gated-create'
+  | 'group-instance-join'
+  | 'group-instance-manage'
+  | 'group-instance-moderate'
+  | 'group-instance-open-create'
+  | 'group-instance-plus-create'
+  | 'group-instance-plus-portal'
+  | 'group-instance-plus-portal-unlocked'
+  | 'group-instance-public-create'
+  | 'group-instance-queue-priority'
+  | 'group-instance-restricted-create'
+  | 'group-invites-manage'
+  | 'group-members-manage'
+  | 'group-members-remove'
+  | 'group-members-viewall'
+  | 'group-roles-assign'
+  | 'group-roles-manage';
+export type GroupRole = {
+  id: string;
+  groupId: string;
+  name: string;
+  permissions: GroupPermission[];
+  isManagementRole: boolean;
+};
 export type Platform = 'PC' | 'Quest' | 'Cross-Platform';
-export type VRChatAuthPhase =
-  | 'none'
-  | 'twoFactorAuth'
-  | 'email2FA'
-  | 'loggedIn';
+export type UserGroup = {
+  id: string;
+  name: string;
+  shortCode: string;
+  discriminator: string;
+  description: string;
+  iconUrl?: string | null;
+  bannerUrl?: string | null;
+  privacy: string;
+  memberCount: number;
+  groupId: string;
+  memberVisibility: GroupMemberVisibility;
+  isRepresenting: boolean;
+  mutualGroup: boolean;
+};
 export type WorldDetails = {
   worldId: string;
   name: string;
