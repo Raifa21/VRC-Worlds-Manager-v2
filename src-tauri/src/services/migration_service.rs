@@ -95,7 +95,7 @@ impl MigrationService {
     /// Returns an error message if the old VRC World Manager Data could not be found
     pub fn detect_old_installation() -> Result<(String, String), String> {
         let base_dirs = BaseDirs::new().ok_or("Could not get base directories")?;
-        let local_app_data = base_dirs.data_local_dir().join("VRC_World_Manager");
+        let local_app_data = base_dirs.data_local_dir().join("VRC_Worlds_Manager");
 
         let worlds_path = local_app_data.join("worlds.json");
         let folders_path = local_app_data.join("folders.json");
