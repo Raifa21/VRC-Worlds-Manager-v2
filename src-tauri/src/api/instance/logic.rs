@@ -31,14 +31,7 @@ pub async fn create_instance<J: Into<Arc<Jar>>>(
         .await
         .map_err(|e| format!("Failed to send create instance request: {}", e))?;
 
-    let text = result.text().await;
-
-    if let Err(e) = text {
-        return Err(format!("Failed to create instance: {}", e.to_string()));
-    }
-
-    let text = text.unwrap();
-
+    let text = result.text().await.map_err(|e| format!("Failed to create instance: {}", e.to_string()))?;
     let parsed: Instance = match serde_json::from_str(&text) {
         Ok(instance) => instance,
         Err(e) => {
