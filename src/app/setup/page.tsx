@@ -464,7 +464,7 @@ const WelcomePage: React.FC = () => {
                   <div className="flex flex-col space-y-1.5">
                     <Label className="text-base font-medium">Language</Label>
                     <div className="text-sm text-gray-500">
-                      Select your preferred language
+                      Select your preferred language (製作中です)
                     </div>
                   </div>
                   <Select
@@ -477,9 +477,13 @@ const WelcomePage: React.FC = () => {
                       <SelectValue placeholder="Theme" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ja-JP">Japanese</SelectItem>
+                      <SelectItem value="ja-JP" disabled>
+                        Japanese
+                      </SelectItem>
                       <SelectItem value="en-US">English(US)</SelectItem>
-                      <SelectItem value="en-UK">English(UK)</SelectItem>
+                      <SelectItem value="en-UK" disabled>
+                        English(UK)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

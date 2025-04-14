@@ -24,6 +24,7 @@ import {
   GroupInstancePermissionInfo,
 } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
+import { DiscoverPage } from '@/components/discover-page';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -31,6 +32,7 @@ export default function ListView() {
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDiscover, setShowDiscover] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
   const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
@@ -65,7 +67,7 @@ export default function ListView() {
           await loadAllWorlds();
           break;
         case SpecialFolders.Discover:
-          // Handle discover folder if needed
+          setShowDiscover(true);
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
@@ -561,6 +563,10 @@ export default function ListView() {
 
     if (showSettings) {
       return <SettingsPage onCardSizeChange={loadCardSize} />;
+    }
+
+    if (showDiscover) {
+      return <DiscoverPage />;
     }
 
     return (

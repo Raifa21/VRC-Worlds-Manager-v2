@@ -117,7 +117,7 @@ export function AppSidebar({
             onClick={() => onSelectFolder(SpecialFolders.Discover)}
           >
             <History className="h-5 w-5" />
-            <span className="text-sm font-medium">Recently Visited</span>
+            <span className="text-sm font-medium">Find Worlds</span>
           </div>
           <div
             className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
