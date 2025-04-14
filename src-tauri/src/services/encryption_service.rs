@@ -18,23 +18,19 @@ impl EncryptionService {
     }
 
     fn get_decryption_keys() -> Result<(Vec<u8>, Vec<u8>), String> {
-        let config_path = std::env::current_dir()
-            .map_err(|e| format!("Failed to get current dir: {}", e))?
-            .join(".config");
+        let key = std::env::var("ENCRYPTION_KEY")
+            .map_err(|_| "ENCRYPTION_KEY environment variable not set".to_string())?;
 
-        println!("config_path: {:?}", config_path);
-        let config =
-            fs::read_to_string(config_path).map_err(|e| format!("Failed to read keys: {}", e))?;
-
-        let keys: serde_json::Value =
-            serde_json::from_str(&config).map_err(|e| format!("Failed to parse keys: {}", e))?;
+        let iv = std::env::var("ENCRYPTION_IV")
+            .map_err(|_| "ENCRYPTION_IV environment variable not set".to_string())?;
 
         // Convert from base64 to bytes for AES
         let key = STANDARD
-            .decode(keys["key"].as_str().unwrap())
+            .decode(key)
             .map_err(|e| format!("Failed to decode key: {}", e))?;
+
         let iv = STANDARD
-            .decode(keys["iv"].as_str().unwrap())
+            .decode(iv)
             .map_err(|e| format!("Failed to decode iv: {}", e))?;
 
         Ok((key, iv))

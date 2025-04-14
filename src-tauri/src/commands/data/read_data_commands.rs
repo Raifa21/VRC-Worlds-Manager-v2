@@ -71,7 +71,7 @@ pub async fn pass_paths() -> Result<String, String> {
     let base_dirs = BaseDirs::new().ok_or("Could not get base directories")?;
     base_dirs
         .data_local_dir()
-        .join("VRC_World_Manager")
+        .join("VRC_Worlds_Manager")
         .to_str()
         .ok_or("Could not convert path to string")
         .map(|s| s.to_string())
