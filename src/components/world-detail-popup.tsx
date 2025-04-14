@@ -24,6 +24,14 @@ import {
   GroupRole,
 } from '@/lib/bindings';
 import { GroupInstanceCreator } from './group-instance-creator';
+import { Platform } from '@/types/worlds';
+import {
+  WorldDetails,
+  GroupInstanceType,
+  InstanceType,
+  Region,
+  GROUP_INSTANCE_TYPES,
+} from '@/types/instances';
 
 interface WorldDetailDialogProps {
   open: boolean;
@@ -48,29 +56,6 @@ interface WorldDetailDialogProps {
   ) => Promise<GroupInstancePermissionInfo>;
 }
 
-export enum Platform {
-  PC = 'PC',
-  Quest = 'Quest',
-  CrossPlatform = 'Cross-Platform',
-}
-
-export interface WorldDetails {
-  worldId: string;
-  name: string;
-  thumbnailUrl: string;
-  authorName: string;
-  authorId: string;
-  favorites: number;
-  lastUpdated: string;
-  visits?: number;
-  platform: Platform;
-  description: string;
-  tags: string[];
-  capacity: number;
-  recommendedCapacity?: number;
-  publicationDate?: string;
-}
-
 interface GroupInstance {
   groups: UserGroup[];
   selectedGroupId: string | null;
@@ -78,45 +63,6 @@ interface GroupInstance {
   roles: GroupRole[];
   isLoading: boolean;
 }
-
-export type GroupInstanceType = 'public' | 'group+' | 'group';
-
-export type InstanceType =
-  | 'public'
-  | 'group'
-  | 'friends+'
-  | 'friends'
-  | 'invite+'
-  | 'invite';
-export type Region = 'USW' | 'USE' | 'EU' | 'JP';
-
-interface GroupInstanceTypeOption {
-  type: GroupInstanceType;
-  label: string;
-  description: string;
-  requiresPermission: 'normal' | 'plus' | 'public';
-}
-
-const GROUP_INSTANCE_TYPES: GroupInstanceTypeOption[] = [
-  {
-    type: 'group',
-    label: 'Group Only',
-    description: 'Only group members can join',
-    requiresPermission: 'normal',
-  },
-  {
-    type: 'group+',
-    label: 'Group+',
-    description: 'Group members and their friends can join',
-    requiresPermission: 'plus',
-  },
-  {
-    type: 'public',
-    label: 'Group Public',
-    description: 'Anyone can join',
-    requiresPermission: 'public',
-  },
-];
 
 export function WorldDetailPopup({
   open,

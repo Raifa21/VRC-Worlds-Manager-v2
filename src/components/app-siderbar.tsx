@@ -4,7 +4,7 @@ import Gear from '@/../public/icons/Gear.svg';
 import Saturn from '@/../public/icons/Saturn.svg';
 import { Info, FileQuestion, History, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { SpecialFolders } from '@/app/listview/page';
+import { SpecialFolders } from '@/types/folders';
 import Image from 'next/image';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { commands } from '@/lib/bindings';

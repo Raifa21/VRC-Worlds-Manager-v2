@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { invoke } from '@tauri-apps/api/core';
 import { useTheme } from 'next-themes';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Platform } from '@/components/world-card';
+import { Platform } from '@/types/worlds';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -30,82 +30,8 @@ import { Loader2 } from 'lucide-react';
 import { ConfirmationPopup } from '@/components/confirmation-popup';
 import { MigrationConfirmationPopup } from '@/components/migration-confirmation-popup';
 import { commands } from '@/lib/bindings';
-
-export enum CardSize {
-  Compact = 'Compact',
-  Normal = 'Normal',
-  Expanded = 'Expanded',
-  Original = 'Original',
-}
-
-interface SetupLayoutProps {
-  title: string;
-  currentPage: number;
-  children: React.ReactNode;
-  onBack: () => void;
-  onNext: () => void;
-  isFirstPage?: boolean;
-  isLastPage?: boolean;
-  isMigrationPage?: boolean;
-  alreadyMigrated?: boolean;
-  isLoading?: boolean;
-}
-
-export function SetupLayout({
-  title,
-  currentPage,
-  children,
-  onBack,
-  onNext,
-  isFirstPage = false,
-  isLastPage = false,
-  isMigrationPage = false,
-  alreadyMigrated = false,
-  isLoading = false,
-}: SetupLayoutProps) {
-  return (
-    <div className="container max-w-2xl mx-auto p-4">
-      <Progress value={currentPage * 25 - 25} className="mb-8" />
-      <Card className="h-[480px]">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="h-[355px]">{children}</CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            onClick={onBack}
-            disabled={isFirstPage}
-            variant={isFirstPage ? 'default' : 'outline'}
-          >
-            Back
-          </Button>
-          <Button
-            onClick={onNext}
-            disabled={isMigrationPage && isLoading}
-            variant={
-              isLastPage ? 'default' : isFirstPage ? 'default' : 'outline'
-            }
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Migrating...
-              </>
-            ) : isFirstPage ? (
-              'Start'
-            ) : isLastPage ? (
-              'Finish'
-            ) : isMigrationPage && !alreadyMigrated ? (
-              'Skip'
-            ) : (
-              'Next'
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
-  );
-}
+import { CardSize } from '@/types/preferences';
+import { SetupLayout } from '@/components/setup-layout';
 
 const WelcomePage: React.FC = () => {
   const router = useRouter();

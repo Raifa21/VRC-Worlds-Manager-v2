@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Check, Minus } from 'lucide-react';
-import { WorldDisplayData } from './world-card';
+import { WorldDisplayData } from '@/types/worlds';
 
 interface AddToFolderDialogProps {
   open: boolean;

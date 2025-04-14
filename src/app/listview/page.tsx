@@ -6,33 +6,23 @@ import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
 import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-siderbar';
-import { WorldDisplayData } from '@/components/world-card';
+import { WorldDisplayData } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
-import { CardSize } from '../setup/page';
+import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
 import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
-import {
-  GroupInstanceType,
-  InstanceType,
-  Region,
-} from '@/components/world-detail-popup';
+import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
 import {
   GroupInstanceCreatePermission,
   UserGroup,
   GroupInstanceCreateAllowedType,
   GroupInstancePermissionInfo,
 } from '@/lib/bindings';
-
-// enum for special folders
-export enum SpecialFolders {
-  All = 'All Worlds',
-  Unclassified = 'Unclassified Worlds',
-  Discover = 'Discover Worlds',
-}
+import { SpecialFolders } from '@/types/folders';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();

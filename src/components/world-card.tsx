@@ -1,33 +1,11 @@
-import { CardSize } from '@/app/setup/page';
+import { CardSize } from '@/types/preferences';
 import { Heart } from 'lucide-react';
 import Image from 'next/image';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
-
-export enum Platform {
-  PC = 'PC',
-  Quest = 'Quest',
-  CrossPlatform = 'Cross-Platform',
-}
-
-export interface WorldDisplayData {
-  worldId: string;
-  name: string;
-  thumbnailUrl: string;
-  authorName: string;
-  favorites: number;
-  lastUpdated: string;
-  visits: number;
-  dateAdded: string;
-  platform: Platform;
-  folders: string[];
-}
-
-interface WorldCardPreviewProps {
-  size: CardSize;
-  world: WorldDisplayData;
-}
+import { Platform } from '@/types/worlds';
+import { WorldDisplayData, WorldCardPreviewProps } from '@/types/worlds';
 
 export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
   const sizeClasses: Record<CardSize, string> = {
