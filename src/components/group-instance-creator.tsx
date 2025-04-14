@@ -8,7 +8,7 @@ import {
   GroupRole,
   GroupInstancePermissionInfo,
 } from '@/lib/bindings';
-import { GroupInstanceType, Region } from './world-detail-popup';
+import { GroupInstanceType, Region } from '@/types/instances';
 import { useState, useEffect } from 'react';
 import { Label } from './ui/label';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';

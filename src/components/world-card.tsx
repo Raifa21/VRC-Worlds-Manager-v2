@@ -5,23 +5,7 @@ import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
 import { Platform } from '@/types/worlds';
-export interface WorldDisplayData {
-  worldId: string;
-  name: string;
-  thumbnailUrl: string;
-  authorName: string;
-  favorites: number;
-  lastUpdated: string;
-  visits: number;
-  dateAdded: string;
-  platform: Platform;
-  folders: string[];
-}
-
-interface WorldCardPreviewProps {
-  size: CardSize;
-  world: WorldDisplayData;
-}
+import { WorldDisplayData, WorldCardPreviewProps } from '@/types/worlds';
 
 export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
   const sizeClasses: Record<CardSize, string> = {
