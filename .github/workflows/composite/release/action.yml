@@ -45,7 +45,7 @@ runs:
     - run: npm --version
       shell: bash
 
-    - run: npm install --frozen-lockfile
+    - run: npm install npm ci
       shell: bash
 
     - uses: dtolnay/rust-toolchain@stable
@@ -60,8 +60,8 @@ runs:
         TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.TAURI_PRIVATE_KEY }}
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.TAURI_PRIVATE_KEY_PASSWORD }}
       with:
-        tagName: "konoasset-v__VERSION__"
-        releaseName: "KonoAsset v__VERSION__"
+        tagName: "vrc-world-manager-v__VERSION__"
+        releaseName: "vrc-world-manager v__VERSION__"
         includeUpdaterJson: true
         updaterJsonPreferNsis: true
         prerelease: ${{ inputs.releaseChannel == 'pre-release' }}
