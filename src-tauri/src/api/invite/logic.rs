@@ -18,7 +18,7 @@ pub async fn invite_self_to_instance<J: Into<Arc<Jar>>>(
         ))
         .send()
         .await
-        .expect("Failed to send invite request");
+        .map_err(|e| e.to_string())?;
 
     let text = result.text().await;
 
