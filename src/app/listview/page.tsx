@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
+import { SettingsPage } from '@/components/settings-page';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
 import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
@@ -23,6 +24,7 @@ import {
   GroupInstancePermissionInfo,
 } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
+import { DiscoverPage } from '@/components/discover-page';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -30,6 +32,7 @@ export default function ListView() {
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDiscover, setShowDiscover] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
   const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
@@ -64,7 +67,7 @@ export default function ListView() {
           await loadAllWorlds();
           break;
         case SpecialFolders.Discover:
-          // Handle discover folder if needed
+          setShowDiscover(true);
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
@@ -533,14 +536,37 @@ export default function ListView() {
     }
   };
 
+  const loadCardSize = async () => {
+    try {
+      const result = await commands.getCardSize();
+      if (result.status === 'ok') {
+        setCardSize(CardSize[result.data as keyof typeof CardSize]);
+      }
+    } catch (error) {
+      console.error('Failed to load card size:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load card size preference',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadCardSize();
+  }, [showSettings]);
+
   const renderMainContent = () => {
     if (showAbout) {
       return <AboutSection />;
     }
 
     if (showSettings) {
-      //todo: implement settings
-      return <></>;
+      return <SettingsPage onCardSizeChange={loadCardSize} />;
+    }
+
+    if (showDiscover) {
+      return <DiscoverPage />;
     }
 
     return (
@@ -584,7 +610,9 @@ export default function ListView() {
         onSelectFolder={handleSelectFolder}
         selectedFolder={currentFolder}
         onSelectAbout={() => setShowAbout(true)}
-        onSelectSettings={() => {}}
+        onSelectSettings={() => {
+          setShowSettings(true);
+        }}
       />
       <div className="flex-1 overflow-auto">{renderMainContent()}</div>
       <CreateFolderDialog

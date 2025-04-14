@@ -82,7 +82,7 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
       )}
 
       {size === CardSize.Original && (
-        <div className="p-2 text-white">
+        <div className="p-2">
           <h3 className="font-medium truncate">{world.name}</h3>
           <p className="text-sm text-muted-foreground truncate">
             By {world.authorName}

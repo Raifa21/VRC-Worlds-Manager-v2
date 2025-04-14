@@ -90,7 +90,7 @@ export function AppSidebar({
   return (
     <aside className={sidebarStyles.container}>
       <header className={sidebarStyles.header}>
-        <h2 className="text-lg font-semibold">VRC World Manager</h2>
+        <h2 className="text-lg font-semibold">VRC Worlds Manager</h2>
       </header>
       <Separator className="" />
 
@@ -100,7 +100,13 @@ export function AppSidebar({
             className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
             onClick={() => onSelectFolder(SpecialFolders.All)}
           >
-            <Image src={Saturn} alt="Saturn" width={18} height={18} />
+            <Image
+              src={Saturn}
+              alt="Saturn"
+              width={18}
+              height={18}
+              className="theme-icon"
+            />
             <span className="text-sm font-medium">All Worlds</span>
           </div>
         </SidebarGroup>
@@ -111,7 +117,7 @@ export function AppSidebar({
             onClick={() => onSelectFolder(SpecialFolders.Discover)}
           >
             <History className="h-5 w-5" />
-            <span className="text-sm font-medium">Recently Visited</span>
+            <span className="text-sm font-medium">Find Worlds</span>
           </div>
           <div
             className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
@@ -178,10 +184,16 @@ export function AppSidebar({
           </div>
           <div
             className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => router.push('/settings')}
+            onClick={() => onSelectSettings()}
           >
             <div className="h-5 w-5 flex items-center justify-center">
-              <Image src={Gear} alt="Settings" width={18} height={18} />
+              <Image
+                src={Gear}
+                alt="Settings"
+                width={18}
+                height={18}
+                className="theme-icon"
+              />
             </div>
             <span>Settings</span>
           </div>

@@ -2,12 +2,14 @@ use crate::api::auth::VRChatAPIClientAuthenticator;
 use crate::api::{auth, group, instance, invite, world};
 use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
 use crate::services::file_service::FileService;
+use crate::services::FolderManager;
 use crate::InitState;
 use crate::INITSTATE;
 use reqwest::cookie::CookieStore;
 use reqwest::{cookie::Jar, Client, Url};
 use std::sync::{Arc, RwLock};
 use tauri::http::HeaderValue;
+use world::ReleaseStatus;
 
 pub struct ApiService;
 
@@ -280,16 +282,6 @@ impl ApiService {
         Ok(())
     }
 
-    /// Get user's favorite worlds
-    ///
-    /// # Arguments
-    /// * `cookie_store` - The cookie store to use for the API
-    ///
-    /// # Returns
-    /// Returns a Result containing a vector of WorldApiData if the request was successful
-    ///
-    /// # Errors
-    /// Returns a string error message if the request fails
     #[must_use]
     pub async fn get_favorite_worlds(cookie_store: Arc<Jar>) -> Result<Vec<WorldApiData>, String> {
         let mut worlds = vec![];
@@ -307,6 +299,13 @@ impl ApiService {
         };
 
         for world in favorite_worlds {
+            // Only include public worlds
+            if world.release_status != ReleaseStatus::Public {
+                println!("Skipping non-public world: {}", world.id);
+
+                continue;
+            }
+
             match world.try_into() {
                 Ok(world_data) => worlds.push(world_data),
                 Err(e) => return Err(format!("Failed to parse world: {}", e)),
@@ -316,24 +315,13 @@ impl ApiService {
         Ok(worlds)
     }
 
-    /// Get a world by its ID
-    ///
-    /// # Arguments
-    /// * `world_id` - The ID of the world to fetch
-    /// * `cookie_store` - The cookie store to use for the API
-    /// * `worlds` - A vector of WorldModel to check for existing worlds
-    ///
-    /// # Returns
-    /// Returns a Result containing the WorldModel if the request was successful
-    ///
-    /// # Errors
-    /// Returns a string error message if the request fails
     #[must_use]
     pub async fn get_world_by_id(
         world_id: String,
         cookie_store: Arc<Jar>,
         worlds: Vec<WorldModel>,
     ) -> Result<WorldApiData, String> {
+        // First check if we have a cached version
         if let Some(existing_world) = worlds.iter().find(|w| w.api_data.world_id == world_id) {
             if !existing_world.user_data.needs_update() {
                 println!("World already exists in cache");
@@ -341,11 +329,21 @@ impl ApiService {
             }
         }
 
+        // Fetch from API
         match world::get_world_by_id(cookie_store, &world_id).await {
-            Ok(world) => match world::WorldDetails::try_into(world) {
-                Ok(world_data) => Ok(world_data),
-                Err(e) => Err(e.to_string()),
-            },
+            Ok(world) => {
+                // Check release status
+                if world.release_status != ReleaseStatus::Public {
+                    println!("World {} is not public", world_id);
+                    // TODO: remove world from local data
+                    return Err("World is not public".to_string());
+                }
+
+                match world::WorldDetails::try_into(world) {
+                    Ok(world_data) => Ok(world_data),
+                    Err(e) => Err(e.to_string()),
+                }
+            }
             Err(e) => Err(format!("Failed to fetch world: {}", e)),
         }
     }
