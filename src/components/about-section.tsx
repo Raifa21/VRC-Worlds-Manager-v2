@@ -7,46 +7,53 @@ import { UserProfile } from '@/components/user-profile';
 import { ExternalLink, Heart } from 'lucide-react';
 import { SiGithub, SiDiscord } from '@icons-pack/react-simple-icons';
 import { useToast } from '@/hooks/use-toast';
+import { commands } from '@/lib/bindings';
 
 export function AboutSection() {
   const [orderedSupporters, setOrderedSupporters] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     async function fetchPatreonData() {
       try {
-        const response = await fetch(
-          'https://data.raifaworks.com/patreons.json',
-        );
-        const patreonData = await response.json();
-
-        // Sort names within their tier groups
-        const platinumNames = patreonData.platinumSupporter.sort();
-        const goldNames = patreonData.goldSupporter.sort();
-        const silverNames = patreonData.silverSupporter.sort();
-        const bronzeNames = patreonData.bronzeSupporter.sort();
-        const basicNames = patreonData.basicSupporter.sort();
-
-        // Combine in tier order
-        setOrderedSupporters([
-          ...platinumNames,
-          ...goldNames,
-          ...silverNames,
-          ...bronzeNames,
-          ...basicNames,
-        ]);
+        const result = await commands.fetchPatreonData();
+        if (result.status === 'ok') {
+          setOrderedSupporters(sortSupporters(result.data));
+        } else {
+          throw new Error(result.error);
+        }
       } catch (error) {
-        console.error('Failed to fetch patreon data:', error);
+        console.error('Failed to fetch supporter data:', error);
         toast({
           title: 'Error',
-          description: 'Failed to fetch Patreon data.',
+          description: 'Failed to load supporter data.',
           variant: 'destructive',
         });
+      } finally {
+        setIsLoading(false);
       }
     }
 
     fetchPatreonData();
-  }, []);
+  }, [toast]);
+
+  // Helper function to sort supporters
+  const sortSupporters = (data: any) => {
+    const platinumNames = (data.platinumSupporter || []).sort();
+    const goldNames = (data.goldSupporter || []).sort();
+    const silverNames = (data.silverSupporter || []).sort();
+    const bronzeNames = (data.bronzeSupporter || []).sort();
+    const basicNames = (data.basicSupporter || []).sort();
+
+    return [
+      ...platinumNames,
+      ...goldNames,
+      ...silverNames,
+      ...bronzeNames,
+      ...basicNames,
+    ];
+  };
 
   return (
     <div className="container mx-auto relative pb-8">
@@ -147,14 +154,22 @@ export function AboutSection() {
             .
           </p>
           <div className="flex flex-wrap gap-2">
-            {orderedSupporters.map((name) => (
-              <span
-                key={name}
-                className="px-1 py-1 text-pink-500 dark:text-pink-400 rounded-full text-sm font-medium"
-              >
-                {name}
+            {isLoading ? (
+              <span className="text-muted-foreground">
+                Loading supporters...
               </span>
-            ))}
+            ) : orderedSupporters.length > 0 ? (
+              orderedSupporters.map((name) => (
+                <span
+                  key={name}
+                  className="px-1 py-1 text-pink-500 dark:text-pink-400 rounded-full text-sm font-medium"
+                >
+                  {name}
+                </span>
+              ))
+            ) : (
+              <span className="text-muted-foreground">No supporters found</span>
+            )}
           </div>
         </CardContent>
       </div>
@@ -162,7 +177,7 @@ export function AboutSection() {
       {/* Bottom Bar - Changed from fixed to absolute positioning */}
       <div className="absolute bottom-0 inset-x-0 pl-4 pr-4 border-t items-center bg-background/80 backdrop-blur-sm flex justify-between items-center">
         <div className="text-sm text-muted-foreground">
-          VRC World Manager v.0.1.0
+          VRC Worlds Manager v.0.1.0
         </div>
 
         <div className="flex gap-4">

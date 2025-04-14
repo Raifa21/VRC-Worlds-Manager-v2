@@ -145,6 +145,22 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getTheme(): Promise<Result<string, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_theme') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getLanguage(): Promise<Result<string, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_language') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getCardSize(): Promise<Result<CardSize, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_card_size') };
@@ -281,6 +297,14 @@ export const commands = {
           queueEnabled,
         }),
       };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async fetchPatreonData(): Promise<Result<PatreonData, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('fetch_patreon_data') };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: 'error', error: e as any };
@@ -455,6 +479,13 @@ export type GroupRole = {
   name: string;
   permissions: GroupPermission[];
   isManagementRole: boolean;
+};
+export type PatreonData = {
+  platinumSupporter: string[];
+  goldSupporter: string[];
+  silverSupporter: string[];
+  bronzeSupporter: string[];
+  basicSupporter: string[];
 };
 export type Platform = 'PC' | 'Quest' | 'Cross-Platform';
 export type UserGroup = {

@@ -2,6 +2,7 @@ mod definitions;
 mod logic;
 
 pub use definitions::FavoriteWorld;
+pub use definitions::ReleaseStatus;
 pub use definitions::SearchWorldSort;
 pub use definitions::VRChatWorld;
 pub use definitions::WorldDetails;

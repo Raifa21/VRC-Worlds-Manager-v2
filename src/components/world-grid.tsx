@@ -305,7 +305,6 @@ export function WorldGrid({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className="flex items-center gap-2">
-
             <Select
               value={sortField}
               onValueChange={(value) => handleSort(value as SortField)}

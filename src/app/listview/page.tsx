@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
+import { SettingsPage } from '@/components/settings-page';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
 import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
@@ -533,14 +534,33 @@ export default function ListView() {
     }
   };
 
+  const loadCardSize = async () => {
+    try {
+      const result = await commands.getCardSize();
+      if (result.status === 'ok') {
+        setCardSize(CardSize[result.data as keyof typeof CardSize]);
+      }
+    } catch (error) {
+      console.error('Failed to load card size:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load card size preference',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadCardSize();
+  }, [showSettings]);
+
   const renderMainContent = () => {
     if (showAbout) {
       return <AboutSection />;
     }
 
     if (showSettings) {
-      //todo: implement settings
-      return <></>;
+      return <SettingsPage onCardSizeChange={loadCardSize} />;
     }
 
     return (
@@ -584,7 +604,9 @@ export default function ListView() {
         onSelectFolder={handleSelectFolder}
         selectedFolder={currentFolder}
         onSelectAbout={() => setShowAbout(true)}
-        onSelectSettings={() => {}}
+        onSelectSettings={() => {
+          setShowSettings(true);
+        }}
       />
       <div className="flex-1 overflow-auto">{renderMainContent()}</div>
       <CreateFolderDialog
