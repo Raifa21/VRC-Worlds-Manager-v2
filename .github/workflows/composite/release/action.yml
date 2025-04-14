@@ -34,22 +34,18 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4
-      with:
-        version: 10
-        run_install: false
     - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
       with:
         node-version: 23
-        cache: pnpm
-        cache-dependency-path: pnpm-lock.yaml
+        cache: npm
+        cache-dependency-path: package-lock.json
 
     - run: node --version
       shell: bash
-    - run: pnpm --version
+    - run: npm --version
       shell: bash
 
-    - run: pnpm install --frozen-lockfile
+    - run: npm install --frozen-lockfile
       shell: bash
 
     - uses: dtolnay/rust-toolchain@stable
