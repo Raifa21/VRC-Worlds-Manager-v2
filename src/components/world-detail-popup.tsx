@@ -24,6 +24,7 @@ import {
   GroupRole,
 } from '@/lib/bindings';
 import { GroupInstanceCreator } from './group-instance-creator';
+import { Platform } from '@/types/worlds';
 
 interface WorldDetailDialogProps {
   open: boolean;
@@ -46,12 +47,6 @@ interface WorldDetailDialogProps {
   onGetGroupPermissions: (
     groupId: string,
   ) => Promise<GroupInstancePermissionInfo>;
-}
-
-export enum Platform {
-  PC = 'PC',
-  Quest = 'Quest',
-  CrossPlatform = 'Cross-Platform',
 }
 
 export interface WorldDetails {

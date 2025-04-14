@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { invoke } from '@tauri-apps/api/core';
 import { useTheme } from 'next-themes';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Platform } from '@/components/world-card';
+import { Platform } from '@/types/worlds';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -30,14 +30,7 @@ import { Loader2 } from 'lucide-react';
 import { ConfirmationPopup } from '@/components/confirmation-popup';
 import { MigrationConfirmationPopup } from '@/components/migration-confirmation-popup';
 import { commands } from '@/lib/bindings';
-
-export enum CardSize {
-  Compact = 'Compact',
-  Normal = 'Normal',
-  Expanded = 'Expanded',
-  Original = 'Original',
-}
-
+import { CardSize } from '@/types/preferences';
 interface SetupLayoutProps {
   title: string;
   currentPage: number;

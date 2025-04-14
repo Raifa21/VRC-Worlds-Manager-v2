@@ -1,16 +1,10 @@
-import { CardSize } from '@/app/setup/page';
+import { CardSize } from '@/types/preferences';
 import { Heart } from 'lucide-react';
 import Image from 'next/image';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
-
-export enum Platform {
-  PC = 'PC',
-  Quest = 'Quest',
-  CrossPlatform = 'Cross-Platform',
-}
-
+import { Platform } from '@/types/worlds';
 export interface WorldDisplayData {
   worldId: string;
   name: string;

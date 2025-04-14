@@ -8,7 +8,7 @@ import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-siderbar';
 import { WorldDisplayData } from '@/components/world-card';
 import { WorldGrid } from '@/components/world-grid';
-import { CardSize } from '../setup/page';
+import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
@@ -26,13 +26,7 @@ import {
   GroupInstanceCreateAllowedType,
   GroupInstancePermissionInfo,
 } from '@/lib/bindings';
-
-// enum for special folders
-export enum SpecialFolders {
-  All = 'All Worlds',
-  Unclassified = 'Unclassified Worlds',
-  Discover = 'Discover Worlds',
-}
+import { SpecialFolders } from '@/types/folders';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();

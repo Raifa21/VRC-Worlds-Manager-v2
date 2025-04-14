@@ -1,9 +1,10 @@
-import { WorldCardPreview, WorldDisplayData, Platform } from './world-card';
-import { CardSize } from '@/app/setup/page';
+import { WorldCardPreview, WorldDisplayData } from './world-card';
+import { CardSize } from '@/types/preferences';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { toRomaji } from 'wanakana';
-import { SpecialFolders } from '@/app/listview/page';
+import { SpecialFolders } from '@/types/folders';
+import { Platform } from '@/types/worlds';
 import {
   ContextMenu,
   ContextMenuContent,
