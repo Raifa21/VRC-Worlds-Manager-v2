@@ -128,7 +128,7 @@ impl VRChatAPIClientAuthenticator {
             .header("Authorization", &auth_header_value)
             .send()
             .await
-            .expect("Failed to send login request");
+            .map_err(|e| format!("Failed to send auth request: {}", e))?;
 
         if result.status() == StatusCode::UNAUTHORIZED {
             return Ok(VRChatAuthStatus::InvalidCredentials);

@@ -29,7 +29,7 @@ pub async fn create_instance<J: Into<Arc<Jar>>>(
         .body(body)
         .send()
         .await
-        .expect("Failed to send instance creation request");
+        .map_err(|e| format!("Failed to send create instance request: {}", e))?;
 
     let text = result.text().await;
 

@@ -26,7 +26,7 @@ pub async fn get_user_groups<J: Into<Arc<Jar>>>(
         .get(format!("{API_BASE_URL}/users/{user_id}/groups"))
         .send()
         .await
-        .expect("Failed to get user groups");
+        .map_err(|e| e.to_string())?;
 
     println!("API Response status: {}", result.status());
 
