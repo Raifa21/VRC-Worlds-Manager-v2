@@ -15,7 +15,17 @@ import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
 import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
-import { InstanceType, Region } from '@/components/world-detail-popup';
+import {
+  GroupInstanceType,
+  InstanceType,
+  Region,
+} from '@/components/world-detail-popup';
+import {
+  GroupInstanceCreatePermission,
+  UserGroup,
+  GroupInstanceCreateAllowedType,
+  GroupInstancePermissionInfo,
+} from '@/lib/bindings';
 
 // enum for special folders
 export enum SpecialFolders {
@@ -427,7 +437,7 @@ export default function ListView() {
     region: Region,
   ) => {
     try {
-      const result = await commands.createInstance(
+      const result = await commands.createWorldInstance(
         worldId,
         instanceType,
         region,
@@ -444,6 +454,10 @@ export default function ListView() {
       }
 
       await refreshCurrentView();
+      toast({
+        title: 'Success',
+        description: `Created ${instanceType} instance`,
+      });
     } catch (error) {
       console.error('Failed to create instance:', error);
       toast({
@@ -451,6 +465,81 @@ export default function ListView() {
         description: 'Failed to create instance',
         variant: 'destructive',
       });
+    }
+  };
+
+  const createGroupInstance = async (
+    worldId: string,
+    region: Region,
+    id: string,
+    instanceType: GroupInstanceType,
+    queueEnabled: boolean,
+    selectedRoles?: string[],
+  ) => {
+    try {
+      const result = await commands.createGroupInstance(
+        worldId,
+        id,
+        instanceType,
+        selectedRoles ?? null,
+        region,
+        queueEnabled,
+      );
+
+      if (result.status === 'error') {
+        throw new Error(result.error);
+      }
+
+      await refreshCurrentView();
+      toast({
+        title: 'Success',
+        description: `Created ${instanceType} instance`,
+      });
+    } catch (error) {
+      console.error('Failed to create group instance:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create group instance',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getGroups = async (): Promise<UserGroup[]> => {
+    try {
+      const result = await commands.getUserGroups();
+      if (result.status === 'error') {
+        throw new Error(result.error);
+      }
+      return result.data;
+    } catch (error) {
+      console.error('Failed to get groups:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to get groups',
+        variant: 'destructive',
+      });
+      return [];
+    }
+  };
+
+  const getGroupPermissions = async (
+    id: string,
+  ): Promise<GroupInstancePermissionInfo> => {
+    try {
+      const result = await commands.getPermissionForCreateGroupInstance(id);
+      if (result.status === 'error') {
+        throw new Error(result.error);
+      }
+      return result.data;
+    } catch (error) {
+      console.error('Failed to get group permissions:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to get group permissions',
+        variant: 'destructive',
+      });
+      throw new Error('Group permissions not found');
     }
   };
 
@@ -529,6 +618,8 @@ export default function ListView() {
         worldId={selectedWorldForDetails ? selectedWorldForDetails : ''}
         onCreateInstance={createInstance}
         onCreateGroupInstance={createGroupInstance}
+        onGetGroups={getGroups}
+        onGetGroupPermissions={getGroupPermissions}
       />
       <AddToFolderDialog
         open={showFolderDialog}

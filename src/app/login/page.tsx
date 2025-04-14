@@ -25,22 +25,29 @@ export default function Login() {
     const result = await commands.loginWithCredentials(username, password);
 
     if (result.status === 'error') {
-      setError(result.error || 'Invalid credentials');
+      // Only set error if it's not a 2FA-related error
+      if (result.error?.includes('2fa-required')) {
+        setShow2FA(true);
+        setError(null);
+        setTwoFactorCodeType('totp');
+      } else {
+        setError(result.error || 'Invalid credentials');
+      }
       return;
     }
 
     const status = result.data;
 
-    if (status === 'loggedIn') {
+    // Let's add some debug logging
+    console.log('Login status:', status);
+
+    // Check 2FA status and set dialog accordingly
+    if (status === 'twoFactorAuth' || status === 'email2FA') {
+      setShow2FA(true);
+      setError(null);
+      setTwoFactorCodeType(status === 'twoFactorAuth' ? 'totp' : 'emailOtp');
+    } else if (status === 'loggedIn') {
       router.push('/listview');
-    } else if (status === 'twoFactorAuth') {
-      setShow2FA(true);
-      setError(null);
-      setTwoFactorCodeType('totp');
-    } else if (status === 'email2FA') {
-      setShow2FA(true);
-      setError(null);
-      setTwoFactorCodeType('emailOtp');
     }
   };
 
@@ -55,20 +62,7 @@ export default function Login() {
         setError(result.error || 'Invalid 2FA code');
         return;
       }
-
-      const status = result.data;
-
-      if (status === 'loggedIn') {
-        router.push('/listview');
-      } else if (status === 'twoFactorAuth') {
-        setShow2FA(true);
-        setError(null);
-        setTwoFactorCodeType('totp');
-      } else if (status === 'email2FA') {
-        setShow2FA(true);
-        setError(null);
-        setTwoFactorCodeType('emailOtp');
-      }
+      router.push('/listview');
     } catch (err) {
       setError((err as string) || 'Invalid 2FA code');
     }
