@@ -6,6 +6,13 @@
     "main"
   ],
   "permissions": [
-    "core:default"
+    "shell:allow-open",
+    "core:default",
+    "log:default",
+    "shell:default",
+    "dialog:default",
+    "opener:default",
+    "log:allow-log",
+    "updater:default"
   ]
 }

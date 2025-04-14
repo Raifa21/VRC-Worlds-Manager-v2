@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "vrc-world-manager",
+  "productName": "vrc-worlds-manager",
   "version": "0.1.0",
   "identifier": "com.tauri.dev",
   "build": {
@@ -12,11 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "VRC World Manager",
+        "title": "VRC Worlds Manager",
         "width": 800,
         "height": 600,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "devtools": true
       }
     ],
     "security": {
@@ -26,6 +27,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -33,5 +35,11 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI5NDRGQjVEOTcwOUE4RDUKUldUVnFBbVhYZnRFS2R6OVVHalozZEdNTVhCV21ZNDZhSFpMZ3dYRHAwd3d3UmhyYnBUMEZJSHgK",
+      "endpoints": ["https://releases.raifaworks.com/vrc-worlds-manager/latest.json"]
+    }
   }
 }
