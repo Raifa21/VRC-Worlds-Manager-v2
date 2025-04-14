@@ -84,15 +84,15 @@ struct PreviousFolderCollection {
 }
 
 impl MigrationService {
-    /// Tries to locate the old VRC World Manager Data
+    /// Tries to locate the old VRC Worlds Manager Data
     /// Called from setup page
     ///
     /// # Returns
-    /// Returns the path to the old VRC World Manager Data
-    /// A tuple containing the path to the old VRC World Manager Worlds file, and the path to the old VRC World Manager Folders file
+    /// Returns the path to the old VRC Worlds Manager Data
+    /// A tuple containing the path to the old VRC Worlds Manager Worlds file, and the path to the old VRC Worlds Manager Folders file
     ///
     /// # Errors
-    /// Returns an error message if the old VRC World Manager Data could not be found
+    /// Returns an error message if the old VRC Worlds Manager Data could not be found
     pub fn detect_old_installation() -> Result<(String, String), String> {
         let base_dirs = BaseDirs::new().ok_or("Could not get base directories")?;
         let local_app_data = base_dirs.data_local_dir().join("VRC_Worlds_Manager");
@@ -282,15 +282,15 @@ impl MigrationService {
         old_worlds
     }
 
-    /// Migrates the old VRC World Manager Data to the new location
+    /// Migrates the old VRC Worlds Manager Data to the new location
     /// Called from setup page
     ///
     /// # Arguments
-    /// * `path_to_worlds` - The path to the old VRC World Manager Worlds file
-    /// * `path_to_folders` - The path to the old VRC World Manager Folders file
+    /// * `path_to_worlds` - The path to the old VRC Worlds Manager Worlds file
+    /// * `path_to_folders` - The path to the old VRC Worlds Manager Folders file
     ///
     /// # Errors
-    /// Returns an error message if the old VRC World Manager Data could not be migrated
+    /// Returns an error message if the old VRC Worlds Manager Data could not be migrated
     pub async fn migrate_old_data(
         path_to_worlds: String,
         path_to_folders: String,

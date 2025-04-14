@@ -307,7 +307,7 @@ pub enum CardSize {
     Compact,  // Small preview
     Normal,   // Standard size
     Expanded, // Large with more details
-    Original, // Just like the original VRC World Manager
+    Original, // Just like the original VRC Worlds Manager
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

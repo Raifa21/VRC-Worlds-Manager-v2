@@ -228,7 +228,7 @@ const WelcomePage: React.FC = () => {
       <div className="welcome-page">
         {page === 1 && (
           <SetupLayout
-            title="Welcome to VRC World Manager"
+            title="Welcome to VRC Worlds Manager"
             currentPage={1}
             onBack={handleBack}
             onNext={handleNext}
@@ -243,7 +243,7 @@ const WelcomePage: React.FC = () => {
                   Since this is your first time here, let's take a moment to set
                   up
                   <br />
-                  VRC World Manager just the way you like it.
+                  VRC Worlds Manager just the way you like it.
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Not your first time? Please contact us through{' '}
@@ -273,7 +273,7 @@ const WelcomePage: React.FC = () => {
             <div className="flex flex-col space-y-6">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground text-center">
-                  If you have used the original VRC World Manager, you can
+                  If you have used the original VRC Worlds Manager, you can
                   migrate your old data. <br />
                   Your original data will not be modified during migration.
                 </p>
@@ -367,7 +367,7 @@ const WelcomePage: React.FC = () => {
           >
             <div className="flex flex-col space-y-4">
               <p className="text-sm text-muted-foreground text-center mb-4">
-                Customize the appearance of VRC World Manager
+                Customize the appearance of VRC Worlds Manager
               </p>
               <div className="flex flex-row justify-between">
                 <div className="flex flex-col items-left space-y-4">
@@ -501,7 +501,7 @@ const WelcomePage: React.FC = () => {
 
                 <div className="space-y-8">
                   <p className="text-lg text-muted-foreground mt-4">
-                    Welcome to VRC World Manager. Start exploring and managing
+                    Welcome to VRC Worlds Manager. Start exploring and managing
                     your VRChat worlds.
                   </p>
 
