@@ -290,12 +290,31 @@ export function GroupInstanceCreator({
   const handleBack = () => {
     if (currentStep === 'config') {
       setCurrentStep('type');
+      setStepInfo((prev) => ({
+        ...prev,
+        instanceType: null,
+        selectedRoles: new Set(),
+      }));
     } else if (currentStep === 'type') {
       setCurrentStep('group');
     } else if (currentStep === 'roles') {
       setCurrentStep('type');
+      setStepInfo((prev) => ({
+        ...prev,
+        instanceType: null,
+        selectedRoles: new Set(),
+      }));
     } else {
       setCurrentStep('group');
+      setStepInfo({
+        groupId: null,
+        instanceType: null,
+        region: 'JP',
+        queueEnabled: false,
+        selectedRoles: new Set(),
+      });
+      setSelectingEveryoneRole(true);
+      onBack();
     }
   };
 
