@@ -475,9 +475,7 @@ export function GroupInstanceCreator({
 
     return (
       <div className="space-y-4 p-4">
-        <h3 className="font-medium">
-          {t('general:select-roles')}
-        </h3>
+        <h3 className="font-medium">{t('general:select-roles')}</h3>
 
         {/* Everyone role at the top */}
         {getEveryoneRole() && (
@@ -567,8 +565,7 @@ export function GroupInstanceCreator({
                 .map(
                   (roleId) => roles?.find((role) => role.id === roleId)?.name,
                 )
-                .join(', ') ||
-              t('general:select-roles')
+                .join(', ') || t('general:select-roles')
             }
             onClick={() => setCurrentStep('roles')}
           />

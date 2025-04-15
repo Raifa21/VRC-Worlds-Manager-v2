@@ -504,9 +504,7 @@ const WelcomePage: React.FC = () => {
                       <SelectItem value="light">
                         {t('general:light')}
                       </SelectItem>
-                      <SelectItem value="dark">
-                        {t('general:dark')}
-                      </SelectItem>
+                      <SelectItem value="dark">{t('general:dark')}</SelectItem>
                       <SelectItem value="system">
                         {t('general:system')}
                       </SelectItem>

@@ -177,9 +177,7 @@ export function AddToFolderDialog({
           <Button variant="secondary" onClick={() => handleOpenChange(false)}>
             {t('general:cancel')}
           </Button>
-          <Button onClick={handleConfirm}>
-            {t('general:confirm')}
-          </Button>
+          <Button onClick={handleConfirm}>{t('general:confirm')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

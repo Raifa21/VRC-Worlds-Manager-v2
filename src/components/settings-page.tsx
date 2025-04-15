@@ -198,9 +198,7 @@ export function SettingsPage({
             <SelectContent>
               <SelectItem value="light">{t('general:light')}</SelectItem>
               <SelectItem value="dark">{t('general:dark')}</SelectItem>
-              <SelectItem value="system">
-                {t('general:system')}
-              </SelectItem>
+              <SelectItem value="system">{t('general:system')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
