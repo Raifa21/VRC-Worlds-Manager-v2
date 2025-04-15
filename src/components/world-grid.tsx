@@ -322,7 +322,7 @@ export function WorldGrid({
                   {t('world-grid:sort-name')}
                 </SelectItem>
                 <SelectItem value="authorName">
-                  {t('world-grid:sort-author')}
+                  {t('general:sort-author')}
                 </SelectItem>
                 <SelectItem value="favorites">
                   {t('world-grid:sort-favorites')}
@@ -463,7 +463,7 @@ export function WorldGrid({
                         }}
                         className="text-destructive"
                       >
-                        {t('world-grid:hide-single')}
+                        {t('general:hide-title')}
                       </ContextMenuItem>
                     </>
                   ) : (
@@ -501,7 +501,7 @@ export function WorldGrid({
                 <AlertDialogTitle>
                   {dialogConfig.type === 'remove'
                     ? t('world-grid:remove-title')
-                    : t('world-grid:hide-title')}
+                    : t('general:hide-title')}
                 </AlertDialogTitle>
                 <AlertDialogDescription className="space-y-2">
                   {dialogConfig.type === 'remove' ? (
@@ -518,7 +518,7 @@ export function WorldGrid({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel onClick={handleDialogClose}>
-                  {t('world-grid:cancel')}
+                  {t('general:cancel')}
                 </AlertDialogCancel>
                 <Button
                   variant="destructive"
@@ -536,7 +536,7 @@ export function WorldGrid({
                 >
                   {dialogConfig.type === 'remove'
                     ? t('world-grid:remove-button')
-                    : t('world-grid:hide-button')}
+                    : t('general:hide-title')}
                 </Button>
               </AlertDialogFooter>
             </AlertDialogContent>

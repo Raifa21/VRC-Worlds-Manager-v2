@@ -388,7 +388,7 @@ export function GroupInstanceCreator({
           ))}
         </div>
         <Button variant="secondary" onClick={onBack}>
-          {t('group-instance-creator:back')}
+          {t('general:back')}
         </Button>
       </div>
     );
@@ -457,7 +457,7 @@ export function GroupInstanceCreator({
           })}
         </div>
         <Button variant="secondary" onClick={handleBack}>
-          {t('group-instance-creator:back')}
+          {t('general:back')}
         </Button>
       </div>
     );
@@ -476,7 +476,7 @@ export function GroupInstanceCreator({
     return (
       <div className="space-y-4 p-4">
         <h3 className="font-medium">
-          {t('group-instance-creator:select-roles')}
+          {t('general:select-roles')}
         </h3>
 
         {/* Everyone role at the top */}
@@ -525,10 +525,10 @@ export function GroupInstanceCreator({
 
         <div className="flex space-x-2">
           <Button variant="secondary" onClick={handleBack}>
-            {t('group-instance-creator:back')}
+            {t('general:back')}
           </Button>
           <Button onClick={() => setCurrentStep('config')}>
-            {t('group-instance-creator:next')}
+            {t('general:next')}
           </Button>
         </div>
       </div>
@@ -541,14 +541,14 @@ export function GroupInstanceCreator({
         label={t('group-instance-creator:group-label')}
         value={
           groups.find((g) => g.groupId === stepInfo.groupId)?.name ||
-          t('group-instance-creator:select-group-placeholder')
+          t('general:select-group')
         }
         onClick={() => setCurrentStep('group')}
       />
       <Separator />
 
       <NavigationItem
-        label={t('group-instance-creator:instance-type-label')}
+        label={t('general:instance-type')}
         value={
           GROUP_INSTANCE_TYPES.find((t) => t.type === stepInfo.instanceType)
             ?.label || t('group-instance-creator:select-type-placeholder')
@@ -568,7 +568,7 @@ export function GroupInstanceCreator({
                   (roleId) => roles?.find((role) => role.id === roleId)?.name,
                 )
                 .join(', ') ||
-              t('group-instance-creator:select-roles-placeholder')
+              t('general:select-roles')
             }
             onClick={() => setCurrentStep('roles')}
           />
@@ -579,7 +579,7 @@ export function GroupInstanceCreator({
       {/* Region Selection */}
       <div className="pl-4 pr-4 pb-1">
         <Label className="text-sm text-muted-foreground">
-          {t('group-instance-creator:region-label')}
+          {t('general:region')}
         </Label>
         <ToggleGroup
           type="single"
@@ -622,10 +622,10 @@ export function GroupInstanceCreator({
 
       <div className="flex space-x-2 items-center justify-between p-4">
         <Button variant="secondary" onClick={handleBack}>
-          {t('group-instance-creator:back')}
+          {t('general:back')}
         </Button>
         <Button variant="default" onClick={handleCreateInstance}>
-          {t('group-instance-creator:create-instance')}
+          {t('general:create-instance')}
         </Button>
       </div>
     </div>
@@ -672,7 +672,7 @@ export function GroupInstanceCreator({
       <div className="text-center p-4">
         <p>{t('group-instance-creator:no-groups-found')}</p>
         <Button variant="secondary" onClick={handleBack}>
-          {t('group-instance-creator:back')}
+          {t('general:back')}
         </Button>
       </div>
     );

@@ -67,7 +67,7 @@ export function CreateFolderDialog({
         />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('create-folder-dialog:cancel')}
+            {t('general:cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={!folderName || isLoading}>
             {isLoading

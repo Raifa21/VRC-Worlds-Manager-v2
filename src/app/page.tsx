@@ -46,7 +46,7 @@ export default function Home() {
   return (
     <div className="h-screen w-screen flex flex-col items-center justify-center gap-4">
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      <p className="text-sm text-muted-foreground">{t('main-page:loading')}</p>
+      <p className="text-sm text-muted-foreground">{t('general:loading')}</p>
     </div>
   );
 }

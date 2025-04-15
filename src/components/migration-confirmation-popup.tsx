@@ -48,7 +48,7 @@ export function MigrationConfirmationPopup({
           {hasExistingData[0] && (
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="worlds" className="flex flex-col space-y-1">
-                <span>{t('migration-confirmation-popup:worlds-data')}</span>
+                <span>{t('general:worlds-data')}</span>
                 <span className="font-normal text-sm text-muted-foreground">
                   {keepExisting[0]
                     ? t('migration-confirmation-popup:keep-existing')
@@ -68,7 +68,7 @@ export function MigrationConfirmationPopup({
           {hasExistingData[1] && (
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="folders" className="flex flex-col space-y-1">
-                <span>{t('migration-confirmation-popup:folders-data')}</span>
+                <span>{t('general:folders-data')}</span>
                 <span className="font-normal text-sm text-muted-foreground">
                   {keepExisting[1]
                     ? t('migration-confirmation-popup:keep-existing')
@@ -93,16 +93,16 @@ export function MigrationConfirmationPopup({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            {t('migration-confirmation-popup:cancel')}
+            {t('general:cancel')}
           </Button>
           <Button onClick={() => onConfirm(keepExisting)} disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('migration-confirmation-popup:migrating')}
+                {t('general:migrating')}
               </>
             ) : (
-              t('migration-confirmation-popup:confirm')
+              t('general:confirm')
             )}
           </Button>
         </DialogFooter>

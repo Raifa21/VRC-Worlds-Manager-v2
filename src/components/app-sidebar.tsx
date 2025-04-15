@@ -330,7 +330,7 @@ export function AppSidebar({
             <div className="h-5 w-5 flex items-center justify-center">
               <GearIcon className="h-[18px] w-[18px]" />
             </div>
-            <span>{t('app-sidebar:settings')}</span>
+            <span>{t('general:settings')}</span>
           </div>
         </SidebarGroup>
       </footer>

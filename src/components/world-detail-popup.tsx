@@ -188,7 +188,7 @@ export function WorldDetailPopup({
         <DialogHeader>
           <DialogTitle>
             {isLoading
-              ? t('world-detail:loading')
+              ? t('general:loading')
               : instanceCreationType === 'group'
                 ? t('world-detail:create-group-instance')
                 : t('world-detail:world-details')}
@@ -277,7 +277,7 @@ export function WorldDetailPopup({
                       <div className="space-y-3">
                         <div>
                           <Label className="text-sm font-medium mb-1 block">
-                            {t('world-detail:instance-type')}
+                            {t('general:instance-type')}
                           </Label>
                           <ToggleGroup
                             type="single"
@@ -337,7 +337,7 @@ export function WorldDetailPopup({
 
                         <div>
                           <Label className="text-sm font-medium mb-1 block">
-                            {t('world-detail:region')}
+                            {t('general:region')}
                           </Label>
                           <ToggleGroup
                             type="single"
@@ -379,8 +379,8 @@ export function WorldDetailPopup({
                             }}
                           >
                             {selectedInstanceType === 'group'
-                              ? t('world-detail:select-group')
-                              : t('world-detail:create-instance')}
+                              ? t('general:select-group')
+                              : t('general:create-instance')}
                           </Button>
                         </div>
                       </div>

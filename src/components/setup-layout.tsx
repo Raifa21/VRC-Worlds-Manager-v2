@@ -51,7 +51,7 @@ export function SetupLayout({
             disabled={isFirstPage}
             variant={isFirstPage ? 'default' : 'outline'}
           >
-            {t('setup-layout:back')}
+            {t('general:back')}
           </Button>
           <Button
             onClick={onNext}
@@ -63,7 +63,7 @@ export function SetupLayout({
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('setup-layout:migrating')}
+                {t('general:migrating')}
               </>
             ) : isFirstPage ? (
               t('setup-layout:start')
@@ -72,7 +72,7 @@ export function SetupLayout({
             ) : isMigrationPage && !alreadyMigrated ? (
               t('setup-layout:skip')
             ) : (
-              t('setup-layout:next')
+              t('general:next')
             )}
           </Button>
         </CardFooter>

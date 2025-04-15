@@ -175,10 +175,10 @@ export function AddToFolderDialog({
         </ScrollArea>
         <DialogFooter>
           <Button variant="secondary" onClick={() => handleOpenChange(false)}>
-            {t('add-to-folder-dialog:cancel')}
+            {t('general:cancel')}
           </Button>
           <Button onClick={handleConfirm}>
-            {t('add-to-folder-dialog:confirm')}
+            {t('general:confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>

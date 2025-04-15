@@ -113,7 +113,7 @@ const WelcomePage: React.FC = () => {
 
       if (result.status === 'error') {
         toast({
-          title: t('setup-page:toast:error:title'),
+          title: t('general:error-title'),
           description: t(
             'setup-page:toast:error:save-preference:message',
             result.error,
@@ -158,7 +158,7 @@ const WelcomePage: React.FC = () => {
 
       if (result.status === 'error') {
         toast({
-          title: t('setup-page:toast:error:title'),
+          title: t('general:error-title'),
           description: t(
             'setup-page:toast:error:migrate:message',
             result.error,
@@ -169,7 +169,7 @@ const WelcomePage: React.FC = () => {
       }
 
       toast({
-        title: t('setup-page:toast:success:title'),
+        title: t('general:success-title'),
         description: t('setup-page:toast:success:migrate:message'),
         duration: 300,
       });
@@ -223,7 +223,7 @@ const WelcomePage: React.FC = () => {
 
             if (result.status === 'error') {
               toast({
-                title: t('setup-page:toast:error:title'),
+                title: t('general:error-title'),
                 description: t(
                   'setup-page:toast:error:migrate:message',
                   result.error,
@@ -234,7 +234,7 @@ const WelcomePage: React.FC = () => {
             }
 
             toast({
-              title: t('setup-page:toast:success:title'),
+              title: t('general:success-title'),
               description: t('setup-page:toast:success:migrate:message'),
             });
             setAlreadyMigrated(true);
@@ -324,7 +324,7 @@ const WelcomePage: React.FC = () => {
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t('setup-page:worlds-data')}</Label>
+                  <Label>{t('general:worlds-data')}</Label>
                   <div className="flex space-x-2">
                     <Input
                       value={migrationPaths[0]}
@@ -349,7 +349,7 @@ const WelcomePage: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t('setup-page:folders-data')}</Label>
+                  <Label>{t('general:folders-data')}</Label>
                   <div className="flex space-x-2">
                     <Input
                       value={migrationPaths[1]}
@@ -386,7 +386,7 @@ const WelcomePage: React.FC = () => {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('setup-page:migrating')}
+                    {t('general:migrating')}
                   </>
                 ) : (
                   t('setup-page:migrate-button')
@@ -432,16 +432,16 @@ const WelcomePage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={CardSize.Compact}>
-                        {t('setup-page:compact')}
+                        {t('general:compact')}
                       </SelectItem>
                       <SelectItem value={CardSize.Normal}>
-                        {t('setup-page:normal')}
+                        {t('general:normal')}
                       </SelectItem>
                       <SelectItem value={CardSize.Expanded}>
-                        {t('setup-page:expanded')}
+                        {t('general:expanded')}
                       </SelectItem>
                       <SelectItem value={CardSize.Original}>
-                        {t('setup-page:original')}
+                        {t('general:original')}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -454,7 +454,7 @@ const WelcomePage: React.FC = () => {
                         worldId: '1',
                         name: t('settings-page:preview-world'),
                         thumbnailUrl: 'icons/1.png',
-                        authorName: t('settings-page:author'),
+                        authorName: t('general:sort-author'),
                         lastUpdated: '2025-02-28',
                         visits: 59,
                         dateAdded: '2025-01-01',
@@ -484,10 +484,10 @@ const WelcomePage: React.FC = () => {
                 <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
                   <div className="flex flex-col space-y-1.5">
                     <Label className="text-base font-medium">
-                      {t('setup-page:theme-label')}
+                      {t('general:theme-label')}
                     </Label>
                     <div className="text-sm text-gray-500">
-                      {t('setup-page:theme-description')}
+                      {t('general:theme-description')}
                     </div>
                   </div>
                   <Select
@@ -502,13 +502,13 @@ const WelcomePage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="light">
-                        {t('setup-page:light')}
+                        {t('general:light')}
                       </SelectItem>
                       <SelectItem value="dark">
-                        {t('setup-page:dark')}
+                        {t('general:dark')}
                       </SelectItem>
                       <SelectItem value="system">
-                        {t('setup-page:system')}
+                        {t('general:system')}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -516,10 +516,10 @@ const WelcomePage: React.FC = () => {
                 <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
                   <div className="flex flex-col space-y-1.5">
                     <Label className="text-base font-medium">
-                      {t('setup-page:language-label')}
+                      {t('general:language-label')}
                     </Label>
                     <div className="text-sm text-gray-500">
-                      {t('setup-page:language-description')}
+                      {t('general:language-description')}
                     </div>
                   </div>
                   <Select

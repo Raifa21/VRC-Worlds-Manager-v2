@@ -63,7 +63,7 @@ export function SettingsPage({
         cardSizeResult.status === 'error'
       ) {
         toast({
-          title: t('settings-page:error-title'),
+          title: t('general:error-title'),
           description:
             t('settings-page:error-load-preferences') +
             ': ' +
@@ -104,7 +104,7 @@ export function SettingsPage({
 
       if (result.status === 'error') {
         toast({
-          title: t('settings-page:error-title'),
+          title: t('general:error-title'),
           description:
             t('settings-page:error-save-preferences') + ': ' + result.error,
           variant: 'destructive',
@@ -121,7 +121,7 @@ export function SettingsPage({
     } catch (error) {
       console.error('Failed to save preferences:', error);
       toast({
-        title: t('settings-page:error-title'),
+        title: t('general:error-title'),
         description: t('settings-page:error-save-preferences'),
         variant: 'destructive',
       });
@@ -145,7 +145,7 @@ export function SettingsPage({
 
       if (result.status === 'error') {
         toast({
-          title: t('settings-page:error-title'),
+          title: t('general:error-title'),
           description:
             t('settings-page:error-save-preferences') + ': ' + result.error,
           variant: 'destructive',
@@ -159,7 +159,7 @@ export function SettingsPage({
     } catch (error) {
       console.error('Failed to save preferences:', error);
       toast({
-        title: t('settings-page:error-title'),
+        title: t('general:error-title'),
         description: t('settings-page:error-save-preferences'),
         variant: 'destructive',
       });
@@ -176,16 +176,16 @@ export function SettingsPage({
 
   return (
     <div className="container max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">{t('settings-page:title')}</h1>
+      <h1 className="text-2xl font-bold">{t('general:settings')}</h1>
 
       <div className="space-y-4">
         <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
           <div className="flex flex-col space-y-1.5">
             <Label className="text-base font-medium">
-              {t('settings-page:theme')}
+              {t('general:theme-label')}
             </Label>
             <div className="text-sm text-muted-foreground">
-              {t('settings-page:theme-description')}
+              {t('general:theme-description')}
             </div>
           </div>
           <Select
@@ -196,10 +196,10 @@ export function SettingsPage({
               <SelectValue placeholder="Theme" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="light">{t('settings-page:light')}</SelectItem>
-              <SelectItem value="dark">{t('settings-page:dark')}</SelectItem>
+              <SelectItem value="light">{t('general:light')}</SelectItem>
+              <SelectItem value="dark">{t('general:dark')}</SelectItem>
               <SelectItem value="system">
-                {t('settings-page:system')}
+                {t('general:system')}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -208,10 +208,10 @@ export function SettingsPage({
         <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
           <div className="flex flex-col space-y-1.5">
             <Label className="text-base font-medium">
-              {t('settings-page:language')}
+              {t('general:language-label')}
             </Label>
             <div className="text-sm text-muted-foreground">
-              {t('settings-page:language-description')}
+              {t('general:language-description')}
             </div>
           </div>
           <Select
@@ -250,16 +250,16 @@ export function SettingsPage({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={CardSize.Compact}>
-                  {t('settings-page:compact')}
+                  {t('general:compact')}
                 </SelectItem>
                 <SelectItem value={CardSize.Normal}>
-                  {t('settings-page:normal')}
+                  {t('general:normal')}
                 </SelectItem>
                 <SelectItem value={CardSize.Expanded}>
-                  {t('settings-page:expanded')}
+                  {t('general:expanded')}
                 </SelectItem>
                 <SelectItem value={CardSize.Original}>
-                  {t('settings-page:original')}
+                  {t('general:original')}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -270,7 +270,7 @@ export function SettingsPage({
               worldId: '1',
               name: t('settings-page:preview-world'),
               thumbnailUrl: 'icons/1.png',
-              authorName: t('settings-page:author'),
+              authorName: t('general:sort-author'),
               lastUpdated: '2025-02-28',
               visits: 1911,
               dateAdded: '2025-01-01',
