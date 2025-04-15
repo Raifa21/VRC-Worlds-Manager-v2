@@ -26,12 +26,18 @@ import { Label } from '@/components/ui/label';
 import { WorldCardPreview } from '@/components/world-card';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Globe } from 'lucide-react';
 import { ConfirmationPopup } from '@/components/confirmation-popup';
 import { MigrationConfirmationPopup } from '@/components/migration-confirmation-popup';
 import { commands } from '@/lib/bindings';
 import { CardSize } from '@/types/preferences';
 import { SetupLayout } from '@/components/setup-layout';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const WelcomePage: React.FC = () => {
   const router = useRouter();
@@ -234,7 +240,36 @@ const WelcomePage: React.FC = () => {
             onNext={handleNext}
             isFirstPage={true}
           >
-            <div className="h-full flex flex-col items-center justify-center space-y-6">
+            <div className="h-full flex flex-col items-center justify-center space-y-6 relative">
+              {/* Add this language switcher */}
+              <div className="absolute top-0 right-0">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="w-9 px-0">
+                      <Globe className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setPreferences({ ...preferences, language: 'en-US' })
+                      }
+                    >
+                      English
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setPreferences({ ...preferences, language: 'ja-JP' })
+                      }
+                      disabled
+                    >
+                      日本語
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Existing welcome content */}
               <h2 className="text-2xl font-semibold">
                 Thank you for installing!
               </h2>
