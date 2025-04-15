@@ -32,7 +32,7 @@ pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
     let parsed: Vec<FavoriteWorldParser> = match serde_json::from_str(&text) {
         Ok(worlds) => worlds,
         Err(e) => {
-            log::info!("Failed to parse favorite worlds: {}", e.to_string());
+            log::error!("Failed to parse favorite worlds: {}", e.to_string());
             log::info!("Response: {}", text);
             return Err(format!(
                 "Failed to parse favorite worlds: {}",
@@ -78,7 +78,7 @@ pub async fn get_recently_visited_worlds<J: Into<Arc<Jar>>>(
     let worlds: Vec<VRChatWorld> = match serde_json::from_str(&text) {
         Ok(worlds) => worlds,
         Err(e) => {
-            log::info!("Failed to parse vrchat worlds: {}", e.to_string());
+            log::error!("Failed to parse vrchat worlds: {}", e.to_string());
             log::info!("Response: {}", text);
             return Err(format!("Failed to parse vrchat worlds: {}", e.to_string()));
         }
@@ -111,7 +111,7 @@ pub async fn get_world_by_id<J: Into<Arc<Jar>>, S: AsRef<str>>(
     let world: WorldDetails = match serde_json::from_str(&text) {
         Ok(world) => world,
         Err(e) => {
-            log::info!("Failed to parse vrchat world: {}", e.to_string());
+            log::error!("Failed to parse vrchat world: {}", e.to_string());
             log::info!("Response: {}", text);
             return Err(format!("Failed to parse vrchat world: {}", e.to_string()));
         }
@@ -145,7 +145,7 @@ pub async fn search_worlds<J: Into<Arc<Jar>>>(
     let worlds: Vec<VRChatWorld> = match serde_json::from_str(&text) {
         Ok(worlds) => worlds,
         Err(e) => {
-            log::info!("Failed to parse vrchat worlds: {}", e.to_string());
+            log::error!("Failed to parse vrchat worlds: {}", e.to_string());
             log::info!("Response: {}", text);
             return Err(format!("Failed to parse vrchat worlds: {}", e.to_string()));
         }
