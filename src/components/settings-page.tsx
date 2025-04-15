@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useContext } from 'react';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
+import { useLocalization } from '@/hooks/use-localization';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,7 +17,8 @@ import { CardSize } from '@/types/preferences';
 import { WorldCardPreview } from '@/components/world-card';
 import { Platform } from '@/types/worlds';
 import { commands } from '@/lib/bindings';
-import { Loader2, Folder } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { LocalizationContext } from './localization-context';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
@@ -34,7 +36,9 @@ export function SettingsPage({
   } | null>(null);
   const { setTheme } = useTheme();
   const { toast } = useToast();
+  const { t } = useLocalization();
   const [isSaving, setIsSaving] = React.useState(false);
+  const { setLanguage } = useContext(LocalizationContext);
 
   React.useEffect(() => {
     const loadPreferences = async () => {
@@ -59,9 +63,10 @@ export function SettingsPage({
         cardSizeResult.status === 'error'
       ) {
         toast({
-          title: 'Error',
+          title: t('general:error-title'),
           description:
-            'Failed to load preferences: ' +
+            t('settings-page:error-load-preferences') +
+            ': ' +
             (themeResult.status === 'error' ? themeResult.error : '') +
             (languageResult.status === 'error' ? languageResult.error : '') +
             (cardSizeResult.status === 'error' ? cardSizeResult.error : ''),
@@ -99,11 +104,16 @@ export function SettingsPage({
 
       if (result.status === 'error') {
         toast({
-          title: 'Error',
-          description: 'Failed to save preferences: ' + result.error,
+          title: t('general:error-title'),
+          description:
+            t('settings-page:error-save-preferences') + ': ' + result.error,
           variant: 'destructive',
         });
         return;
+      }
+
+      if (key === 'language') {
+        setLanguage(newPreferences.language);
       }
 
       // Update local state after successful save
@@ -111,8 +121,8 @@ export function SettingsPage({
     } catch (error) {
       console.error('Failed to save preferences:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to save preferences',
+        title: t('general:error-title'),
+        description: t('settings-page:error-save-preferences'),
         variant: 'destructive',
       });
     }
@@ -135,8 +145,9 @@ export function SettingsPage({
 
       if (result.status === 'error') {
         toast({
-          title: 'Error',
-          description: 'Failed to save preferences: ' + result.error,
+          title: t('general:error-title'),
+          description:
+            t('settings-page:error-save-preferences') + ': ' + result.error,
           variant: 'destructive',
         });
         return;
@@ -148,8 +159,8 @@ export function SettingsPage({
     } catch (error) {
       console.error('Failed to save preferences:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to save preferences',
+        title: t('general:error-title'),
+        description: t('settings-page:error-save-preferences'),
         variant: 'destructive',
       });
     }
@@ -165,14 +176,16 @@ export function SettingsPage({
 
   return (
     <div className="container max-w-4xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      <h1 className="text-2xl font-bold">{t('general:settings')}</h1>
 
       <div className="space-y-4">
         <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
           <div className="flex flex-col space-y-1.5">
-            <Label className="text-base font-medium">Theme</Label>
+            <Label className="text-base font-medium">
+              {t('general:theme-label')}
+            </Label>
             <div className="text-sm text-muted-foreground">
-              Select your preferred theme
+              {t('general:theme-description')}
             </div>
           </div>
           <Select
@@ -183,18 +196,20 @@ export function SettingsPage({
               <SelectValue placeholder="Theme" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="light">Light</SelectItem>
-              <SelectItem value="dark">Dark</SelectItem>
-              <SelectItem value="system">System</SelectItem>
+              <SelectItem value="light">{t('general:light')}</SelectItem>
+              <SelectItem value="dark">{t('general:dark')}</SelectItem>
+              <SelectItem value="system">{t('general:system')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
           <div className="flex flex-col space-y-1.5">
-            <Label className="text-base font-medium">Language</Label>
+            <Label className="text-base font-medium">
+              {t('general:language-label')}
+            </Label>
             <div className="text-sm text-muted-foreground">
-              Select your preferred language (製作中です)
+              {t('general:language-description')}
             </div>
           </div>
           <Select
@@ -205,12 +220,10 @@ export function SettingsPage({
               <SelectValue placeholder="Language" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ja-JP" disabled>
-                Japanese
-              </SelectItem>
-              <SelectItem value="en-US">English(US)</SelectItem>
+              <SelectItem value="ja-JP">日本語</SelectItem>
+              <SelectItem value="en-US">English (US)</SelectItem>
               <SelectItem value="en-UK" disabled>
-                English(UK)
+                English (UK)
               </SelectItem>
             </SelectContent>
           </Select>
@@ -219,9 +232,11 @@ export function SettingsPage({
         <div className="flex flex-col items-start justify-between space-y-3 p-4 rounded-lg border">
           <div className="flex flex-row justify-between w-full">
             <div className="flex flex-col space-y-1.5">
-              <Label className="text-base font-medium">World Card Size</Label>
+              <Label className="text-base font-medium">
+                {t('settings-page:world-card-size')}
+              </Label>
               <div className="text-sm text-muted-foreground">
-                Select how world cards appear
+                {t('settings-page:world-card-description')}
               </div>
             </div>
             <Select
@@ -232,10 +247,18 @@ export function SettingsPage({
                 <SelectValue placeholder="Card Size" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CardSize.Compact}>Compact</SelectItem>
-                <SelectItem value={CardSize.Normal}>Normal</SelectItem>
-                <SelectItem value={CardSize.Expanded}>Expanded</SelectItem>
-                <SelectItem value={CardSize.Original}>Original</SelectItem>
+                <SelectItem value={CardSize.Compact}>
+                  {t('general:compact')}
+                </SelectItem>
+                <SelectItem value={CardSize.Normal}>
+                  {t('general:normal')}
+                </SelectItem>
+                <SelectItem value={CardSize.Expanded}>
+                  {t('general:expanded')}
+                </SelectItem>
+                <SelectItem value={CardSize.Original}>
+                  {t('general:original')}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -243,9 +266,9 @@ export function SettingsPage({
             size={preferences.card_size}
             world={{
               worldId: '1',
-              name: 'Preview World',
+              name: t('settings-page:preview-world'),
               thumbnailUrl: 'icons/1.png',
-              authorName: 'Author',
+              authorName: t('general:sort-author'),
               lastUpdated: '2025-02-28',
               visits: 1911,
               dateAdded: '2025-01-01',

@@ -6,8 +6,10 @@ import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
 import { Platform } from '@/types/worlds';
 import { WorldDisplayData, WorldCardPreviewProps } from '@/types/worlds';
+import { useLocalization } from '@/hooks/use-localization';
 
 export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
+  const { t } = useLocalization();
   const sizeClasses: Record<CardSize, string> = {
     [CardSize.Compact]: 'w-48 h-32',
     [CardSize.Normal]: 'w-52 h-48',
@@ -22,11 +24,21 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
       <div className="relative w-full">
         <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1">
           {world.platform == Platform.CrossPlatform ? (
-            <Image src={QPcQ} alt="Cross-platform" width={24} height={24} />
+            <Image
+              src={QPcQ}
+              alt={t('world-card:cross-platform')}
+              width={24}
+              height={24}
+            />
           ) : world.platform == Platform.PC ? (
-            <Image src={QPc} alt="PC" width={24} height={24} />
+            <Image src={QPc} alt={t('world-card:pc')} width={24} height={24} />
           ) : (
-            <Image src={QQ} alt="Quest" width={24} height={24} />
+            <Image
+              src={QQ}
+              alt={t('world-card:quest')}
+              width={24}
+              height={24}
+            />
           )}
         </div>
       </div>
@@ -67,11 +79,11 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
           </div>
           <div className="flex items-center text-muted-foreground text-sm justify-between">
             <span>{world.authorName}</span>
-            <span>Visits: {world.visits}</span>
+            <span>{t('world-card:visits', world.visits)}</span>
           </div>
           <div className="flex justify-between whitespace-nowrap">
             <span className="text-sm text-muted-foreground">
-              Updated: {world.lastUpdated}
+              {t('world-card:updated', world.lastUpdated)}
             </span>
             <div className="flex items-center gap-1">
               <Heart className="w-3.5 h-3.5" />
@@ -85,7 +97,7 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
         <div className="p-2">
           <h3 className="font-medium truncate">{world.name}</h3>
           <p className="text-sm text-muted-foreground truncate">
-            By {world.authorName}
+            {t('world-card:by-author', world.authorName)}
           </p>
         </div>
       )}

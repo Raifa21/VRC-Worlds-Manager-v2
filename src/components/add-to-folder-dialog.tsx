@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Check, Minus } from 'lucide-react';
 import { WorldDisplayData } from '@/types/worlds';
+import { useLocalization } from '@/hooks/use-localization';
 
 interface AddToFolderDialogProps {
   open: boolean;
@@ -27,6 +28,7 @@ export function AddToFolderDialog({
   folders,
   onConfirm,
 }: AddToFolderDialogProps) {
+  const { t } = useLocalization();
   const [foldersToAdd, setFoldersToAdd] = useState<Set<string>>(new Set());
   const [foldersToRemove, setFoldersToRemove] = useState<Set<string>>(
     new Set(),
@@ -137,11 +139,17 @@ export function AddToFolderDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Manage Folders</DialogTitle>
+          <DialogTitle>{t('add-to-folder-dialog:title')}</DialogTitle>
           <DialogDescription>
-            Select folders to add or remove {selectedWorlds.length} world
-            {selectedWorlds.length > 1 ? 's' : ''}{' '}
-            {selectedWorlds.length > 1 ? 'from' : 'to'}
+            {selectedWorlds.length === 1
+              ? t(
+                  'add-to-folder-dialog:description-single',
+                  selectedWorlds.length,
+                )
+              : t(
+                  'add-to-folder-dialog:description-multiple',
+                  selectedWorlds.length,
+                )}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-[300px] pr-4">
@@ -167,9 +175,9 @@ export function AddToFolderDialog({
         </ScrollArea>
         <DialogFooter>
           <Button variant="secondary" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {t('general:cancel')}
           </Button>
-          <Button onClick={handleConfirm}>Confirm</Button>
+          <Button onClick={handleConfirm}>{t('general:confirm')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLocalization } from '@/hooks/use-localization';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { UserProfile } from '@/components/user-profile';
@@ -10,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { commands } from '@/lib/bindings';
 
 export function AboutSection() {
+  const { t } = useLocalization();
   const [orderedSupporters, setOrderedSupporters] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -63,13 +65,13 @@ export function AboutSection() {
           {/* Development Team Section */}
           <div>
             <CardHeader>
-              <CardTitle>Development Team</CardTitle>
+              <CardTitle>{t('about-section:development-team')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-8">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                    Developers
+                    {t('about-section:developers')}
                   </h3>
                   <div className="space-x-4 flex flex-row">
                     <UserProfile
@@ -88,7 +90,7 @@ export function AboutSection() {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                    Media Design
+                    {t('about-section:media-design')}
                   </h3>
                   <div className="space-x-4 flex flex-row">
                     <UserProfile
@@ -104,28 +106,31 @@ export function AboutSection() {
           {/* Special Thanks Section */}
           <div>
             <CardHeader>
-              <CardTitle>Special Thanks</CardTitle>
+              <CardTitle>{t('about-section:special-thanks')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">VRChat</span>
+                  <span className="text-sm font-medium">
+                    {' '}
+                    {t('about-section:vrchat')}
+                  </span>
                   <span className="text-sm text-muted-foreground">
-                    For the API and the platform.
+                    {t('about-section:vrchat-description')}
                   </span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">
-                    VRChat API Community
+                    {t('about-section:api-community')}
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    For maintaing the API documentation.
+                    {t('about-section:api-community-description')}
                   </span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">黒音キト</span>
                   <span className="text-sm text-muted-foreground">
-                    For Launchpad Icons.
+                    {t('about-section:icons-credit')}
                   </span>
                 </div>
               </div>
@@ -138,27 +143,26 @@ export function AboutSection() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-pink-500" />
-              Supporters
+              {t('about-section:supporters')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-muted-foreground">
-              Thank you to all the wonderful people who support this project!
-              Support me{' '}
+              {t('about-section:supporters-description:foretext')}
               <a
                 href="https://raifa.fanbox.cc/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-pink-500 hover:underline"
               >
-                here
+                {t('about-section:supporters-description:link-text')}
               </a>
-              .
+              {t('about-section:supporters-description:posttext')}
             </p>
             <div className="flex flex-wrap gap-2">
               {isLoading ? (
                 <span className="text-muted-foreground">
-                  Loading supporters...
+                  {t('about-section:loading-supporters')}
                 </span>
               ) : orderedSupporters.length > 0 ? (
                 orderedSupporters.map((name) => (
@@ -171,7 +175,7 @@ export function AboutSection() {
                 ))
               ) : (
                 <span className="text-muted-foreground">
-                  No supporters found
+                  {t('about-section:no-supporters')}
                 </span>
               )}
             </div>
@@ -199,7 +203,7 @@ export function AboutSection() {
               }
             >
               <SiGithub className="h-4 w-4" />
-              Source Code
+              {t('about-section:source-code')}
             </Button>
             <Button
               variant="ghost"
@@ -213,7 +217,7 @@ export function AboutSection() {
               }
             >
               <SiDiscord className="h-4 w-4" />
-              Report an Issue
+              {t('about-section:report-issue')}
             </Button>
           </div>
         </div>
