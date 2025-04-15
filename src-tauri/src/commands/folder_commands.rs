@@ -93,6 +93,15 @@ pub async fn move_folder(folder_name: String, new_index: usize) -> Result<(), St
 
 #[tauri::command]
 #[specta::specta]
+pub async fn rename_folder(old_name: String, new_name: String) -> Result<(), String> {
+    FolderManager::rename_folder(old_name, new_name, FOLDERS.get(), WORLDS.get()).map_err(|e| {
+        log::error!("Error renaming folder: {}", e);
+        e.to_string()
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn get_worlds(folder_name: String) -> Result<Vec<WorldDisplayData>, String> {
     FolderManager::get_worlds(folder_name, FOLDERS.get(), WORLDS.get()).map_err(|e| {
         log::error!("Error getting worlds: {}", e);

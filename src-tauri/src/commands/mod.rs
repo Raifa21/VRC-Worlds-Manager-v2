@@ -16,6 +16,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         folder_commands::create_folder,
         folder_commands::delete_folder,
         folder_commands::move_folder,
+        folder_commands::rename_folder,
         folder_commands::get_worlds,
         folder_commands::get_all_worlds,
         folder_commands::get_unclassified_worlds,

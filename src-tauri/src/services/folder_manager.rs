@@ -395,6 +395,58 @@ impl FolderManager {
         Ok(())
     }
 
+    /// Rename a folder
+    /// This is done by removing the folder from the list, and adding it back with the new name
+    /// We also need to update the world user_data.folders list
+    ///
+    /// # Arguments
+    /// * `old_name` - The old name of the folder
+    /// * `new_name` - The new name of the folder
+    /// * `folders` - The list of folders, as a RwLock
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// Ok if the folder was renamed successfully
+    ///
+    /// # Errors
+    /// Returns an error if the folder is not found
+    /// Returns an error if the worlds lock is poisoned
+    /// Returns an error if the folders lock is poisoned
+    pub fn rename_folder(
+        old_name: String,
+        new_name: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<(), AppError> {
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+
+        let folder_index = folders_lock.iter().position(|f| f.folder_name == old_name);
+        match folder_index {
+            Some(index) => {
+                let world_ids = folders_lock[index].world_ids.clone();
+                folders_lock[index].folder_name = new_name.clone();
+                FileService::write_folders(&*folders_lock)?;
+                drop(folders_lock);
+                for world_id in world_ids {
+                    if let Some(world) = worlds_lock
+                        .iter_mut()
+                        .find(|w| w.api_data.world_id == world_id)
+                    {
+                        if !world.user_data.folders.contains(&new_name) {
+                            world.user_data.folders.push(new_name.clone());
+                        }
+                    }
+                }
+                FileService::write_worlds(&*worlds_lock)?;
+                Ok(())
+            }
+            None => Err(EntityError::FolderNotFound(old_name).into()),
+        }
+    }
+
     /// Get a world by its ID
     ///
     /// # Arguments

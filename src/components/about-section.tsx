@@ -56,159 +56,166 @@ export function AboutSection() {
   };
 
   return (
-    <div className="container mx-auto relative pb-8">
-      <div className="flex flex-row mb-2">
-        {/* Development Team Section */}
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
+      <div className="flex-1 container mx-auto p-6">
+        {/* Development Team and Special Thanks Section */}
+        <div className="flex flex-row mb-2">
+          {/* Development Team Section */}
+          <div>
+            <CardHeader>
+              <CardTitle>Development Team</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                    Developers
+                  </h3>
+                  <div className="space-x-4 flex flex-row">
+                    <UserProfile
+                      name="Raifa"
+                      iconUrl="https://data.raifaworks.com/icons/raifa.jpg"
+                      xUsername="raifa_trtr"
+                      githubUsername="Raifa21"
+                    />
+                    <UserProfile
+                      name="siloneco"
+                      iconUrl="https://data.raifaworks.com/icons/siloneco.jpg"
+                      xUsername="siloneco_vrc"
+                      githubUsername="siloneco"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                    Media Design
+                  </h3>
+                  <div className="space-x-4 flex flex-row">
+                    <UserProfile
+                      name="じゃんくま"
+                      iconUrl="https://data.raifaworks.com/icons/jan_kuma.jpg"
+                      xUsername="Jan_kumaVRC"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </div>
+          {/* Special Thanks Section */}
+          <div>
+            <CardHeader>
+              <CardTitle>Special Thanks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">VRChat</span>
+                  <span className="text-sm text-muted-foreground">
+                    For the API and the platform.
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">
+                    VRChat API Community
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    For maintaing the API documentation.
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">黒音キト</span>
+                  <span className="text-sm text-muted-foreground">
+                    For Launchpad Icons.
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </div>
+        </div>
+
+        {/* Supporters Section */}
         <div>
           <CardHeader>
-            <CardTitle>Development Team</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-pink-500" />
+              Supporters
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                  Developers
-                </h3>
-                <div className="space-x-4 flex flex-row">
-                  <UserProfile
-                    name="Raifa"
-                    iconUrl="https://data.raifaworks.com/icons/raifa.jpg"
-                    xUsername="raifa_trtr"
-                    githubUsername="Raifa21"
-                  />
-                  <UserProfile
-                    name="siloneco"
-                    iconUrl="https://data.raifaworks.com/icons/siloneco.jpg"
-                    xUsername="siloneco_vrc"
-                    githubUsername="siloneco"
-                  />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                  Media Design
-                </h3>
-                <div className="space-x-4 flex flex-row">
-                  <UserProfile
-                    name="じゃんくま"
-                    iconUrl="https://data.raifaworks.com/icons/jan_kuma.jpg"
-                    xUsername="Jan_kumaVRC"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </div>
-        {/* Special Thanks Section */}
-        <div>
-          <CardHeader>
-            <CardTitle>Special Thanks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">VRChat</span>
-                <span className="text-sm text-muted-foreground">
-                  For the API and the platform.
+            <p className="text-muted-foreground">
+              Thank you to all the wonderful people who support this project!
+              Support me{' '}
+              <a
+                href="https://raifa.fanbox.cc/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-pink-500 hover:underline"
+              >
+                here
+              </a>
+              .
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {isLoading ? (
+                <span className="text-muted-foreground">
+                  Loading supporters...
                 </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">
-                  VRChat API Community
+              ) : orderedSupporters.length > 0 ? (
+                orderedSupporters.map((name) => (
+                  <span
+                    key={name}
+                    className="px-1 py-1 text-pink-500 dark:text-pink-400 rounded-full text-sm font-medium"
+                  >
+                    {name}
+                  </span>
+                ))
+              ) : (
+                <span className="text-muted-foreground">
+                  No supporters found
                 </span>
-                <span className="text-sm text-muted-foreground">
-                  For maintaing the API documentation.
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">黒音キト</span>
-                <span className="text-sm text-muted-foreground">
-                  For Launchpad Icons.
-                </span>
-              </div>
+              )}
             </div>
           </CardContent>
         </div>
       </div>
 
-      {/* Supporters Section */}
-      <div>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Heart className="h-5 w-5 text-pink-500" />
-            Supporters
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <p className="text-muted-foreground">
-            Thank you to all the wonderful people who support this project!
-            Support me{' '}
-            <a
-              href="https://raifa.fanbox.cc/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-pink-500 hover:underline"
-            >
-              here
-            </a>
-            .
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {isLoading ? (
-              <span className="text-muted-foreground">
-                Loading supporters...
-              </span>
-            ) : orderedSupporters.length > 0 ? (
-              orderedSupporters.map((name) => (
-                <span
-                  key={name}
-                  className="px-1 py-1 text-pink-500 dark:text-pink-400 rounded-full text-sm font-medium"
-                >
-                  {name}
-                </span>
-              ))
-            ) : (
-              <span className="text-muted-foreground">No supporters found</span>
-            )}
+      {/* Footer */}
+      <div className="w-full border-t bg-background/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+          <div className="text-sm text-muted-foreground">
+            VRC Worlds Manager v.0.1.3a
           </div>
-        </CardContent>
-      </div>
 
-      {/* Bottom Bar - Changed from fixed to absolute positioning */}
-      <div className="absolute bottom-0 inset-x-0 pl-4 pr-4 border-t items-center bg-background/80 backdrop-blur-sm flex justify-between items-center">
-        <div className="text-sm text-muted-foreground">
-          VRC Worlds Manager v.0.1.3a
-        </div>
-
-        <div className="flex gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() =>
-              window.open(
-                'https://github.com/Raifa21/vrc-world-manager',
-                '_blank',
-              )
-            }
-          >
-            <SiGithub className="h-4 w-4" />
-            Source Code
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() =>
-              window.open(
-                'https://github.com/Raifa21/vrc-world-manager/issues',
-                '_blank',
-              )
-            }
-          >
-            <SiDiscord className="h-4 w-4" />
-            Report an Issue
-          </Button>
+          <div className="flex gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={() =>
+                window.open(
+                  'https://github.com/Raifa21/vrc-world-manager',
+                  '_blank',
+                )
+              }
+            >
+              <SiGithub className="h-4 w-4" />
+              Source Code
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={() =>
+                window.open(
+                  'https://github.com/Raifa21/vrc-world-manager/issues',
+                  '_blank',
+                )
+              }
+            >
+              <SiDiscord className="h-4 w-4" />
+              Report an Issue
+            </Button>
+          </div>
         </div>
       </div>
     </div>
