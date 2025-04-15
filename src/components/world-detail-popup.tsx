@@ -32,6 +32,7 @@ import {
   Region,
   GROUP_INSTANCE_TYPES,
 } from '@/types/instances';
+import { useLocalization } from '@/hooks/use-localization';
 
 interface WorldDetailDialogProps {
   open: boolean;
@@ -73,6 +74,7 @@ export function WorldDetailPopup({
   onGetGroups,
   onGetGroupPermissions,
 }: WorldDetailDialogProps) {
+  const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
   const [worldDetails, setWorldDetails] = useState<WorldDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -186,10 +188,10 @@ export function WorldDetailPopup({
         <DialogHeader>
           <DialogTitle>
             {isLoading
-              ? 'Loading...'
+              ? t('general:loading')
               : instanceCreationType === 'group'
-                ? 'Create Group Instance'
-                : 'World Details'}
+                ? t('world-detail:create-group-instance')
+                : t('world-detail:world-details')}
           </DialogTitle>
         </DialogHeader>
 
@@ -210,7 +212,7 @@ export function WorldDetailPopup({
 
             {isLoading ? (
               <div className="flex items-center justify-center p-4">
-                <span>Loading world details...</span>
+                <span>{t('world-detail:loading-details')}</span>
               </div>
             ) : (
               worldDetails && (
@@ -228,13 +230,21 @@ export function WorldDetailPopup({
                             {worldDetails.platform == Platform.CrossPlatform ? (
                               <Image
                                 src={QPcQ}
-                                alt="Cross-platform"
+                                alt={t('world-card:cross-platform')}
                                 width={35}
                               />
                             ) : worldDetails.platform == Platform.PC ? (
-                              <Image src={QPc} alt="PC" width={35} />
+                              <Image
+                                src={QPc}
+                                alt={t('world-card:pc')}
+                                width={35}
+                              />
                             ) : (
-                              <Image src={QQ} alt="Quest" width={35} />
+                              <Image
+                                src={QQ}
+                                alt={t('world-card:quest')}
+                                width={35}
+                              />
                             )}
                           </div>
                           <img
@@ -252,7 +262,7 @@ export function WorldDetailPopup({
                         {worldDetails.name}
                       </div>
                       <div className="text-sm text-gray-500">
-                        by{' '}
+                        {t('world-detail:by')}{' '}
                         <a
                           className="text-blue"
                           href={`https://vrchat.com/home/user/${worldDetails.authorId}`}
@@ -267,7 +277,7 @@ export function WorldDetailPopup({
                       <div className="space-y-3">
                         <div>
                           <Label className="text-sm font-medium mb-1 block">
-                            Instance Type
+                            {t('general:instance-type')}
                           </Label>
                           <ToggleGroup
                             type="single"
@@ -279,22 +289,37 @@ export function WorldDetailPopup({
                             className="grid grid-cols-2 gap-2"
                           >
                             {[
-                              { value: 'public', label: 'Public' },
+                              {
+                                value: 'public',
+                                label: t('world-detail:public'),
+                              },
                               {
                                 value: 'group',
                                 label: (
                                   <div className="flex items-center justify-between w-full gap-2">
                                     <div className="flex-1 text-center">
-                                      Group
+                                      {t('world-detail:group')}
                                     </div>
                                     <ChevronRight className="h-4 w-4 text-muted-foreground flex-none" />
                                   </div>
                                 ),
                               },
-                              { value: 'friends+', label: 'Friends+' },
-                              { value: 'friends', label: 'Friends' },
-                              { value: 'invite+', label: 'Invite+' },
-                              { value: 'invite', label: 'Invite' },
+                              {
+                                value: 'friends+',
+                                label: t('world-detail:friends-plus'),
+                              },
+                              {
+                                value: 'friends',
+                                label: t('world-detail:friends'),
+                              },
+                              {
+                                value: 'invite+',
+                                label: t('world-detail:invite-plus'),
+                              },
+                              {
+                                value: 'invite',
+                                label: t('world-detail:invite'),
+                              },
                             ].map(({ value, label }) => (
                               <ToggleGroupItem
                                 key={value}
@@ -312,7 +337,7 @@ export function WorldDetailPopup({
 
                         <div>
                           <Label className="text-sm font-medium mb-1 block">
-                            Region
+                            {t('general:region')}
                           </Label>
                           <ToggleGroup
                             type="single"
@@ -354,8 +379,8 @@ export function WorldDetailPopup({
                             }}
                           >
                             {selectedInstanceType === 'group'
-                              ? 'Select Group'
-                              : 'Create Instance'}
+                              ? t('general:select-group')
+                              : t('general:create-instance')}
                           </Button>
                         </div>
                       </div>
@@ -366,7 +391,7 @@ export function WorldDetailPopup({
                     <div className="flex flex-col gap-4 w-2/3">
                       <div>
                         <div className="text-sm font-semibold mb-2">
-                          Description
+                          {t('world-detail:description')}
                         </div>
                         <div className="text-sm">
                           {worldDetails.description}
@@ -374,7 +399,9 @@ export function WorldDetailPopup({
                       </div>
                       <Separator className="my-2" />
                       <div>
-                        <div className="text-sm font-semibold mb-2">Tags</div>
+                        <div className="text-sm font-semibold mb-2">
+                          {t('world-detail:tags')}
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           {worldDetails.tags
                             .filter((tag) => tag.startsWith('author_tag_'))
@@ -394,24 +421,32 @@ export function WorldDetailPopup({
                     <div className="flex flex-col gap-4 w-1/3">
                       <div>
                         <div className="text-sm font-semibold mb-2">
-                          Details
+                          {t('world-detail:details')}
                         </div>
                         <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                          <div className="text-gray-500">Visits:</div>
+                          <div className="text-gray-500">
+                            {t('world-detail:visits')}
+                          </div>
                           <div>{worldDetails.visits}</div>
 
-                          <div className="text-gray-500">Favorites:</div>
+                          <div className="text-gray-500">
+                            {t('world-detail:favorites')}
+                          </div>
                           <div>{worldDetails.favorites}</div>
-                          <div className="text-gray-500">Capacity:</div>
+                          <div className="text-gray-500">
+                            {t('world-detail:capacity')}
+                          </div>
                           <div>
                             {worldDetails.recommendedCapacity
-                              ? `${worldDetails.recommendedCapacity} (max ${worldDetails.capacity})`
+                              ? `${worldDetails.recommendedCapacity} (${t('world-detail:max')} ${worldDetails.capacity})`
                               : worldDetails.capacity}
                           </div>
 
                           {worldDetails.publicationDate && (
                             <>
-                              <div className="text-gray-500">Published:</div>
+                              <div className="text-gray-500">
+                                {t('world-detail:published')}
+                              </div>
                               <div>
                                 {
                                   new Date(worldDetails.publicationDate)
@@ -422,7 +457,9 @@ export function WorldDetailPopup({
                             </>
                           )}
 
-                          <div className="text-gray-500">Last Updated:</div>
+                          <div className="text-gray-500">
+                            {t('world-detail:last-updated')}
+                          </div>
                           <div>
                             {
                               new Date(worldDetails.lastUpdated)

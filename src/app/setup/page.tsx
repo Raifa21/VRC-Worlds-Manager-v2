@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { invoke } from '@tauri-apps/api/core';
@@ -26,17 +26,27 @@ import { Label } from '@/components/ui/label';
 import { WorldCardPreview } from '@/components/world-card';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Globe } from 'lucide-react';
 import { ConfirmationPopup } from '@/components/confirmation-popup';
 import { MigrationConfirmationPopup } from '@/components/migration-confirmation-popup';
 import { commands } from '@/lib/bindings';
 import { CardSize } from '@/types/preferences';
 import { SetupLayout } from '@/components/setup-layout';
+import { useLocalization } from '@/hooks/use-localization';
+import { LocalizationContext } from '@/components/localization-context';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const WelcomePage: React.FC = () => {
   const router = useRouter();
+  const { t } = useLocalization();
   const { toast } = useToast();
   const { setTheme } = useTheme();
+  const { setLanguage } = useContext(LocalizationContext);
   const [selectedSize, setSelectedSize] = useState<CardSize>(CardSize.Normal);
   const [page, setPage] = useState(1);
   const [preferences, setPreferences] = useState({
@@ -103,8 +113,11 @@ const WelcomePage: React.FC = () => {
 
       if (result.status === 'error') {
         toast({
-          title: 'Error',
-          description: 'Failed to save preferences: ' + result.error,
+          title: t('general:error-title'),
+          description: t(
+            'setup-page:toast:error:save-preference:message',
+            result.error,
+          ),
         });
 
         console.error('Failed to save preferences:', result.error);
@@ -145,16 +158,19 @@ const WelcomePage: React.FC = () => {
 
       if (result.status === 'error') {
         toast({
-          title: 'Error',
-          description: 'Failed to migrate data: ' + result.error,
+          title: t('general:error-title'),
+          description: t(
+            'setup-page:toast:error:migrate:message',
+            result.error,
+          ),
         });
         setPage(2);
         return;
       }
 
       toast({
-        title: 'Success',
-        description: 'Data migrated successfully!',
+        title: t('general:success-title'),
+        description: t('setup-page:toast:success:migrate:message'),
         duration: 300,
       });
       setAlreadyMigrated(true);
@@ -207,16 +223,19 @@ const WelcomePage: React.FC = () => {
 
             if (result.status === 'error') {
               toast({
-                title: 'Error',
-                description: 'Failed to migrate data: ' + result.error,
+                title: t('general:error-title'),
+                description: t(
+                  'setup-page:toast:error:migrate:message',
+                  result.error,
+                ),
               });
               setPage(2);
               return;
             }
 
             toast({
-              title: 'Success',
-              description: 'Data migrated successfully!',
+              title: t('general:success-title'),
+              description: t('setup-page:toast:success:migrate:message'),
             });
             setAlreadyMigrated(true);
             handleNext();
@@ -228,34 +247,60 @@ const WelcomePage: React.FC = () => {
       <div className="welcome-page">
         {page === 1 && (
           <SetupLayout
-            title="Welcome to VRC Worlds Manager"
+            title={t('setup-page:welcome-title')}
             currentPage={1}
             onBack={handleBack}
             onNext={handleNext}
             isFirstPage={true}
           >
-            <div className="h-full flex flex-col items-center justify-center space-y-6">
+            <div className="h-full flex flex-col items-center justify-center space-y-6 relative">
+              {/* Add this language switcher */}
+              <div className="absolute top-0 right-0">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="w-9 px-0">
+                      <Globe className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setPreferences({ ...preferences, language: 'en-US' })
+                      }
+                    >
+                      English
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setPreferences({ ...preferences, language: 'ja-JP' })
+                      }
+                      disabled
+                    >
+                      日本語
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Existing welcome content */}
               <h2 className="text-2xl font-semibold">
-                Thank you for installing!
+                {t('setup-page:thank-you')}
               </h2>
               <div className="space-y-4 text-center">
                 <p className="text-muted-foreground">
-                  Since this is your first time here, let's take a moment to set
-                  up
-                  <br />
-                  VRC Worlds Manager just the way you like it.
+                  {t('setup-page:first-time')}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Not your first time? Please contact us through{' '}
+                  {t('setup-page:not-first-time:foretext')}
                   <a
                     href="https://discord.gg/gNzbpux5xW"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:underline"
                   >
-                    Discord
+                    {t('setup-page:discord')}
                   </a>{' '}
-                  for support.
+                  {t('setup-page:not-first-time:posttext')}
                 </p>
               </div>
             </div>
@@ -263,7 +308,7 @@ const WelcomePage: React.FC = () => {
         )}
         {page === 2 && (
           <SetupLayout
-            title="Migration"
+            title={t('setup-page:migration-title')}
             currentPage={2}
             onBack={handleBack}
             onNext={handleNext}
@@ -273,15 +318,13 @@ const WelcomePage: React.FC = () => {
             <div className="flex flex-col space-y-6">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground text-center">
-                  If you have used the original VRC Worlds Manager, you can
-                  migrate your old data. <br />
-                  Your original data will not be modified during migration.
+                  {t('setup-page:migration-description')}
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Worlds Data</Label>
+                  <Label>{t('general:worlds-data')}</Label>
                   <div className="flex space-x-2">
                     <Input
                       value={migrationPaths[0]}
@@ -293,20 +336,20 @@ const WelcomePage: React.FC = () => {
                       className="text-muted-foreground"
                     />
                     <Button variant="outline" onClick={() => handleFilePick(0)}>
-                      Select
+                      {t('setup-page:select-button')}
                     </Button>
                   </div>
                   <div className="h-3">
                     {!pathValidation[0] && (
                       <p className="text-sm text-red-500">
-                        Could not detect existing worlds file.
+                        {t('setup-page:worlds-file-error')}
                       </p>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Folders Data</Label>
+                  <Label>{t('general:folders-data')}</Label>
                   <div className="flex space-x-2">
                     <Input
                       value={migrationPaths[1]}
@@ -318,13 +361,13 @@ const WelcomePage: React.FC = () => {
                       className="text-muted-foreground"
                     />
                     <Button variant="outline" onClick={() => handleFilePick(1)}>
-                      Select
+                      {t('setup-page:select-button')}
                     </Button>
                   </div>
                   <div className="h-3">
                     {!pathValidation[1] && (
                       <p className="text-sm text-red-500">
-                        Could not detect existing folders file.
+                        {t('setup-page:folders-file-error')}
                       </p>
                     )}
                   </div>
@@ -343,16 +386,16 @@ const WelcomePage: React.FC = () => {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Migrating...
+                    {t('general:migrating')}
                   </>
                 ) : (
-                  'Migrate'
+                  t('setup-page:migrate-button')
                 )}
               </Button>
 
               {!alreadyMigrated && !hasExistingData && (
                 <p className="text-sm text-muted-foreground text-center pb-3">
-                  Skipping will create new empty folders, if one does not exist.
+                  {t('setup-page:skip-text')}
                 </p>
               )}
             </div>
@@ -360,21 +403,21 @@ const WelcomePage: React.FC = () => {
         )}
         {page === 3 && (
           <SetupLayout
-            title="UI Customization"
+            title={t('setup-page:ui-customization-title')}
             currentPage={3}
             onBack={handleBack}
             onNext={handleNext}
           >
             <div className="flex flex-col space-y-4">
               <p className="text-sm text-muted-foreground text-center mb-4">
-                Customize the appearance of VRC Worlds Manager
+                {t('setup-page:ui-description')}
               </p>
               <div className="flex flex-row justify-between">
                 <div className="flex flex-col items-left space-y-4">
                   <div className="flex flex-col space-y-1">
-                    <Label>Worlds</Label>
+                    <Label>{t('setup-page:worlds-label')}</Label>
                     <div className="text-sm text-gray-500">
-                      Select the design for world previews
+                      {t('setup-page:worlds-design')}
                     </div>
                   </div>
                   <Select
@@ -388,13 +431,17 @@ const WelcomePage: React.FC = () => {
                       <SelectValue placeholder="Theme" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={CardSize.Compact}>Compact</SelectItem>
-                      <SelectItem value={CardSize.Normal}>Normal</SelectItem>
+                      <SelectItem value={CardSize.Compact}>
+                        {t('general:compact')}
+                      </SelectItem>
+                      <SelectItem value={CardSize.Normal}>
+                        {t('general:normal')}
+                      </SelectItem>
                       <SelectItem value={CardSize.Expanded}>
-                        Expanded
+                        {t('general:expanded')}
                       </SelectItem>
                       <SelectItem value={CardSize.Original}>
-                        Original
+                        {t('general:original')}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -405,9 +452,9 @@ const WelcomePage: React.FC = () => {
                       size={selectedSize}
                       world={{
                         worldId: '1',
-                        name: 'World',
+                        name: t('settings-page:preview-world'),
                         thumbnailUrl: 'icons/1.png',
-                        authorName: 'Author',
+                        authorName: t('general:sort-author'),
                         lastUpdated: '2025-02-28',
                         visits: 59,
                         dateAdded: '2025-01-01',
@@ -424,21 +471,23 @@ const WelcomePage: React.FC = () => {
         )}
         {page === 4 && (
           <SetupLayout
-            title="Preferences"
+            title={t('setup-page:preferences-title')}
             currentPage={4}
             onBack={handleBack}
             onNext={handleNext}
           >
             <div className="flex flex-col space-y-4">
               <p className="text-sm text-muted-foreground text-center">
-                Customize your preferences
+                {t('setup-page:preferences-description')}
               </p>
               <div className="flex flex-col space-y-8 py-6">
                 <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
                   <div className="flex flex-col space-y-1.5">
-                    <Label className="text-base font-medium">Theme</Label>
+                    <Label className="text-base font-medium">
+                      {t('general:theme-label')}
+                    </Label>
                     <div className="text-sm text-gray-500">
-                      Select your preferred theme
+                      {t('general:theme-description')}
                     </div>
                   </div>
                   <Select
@@ -452,38 +501,39 @@ const WelcomePage: React.FC = () => {
                       <SelectValue placeholder="Theme" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="system">System</SelectItem>
+                      <SelectItem value="light">
+                        {t('general:light')}
+                      </SelectItem>
+                      <SelectItem value="dark">{t('general:dark')}</SelectItem>
+                      <SelectItem value="system">
+                        {t('general:system')}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
-                  {' '}
-                  {/* TODO: add localization */}
                   <div className="flex flex-col space-y-1.5">
-                    <Label className="text-base font-medium">Language</Label>
+                    <Label className="text-base font-medium">
+                      {t('general:language-label')}
+                    </Label>
                     <div className="text-sm text-gray-500">
-                      Select your preferred language (製作中です)
+                      {t('general:language-description')}
                     </div>
                   </div>
                   <Select
                     defaultValue={preferences.language}
                     onValueChange={(value) => {
+                      setLanguage(value);
                       setPreferences({ ...preferences, language: value });
                     }}
                   >
                     <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Theme" />
+                      <SelectValue placeholder="Language" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ja-JP" disabled>
-                        Japanese
-                      </SelectItem>
-                      <SelectItem value="en-US">English(US)</SelectItem>
-                      <SelectItem value="en-UK" disabled>
-                        English(UK)
-                      </SelectItem>
+                      <SelectItem value="ja-JP">日本語</SelectItem>
+                      <SelectItem value="en-US">English (US)</SelectItem>
+                      <SelectItem value="en-UK">English (UK)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -493,7 +543,7 @@ const WelcomePage: React.FC = () => {
         )}
         {page === 5 && (
           <SetupLayout
-            title="Setup Complete"
+            title={t('setup-page:complete-title')}
             currentPage={5}
             onBack={handleBack}
             onNext={handleNext}
@@ -501,30 +551,30 @@ const WelcomePage: React.FC = () => {
           >
             <div className="flex flex-col items-center justify-center min-h-[400px]">
               <div className="text-center max-w-md">
-                <h2 className="text-3xl font-bold">You're All Set!</h2>
+                <h2 className="text-3xl font-bold">
+                  {t('setup-page:all-set')}
+                </h2>
 
                 <div className="space-y-8">
                   <p className="text-lg text-muted-foreground mt-4">
-                    Welcome to VRC Worlds Manager. Start exploring and managing
-                    your VRChat worlds.
+                    {t('setup-page:welcome-text')}
                   </p>
 
                   <p className="text-base text-muted-foreground">
-                    We hope this tool helps you organize and discover amazing
-                    VRChat worlds.
+                    {t('setup-page:hope-text')}
                   </p>
                 </div>
 
                 <div className="pt-6">
                   <p className="text-sm text-muted-foreground">
-                    Need help? Join our{' '}
+                    {t('setup-page:need-help:foretext')}
                     <a
                       href="https://discord.gg/gNzbpux5xW"
                       className="text-blue-500 hover:underline"
                     >
-                      Discord
-                    </a>{' '}
-                    community.
+                      {t('setup-page:discord')}
+                    </a>
+                    {t('setup-page:need-help:posttext')}
                   </p>
                 </div>
               </div>

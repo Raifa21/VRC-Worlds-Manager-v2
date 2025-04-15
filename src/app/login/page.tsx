@@ -11,9 +11,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { commands } from '@/lib/bindings';
+import { useLocalization } from '@/hooks/use-localization';
 
 export default function Login() {
   const router = useRouter();
+  const { t } = useLocalization();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export default function Login() {
         setError(null);
         setTwoFactorCodeType('totp');
       } else {
-        setError(result.error || 'Invalid credentials');
+        setError(result.error || t('login-page:error-invalid-credentials'));
       }
       return;
     }
@@ -59,23 +61,25 @@ export default function Login() {
       );
 
       if (result.status === 'error') {
-        setError(result.error || 'Invalid 2FA code');
+        setError(result.error || t('login-page:error-invalid-2fa'));
         return;
       }
       router.push('/listview');
     } catch (err) {
-      setError((err as string) || 'Invalid 2FA code');
+      setError((err as string) || t('login-page:error-invalid-2fa'));
     }
   };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-24">
       <div className="w-full max-w-md space-y-4">
-        <h2 className="text-2xl font-bold text-center">Login to VRChat</h2>
+        <h2 className="text-2xl font-bold text-center">
+          {t('login-page:title')}
+        </h2>
         <div className="space-y-4">
           <Input
             type="text"
-            placeholder="Email / Username"
+            placeholder={t('login-page:username-placeholder')}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             onKeyDown={(e) => {
@@ -90,7 +94,7 @@ export default function Login() {
           />
           <Input
             type="password"
-            placeholder="Password"
+            placeholder={t('login-page:password-placeholder')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => {
@@ -109,18 +113,16 @@ export default function Login() {
             onClick={handleLogin}
             disabled={!username || !password}
           >
-            Login
+            {t('login-page:login-button')}
           </Button>
 
           <div className="mt-4 p-4 border-2 border-red-500 rounded-md">
             <p className="text-sm text-center">
-              <span className="font-bold">NOTICE:</span> We DO NOT store your
-              login details. Your credentials are only used to communicate with
-              VRChat&apos;s API, which is required to access world information.
+              <span className="font-bold">{t('login-page:notice-title')}</span>{' '}
+              {t('login-page:notice-text')}
             </p>
             <p className="text-xs text-center mt-2">
-              By logging in, you agree to VRChat&apos;s Terms of Service and
-              Community Guidelines.
+              {t('login-page:terms-text')}
             </p>
           </div>
         </div>
@@ -129,12 +131,12 @@ export default function Login() {
       <Dialog open={show2FA} onOpenChange={setShow2FA}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Two-Factor Authentication</DialogTitle>
+            <DialogTitle>{t('login-page:2fa-title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Input
               type="text"
-              placeholder="Enter 2FA code"
+              placeholder={t('login-page:2fa-placeholder')}
               value={twoFactorCode}
               onChange={(e) => setTwoFactorCode(e.target.value)}
               onKeyDown={(e) => {
@@ -152,7 +154,7 @@ export default function Login() {
               onClick={handle2FA}
               disabled={!twoFactorCode}
             >
-              Verify
+              {t('login-page:2fa-button')}
             </Button>
           </div>
         </DialogContent>
