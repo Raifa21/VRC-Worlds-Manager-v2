@@ -533,15 +533,9 @@ const WelcomePage: React.FC = () => {
                       <SelectValue placeholder="Language" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ja-JP">
-                        {t('setup-page:japanese')}
-                      </SelectItem>
-                      <SelectItem value="en-US">
-                        {t('setup-page:english-us')}
-                      </SelectItem>
-                      <SelectItem value="en-UK">
-                        {t('setup-page:english-uk')}
-                      </SelectItem>
+                      <SelectItem value="ja-JP">日本語</SelectItem>
+                      <SelectItem value="en-US">English (US)</SelectItem>
+                      <SelectItem value="en-UK">English (UK)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

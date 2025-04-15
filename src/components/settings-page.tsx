@@ -222,14 +222,10 @@ export function SettingsPage({
               <SelectValue placeholder="Language" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ja-JP">
-                {t('settings-page:japanese')}
-              </SelectItem>
-              <SelectItem value="en-US">
-                {t('settings-page:english-us')}
-              </SelectItem>
+              <SelectItem value="ja-JP">日本語</SelectItem>
+              <SelectItem value="en-US">English (US)</SelectItem>
               <SelectItem value="en-UK" disabled>
-                {t('settings-page:english-uk')}
+                English (UK)
               </SelectItem>
             </SelectContent>
           </Select>
