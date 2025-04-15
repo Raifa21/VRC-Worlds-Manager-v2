@@ -282,7 +282,7 @@ impl FolderManager {
         }
         // if not, check if the name already exists
         while folders_lock.iter().any(|f| f.folder_name == new_name) {
-            println!("Folder name exists: {}", new_name);
+            log::info!("Folder name exists: {}", new_name);
             new_name = format!("{} ({})", base_name, count);
             count += 1;
         }
@@ -554,7 +554,7 @@ impl FolderManager {
         let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
         for new_world in new_worlds {
             let world_id = new_world.world_id.clone();
-            println!("Adding world: {}", world_id);
+            log::info!("Adding world: {}", world_id);
             let existing_world = worlds_lock
                 .iter_mut()
                 .find(|w| w.api_data.world_id == world_id);

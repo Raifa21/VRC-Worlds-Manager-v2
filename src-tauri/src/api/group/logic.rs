@@ -16,7 +16,7 @@ pub async fn get_user_groups<J: Into<Arc<Jar>>>(
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
 
-    println!("Fetching groups for user: {}", user_id);
+    log::info!("Fetching groups for user: {}", user_id);
 
     if user_id.contains("/") {
         return Err("User ID cannot contain '/'".to_string());
@@ -28,26 +28,26 @@ pub async fn get_user_groups<J: Into<Arc<Jar>>>(
         .await
         .map_err(|e| e.to_string())?;
 
-    println!("API Response status: {}", result.status());
+    log::info!("API Response status: {}", result.status());
 
     let text = result.text().await;
 
     if let Err(e) = text {
-        println!("Failed to read response text: {}", e);
+        log::info!("Failed to read response text: {}", e);
         return Err(format!("Failed to get user groups: {}", e.to_string()));
     }
 
     let text = text.unwrap();
-    println!("Raw API Response: {}", text);
+    log::info!("Raw API Response: {}", text);
 
     let parsed: Vec<UserGroup> = match serde_json::from_str::<Vec<UserGroup>>(&text) {
         Ok(groups) => {
-            println!("Successfully parsed {} groups", groups.len());
+            log::info!("Successfully parsed {} groups", groups.len());
             groups
         }
         Err(e) => {
-            println!("Failed to parse user groups: {}", e);
-            println!("Response that failed parsing: {}", text);
+            log::info!("Failed to parse user groups: {}", e);
+            log::info!("Response that failed parsing: {}", text);
             return Err(format!("Failed to parse user groups: {}", e.to_string()));
         }
     };
@@ -59,7 +59,7 @@ pub async fn get_permission_for_create_group_instance(
     cookie: Arc<Jar>,
     group_id: &str,
 ) -> Result<GroupInstancePermissionInfo, String> {
-    println!("Fetching permissions for group: {}", group_id);
+    log::info!("Fetching permissions for group: {}", group_id);
     let client = get_reqwest_client(&cookie);
 
     let result = client
@@ -69,18 +69,18 @@ pub async fn get_permission_for_create_group_instance(
         .send()
         .await
         .map_err(|e| {
-            println!("Failed to send request: {}", e);
+            log::info!("Failed to send request: {}", e);
             format!("Failed to fetch group: {}", e)
         })?;
 
-    println!("API Response status: {}", result.status());
+    log::info!("API Response status: {}", result.status());
 
     let text = result.text().await.map_err(|e| {
-        println!("Failed to read response text: {}", e);
+        log::info!("Failed to read response text: {}", e);
         format!("Failed to read response: {}", e)
     })?;
 
-    println!("Raw API Response: {}", text);
+    log::info!("Raw API Response: {}", text);
 
     let details: GroupDetails = match serde_json::from_str(&text) {
         Ok(d) => d,
@@ -89,15 +89,15 @@ pub async fn get_permission_for_create_group_instance(
             let parsed: serde_json::Value =
                 serde_json::from_str(&text).unwrap_or_else(|_| serde_json::Value::Null);
 
-            println!("JSON structure:");
+            log::info!("JSON structure:");
             if let Some(obj) = parsed.as_object() {
-                println!("Top level keys: {:?}", obj.keys().collect::<Vec<_>>());
+                log::info!("Top level keys: {:?}", obj.keys().collect::<Vec<_>>());
 
                 // Inspect galleries array
                 if let Some(galleries) = obj.get("galleries").and_then(|g| g.as_array()) {
-                    println!("\nGalleries structure:");
+                    log::info!("\nGalleries structure:");
                     for (i, gallery) in galleries.iter().enumerate() {
-                        println!(
+                        log::info!(
                             "Gallery {}: Keys present: {:?}",
                             i,
                             gallery
@@ -110,7 +110,7 @@ pub async fn get_permission_for_create_group_instance(
 
                 // Inspect myMember object
                 if let Some(member) = obj.get("myMember") {
-                    println!(
+                    log::info!(
                         "\nMyMember keys: {:?}",
                         member
                             .as_object()
@@ -120,10 +120,10 @@ pub async fn get_permission_for_create_group_instance(
                 }
             }
 
-            println!("\nError details:");
-            println!("Location: line {}, column {}", e.line(), e.column());
-            println!("Kind: {:?}", e.classify());
-            println!("Full error: {}", e);
+            log::info!("\nError details:");
+            log::info!("Location: line {}, column {}", e.line(), e.column());
+            log::info!("Kind: {:?}", e.classify());
+            log::info!("Full error: {}", e);
 
             return Err(format!(
                 "Failed to parse group details: {} at line {} column {}",
@@ -134,17 +134,17 @@ pub async fn get_permission_for_create_group_instance(
         }
     };
 
-    println!("Successfully parsed group details");
+    log::info!("Successfully parsed group details");
     if let Some(my_member) = &details.my_member {
-        println!("Permissions: {:?}", my_member.permissions);
+        log::info!("Permissions: {:?}", my_member.permissions);
     } else {
-        println!("No member details available to fetch permissions.");
+        log::info!("No member details available to fetch permissions.");
     }
 
     let permissions = if let Some(my_member) = &details.my_member {
         &my_member.permissions
     } else {
-        println!("No member details available to fetch permissions.");
+        log::info!("No member details available to fetch permissions.");
         return Ok(GroupInstancePermissionInfo {
             permission: GroupInstanceCreatePermission::none(),
             roles: vec![],
@@ -152,7 +152,7 @@ pub async fn get_permission_for_create_group_instance(
     };
 
     let permission = if permissions.contains(&GroupPermission::All) {
-        println!("User has wildcard (*) permission");
+        log::info!("User has wildcard (*) permission");
         GroupInstanceCreatePermission::all()
     } else {
         let normal = permissions.contains(&GroupPermission::GroupInstanceOpenCreate);
@@ -160,9 +160,11 @@ pub async fn get_permission_for_create_group_instance(
         let public = permissions.contains(&GroupPermission::GroupInstancePublicCreate);
         let restricted = permissions.contains(&GroupPermission::GroupInstanceRestrictedCreate);
 
-        println!(
+        log::info!(
             "Permission check results - Normal: {}, Plus: {}, Public: {}",
-            normal, plus, public
+            normal,
+            plus,
+            public
         );
 
         if !normal && !plus && !public && !restricted {

@@ -155,12 +155,12 @@ impl MigrationService {
     }
 
     fn parse_folder_data(folders_json: &str) -> Result<Vec<PreviousFolderCollection>, String> {
-        println!("Folders JSON content: {}", folders_json);
+        log::info!("Folders JSON content: {}", folders_json);
 
         let decrypted = EncryptionService::decrypt_aes(folders_json)
             .map_err(|e| format!("Failed to decrypt folders: {}", e))?;
 
-        println!("Decrypted folders: {}", decrypted);
+        log::info!("Decrypted folders: {}", decrypted);
 
         serde_json::from_str(&decrypted).map_err(|e| format!("Failed to parse folders: {}", e))
     }
@@ -404,8 +404,8 @@ mod tests {
 
         let (earliest, dates) = MigrationService::calculate_dates(&worlds);
 
-        println!("Earliest date: {}", earliest);
-        println!("All dates: {:?}", dates);
+        log::info!("Earliest date: {}", earliest);
+        log::info!("All dates: {:?}", dates);
 
         assert_eq!(dates.len(), 3);
         assert!(

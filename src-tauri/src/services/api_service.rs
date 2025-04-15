@@ -29,10 +29,10 @@ impl ApiService {
             .cookies(&Url::parse("https://api.vrchat.cloud").unwrap())
             .map(|cookies| cookies.to_str().unwrap_or_default().to_string())
             .unwrap_or_default();
-        println!("Cookies: {}", cookie_str);
+        log::info!("Cookies: {}", cookie_str);
         //convert to AuthCookies
         let auth = AuthCookies::from_cookie_str(&cookie_str);
-        println!("Auth: {:?} {:?}", auth.auth_token, auth.two_factor_auth);
+        log::info!("Auth: {:?} {:?}", auth.auth_token, auth.two_factor_auth);
         FileService::write_auth(&auth).map_err(|e| e.to_string())
     }
 
@@ -93,7 +93,7 @@ impl ApiService {
             Ok(auth::VRChatAuthStatus::Success(cookies, user)) => {
                 // Store cookies and update AUTHENTICATOR state
                 FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
-                println!("Username: {}, ID: {}", user.username, user.id);
+                log::info!("Username: {}, ID: {}", user.username, user.id);
                 auth_lock.update_user_info(user.username);
                 init_lock.user_id = user.id.clone();
                 Ok(())
@@ -191,7 +191,7 @@ impl ApiService {
             Ok(auth::VRChatAuthStatus::UnknownError(e)) => Err(format!("Login failed: {}", e)),
             Err(e) => {
                 let err = format!("Login failed: {}", e);
-                println!("{}", err);
+                log::info!("{}", err);
                 Err(err)
             }
         }
@@ -218,7 +218,7 @@ impl ApiService {
             Ok(auth::VRChatAuthStatus::Success(cookies, user)) => {
                 // Store cookies and update AUTHENTICATOR state
                 FileService::write_auth(&cookies).map_err(|e| e.to_string())?;
-                println!("Username: {}, ID: {}", user.username, user.id);
+                log::info!("Username: {}, ID: {}", user.username, user.id);
                 auth_lock.update_user_info(user.username);
                 INITSTATE.get().write().await.user_id = user.id.clone();
 
@@ -237,7 +237,7 @@ impl ApiService {
             Ok(auth::VRChatAuthStatus::UnknownError(e)) => Err(format!("Login failed: {}", e)),
             Err(e) => {
                 let err = format!("Login failed: {}", e);
-                println!("{}", err);
+                log::info!("{}", err);
                 Err(err)
             }
         }
@@ -264,7 +264,7 @@ impl ApiService {
         // Call the API logout endpoint
         auth::logout(&cookie_store).await.map_err(|e| {
             let err = format!("Failed to logout from VRChat: {}", e);
-            println!("{}", err);
+            log::info!("{}", err);
             err
         })?;
 
@@ -301,7 +301,7 @@ impl ApiService {
         for world in favorite_worlds {
             // Only include public worlds
             if world.release_status != ReleaseStatus::Public {
-                println!("Skipping non-public world: {}", world.id);
+                log::info!("Skipping non-public world: {}", world.id);
 
                 continue;
             }
@@ -324,7 +324,7 @@ impl ApiService {
         // First check if we have a cached version
         if let Some(existing_world) = worlds.iter().find(|w| w.api_data.world_id == world_id) {
             if !existing_world.user_data.needs_update() {
-                println!("World already exists in cache");
+                log::info!("World already exists in cache");
                 return Ok(existing_world.api_data.clone());
             }
         }
@@ -334,7 +334,7 @@ impl ApiService {
             Ok(world) => {
                 // Check release status
                 if world.release_status != ReleaseStatus::Public {
-                    println!("World {} is not public", world_id);
+                    log::info!("World {} is not public", world_id);
                     // TODO: remove world from local data
                     return Err("World is not public".to_string());
                 }
@@ -381,9 +381,11 @@ impl ApiService {
         cookie_store: Arc<Jar>,
         user_id: String,
     ) -> Result<(), String> {
-        println!(
+        log::info!(
             "Creating instance: {} {} {}",
-            world_id, instance_type_str, region_str
+            world_id,
+            instance_type_str,
+            region_str
         );
         // Convert region string to InstanceRegion enum
         let region = match region_str.as_str() {
@@ -393,7 +395,7 @@ impl ApiService {
             "JP" => instance::InstanceRegion::JP,
             _ => return Err("Invalid region".to_string()),
         };
-        println!("ID: {:?}", user_id.clone());
+        log::info!("ID: {:?}", user_id.clone());
         // Create instance type based on string and user_id
         let instance_type = match instance_type_str.as_str() {
             "public" => instance::InstanceType::Public,
@@ -492,9 +494,13 @@ impl ApiService {
         queue_enabled: bool,
         cookie_store: Arc<Jar>,
     ) -> Result<(), String> {
-        println!(
+        log::info!(
             "Creating group instance: {} {} {} {} {:?}",
-            world_id, group_id, instance_type_str, region_str, allowed_roles
+            world_id,
+            group_id,
+            instance_type_str,
+            region_str,
+            allowed_roles
         );
         // Convert region string to InstanceRegion enum
         let region = match region_str.as_str() {

@@ -70,9 +70,9 @@ impl TryInto<WorldApiData> for FavoriteWorld {
     type Error = chrono::ParseError;
 
     fn try_into(self) -> Result<WorldApiData, Self::Error> {
-        println!("world: {:?}", self);
+        log::info!("world: {:?}", self);
 
-        println!("world.publication_date: {:?}", self.publication_date);
+        log::info!("world.publication_date: {:?}", self.publication_date);
 
         let publication_date = if self.publication_date == "none" {
             None
@@ -80,21 +80,21 @@ impl TryInto<WorldApiData> for FavoriteWorld {
             Some(
                 DateTime::parse_from_rfc3339(&self.publication_date)
                     .map_err(|e| {
-                        println!("Failed to parse publication_date: {}", e);
+                        log::info!("Failed to parse publication_date: {}", e);
                         e
                     })?
                     .with_timezone(&chrono::Utc),
             )
         };
 
-        println!("publication_date: {:?}", publication_date);
+        log::info!("publication_date: {:?}", publication_date);
 
-        println!("world.updated_at: {:?}", self.updated_at);
+        log::info!("world.updated_at: {:?}", self.updated_at);
 
         let last_update =
             DateTime::parse_from_rfc3339(&self.updated_at)?.with_timezone(&chrono::Utc);
 
-        println!("last_update: {:?}", last_update);
+        log::info!("last_update: {:?}", last_update);
 
         let platform: Vec<String> = self
             .unity_packages
@@ -197,9 +197,9 @@ impl TryInto<WorldApiData> for WorldDetails {
     type Error = chrono::ParseError;
 
     fn try_into(self) -> Result<WorldApiData, Self::Error> {
-        println!("world: {:?}", self);
+        log::info!("world: {:?}", self);
 
-        println!("world.publication_date: {:?}", self.publication_date);
+        log::info!("world.publication_date: {:?}", self.publication_date);
 
         let publication_date = if self.publication_date == "none" {
             None
@@ -207,21 +207,21 @@ impl TryInto<WorldApiData> for WorldDetails {
             Some(
                 DateTime::parse_from_rfc3339(&self.publication_date)
                     .map_err(|e| {
-                        println!("Failed to parse publication_date: {}", e);
+                        log::info!("Failed to parse publication_date: {}", e);
                         e
                     })?
                     .with_timezone(&chrono::Utc),
             )
         };
 
-        println!("publication_date: {:?}", publication_date);
+        log::info!("publication_date: {:?}", publication_date);
 
-        println!("world.updated_at: {:?}", self.updated_at);
+        log::info!("world.updated_at: {:?}", self.updated_at);
 
         let last_update =
             DateTime::parse_from_rfc3339(&self.updated_at)?.with_timezone(&chrono::Utc);
 
-        println!("last_update: {:?}", last_update);
+        log::info!("last_update: {:?}", last_update);
 
         let platform: Vec<String> = self
             .unity_packages
