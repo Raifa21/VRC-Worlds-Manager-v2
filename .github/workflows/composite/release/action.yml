@@ -30,6 +30,12 @@ inputs:
   R2_BUCKET:
     required: true
     description: "The R2 bucket to upload the release to"
+  ENCRYPTION_KEY:
+    required: true
+    description: "The encryption key for the application"
+  ENCRYPTION_IV:
+    required: true
+    description: "The encryption IV for the application"
 
 runs:
   using: "composite"
@@ -59,6 +65,8 @@ runs:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.TAURI_PRIVATE_KEY }}
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.TAURI_PRIVATE_KEY_PASSWORD }}
+        ENCRYPTION_KEY: ${{ inputs.ENCRYPTION_KEY }}
+        ENCRYPTION_IV: ${{ inputs.ENCRYPTION_IV }}
       with:
         tagName: "vrc-world-manager-v__VERSION__"
         releaseName: "vrc-world-manager v__VERSION__"
