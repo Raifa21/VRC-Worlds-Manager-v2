@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { toRomaji } from 'wanakana';
 import { SpecialFolders } from '@/types/folders';
-import { Platform } from '@/types/worlds';
 import { WorldDisplayData } from '@/types/worlds';
 import {
   ContextMenu,
@@ -31,8 +30,6 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import * as Portal from '@radix-ui/react-portal';
-import { createPortal } from 'react-dom';
-import { AddToFolderDialog } from './add-to-folder-dialog';
 
 interface WorldGridProps {
   size: CardSize;
@@ -41,9 +38,10 @@ interface WorldGridProps {
   onWorldChange: () => Promise<void>;
   onRemoveFromFolder: (worldId: string[]) => void;
   onHideWorld: (worldId: string[], worldName: string[]) => void;
+  onUnhideWorld: (worldId: string[]) => void;
   onOpenWorldDetails: (worldId: string) => void;
   onAddToFolder?: (worldIds: string[], folderName: string) => void;
-  onShowFolderDialog: (worlds: WorldDisplayData[]) => void;
+  onShowFolderDialog?: (worlds: WorldDisplayData[]) => void;
 }
 
 type SortOption =
@@ -72,6 +70,7 @@ export function WorldGrid({
   onWorldChange,
   onRemoveFromFolder,
   onHideWorld,
+  onUnhideWorld,
   onOpenWorldDetails,
   onAddToFolder,
   onShowFolderDialog,
@@ -230,9 +229,13 @@ export function WorldGrid({
     return Object.values(SpecialFolders).includes(folderName as SpecialFolders);
   }, [folderName]);
 
+  // Check if current folder is Hidden folder
+  const isHiddenFolder = useMemo(() => {
+    return folderName === SpecialFolders.Hidden;
+  }, [folderName]);
+
   const handleDialogClose = () => {
     setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
-    // Allow animation to complete before clearing state
     setTimeout(() => setDialogConfig(null), 150);
   };
 
@@ -321,6 +324,20 @@ export function WorldGrid({
               </SelectContent>
             </Select>
             <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+              }
+              className="h-10 w-10"
+            >
+              {sortDirection === 'asc' ? (
+                <SortAsc className="h-4 w-4" />
+              ) : (
+                <SortDesc className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
               variant={isSelectionMode ? 'secondary' : 'ghost'}
               size="icon"
               onClick={() => {
@@ -337,20 +354,6 @@ export function WorldGrid({
                 <CheckSquare className="h-4 w-4" />
               ) : (
                 <Square className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-              }
-              className="h-10 w-10"
-            >
-              {sortDirection === 'asc' ? (
-                <SortAsc className="h-4 w-4" />
-              ) : (
-                <SortDesc className="h-4 w-4" />
               )}
             </Button>
           </div>
@@ -396,69 +399,75 @@ export function WorldGrid({
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
-                  <ContextMenuItem
-                    onSelect={(e) => {
-                      const worldsToMove =
-                        selectedWorlds.size > 0 &&
-                        selectedWorlds.has(world.worldId)
-                          ? Array.from(selectedWorlds).map(
-                              (id) => worlds.find((w) => w.worldId === id)!,
+                  {!isHiddenFolder ? (
+                    <>
+                      {onShowFolderDialog && (
+                        <ContextMenuItem
+                          onSelect={(e) => {
+                            const worldsToMove =
+                              selectedWorlds.size > 0 &&
+                              selectedWorlds.has(world.worldId)
+                                ? Array.from(selectedWorlds).map(
+                                    (id) =>
+                                      worlds.find((w) => w.worldId === id)!,
+                                  )
+                                : [world];
+                            onShowFolderDialog(worldsToMove);
+                          }}
+                        >
+                          Move to folder
+                        </ContextMenuItem>
+                      )}
+                      {!isSpecialFolder && (
+                        <ContextMenuItem
+                          onSelect={(e) => {
+                            const worldsToRemove =
+                              selectedWorlds.size > 0 &&
+                              selectedWorlds.has(world.worldId)
+                                ? Array.from(selectedWorlds)
+                                : [world.worldId];
+                            onRemoveFromFolder(worldsToRemove);
+                          }}
+                          className="text-destructive"
+                        >
+                          Remove from folder
+                        </ContextMenuItem>
+                      )}
+                      <ContextMenuItem
+                        onSelect={(e) => {
+                          const worldsToHide =
+                            selectedWorlds.size > 0 &&
+                            selectedWorlds.has(world.worldId)
+                              ? Array.from(selectedWorlds)
+                              : [world.worldId];
+                          const worldNames = worldsToHide
+                            .map(
+                              (id) =>
+                                worlds.find((w) => w.worldId === id)?.name ||
+                                '',
                             )
-                          : [world];
-                      onShowFolderDialog(worldsToMove);
-                    }}
-                  >
-                    Move{' '}
-                    {selectedWorlds.size > 1 &&
-                    selectedWorlds.has(world.worldId)
-                      ? `${selectedWorlds.size} worlds`
-                      : 'world'}{' '}
-                    to folder
-                  </ContextMenuItem>
-                  {!isSpecialFolder && (
+                            .filter(Boolean);
+                          onHideWorld(worldsToHide, worldNames);
+                        }}
+                        className="text-destructive"
+                      >
+                        Hide world
+                      </ContextMenuItem>
+                    </>
+                  ) : (
                     <ContextMenuItem
                       onSelect={(e) => {
-                        const worldsToRemove =
+                        const worldsToRestore =
                           selectedWorlds.size > 0 &&
                           selectedWorlds.has(world.worldId)
                             ? Array.from(selectedWorlds)
                             : [world.worldId];
-                        onRemoveFromFolder(worldsToRemove);
+                        onUnhideWorld(worldsToRestore);
                       }}
-                      className="text-destructive"
                     >
-                      Remove{' '}
-                      {selectedWorlds.size > 1 &&
-                      selectedWorlds.has(world.worldId)
-                        ? `${selectedWorlds.size} worlds`
-                        : 'world'}{' '}
-                      from folder
+                      Restore world
                     </ContextMenuItem>
                   )}
-
-                  <ContextMenuItem
-                    onSelect={(e) => {
-                      const worldsToHide =
-                        selectedWorlds.size > 0 &&
-                        selectedWorlds.has(world.worldId)
-                          ? Array.from(selectedWorlds)
-                          : [world.worldId];
-                      const worldNames = worldsToHide
-                        .map(
-                          (id) =>
-                            worlds.find((w) => w.worldId === id)?.name || '',
-                        )
-                        .filter(Boolean);
-                      onHideWorld(worldsToHide, worldNames);
-                    }}
-                    className="text-destructive"
-                  >
-                    Hide{' '}
-                    {selectedWorlds.size > 1 &&
-                    selectedWorlds.has(world.worldId)
-                      ? `${selectedWorlds.size} worlds`
-                      : 'world'}
-                  </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
             ))}

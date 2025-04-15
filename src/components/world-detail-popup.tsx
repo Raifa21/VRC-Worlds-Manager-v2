@@ -217,7 +217,7 @@ export function WorldDetailPopup({
                 <div className="flex flex-col gap-4">
                   <div className="flex gap-4 py-4">
                     <div className="w-[60%]">
-                      <div className="h-[calc(60vh-125px)] relative overflow-hidden rounded-lg mb-4 bg-black">
+                      <div className="h-[220px] relative overflow-hidden rounded-lg mb-4 bg-black">
                         <a
                           href={`https://vrchat.com/home/world/${worldDetails.worldId}`}
                           target="_blank"

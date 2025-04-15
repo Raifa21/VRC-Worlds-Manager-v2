@@ -16,13 +16,17 @@ import { CardSize } from '@/types/preferences';
 import { WorldCardPreview } from '@/components/world-card';
 import { Platform } from '@/types/worlds';
 import { commands } from '@/lib/bindings';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Folder } from 'lucide-react';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
+  onOpenHiddenFolder: () => void;
 }
 
-export function SettingsPage({ onCardSizeChange }: SettingsPageProps) {
+export function SettingsPage({
+  onCardSizeChange,
+  onOpenHiddenFolder,
+}: SettingsPageProps) {
   const [preferences, setPreferences] = React.useState<{
     theme: string;
     language: string;
@@ -250,6 +254,21 @@ export function SettingsPage({ onCardSizeChange }: SettingsPageProps) {
               folders: [],
             }}
           />
+        </div>
+        <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
+          <div className="flex flex-col space-y-1.5">
+            <Label className="text-base font-medium">Hidden Folder</Label>
+            <div className="text-sm text-muted-foreground">
+              Access hidden worlds
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            onClick={onOpenHiddenFolder}
+            className="gap-2"
+          >
+            <span className="text-sm">Open Folder</span>
+          </Button>
         </div>
       </div>
     </div>
