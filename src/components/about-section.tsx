@@ -177,7 +177,7 @@ export function AboutSection() {
       {/* Bottom Bar - Changed from fixed to absolute positioning */}
       <div className="absolute bottom-0 inset-x-0 pl-4 pr-4 border-t items-center bg-background/80 backdrop-blur-sm flex justify-between items-center">
         <div className="text-sm text-muted-foreground">
-          VRC Worlds Manager v.0.1.0
+          VRC Worlds Manager v.0.1.2a
         </div>
 
         <div className="flex gap-4">
