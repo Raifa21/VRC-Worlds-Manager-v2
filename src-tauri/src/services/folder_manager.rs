@@ -435,6 +435,7 @@ impl FolderManager {
                         .iter_mut()
                         .find(|w| w.api_data.world_id == world_id)
                     {
+                        world.user_data.folders.retain(|folder| folder != &old_name);
                         if !world.user_data.folders.contains(&new_name) {
                             world.user_data.folders.push(new_name.clone());
                         }
