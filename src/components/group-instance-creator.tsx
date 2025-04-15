@@ -292,18 +292,10 @@ export function GroupInstanceCreator({
       setCurrentStep('type');
     } else if (currentStep === 'type') {
       setCurrentStep('group');
+    } else if (currentStep === 'roles') {
+      setCurrentStep('type');
     } else {
-      // Reset everything when going back from group selection
       setCurrentStep('group');
-      setStepInfo({
-        groupId: null,
-        instanceType: null,
-        region: 'JP',
-        queueEnabled: false,
-        selectedRoles: new Set(),
-      });
-      setSelectingEveryoneRole(true);
-      onBack();
     }
   };
 

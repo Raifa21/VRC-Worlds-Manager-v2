@@ -212,16 +212,14 @@ export function SettingsPage({ onCardSizeChange }: SettingsPageProps) {
           </Select>
         </div>
 
-        <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
-          <div>
+        <div className="flex flex-col items-start justify-between space-y-3 p-4 rounded-lg border">
+          <div className="flex flex-row justify-between w-full">
             <div className="flex flex-col space-y-1.5">
               <Label className="text-base font-medium">World Card Size</Label>
               <div className="text-sm text-muted-foreground">
                 Select how world cards appear
               </div>
             </div>
-          </div>
-          <div className="flex flex-col items-end space-y-4">
             <Select
               value={preferences.card_size}
               onValueChange={handleCardSizeChange}
@@ -236,22 +234,22 @@ export function SettingsPage({ onCardSizeChange }: SettingsPageProps) {
                 <SelectItem value={CardSize.Original}>Original</SelectItem>
               </SelectContent>
             </Select>
-            <WorldCardPreview
-              size={preferences.card_size}
-              world={{
-                worldId: '1',
-                name: 'Preview World',
-                thumbnailUrl: 'icons/1.png',
-                authorName: 'Author',
-                lastUpdated: '2025-02-28',
-                visits: 59,
-                dateAdded: '2025-01-01',
-                favorites: 10,
-                platform: Platform.CrossPlatform,
-                folders: [],
-              }}
-            />
           </div>
+          <WorldCardPreview
+            size={preferences.card_size}
+            world={{
+              worldId: '1',
+              name: 'Preview World',
+              thumbnailUrl: 'icons/1.png',
+              authorName: 'Author',
+              lastUpdated: '2025-02-28',
+              visits: 1911,
+              dateAdded: '2025-01-01',
+              favorites: 616,
+              platform: Platform.CrossPlatform,
+              folders: [],
+            }}
+          />
         </div>
       </div>
     </div>
