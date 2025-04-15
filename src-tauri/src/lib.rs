@@ -67,14 +67,16 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_log::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(
             tauri_plugin_log::Builder::new()
-                .target(Target::new(TargetKind::Stdout))
-                .level(log::LevelFilter::Info)
+                .target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::LogDir {
+                        file_name: Some("logs".to_string()),
+                    },
+                ))
                 .build(),
         )
         .invoke_handler(builder.invoke_handler())
@@ -87,20 +89,23 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     if let Some(update) = app.updater()?.check().await? {
         let mut downloaded = 0;
 
-        // alternatively we could also call update.download() and update.install() separately
+        log::info!("update found: {}", update.version);
+        log::info!("current version: {}", app.package_info().version);
+        log::info!("latest version: {}", update.version);
+        log::info!("download url: {}", update.download_url);
         update
             .download_and_install(
                 |chunk_length, content_length| {
                     downloaded += chunk_length;
-                    println!("downloaded {downloaded} from {content_length:?}");
+                    log::info!("downloaded {downloaded} from {content_length:?}");
                 },
                 || {
-                    println!("download finished");
+                    log::info!("download finished");
                 },
             )
             .await?;
 
-        println!("update installed");
+        log::info!("update installed");
         app.restart();
     }
 

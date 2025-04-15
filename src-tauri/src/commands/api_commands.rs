@@ -55,17 +55,17 @@ pub async fn get_favorite_worlds() -> Result<(), String> {
     let worlds = match ApiService::get_favorite_worlds(cookie_store).await {
         Ok(worlds) => worlds,
         Err(e) => {
-            println!("Failed to fetch favorite worlds: {}", e);
+            log::info!("Failed to fetch favorite worlds: {}", e);
             return Err(format!("Failed to fetch favorite worlds: {}", e));
         }
     };
 
-    println!("Received worlds: {:#?}", worlds); // Debug print the worlds
+    log::info!("Received worlds: {:#?}", worlds); // Debug print the worlds
 
     match FolderManager::add_worlds(WORLDS.get(), worlds) {
         Ok(_) => Ok(()),
         Err(e) => {
-            println!("Failed to add worlds to folder: {}", e);
+            log::info!("Failed to add worlds to folder: {}", e);
             Err(format!("Failed to add worlds to folder: {}", e))
         }
     }
@@ -80,16 +80,16 @@ pub async fn get_world(world_id: String) -> Result<WorldDetails, String> {
     let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy).await {
         Ok(world) => world,
         Err(e) => {
-            println!("Failed to fetch world: {}", e);
+            log::info!("Failed to fetch world: {}", e);
             return Err(format!("Failed to fetch world: {}", e));
         }
     };
 
-    println!("Received world: {:#?}", world); // Debug print the world
+    log::info!("Received world: {:#?}", world); // Debug print the world
     match FolderManager::add_worlds(WORLDS.get(), vec![world.clone()]) {
         Ok(_) => Ok(world.to_world_details()),
         Err(e) => {
-            println!("Failed to add world to folder: {}", e);
+            log::info!("Failed to add world to folder: {}", e);
             Err(format!("Failed to add world to folder: {}", e))
         }
     }
@@ -117,7 +117,7 @@ pub async fn create_world_instance(
     match result {
         Ok(_) => Ok(()),
         Err(e) => {
-            println!("Failed to create world instance: {}", e);
+            log::info!("Failed to create world instance: {}", e);
             Err(format!("Failed to create world instance: {}", e))
         }
     }
@@ -132,7 +132,7 @@ pub async fn get_user_groups() -> Result<Vec<UserGroup>, String> {
     let groups = match ApiService::get_user_groups(cookie_store, user_id).await {
         Ok(groups) => groups,
         Err(e) => {
-            println!("Failed to fetch user groups: {}", e);
+            log::info!("Failed to fetch user groups: {}", e);
             return Err(format!("Failed to fetch user groups: {}", e));
         }
     };
@@ -150,7 +150,7 @@ pub async fn get_permission_for_create_group_instance(
         match ApiService::get_permission_for_create_group_instance(cookie_store, group_id).await {
             Ok(permission) => permission,
             Err(e) => {
-                println!("Failed to fetch group instance create permission: {}", e);
+                log::info!("Failed to fetch group instance create permission: {}", e);
                 return Err(format!(
                     "Failed to fetch group instance create permission: {}",
                     e
@@ -187,7 +187,7 @@ pub async fn create_group_instance(
     match result {
         Ok(_) => Ok(()),
         Err(e) => {
-            println!("Failed to create group instance: {}", e);
+            log::info!("Failed to create group instance: {}", e);
             Err(format!("Failed to create group instance: {}", e))
         }
     }

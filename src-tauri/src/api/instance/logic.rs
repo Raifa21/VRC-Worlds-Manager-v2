@@ -16,12 +16,12 @@ pub async fn create_instance<J: Into<Arc<Jar>>>(
     let body = match serde_json::to_string(&request) {
         Ok(body) => body,
         Err(e) => {
-            println!("Failed to serialize request: {}", e.to_string());
+            log::info!("Failed to serialize request: {}", e.to_string());
             return Err(format!("Failed to serialize request: {}", e.to_string()));
         }
     };
 
-    println!("{body}");
+    log::info!("{body}");
 
     let result = client
         .post(format!("{API_BASE_URL}/instances"))
@@ -38,8 +38,8 @@ pub async fn create_instance<J: Into<Arc<Jar>>>(
     let parsed: Instance = match serde_json::from_str(&text) {
         Ok(instance) => instance,
         Err(e) => {
-            println!("Failed to parse instance: {}", e.to_string());
-            println!("Response: {text}");
+            log::info!("Failed to parse instance: {}", e.to_string());
+            log::info!("Response: {text}");
             return Err(format!("Failed to parse instance: {}", e.to_string()));
         }
     };

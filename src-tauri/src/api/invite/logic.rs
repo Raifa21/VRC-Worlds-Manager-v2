@@ -31,8 +31,8 @@ pub async fn invite_self_to_instance<J: Into<Arc<Jar>>>(
     let response: SelfInviteResponse = match serde_json::from_str(&text) {
         Ok(response) => response,
         Err(e) => {
-            println!("Failed to parse invite response: {}", e.to_string());
-            println!("Response: {}", text);
+            log::info!("Failed to parse invite response: {}", e.to_string());
+            log::info!("Response: {}", text);
             return Err(format!(
                 "Failed to parse invite response: {}",
                 e.to_string()
