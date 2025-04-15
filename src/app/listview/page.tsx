@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
 import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-sidebar';
-import { WorldDisplayData } from '@/types/worlds';
+import { Platform, WorldDisplayData } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
 import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
+import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
 import {
   GroupInstanceCreatePermission,
@@ -32,6 +33,7 @@ export default function ListView() {
   const { toast } = useToast();
   const { t } = useLocalization();
   const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [showDeleteFolder, setShowDeleteFolder] = useState<string | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showDiscover, setShowDiscover] = useState(false);
@@ -53,11 +55,41 @@ export default function ListView() {
     loadAllWorlds();
   }, []);
 
+  const openHiddenFolder = async () => {
+    console.log('Opening hidden worlds');
+    try {
+      const hiddenWorlds = await commands.getHiddenWorlds();
+      if (hiddenWorlds.status === 'error') {
+        toast({
+          title: 'Error',
+          description: hiddenWorlds.error as string,
+          variant: 'destructive',
+        });
+        return;
+      }
+      const worlds = hiddenWorlds.data;
+      setWorlds(
+        worlds.map((world) => ({
+          ...world,
+          platform: world.platform as Platform,
+        })),
+      );
+      setCurrentFolder(SpecialFolders.Hidden);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load hidden worlds',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSelectFolder = async (
     type:
       | SpecialFolders.All
       | SpecialFolders.Discover
       | SpecialFolders.Unclassified
+      | SpecialFolders.Hidden
       | 'folder',
     folderName?: string,
   ) => {
@@ -74,6 +106,9 @@ export default function ListView() {
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
+          break;
+        case SpecialFolders.Hidden:
+          await openHiddenFolder();
           break;
         case 'folder':
           if (folderName) {
@@ -175,6 +210,8 @@ export default function ListView() {
       await loadAllWorlds();
     } else if (currentFolder === SpecialFolders.Unclassified) {
       await loadUnclassifiedWorlds();
+    } else if (currentFolder === SpecialFolders.Hidden) {
+      await openHiddenFolder();
     } else if (currentFolder) {
       await loadFolderContents(currentFolder);
     }
@@ -196,6 +233,9 @@ export default function ListView() {
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
+          break;
+        case SpecialFolders.Hidden:
+          await openHiddenFolder();
           break;
         default:
           if (currentFolder) {
@@ -270,6 +310,60 @@ export default function ListView() {
       toast({
         title: t('listview-page:error-title'),
         description: t('listview-page:error-hide-world'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRestoreWorld = async (worldIds: string[]) => {
+    try {
+      const restoredWorlds = worldIds;
+
+      for (const id of worldIds) {
+        await commands.unhideWorld(id);
+      }
+
+      toast({
+        title: 'Worlds restored',
+        description: (
+          <div className="flex w-full items-center justify-between gap-2">
+            <span>Restored from hidden</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  for (const id of restoredWorlds) {
+                    await commands.hideWorld(id);
+                  }
+                  await refreshCurrentView();
+                  toast({
+                    title: 'Hidden',
+                    description: 'Worlds hidden again',
+                  });
+                } catch (error) {
+                  console.error('Failed to re-hide worlds:', error);
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to re-hide worlds',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+            >
+              Undo
+            </Button>
+          </div>
+        ),
+        duration: 3000,
+      });
+
+      await refreshCurrentView();
+    } catch (error) {
+      console.error('Failed to restore worlds:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to restore worlds from hidden',
         variant: 'destructive',
       });
     }
@@ -576,13 +670,58 @@ export default function ListView() {
     loadCardSize();
   }, [showSettings]);
 
+  const onRenameFolder = async (oldName: string, newName: string) => {
+    try {
+      await commands.renameFolder(oldName, newName);
+      await loadFolders();
+      setCurrentFolder(newName);
+      toast({
+        title: 'Success',
+        description: 'Folder renamed successfully',
+      });
+    } catch (error) {
+      console.error('Failed to rename folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to rename folder',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteFolder = async (folderName: string) => {
+    try {
+      await commands.deleteFolder(folderName);
+      await loadFolders();
+      setShowDeleteFolder(null);
+      toast({
+        title: 'Success',
+        description: 'Folder deleted successfully',
+      });
+    } catch (error) {
+      console.error('Failed to delete folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete folder',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const renderMainContent = () => {
     if (showAbout) {
       return <AboutSection />;
     }
 
     if (showSettings) {
-      return <SettingsPage onCardSizeChange={loadCardSize} />;
+      return (
+        <SettingsPage
+          onCardSizeChange={loadCardSize}
+          onOpenHiddenFolder={() => {
+            handleSelectFolder(SpecialFolders.Hidden);
+          }}
+        />
+      );
     }
 
     if (showDiscover) {
@@ -610,6 +749,7 @@ export default function ListView() {
             onWorldChange={refreshCurrentView}
             onRemoveFromFolder={removeWorldsFromFolder}
             onHideWorld={handleHideWorld}
+            onUnhideWorld={handleRestoreWorld}
             onOpenWorldDetails={handleOpenWorldDetails}
             onShowFolderDialog={(worlds) => {
               setSelectedWorldsForFolder(worlds);
@@ -641,6 +781,8 @@ export default function ListView() {
           setShowDiscover(false);
           setShowWorldDetails(false);
         }}
+        onRenameFolder={onRenameFolder}
+        onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
       />
       <div className="flex-1 overflow-auto">{renderMainContent()}</div>
       <CreateFolderDialog
@@ -679,6 +821,15 @@ export default function ListView() {
             foldersToRemove,
           )
         }
+      />
+      <DeleteFolderDialog
+        folderName={showDeleteFolder}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowDeleteFolder(null);
+          }
+        }}
+        onConfirm={handleDeleteFolder}
       />
     </div>
   );
