@@ -8,6 +8,9 @@ use std::fs;
 
 pub struct EncryptionService;
 
+const ENCRYPTION_KEY: Option<&str> = option_env!("ENCRYPTION_KEY");
+const ENCRYPTION_IV: Option<&str> = option_env!("ENCRYPTION_IV");
+
 impl EncryptionService {
     pub fn encrypt(data: String) -> Result<String, String> {
         Ok(data.to_string())
@@ -18,11 +21,21 @@ impl EncryptionService {
     }
 
     fn get_decryption_keys() -> Result<(Vec<u8>, Vec<u8>), String> {
-        let key = std::env::var("ENCRYPTION_KEY")
-            .map_err(|_| "ENCRYPTION_KEY environment variable not set".to_string())?;
+        let key = match ENCRYPTION_KEY {
+            Some(key) => key,
+            None => {
+                return Err(
+                    "ENCRYPTION_KEY environment variable not set at compile time".to_string(),
+                )
+            }
+        };
 
-        let iv = std::env::var("ENCRYPTION_IV")
-            .map_err(|_| "ENCRYPTION_IV environment variable not set".to_string())?;
+        let iv = match ENCRYPTION_IV {
+            Some(iv) => iv,
+            None => {
+                return Err("ENCRYPTION_IV environment variable not set at compile time".to_string())
+            }
+        };
 
         // Convert from base64 to bytes for AES
         let key = STANDARD
