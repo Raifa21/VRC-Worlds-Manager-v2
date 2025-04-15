@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocalization } from '@/hooks/use-localization';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -35,6 +36,7 @@ export function SetupLayout({
   alreadyMigrated = false,
   isLoading = false,
 }: SetupLayoutProps) {
+  const { t } = useLocalization();
   return (
     <div className="container max-w-2xl mx-auto p-4">
       <Progress value={currentPage * 25 - 25} className="mb-8" />
@@ -49,7 +51,7 @@ export function SetupLayout({
             disabled={isFirstPage}
             variant={isFirstPage ? 'default' : 'outline'}
           >
-            Back
+            {t('setup-layout:back')}
           </Button>
           <Button
             onClick={onNext}
@@ -61,16 +63,16 @@ export function SetupLayout({
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Migrating...
+                {t('setup-layout:migrating')}
               </>
             ) : isFirstPage ? (
-              'Start'
+              t('setup-layout:start')
             ) : isLastPage ? (
-              'Finish'
+              t('setup-layout:finish')
             ) : isMigrationPage && !alreadyMigrated ? (
-              'Skip'
+              t('setup-layout:skip')
             ) : (
-              'Next'
+              t('setup-layout:next')
             )}
           </Button>
         </CardFooter>

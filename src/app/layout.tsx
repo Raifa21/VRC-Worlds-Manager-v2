@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 
 import '@/app/globals.css';
+import { LocalizationContextProvider } from '@/components/localization-context';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,7 +35,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main>{children}</main>
+          <LocalizationContextProvider>
+            <main>{children}</main>
+          </LocalizationContextProvider>
         </ThemeProvider>
         <Toaster />
       </body>

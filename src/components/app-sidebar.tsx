@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { commands } from '@/lib/bindings';
 import { useState, useEffect } from 'react';
+import { useLocalization } from '@/hooks/use-localization';
 
 import { Separator } from '@/components/ui/separator';
 
@@ -58,6 +59,7 @@ export function AppSidebar({
   onSelectSettings,
 }: AppSidebarProps) {
   const router = useRouter();
+  const { t } = useLocalization();
   const [localFolders, setLocalFolders] = useState<string[]>(folders);
 
   // Update local folders when prop changes
@@ -101,7 +103,9 @@ export function AppSidebar({
             onClick={() => onSelectFolder(SpecialFolders.All)}
           >
             <SaturnIcon className="h-[18px] w-[18px]" />
-            <span className="text-sm font-medium">All Worlds</span>
+            <span className="text-sm font-medium">
+              {t('app-sidebar:all-worlds')}
+            </span>
           </div>
         </SidebarGroup>
         <Separator className="my-2" />
@@ -111,20 +115,26 @@ export function AppSidebar({
             onClick={() => onSelectFolder(SpecialFolders.Discover)}
           >
             <History className="h-5 w-5" />
-            <span className="text-sm font-medium">Find Worlds</span>
+            <span className="text-sm font-medium">
+              {t('app-sidebar:find-worlds')}
+            </span>
           </div>
           <div
             className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
             onClick={() => onSelectFolder(SpecialFolders.Unclassified)}
           >
             <FileQuestion className="h-5 w-5" />
-            <span className="text-sm font-medium">Unclassified Worlds</span>
+            <span className="text-sm font-medium">
+              {t('app-sidebar:unclassified-worlds')}
+            </span>
           </div>
         </SidebarGroup>
         <Separator className="my-2" />
         <SidebarGroup>
           <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
-            <span className="text-sm font-medium">Folders</span>
+            <span className="text-sm font-medium">
+              {t('app-sidebar:folders')}
+            </span>
           </div>
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="folders">
@@ -162,7 +172,7 @@ export function AppSidebar({
             }}
           >
             <Plus className="h-5 w-5" />
-            Add Folder
+            {t('app-sidebar:add-folder')}
           </div>
         </SidebarGroup>
       </nav>
@@ -174,7 +184,7 @@ export function AppSidebar({
             onClick={() => onSelectAbout()}
           >
             <Info className="h-5 w-5" />
-            <span>About</span>
+            <span>{t('app-sidebar:about')}</span>
           </div>
           <div
             className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
@@ -183,7 +193,7 @@ export function AppSidebar({
             <div className="h-5 w-5 flex items-center justify-center">
               <GearIcon className="h-[18px] w-[18px]" />
             </div>
-            <span>Settings</span>
+            <span>{t('app-sidebar:settings')}</span>
           </div>
         </SidebarGroup>
       </footer>

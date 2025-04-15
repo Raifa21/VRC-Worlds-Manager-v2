@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
@@ -29,6 +30,7 @@ import { DiscoverPage } from '@/components/discover-page';
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
   const { toast } = useToast();
+  const { t } = useLocalization();
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -81,8 +83,8 @@ export default function ListView() {
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load worlds',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-load-worlds'),
         duration: 3000,
       });
     }
@@ -95,8 +97,8 @@ export default function ListView() {
       setCurrentFolder(SpecialFolders.All);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load worlds',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-load-worlds'),
       });
     }
   };
@@ -109,8 +111,8 @@ export default function ListView() {
       setCurrentFolder(SpecialFolders.Unclassified);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load worlds',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-load-worlds'),
       });
     }
   };
@@ -131,8 +133,8 @@ export default function ListView() {
     } catch (error) {
       console.error('Failed to create folder:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to create folder',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-create-folder'),
       });
     }
   };
@@ -148,8 +150,8 @@ export default function ListView() {
       setCurrentFolder(folder);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load worlds',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-load-worlds'),
       });
       console.log('Failed to load worlds:', error);
     }
@@ -162,7 +164,7 @@ export default function ListView() {
       const error = result.error;
 
       toast({
-        title: 'Error',
+        title: t('listview-page:error-title'),
         description: error as string,
         variant: 'destructive',
       });
@@ -178,8 +180,8 @@ export default function ListView() {
     }
 
     toast({
-      title: 'Success',
-      description: 'Worlds fetched successfully!',
+      title: t('listview-page:success-title'),
+      description: t('listview-page:worlds-fetched'),
       duration: 2000,
     });
   };
@@ -202,8 +204,8 @@ export default function ListView() {
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to refresh worlds',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-refresh-worlds'),
         duration: 3000,
       });
     }
@@ -216,13 +218,17 @@ export default function ListView() {
       }
 
       toast({
-        title: 'Worlds hidden',
+        title: t('listview-page:worlds-hidden-title'),
         description: (
           <div className="flex w-full items-center justify-between gap-2">
             <span>
               {worldName.length > 1
-                ? `Hidden "${worldName[0]}" and ${worldName.length - 1} more worlds`
-                : `Hidden "${worldName[0]}"`}
+                ? t(
+                    'listview-page:worlds-hidden-multiple',
+                    worldName[0],
+                    worldName.length - 1,
+                  )
+                : t('listview-page:worlds-hidden-single', worldName[0])}
             </span>
             <Button
               variant="outline"
@@ -234,20 +240,20 @@ export default function ListView() {
                   }
                   await refreshCurrentView();
                   toast({
-                    title: 'Restored',
-                    description: 'Worlds restored from hidden',
+                    title: t('listview-page:restored-title'),
+                    description: t('listview-page:worlds-restored'),
                   });
                 } catch (error) {
                   console.error('Failed to restore worlds:', error);
                   toast({
-                    title: 'Error',
-                    description: 'Failed to restore worlds',
+                    title: t('listview-page:error-title'),
+                    description: t('listview-page:error-restore-worlds'),
                     variant: 'destructive',
                   });
                 }
               }}
             >
-              Undo
+              {t('listview-page:undo-button')}
             </Button>
           </div>
         ),
@@ -262,8 +268,8 @@ export default function ListView() {
     } catch (error) {
       console.error('Failed to hide world:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to hide world',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-hide-world'),
         variant: 'destructive',
       });
     }
@@ -278,10 +284,10 @@ export default function ListView() {
         await commands.removeWorldFromFolder(currentFolder, id);
       }
       toast({
-        title: 'Worlds removed',
+        title: t('listview-page:worlds-removed-title'),
         description: (
           <div className="flex w-full items-center justify-between gap-2">
-            <span>Removed from {currentFolder}</span>
+            <span>{t('listview-page:removed-from-folder', currentFolder)}</span>
             <Button
               variant="outline"
               size="sm"
@@ -293,14 +299,14 @@ export default function ListView() {
                   }
                   await refreshCurrentView();
                   toast({
-                    title: 'Restored',
-                    description: 'Worlds restored to folder',
+                    title: t('listview-page:restored-title'),
+                    description: t('listview-page:worlds-restored-to-folder'),
                   });
                 } catch (error) {
                   console.error('Failed to restore worlds:', error);
                   toast({
-                    title: 'Error',
-                    description: 'Failed to restore worlds',
+                    title: t('listview-page:error-title'),
+                    description: t('listview-page:error-restore-worlds'),
                     variant: 'destructive',
                   });
                 }
@@ -321,8 +327,8 @@ export default function ListView() {
     } catch (error) {
       console.error('Failed to remove worlds:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to remove worlds from folder',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-remove-from-folder'),
         variant: 'destructive',
       });
     }
@@ -360,13 +366,20 @@ export default function ListView() {
       }
 
       toast({
-        title: 'Folders updated',
+        title: t('listview-page:folders-updated-title'),
         description: (
           <div className="flex w-full items-center justify-between gap-2">
             <span>
               {worldsToAdd.length > 1
-                ? `Updated folders for "${worldsToAdd[0].name}" and ${worldsToAdd.length - 1} more worlds`
-                : `Updated folders for "${worldsToAdd[0].name}"`}
+                ? t(
+                    'listview-page:folders-updated-multiple',
+                    worldsToAdd[0].name,
+                    worldsToAdd.length - 1,
+                  )
+                : t(
+                    'listview-page:folders-updated-single',
+                    worldsToAdd[0].name,
+                  )}
             </span>
             <Button
               variant="outline"
@@ -389,14 +402,14 @@ export default function ListView() {
                   }
                   await refreshCurrentView();
                   toast({
-                    title: 'Restored',
-                    description: 'Folder changes undone',
+                    title: t('listview-page:restored-title'),
+                    description: t('listview-page:folder-changes-undone'),
                   });
                 } catch (error) {
                   console.error('Failed to undo folder changes:', error);
                   toast({
-                    title: 'Error',
-                    description: 'Failed to undo folder changes',
+                    title: t('listview-page:error-title'),
+                    description: t('listview-page:error-undo-folder-changes'),
                     variant: 'destructive',
                   });
                 }
@@ -419,8 +432,8 @@ export default function ListView() {
     } catch (error) {
       console.error('Failed to update folders:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update folders',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-update-folders'),
         variant: 'destructive',
       });
     }
@@ -446,7 +459,7 @@ export default function ListView() {
       if (result.status === 'error') {
         const error = result.error;
         toast({
-          title: 'Error',
+          title: t('listview-page:error-title'),
           description: error as string,
           variant: 'destructive',
         });
@@ -455,14 +468,14 @@ export default function ListView() {
 
       await refreshCurrentView();
       toast({
-        title: 'Success',
-        description: `Created ${instanceType} instance`,
+        title: t('listview-page:success-title'),
+        description: t('listview-page:created-instance', instanceType),
       });
     } catch (error) {
       console.error('Failed to create instance:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to create instance',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-create-instance'),
         variant: 'destructive',
       });
     }
@@ -492,14 +505,14 @@ export default function ListView() {
 
       await refreshCurrentView();
       toast({
-        title: 'Success',
-        description: `Created ${instanceType} instance`,
+        title: t('listview-page:success-title'),
+        description: t('listview-page:created-instance', instanceType),
       });
     } catch (error) {
       console.error('Failed to create group instance:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to create group instance',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-create-group-instance'),
         variant: 'destructive',
       });
     }
@@ -515,8 +528,8 @@ export default function ListView() {
     } catch (error) {
       console.error('Failed to get groups:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to get groups',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-get-groups'),
         variant: 'destructive',
       });
       return [];
@@ -535,8 +548,8 @@ export default function ListView() {
     } catch (error) {
       console.error('Failed to get group permissions:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to get group permissions',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-get-group-permissions'),
         variant: 'destructive',
       });
       throw new Error('Group permissions not found');
@@ -552,8 +565,8 @@ export default function ListView() {
     } catch (error) {
       console.error('Failed to load card size:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load card size preference',
+        title: t('listview-page:error-title'),
+        description: t('listview-page:error-load-card-size'),
         variant: 'destructive',
       });
     }

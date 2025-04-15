@@ -14,6 +14,7 @@ import { Label } from './ui/label';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import { ChevronRight } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { useLocalization } from '@/hooks/use-localization';
 
 interface GroupInstanceCreatorProps {
   groups: UserGroup[];
@@ -42,27 +43,6 @@ interface StepInfo {
   selectedRoles: Set<string>;
 }
 
-const GROUP_INSTANCE_TYPES = [
-  {
-    type: 'group' as const,
-    label: 'Group Only',
-    description: 'Only group members can join',
-    requiresPermission: 'normal' as const,
-  },
-  {
-    type: 'group+' as const,
-    label: 'Group+',
-    description: 'Group members and their friends can join',
-    requiresPermission: 'plus' as const,
-  },
-  {
-    type: 'public' as const,
-    label: 'Group Public',
-    description: 'Anyone can join',
-    requiresPermission: 'public' as const,
-  },
-] as const;
-
 export function GroupInstanceCreator({
   groups,
   selectedGroupId: initialGroupId,
@@ -73,6 +53,29 @@ export function GroupInstanceCreator({
   onCreateInstance,
   isLoading: externalLoading,
 }: GroupInstanceCreatorProps) {
+  const { t } = useLocalization();
+
+  const GROUP_INSTANCE_TYPES = [
+    {
+      type: 'group' as const,
+      label: t('group-instance-creator:group-only'),
+      description: t('group-instance-creator:group-only-description'),
+      requiresPermission: 'normal' as const,
+    },
+    {
+      type: 'group+' as const,
+      label: t('group-instance-creator:group-plus'),
+      description: t('group-instance-creator:group-plus-description'),
+      requiresPermission: 'plus' as const,
+    },
+    {
+      type: 'public' as const,
+      label: t('group-instance-creator:group-public'),
+      description: t('group-instance-creator:group-public-description'),
+      requiresPermission: 'public' as const,
+    },
+  ] as const;
+
   const [currentStep, setCurrentStep] = useState<CreationStep>(
     initialGroupId ? 'type' : 'group',
   );
@@ -351,7 +354,9 @@ export function GroupInstanceCreator({
         <div className="flex items-center justify-center min-h-[300px]">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading groups...</p>
+            <p className="text-sm text-muted-foreground">
+              {t('group-instance-creator:loading-groups')}
+            </p>
           </div>
         </div>
       );
@@ -359,7 +364,9 @@ export function GroupInstanceCreator({
 
     return (
       <div className="space-y-4 p-4">
-        <h3 className="font-medium">Select a Group</h3>
+        <h3 className="font-medium">
+          {t('group-instance-creator:select-group')}
+        </h3>
         <div className="space-y-2 overflow-y-auto max-h-[35vh]">
           {groups.map((group) => (
             <Button
@@ -381,7 +388,7 @@ export function GroupInstanceCreator({
           ))}
         </div>
         <Button variant="secondary" onClick={onBack}>
-          Back
+          {t('group-instance-creator:back')}
         </Button>
       </div>
     );
@@ -394,7 +401,7 @@ export function GroupInstanceCreator({
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-6 w-6 animate-spin" />
             <p className="text-sm text-muted-foreground">
-              Loading permissions...
+              {t('group-instance-creator:loading-permissions')}
             </p>
           </div>
         </div>
@@ -402,7 +409,9 @@ export function GroupInstanceCreator({
     }
     return (
       <div className="space-y-4 p-4">
-        <h3 className="font-medium">Select Instance Type</h3>
+        <h3 className="font-medium">
+          {t('group-instance-creator:select-instance-type')}
+        </h3>
         <div className="space-y-2">
           {GROUP_INSTANCE_TYPES.map((option) => {
             const hasPermission =
@@ -413,8 +422,8 @@ export function GroupInstanceCreator({
             const description =
               option.type === 'group'
                 ? canGateRoles()
-                  ? 'Selected roles can join'
-                  : 'All roles can join (You cannot create a restricted instance)'
+                  ? t('group-instance-creator:selected-roles-description')
+                  : t('group-instance-creator:all-roles-description')
                 : option.description;
 
             return (
@@ -430,7 +439,7 @@ export function GroupInstanceCreator({
                     <span className="font-medium">{option.label}</span>
                     {option.type === 'group' && !canGateRoles() && (
                       <span className="text-sm text-muted-foreground">
-                        (All roles)
+                        {t('group-instance-creator:all-roles-label')}
                       </span>
                     )}
                   </div>
@@ -439,7 +448,7 @@ export function GroupInstanceCreator({
                   </span>
                   {!hasPermission && (
                     <span className="text-xs text-destructive">
-                      Missing required permission
+                      {t('group-instance-creator:missing-permission')}
                     </span>
                   )}
                 </div>
@@ -448,7 +457,7 @@ export function GroupInstanceCreator({
           })}
         </div>
         <Button variant="secondary" onClick={handleBack}>
-          Back
+          {t('group-instance-creator:back')}
         </Button>
       </div>
     );
@@ -458,14 +467,17 @@ export function GroupInstanceCreator({
     if (isLoading || !roles) {
       return (
         <div className="flex items-center justify-center p-4">
-          <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading roles...
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />{' '}
+          {t('group-instance-creator:loading-roles')}
         </div>
       );
     }
 
     return (
       <div className="space-y-4 p-4">
-        <h3 className="font-medium">Select Roles</h3>
+        <h3 className="font-medium">
+          {t('group-instance-creator:select-roles')}
+        </h3>
 
         {/* Everyone role at the top */}
         {getEveryoneRole() && (
@@ -482,7 +494,7 @@ export function GroupInstanceCreator({
                 htmlFor={getEveryoneRole()!.id}
                 className="text-sm font-medium"
               >
-                Everyone
+                {t('group-instance-creator:everyone')}
               </label>
             </div>
           </div>
@@ -505,7 +517,7 @@ export function GroupInstanceCreator({
                 {isRoleRequired(role) &&
                   stepInfo.selectedRoles.has(role.id) &&
                   !selectingEveryoneRole &&
-                  ' (Required)'}
+                  ` ${t('group-instance-creator:required')}`}
               </label>
             </div>
           ))}
@@ -513,9 +525,11 @@ export function GroupInstanceCreator({
 
         <div className="flex space-x-2">
           <Button variant="secondary" onClick={handleBack}>
-            Back
+            {t('group-instance-creator:back')}
           </Button>
-          <Button onClick={() => setCurrentStep('config')}>Next</Button>
+          <Button onClick={() => setCurrentStep('config')}>
+            {t('group-instance-creator:next')}
+          </Button>
         </div>
       </div>
     );
@@ -524,20 +538,20 @@ export function GroupInstanceCreator({
   const ConfigurationPage = () => (
     <div className="space-y-1">
       <NavigationItem
-        label="Group"
+        label={t('group-instance-creator:group-label')}
         value={
           groups.find((g) => g.groupId === stepInfo.groupId)?.name ||
-          'Select Group'
+          t('group-instance-creator:select-group-placeholder')
         }
         onClick={() => setCurrentStep('group')}
       />
       <Separator />
 
       <NavigationItem
-        label="Instance Type"
+        label={t('group-instance-creator:instance-type-label')}
         value={
           GROUP_INSTANCE_TYPES.find((t) => t.type === stepInfo.instanceType)
-            ?.label || 'Select Type'
+            ?.label || t('group-instance-creator:select-type-placeholder')
         }
         onClick={() => setCurrentStep('type')}
       />
@@ -547,13 +561,14 @@ export function GroupInstanceCreator({
       {stepInfo.instanceType === 'group' && canGateRoles() && (
         <>
           <NavigationItem
-            label="Roles"
+            label={t('group-instance-creator:roles-label')}
             value={
               Array.from(stepInfo.selectedRoles)
                 .map(
                   (roleId) => roles?.find((role) => role.id === roleId)?.name,
                 )
-                .join(', ') || 'Select Roles'
+                .join(', ') ||
+              t('group-instance-creator:select-roles-placeholder')
             }
             onClick={() => setCurrentStep('roles')}
           />
@@ -563,7 +578,9 @@ export function GroupInstanceCreator({
 
       {/* Region Selection */}
       <div className="pl-4 pr-4 pb-1">
-        <Label className="text-sm text-muted-foreground">Region</Label>
+        <Label className="text-sm text-muted-foreground">
+          {t('group-instance-creator:region-label')}
+        </Label>
         <ToggleGroup
           type="single"
           value={stepInfo.region}
@@ -599,16 +616,16 @@ export function GroupInstanceCreator({
           }
         />
         <label htmlFor="queue" className="text-sm">
-          Enable Queue
+          {t('group-instance-creator:enable-queue')}
         </label>
       </div>
 
       <div className="flex space-x-2 items-center justify-between p-4">
         <Button variant="secondary" onClick={handleBack}>
-          Back
+          {t('group-instance-creator:back')}
         </Button>
         <Button variant="default" onClick={handleCreateInstance}>
-          Create Instance
+          {t('group-instance-creator:create-instance')}
         </Button>
       </div>
     </div>
@@ -621,10 +638,14 @@ export function GroupInstanceCreator({
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
           <p className="text-sm text-muted-foreground">
-            {currentStep === 'group' && 'Loading groups...'}
-            {currentStep === 'type' && 'Loading permissions...'}
-            {currentStep === 'roles' && 'Loading roles...'}
-            {currentStep === 'config' && 'Loading configuration...'}
+            {currentStep === 'group' &&
+              t('group-instance-creator:loading-groups')}
+            {currentStep === 'type' &&
+              t('group-instance-creator:loading-permissions')}
+            {currentStep === 'roles' &&
+              t('group-instance-creator:loading-roles')}
+            {currentStep === 'config' &&
+              t('group-instance-creator:loading-configuration')}
           </p>
         </div>
       </div>
@@ -638,7 +659,7 @@ export function GroupInstanceCreator({
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
           <p className="text-sm text-muted-foreground">
-            Loading permissions...
+            {t('group-instance-creator:loading-permissions')}
           </p>
         </div>
       </div>
@@ -649,9 +670,9 @@ export function GroupInstanceCreator({
   if (!isLoading && groups.length === 0) {
     return (
       <div className="text-center p-4">
-        <p>No groups found</p>
+        <p>{t('group-instance-creator:no-groups-found')}</p>
         <Button variant="secondary" onClick={handleBack}>
-          Back
+          {t('group-instance-creator:back')}
         </Button>
       </div>
     );

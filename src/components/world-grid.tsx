@@ -6,6 +6,7 @@ import { toRomaji } from 'wanakana';
 import { SpecialFolders } from '@/types/folders';
 import { Platform } from '@/types/worlds';
 import { WorldDisplayData } from '@/types/worlds';
+import { useLocalization } from '@/hooks/use-localization';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -76,6 +77,7 @@ export function WorldGrid({
   onAddToFolder,
   onShowFolderDialog,
 }: WorldGridProps) {
+  const { t } = useLocalization();
   const cardWidths = {
     [CardSize.Compact]: 192, // w-48 = 12rem = 192px
     [CardSize.Normal]: 208, // w-52 = 13rem = 208px
@@ -299,7 +301,7 @@ export function WorldGrid({
         <div className="p-4 flex items-center gap-4">
           <Input
             type="search"
-            placeholder="Search worlds..."
+            placeholder={t('world-grid:search-placeholder')}
             className="w-[calc(80vw-380px)]"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -310,14 +312,24 @@ export function WorldGrid({
               onValueChange={(value) => handleSort(value as SortField)}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by..." />
+                <SelectValue placeholder={t('world-grid:sort-placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="authorName">Author</SelectItem>
-                <SelectItem value="favorites">Favorites</SelectItem>
-                <SelectItem value="dateAdded">Date Added</SelectItem>
-                <SelectItem value="lastUpdated">Last Updated</SelectItem>
+                <SelectItem value="name">
+                  {t('world-grid:sort-name')}
+                </SelectItem>
+                <SelectItem value="authorName">
+                  {t('world-grid:sort-author')}
+                </SelectItem>
+                <SelectItem value="favorites">
+                  {t('world-grid:sort-favorites')}
+                </SelectItem>
+                <SelectItem value="dateAdded">
+                  {t('world-grid:sort-date-added')}
+                </SelectItem>
+                <SelectItem value="lastUpdated">
+                  {t('world-grid:sort-last-updated')}
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -408,12 +420,10 @@ export function WorldGrid({
                       onShowFolderDialog(worldsToMove);
                     }}
                   >
-                    Move{' '}
                     {selectedWorlds.size > 1 &&
                     selectedWorlds.has(world.worldId)
-                      ? `${selectedWorlds.size} worlds`
-                      : 'world'}{' '}
-                    to folder
+                      ? t('world-grid:move-multiple', selectedWorlds.size)
+                      : t('world-grid:move-single')}
                   </ContextMenuItem>
                   {!isSpecialFolder && (
                     <ContextMenuItem
@@ -427,12 +437,10 @@ export function WorldGrid({
                       }}
                       className="text-destructive"
                     >
-                      Remove{' '}
                       {selectedWorlds.size > 1 &&
                       selectedWorlds.has(world.worldId)
-                        ? `${selectedWorlds.size} worlds`
-                        : 'world'}{' '}
-                      from folder
+                        ? t('world-grid:remove-multiple', selectedWorlds.size)
+                        : t('world-grid:remove-single')}
                     </ContextMenuItem>
                   )}
 
@@ -453,11 +461,10 @@ export function WorldGrid({
                     }}
                     className="text-destructive"
                   >
-                    Hide{' '}
                     {selectedWorlds.size > 1 &&
                     selectedWorlds.has(world.worldId)
-                      ? `${selectedWorlds.size} worlds`
-                      : 'world'}
+                      ? t('world-grid:hide-multiple', selectedWorlds.size)
+                      : t('world-grid:hide-single')}
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -479,18 +486,17 @@ export function WorldGrid({
               <AlertDialogHeader>
                 <AlertDialogTitle>
                   {dialogConfig.type === 'remove'
-                    ? 'Remove from Folder'
-                    : 'Hide World'}
+                    ? t('world-grid:remove-title')
+                    : t('world-grid:hide-title')}
                 </AlertDialogTitle>
                 <AlertDialogDescription className="space-y-2">
                   {dialogConfig.type === 'remove' ? (
-                    <p>This will remove this world from the current folder.</p>
+                    <p>{t('world-grid:remove-description')}</p>
                   ) : (
                     <>
-                      <p>This hides this world from all folders.</p>
+                      <p>{t('world-grid:hide-description')}</p>
                       <p className="text-muted-foreground">
-                        You can find the world in the "Hidden Folder" in
-                        settings to revert.
+                        {t('world-grid:hide-note')}
                       </p>
                     </>
                   )}
@@ -498,7 +504,7 @@ export function WorldGrid({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel onClick={handleDialogClose}>
-                  Cancel
+                  {t('world-grid:cancel')}
                 </AlertDialogCancel>
                 <Button
                   variant="destructive"
@@ -514,7 +520,9 @@ export function WorldGrid({
                     handleDialogClose();
                   }}
                 >
-                  {dialogConfig.type === 'remove' ? 'Remove' : 'Hide World'}
+                  {dialogConfig.type === 'remove'
+                    ? t('world-grid:remove-button')
+                    : t('world-grid:hide-button')}
                 </Button>
               </AlertDialogFooter>
             </AlertDialogContent>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocalization } from '@/hooks/use-localization';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,7 @@ export function MigrationConfirmationPopup({
   hasExistingData,
   isLoading = false,
 }: MigrationConfirmationPopupProps) {
+  const { t } = useLocalization();
   const [keepExisting, setKeepExisting] = useState<[boolean, boolean]>([
     true,
     true,
@@ -36,9 +38,9 @@ export function MigrationConfirmationPopup({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Existing Data Detected</DialogTitle>
+          <DialogTitle>{t('migration-confirmation-popup:title')}</DialogTitle>
           <DialogDescription>
-            Toggle which existing data you want to keep:
+            {t('migration-confirmation-popup:description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -46,9 +48,11 @@ export function MigrationConfirmationPopup({
           {hasExistingData[0] && (
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="worlds" className="flex flex-col space-y-1">
-                <span>Worlds Data</span>
+                <span>{t('migration-confirmation-popup:worlds-data')}</span>
                 <span className="font-normal text-sm text-muted-foreground">
-                  {keepExisting[0] ? 'Keep existing data' : 'Import new data'}
+                  {keepExisting[0]
+                    ? t('migration-confirmation-popup:keep-existing')
+                    : t('migration-confirmation-popup:import-new')}
                 </span>
               </Label>
               <Switch
@@ -64,9 +68,11 @@ export function MigrationConfirmationPopup({
           {hasExistingData[1] && (
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="folders" className="flex flex-col space-y-1">
-                <span>Folders Data</span>
+                <span>{t('migration-confirmation-popup:folders-data')}</span>
                 <span className="font-normal text-sm text-muted-foreground">
-                  {keepExisting[1] ? 'Keep existing data' : 'Import new data'}
+                  {keepExisting[1]
+                    ? t('migration-confirmation-popup:keep-existing')
+                    : t('migration-confirmation-popup:import-new')}
                 </span>
               </Label>
               <Switch
@@ -87,16 +93,16 @@ export function MigrationConfirmationPopup({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            Cancel
+            {t('migration-confirmation-popup:cancel')}
           </Button>
           <Button onClick={() => onConfirm(keepExisting)} disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Migrating...
+                {t('migration-confirmation-popup:migrating')}
               </>
             ) : (
-              'Confirm'
+              t('migration-confirmation-popup:confirm')
             )}
           </Button>
         </DialogFooter>

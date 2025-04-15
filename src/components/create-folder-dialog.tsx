@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useLocalization } from '@/hooks/use-localization';
 
 interface CreateFolderDialogProps {
   open: boolean;
@@ -20,6 +21,7 @@ export function CreateFolderDialog({
   onOpenChange,
   onConfirm,
 }: CreateFolderDialogProps) {
+  const { t } = useLocalization();
   const [folderName, setFolderName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
@@ -41,12 +43,12 @@ export function CreateFolderDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create New Folder</DialogTitle>
+          <DialogTitle>{t('create-folder-dialog:title')}</DialogTitle>
         </DialogHeader>
         <Input
           value={folderName}
           onChange={(e) => setFolderName(e.target.value)}
-          placeholder="Enter folder name"
+          placeholder={t('create-folder-dialog:placeholder')}
           onKeyDown={(e) => {
             console.log('Key pressed:', e.key);
             if (e.key === 'Enter' && !isComposing) {
@@ -65,10 +67,12 @@ export function CreateFolderDialog({
         />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('create-folder-dialog:cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={!folderName || isLoading}>
-            {isLoading ? 'Creating...' : 'Create'}
+            {isLoading
+              ? t('create-folder-dialog:creating')
+              : t('create-folder-dialog:create')}
           </Button>
         </DialogFooter>
       </DialogContent>

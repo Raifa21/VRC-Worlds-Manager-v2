@@ -4,10 +4,12 @@ import { invoke } from '@tauri-apps/api/core';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { commands } from '@/lib/bindings';
+import { useLocalization } from '@/hooks/use-localization';
 
 export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { t } = useLocalization();
 
   useEffect(() => {
     const checkFirstTime = async () => {
@@ -44,7 +46,7 @@ export default function Home() {
   return (
     <div className="h-screen w-screen flex flex-col items-center justify-center gap-4">
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      <p className="text-sm text-muted-foreground">Loading...</p>
+      <p className="text-sm text-muted-foreground">{t('main-page:loading')}</p>
     </div>
   );
 }
