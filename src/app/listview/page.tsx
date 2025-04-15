@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
 import { useFolders } from '../listview/hook';
-import { AppSidebar } from '@/components/app-siderbar';
+import { AppSidebar } from '@/components/app-sidebar';
 import { WorldDisplayData } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
@@ -169,28 +169,19 @@ export default function ListView() {
       console.error('Failed to reload:', error);
       return;
     }
-
-    try {
-      if (currentFolder === SpecialFolders.All) {
-        await loadAllWorlds();
-      } else if (currentFolder === SpecialFolders.Unclassified) {
-        await loadUnclassifiedWorlds();
-      } else if (currentFolder) {
-        await loadFolderContents(currentFolder);
-      }
-
-      toast({
-        title: 'Success',
-        description: 'Worlds fetched successfully!',
-        duration: 2000,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to reload worlds',
-        variant: 'destructive',
-      });
+    if (currentFolder === SpecialFolders.All) {
+      await loadAllWorlds();
+    } else if (currentFolder === SpecialFolders.Unclassified) {
+      await loadUnclassifiedWorlds();
+    } else if (currentFolder) {
+      await loadFolderContents(currentFolder);
     }
+
+    toast({
+      title: 'Success',
+      description: 'Worlds fetched successfully!',
+      duration: 2000,
+    });
   };
 
   const refreshCurrentView = async () => {
