@@ -79,7 +79,7 @@ runs:
 
           const url = latestJson['platforms']['windows-x86_64']['url'];
           const filename = path.basename(url);
-          const newUrl = `https://releases.raifaworks.com/vrc-worlds-manager/installer/${filename}`;
+          const newUrl = `https://releases.raifaworks.com/installer/${filename}`;
 
           latestJson['platforms']['windows-x86_64']['url'] = newUrl;
 
