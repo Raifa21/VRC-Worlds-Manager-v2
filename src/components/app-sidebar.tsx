@@ -1,7 +1,7 @@
 'use client';
 
-import Gear from '@/../public/icons/Gear.svg';
-import Saturn from '@/../public/icons/Saturn.svg';
+import { SaturnIcon } from './icons/saturn-icon';
+import { GearIcon } from './icons/gear-icon';
 import { Info, FileQuestion, History, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SpecialFolders } from '@/types/folders';
@@ -100,13 +100,7 @@ export function AppSidebar({
             className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
             onClick={() => onSelectFolder(SpecialFolders.All)}
           >
-            <Image
-              src={Saturn}
-              alt="Saturn"
-              width={18}
-              height={18}
-              className="theme-icon"
-            />
+            <SaturnIcon className="h-[18px] w-[18px]" />
             <span className="text-sm font-medium">All Worlds</span>
           </div>
         </SidebarGroup>
@@ -187,13 +181,7 @@ export function AppSidebar({
             onClick={() => onSelectSettings()}
           >
             <div className="h-5 w-5 flex items-center justify-center">
-              <Image
-                src={Gear}
-                alt="Settings"
-                width={18}
-                height={18}
-                className="theme-icon"
-              />
+              <GearIcon className="h-[18px] w-[18px]" />
             </div>
             <span>Settings</span>
           </div>

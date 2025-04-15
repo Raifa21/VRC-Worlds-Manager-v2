@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
 import { useFolders } from '../listview/hook';
-import { AppSidebar } from '@/components/app-siderbar';
+import { AppSidebar } from '@/components/app-sidebar';
 import { WorldDisplayData } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
@@ -62,6 +62,7 @@ export default function ListView() {
     try {
       setShowAbout(false);
       setShowSettings(false);
+      setShowDiscover(false);
       switch (type) {
         case SpecialFolders.All:
           await loadAllWorlds();
@@ -163,11 +164,11 @@ export default function ListView() {
       toast({
         title: 'Error',
         description: error as string,
+        variant: 'destructive',
       });
       console.error('Failed to reload:', error);
       return;
     }
-
     if (currentFolder === SpecialFolders.All) {
       await loadAllWorlds();
     } else if (currentFolder === SpecialFolders.Unclassified) {
@@ -175,6 +176,12 @@ export default function ListView() {
     } else if (currentFolder) {
       await loadFolderContents(currentFolder);
     }
+
+    toast({
+      title: 'Success',
+      description: 'Worlds fetched successfully!',
+      duration: 2000,
+    });
   };
 
   const refreshCurrentView = async () => {
@@ -609,9 +616,17 @@ export default function ListView() {
         onAddFolder={() => setShowCreateFolder(true)}
         onSelectFolder={handleSelectFolder}
         selectedFolder={currentFolder}
-        onSelectAbout={() => setShowAbout(true)}
+        onSelectAbout={() => {
+          setShowAbout(true);
+          setShowSettings(false);
+          setShowDiscover(false);
+          setShowWorldDetails(false);
+        }}
         onSelectSettings={() => {
           setShowSettings(true);
+          setShowAbout(false);
+          setShowDiscover(false);
+          setShowWorldDetails(false);
         }}
       />
       <div className="flex-1 overflow-auto">{renderMainContent()}</div>

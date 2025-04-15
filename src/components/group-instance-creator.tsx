@@ -290,10 +290,21 @@ export function GroupInstanceCreator({
   const handleBack = () => {
     if (currentStep === 'config') {
       setCurrentStep('type');
+      setStepInfo((prev) => ({
+        ...prev,
+        instanceType: null,
+        selectedRoles: new Set(),
+      }));
     } else if (currentStep === 'type') {
       setCurrentStep('group');
+    } else if (currentStep === 'roles') {
+      setCurrentStep('type');
+      setStepInfo((prev) => ({
+        ...prev,
+        instanceType: null,
+        selectedRoles: new Set(),
+      }));
     } else {
-      // Reset everything when going back from group selection
       setCurrentStep('group');
       setStepInfo({
         groupId: null,
