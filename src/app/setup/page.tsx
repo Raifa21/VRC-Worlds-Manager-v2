@@ -254,7 +254,6 @@ const WelcomePage: React.FC = () => {
             isFirstPage={true}
           >
             <div className="h-full flex flex-col items-center justify-center space-y-6 relative">
-              {/* Add this language switcher */}
               <div className="absolute top-0 right-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -264,17 +263,18 @@ const WelcomePage: React.FC = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      onClick={() =>
-                        setPreferences({ ...preferences, language: 'en-US' })
-                      }
+                      onClick={() => {
+                        setLanguage('en-US');
+                        setPreferences({ ...preferences, language: 'en-US' });
+                      }}
                     >
                       English
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() =>
-                        setPreferences({ ...preferences, language: 'ja-JP' })
-                      }
-                      disabled
+                      onClick={() => {
+                        setLanguage('ja-JP');
+                        setPreferences({ ...preferences, language: 'ja-JP' });
+                      }}
                     >
                       日本語
                     </DropdownMenuItem>
@@ -455,10 +455,10 @@ const WelcomePage: React.FC = () => {
                         name: t('settings-page:preview-world'),
                         thumbnailUrl: 'icons/1.png',
                         authorName: t('general:sort-author'),
-                        lastUpdated: '2025-02-28',
-                        visits: 59,
+                        lastUpdated: '2017-03-09',
+                        visits: 616,
                         dateAdded: '2025-01-01',
-                        favorites: 10,
+                        favorites: 59,
                         platform: Platform.CrossPlatform,
                         folders: [],
                       }}
