@@ -143,8 +143,6 @@ impl FileService {
     /// Returns a FileError if the data could not be written    
     pub fn write_folders(folders: &Vec<FolderModel>) -> Result<(), FileError> {
         let (_, folders_path, _, _) = Self::get_paths();
-        log::info!("folders_path: {:?}", folders_path);
-        debug!("folders_path: {:?}", folders_path);
         let data = serde_json::to_string_pretty(folders).map_err(|_| FileError::InvalidFile)?;
         fs::write(folders_path, data).map_err(|_| FileError::FileWriteError)
     }
@@ -162,8 +160,6 @@ impl FileService {
     /// Returns a FileError if the data could not be written
     pub fn write_worlds(worlds: &Vec<WorldModel>) -> Result<(), FileError> {
         let (_, _, worlds_path, _) = Self::get_paths();
-        log::info!("worlds_path: {:?}", worlds_path);
-        debug!("worlds_path: {:?}", worlds_path);
 
         let data = serde_json::to_string_pretty(&worlds).map_err(|_| FileError::InvalidFile)?;
         fs::write(worlds_path, data).map_err(|_| FileError::FileWriteError)

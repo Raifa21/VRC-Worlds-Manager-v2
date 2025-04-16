@@ -28,10 +28,14 @@ export default function Login() {
 
     if (result.status === 'error') {
       // Only set error if it's not a 2FA-related error
-      if (result.error?.includes('2fa-required')) {
+      if (result.error == '2fa-required') {
         setShow2FA(true);
         setError(null);
         setTwoFactorCodeType('totp');
+      } else if (result.error == 'email-2fa-required') {
+        setShow2FA(true);
+        setError(null);
+        setTwoFactorCodeType('emailOtp');
       } else {
         setError(result.error || t('login-page:error-invalid-credentials'));
       }
