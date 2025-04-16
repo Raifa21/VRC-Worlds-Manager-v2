@@ -99,7 +99,7 @@ impl ApiService {
                 Ok(())
             }
             Ok(auth::VRChatAuthStatus::Requires2FA) => Err("2fa-required".to_string()),
-            Ok(auth::VRChatAuthStatus::RequiresEmail2FA) => Err("2fa-required".to_string()),
+            Ok(auth::VRChatAuthStatus::RequiresEmail2FA) => Err("email-2fa-required".to_string()),
             Ok(auth::VRChatAuthStatus::InvalidCredentials) => {
                 Err("Invalid credentials".to_string())
             }
@@ -148,7 +148,7 @@ impl ApiService {
                 Ok(())
             }
             auth::VRChatAuthStatus::Requires2FA => Err("2fa-required".to_string()),
-            auth::VRChatAuthStatus::RequiresEmail2FA => Err("2fa-required".to_string()),
+            auth::VRChatAuthStatus::RequiresEmail2FA => Err("email-2fa-required".to_string()),
             auth::VRChatAuthStatus::InvalidCredentials => Err("Invalid credentials".to_string()),
             auth::VRChatAuthStatus::UnknownError(e) => Err(format!("Login failed: {}", e)),
         }
@@ -184,7 +184,7 @@ impl ApiService {
                 Ok(())
             }
             Ok(auth::VRChatAuthStatus::Requires2FA) => Err("2fa-required".to_string()),
-            Ok(auth::VRChatAuthStatus::RequiresEmail2FA) => Err("2fa-required".to_string()),
+            Ok(auth::VRChatAuthStatus::RequiresEmail2FA) => Err("email-2fa-required".to_string()),
             Ok(auth::VRChatAuthStatus::InvalidCredentials) => {
                 Err("Invalid credentials".to_string())
             }
@@ -230,7 +230,7 @@ impl ApiService {
                 Ok(())
             }
             Ok(auth::VRChatAuthStatus::Requires2FA) => Err("2fa-required".to_string()),
-            Ok(auth::VRChatAuthStatus::RequiresEmail2FA) => Err("2fa-required".to_string()),
+            Ok(auth::VRChatAuthStatus::RequiresEmail2FA) => Err("email-2fa-required".to_string()),
             Ok(auth::VRChatAuthStatus::InvalidCredentials) => {
                 Err("Invalid credentials".to_string())
             }
