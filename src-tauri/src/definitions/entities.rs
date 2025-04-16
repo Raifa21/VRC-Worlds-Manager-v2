@@ -37,10 +37,6 @@ impl WorldApiData {
     pub fn from_api_favorite_data(
         world: models::FavoritedWorld,
     ) -> Result<WorldApiData, chrono::ParseError> {
-        log::info!("world: {:?}", world);
-
-        log::info!("world.publication_date: {:?}", world.publication_date);
-
         let publication_date = if world.publication_date == "none" {
             None
         } else {
@@ -54,13 +50,7 @@ impl WorldApiData {
             )
         };
 
-        log::info!("publication_date: {:?}", publication_date);
-
-        log::info!("world.updated_at: {:?}", world.updated_at);
-
         let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
-
-        log::info!("last_update: {:?}", last_update);
 
         let platform: Vec<String> = world
             .unity_packages

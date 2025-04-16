@@ -404,9 +404,6 @@ mod tests {
 
         let (earliest, dates) = MigrationService::calculate_dates(&worlds);
 
-        log::info!("Earliest date: {}", earliest);
-        log::info!("All dates: {:?}", dates);
-
         assert_eq!(dates.len(), 3);
         assert!(
             dates[1] < dates[2],

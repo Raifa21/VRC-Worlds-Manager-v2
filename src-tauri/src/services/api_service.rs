@@ -29,10 +29,8 @@ impl ApiService {
             .cookies(&Url::parse("https://api.vrchat.cloud").unwrap())
             .map(|cookies| cookies.to_str().unwrap_or_default().to_string())
             .unwrap_or_default();
-        log::info!("Cookies: {}", cookie_str);
         //convert to AuthCookies
         let auth = AuthCookies::from_cookie_str(&cookie_str);
-        log::info!("Auth: {:?} {:?}", auth.auth_token, auth.two_factor_auth);
         FileService::write_auth(&auth).map_err(|e| e.to_string())
     }
 
