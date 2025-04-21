@@ -114,7 +114,7 @@ export default function checkLocaleKeys() {
       if (item.difference < 0) {
         console.log(`\nKey "${item.key}" is missing in:`)
         Object.entries(locales).forEach(([fileName, locale]) => {
-          if (!locale.data[item.key]) {
+          if (!Object.prototype.hasOwnProperty.call(locale.data, item.key)) {
             console.log(`- ${fileName}`)
           }
         })
