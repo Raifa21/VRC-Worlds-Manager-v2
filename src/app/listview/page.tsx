@@ -735,9 +735,7 @@ export default function ListView() {
             {Object.values(SpecialFolders).includes(
               currentFolder as SpecialFolders,
             )
-              ? t(
-                  `app-sidebar:${currentFolder.toLowerCase().replace(' ', '-')}`,
-                )
+              ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
               : currentFolder}
           </h1>
           <Button

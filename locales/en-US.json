@@ -179,6 +179,9 @@
   "settings-page:world-card-size": "World Card Size",
   "settings-page:world-card-description": "Select how world cards appear",
   "settings-page:preview-world": "Preview World",
+  "settings-page:hidden-folder": "Hidden Folder",
+  "settings-page:hidden-folder-description": "Access hidden worlds",
+  "settings-page:open-folder": "Open Folder",
   "settings-page:error-load-preferences": "Failed to load preferences",
   "settings-page:error-save-preferences": "Failed to save preferences",
 
