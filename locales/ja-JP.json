@@ -149,9 +149,9 @@
   "world-detail:by": "作成者:",
   "world-detail:max": "最大",
 
-  "app-sidebar:all-worlds": "すべてのワールド",
-  "app-sidebar:find-worlds": "ワールドを探す",
-  "app-sidebar:unclassified-worlds": "未分類のワールド",
+  "general:all-worlds": "すべてのワールド",
+  "general:find-worlds": "ワールドを探す",
+  "general:unclassified-worlds": "未分類のワールド",
   "app-sidebar:folders": "フォルダ",
   "app-sidebar:add-folder": "フォルダを追加",
   "app-sidebar:about": "このアプリについて",
@@ -181,8 +181,7 @@
   "settings-page:error-load-preferences": "設定の読み込みに失敗しました",
   "settings-page:error-save-preferences": "設定の保存に失敗しました",
 
-  "discover-page:title": "ワールドを見つける",
-  "discover-page:under-development": "この機能は現在開発中です。乞うご期待！",
+  "find-page:under-development": "この機能は現在開発中です。乞うご期待！",
 
   "add-to-folder-dialog:title": "フォルダの管理",
   "add-to-folder-dialog:description-single": "{0} ワールドの追加または削除するフォルダを選択してください",
