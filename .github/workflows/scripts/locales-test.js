@@ -37,8 +37,12 @@ function readLocaleFiles() {
   files.forEach((file) => {
     const filePath = path.join(localesDir, file)
     const content = fs.readFileSync(filePath, 'utf8')
-    const locale = JSON.parse(content)
-    locales[file] = locale
+    try {
+      const locale = JSON.parse(content)
+      locales[file] = locale
+    } catch (error) {
+      console.error(`Error parsing JSON in file "${file}": ${error.message}`)
+    }
   })
 
   return locales
