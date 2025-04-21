@@ -121,6 +121,13 @@ export default function checkLocaleKeys() {
       }
     })
 
-    throw new Error('Inconsistent key implementation detected!')
+    const summary = inconsistentKeys
+      .slice(0, 5) // Limit to the first 5 keys for brevity
+      .map(item => `"${item.key}": ${item.count}/${average} (${item.difference > 0 ? '+' : ''}${item.difference})`)
+      .join(', ')
+
+    throw new Error(
+      `Inconsistent key implementation detected! Summary of issues: ${summary}. See logs for detailed analysis.`
+    )
   }
 }
