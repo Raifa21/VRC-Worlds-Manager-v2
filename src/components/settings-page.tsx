@@ -280,9 +280,11 @@ export function SettingsPage({
         </div>
         <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
           <div className="flex flex-col space-y-1.5">
-            <Label className="text-base font-medium">Hidden Folder</Label>
+            <Label className="text-base font-medium">
+              {t('settings-page:hidden-folder')}
+            </Label>
             <div className="text-sm text-muted-foreground">
-              Access hidden worlds
+              {t('settings-page:hidden-folder-description')}
             </div>
           </div>
           <Button
@@ -290,7 +292,7 @@ export function SettingsPage({
             onClick={onOpenHiddenFolder}
             className="gap-2"
           >
-            <span className="text-sm">Open Folder</span>
+            <span className="text-sm">{t('settings-page:open-folder')}</span>
           </Button>
         </div>
       </div>

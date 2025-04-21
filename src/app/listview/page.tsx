@@ -26,7 +26,7 @@ import {
   GroupInstancePermissionInfo,
 } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
-import { DiscoverPage } from '@/components/discover-page';
+import { FindPage } from '@/components/find-page';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -36,7 +36,7 @@ export default function ListView() {
   const [showDeleteFolder, setShowDeleteFolder] = useState<string | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showDiscover, setShowDiscover] = useState(false);
+  const [showFind, setShowFind] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
   const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
@@ -87,7 +87,7 @@ export default function ListView() {
   const handleSelectFolder = async (
     type:
       | SpecialFolders.All
-      | SpecialFolders.Discover
+      | SpecialFolders.Find
       | SpecialFolders.Unclassified
       | SpecialFolders.Hidden
       | 'folder',
@@ -96,13 +96,13 @@ export default function ListView() {
     try {
       setShowAbout(false);
       setShowSettings(false);
-      setShowDiscover(false);
+      setShowFind(false);
       switch (type) {
         case SpecialFolders.All:
           await loadAllWorlds();
           break;
-        case SpecialFolders.Discover:
-          setShowDiscover(true);
+        case SpecialFolders.Find:
+          setShowFind(true);
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
@@ -724,14 +724,20 @@ export default function ListView() {
       );
     }
 
-    if (showDiscover) {
-      return <DiscoverPage />;
+    if (showFind) {
+      return <FindPage />;
     }
 
     return (
       <>
         <div className="p-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">{currentFolder}</h1>
+          <h1 className="text-xl font-bold">
+            {Object.values(SpecialFolders).includes(
+              currentFolder as SpecialFolders,
+            )
+              ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
+              : currentFolder}
+          </h1>
           <Button
             variant="outline"
             size="icon"
@@ -772,13 +778,13 @@ export default function ListView() {
         onSelectAbout={() => {
           setShowAbout(true);
           setShowSettings(false);
-          setShowDiscover(false);
+          setShowFind(false);
           setShowWorldDetails(false);
         }}
         onSelectSettings={() => {
           setShowSettings(true);
           setShowAbout(false);
-          setShowDiscover(false);
+          setShowFind(false);
           setShowWorldDetails(false);
         }}
         onRenameFolder={onRenameFolder}

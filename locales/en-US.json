@@ -28,6 +28,10 @@
   "general:confirm": "Confirm",
   "general:back": "Back",
   "general:next": "Next",
+  "general:all-worlds": "All Worlds",
+  "general:find-worlds": "Find Worlds",
+  "general:unclassified-worlds": "Unclassified Worlds",
+  "general:hidden-worlds": "Hidden Worlds",
 
   "error-page:title": "Error Loading Application",
   "error-page:retry": "Retry",
@@ -149,9 +153,6 @@
   "world-detail:by": "by",
   "world-detail:max": "max",
 
-  "app-sidebar:all-worlds": "All Worlds",
-  "app-sidebar:find-worlds": "Find Worlds",
-  "app-sidebar:unclassified-worlds": "Unclassified Worlds",
   "app-sidebar:folders": "Folders",
   "app-sidebar:add-folder": "Add Folder",
   "app-sidebar:about": "About",
@@ -178,11 +179,13 @@
   "settings-page:world-card-size": "World Card Size",
   "settings-page:world-card-description": "Select how world cards appear",
   "settings-page:preview-world": "Preview World",
+  "settings-page:hidden-folder": "Hidden Folder",
+  "settings-page:hidden-folder-description": "Access hidden worlds",
+  "settings-page:open-folder": "Open Folder",
   "settings-page:error-load-preferences": "Failed to load preferences",
   "settings-page:error-save-preferences": "Failed to save preferences",
 
-  "discover-page:title": "Discover Worlds",
-  "discover-page:under-development": "This feature is currently under development. Stay tuned!",
+  "find-page:under-development": "This feature is currently under development. Stay tuned!",
 
   "add-to-folder-dialog:title": "Manage Folders",
   "add-to-folder-dialog:description-single": "Select folders to add or remove {0} world to",
