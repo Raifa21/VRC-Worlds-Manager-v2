@@ -184,7 +184,7 @@ export function WorldDetailPopup({
         onOpenChange(open);
       }}
     >
-      <DialogContent className="min-w-[80vw] h-[70vh] overflow-y-auto">
+      <DialogContent className="max-w-[800px] h-[70vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isLoading
