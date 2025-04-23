@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { info, error } from '@tauri-apps/plugin-log';
 import {
   Dialog,
   DialogContent,
@@ -31,9 +32,12 @@ export function CreateFolderDialog({
 
     setIsLoading(true);
     try {
+      info(`Creating folder: ${folderName}`);
       await onConfirm(folderName);
       setFolderName('');
       onOpenChange(false);
+    } catch (e) {
+      error(`Failed to create folder: ${e}`);
     } finally {
       setIsLoading(false);
     }
@@ -50,16 +54,15 @@ export function CreateFolderDialog({
           onChange={(e) => setFolderName(e.target.value)}
           placeholder={t('create-folder-dialog:placeholder')}
           onKeyDown={(e) => {
-            console.log('Key pressed:', e.key);
             if (e.key === 'Enter' && !isComposing) {
               e.preventDefault();
               handleSubmit();
             }
           }}
-          onCompositionStart={(e) => {
+          onCompositionStart={() => {
             setIsComposing(true);
           }}
-          onCompositionEnd={(e) => {
+          onCompositionEnd={() => {
             setTimeout(() => {
               setIsComposing(false);
             }, 0);

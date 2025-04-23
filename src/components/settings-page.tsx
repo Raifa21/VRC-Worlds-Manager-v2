@@ -19,6 +19,7 @@ import { Platform } from '@/types/worlds';
 import { commands } from '@/lib/bindings';
 import { Loader2 } from 'lucide-react';
 import { LocalizationContext } from './localization-context';
+import { info, error } from '@tauri-apps/plugin-log';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
@@ -118,8 +119,8 @@ export function SettingsPage({
 
       // Update local state after successful save
       setPreferences(newPreferences);
-    } catch (error) {
-      console.error('Failed to save preferences:', error);
+    } catch (e) {
+      error(`Failed to save preferences: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('settings-page:error-save-preferences'),
@@ -156,8 +157,8 @@ export function SettingsPage({
       setPreferences(newPreferences);
       // Notify parent component to update card size
       onCardSizeChange?.();
-    } catch (error) {
-      console.error('Failed to save preferences:', error);
+    } catch (e) {
+      error(`Failed to save card size: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('settings-page:error-save-preferences'),

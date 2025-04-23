@@ -9,6 +9,7 @@ import { ExternalLink, Heart } from 'lucide-react';
 import { SiGithub, SiDiscord } from '@icons-pack/react-simple-icons';
 import { useToast } from '@/hooks/use-toast';
 import { commands } from '@/lib/bindings';
+import { info, error } from '@tauri-apps/plugin-log';
 
 export function AboutSection() {
   const { t } = useLocalization();
@@ -25,8 +26,8 @@ export function AboutSection() {
         } else {
           throw new Error(result.error);
         }
-      } catch (error) {
-        console.error('Failed to fetch supporter data:', error);
+      } catch (e) {
+        error(`Failed to fetch Patreon data: ${e}`);
         toast({
           title: 'Error',
           description: 'Failed to load supporter data.',

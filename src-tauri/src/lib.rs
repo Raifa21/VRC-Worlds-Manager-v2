@@ -6,13 +6,13 @@ use services::ApiService;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use state::InitCell;
 use std::sync::RwLock;
-use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_updater::UpdaterExt;
 
 mod api;
 mod commands;
 mod definitions;
 mod errors;
+mod logging;
 mod services;
 
 static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
@@ -24,28 +24,6 @@ static AUTHENTICATOR: InitCell<tokio::sync::RwLock<VRChatAPIClientAuthenticator>
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    match services::initialize_service::initialize_app() {
-        Ok((preferences, folders, worlds, cookies, init_state)) => {
-            PREFERENCES.set(RwLock::new(preferences));
-            FOLDERS.set(RwLock::new(folders));
-            WORLDS.set(RwLock::new(worlds));
-            INITSTATE.set(tokio::sync::RwLock::new(init_state));
-            let cookie_store = ApiService::initialize_with_cookies(cookies.clone());
-            AUTHENTICATOR.set(tokio::sync::RwLock::new(
-                VRChatAPIClientAuthenticator::from_cookie_store(cookie_store),
-            ));
-        }
-        Err(e) => {
-            PREFERENCES.set(RwLock::new(PreferenceModel::new()));
-            FOLDERS.set(RwLock::new(vec![]));
-            WORLDS.set(RwLock::new(vec![]));
-            INITSTATE.set(tokio::sync::RwLock::new(InitState::error(e)));
-            AUTHENTICATOR.set(tokio::sync::RwLock::new(VRChatAPIClientAuthenticator::new(
-                String::new(),
-            )));
-        }
-    };
-
     let builder = generate_tauri_specta_builder();
 
     #[cfg(debug_assertions)]
@@ -59,26 +37,21 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
-        .setup(|app| {
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                update(handle).await.unwrap();
-            });
-            Ok(())
-        })
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
-        .plugin(
-            tauri_plugin_log::Builder::new()
-                .target(tauri_plugin_log::Target::new(
-                    tauri_plugin_log::TargetKind::LogDir {
-                        file_name: Some("logs".to_string()),
-                    },
-                ))
-                .build(),
-        )
+        .setup(|app| {
+            logging::initialize_logger(&app.handle());
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                update(handle).await.unwrap();
+            });
+            if let Err(e) = initialize_app() {
+                log::error!("Failed to initialize app: {}", e);
+            }
+            Ok(())
+        })
         .invoke_handler(builder.invoke_handler())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -110,4 +83,32 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     }
 
     Ok(())
+}
+
+fn initialize_app() -> Result<(), String> {
+    match services::initialize_service::initialize_app() {
+        Ok((preferences, folders, worlds, cookies, init_state)) => {
+            log::info!("App initialized successfully");
+            PREFERENCES.set(RwLock::new(preferences));
+            FOLDERS.set(RwLock::new(folders));
+            WORLDS.set(RwLock::new(worlds));
+            INITSTATE.set(tokio::sync::RwLock::new(init_state));
+            let cookie_store = ApiService::initialize_with_cookies(cookies.clone());
+            AUTHENTICATOR.set(tokio::sync::RwLock::new(
+                VRChatAPIClientAuthenticator::from_cookie_store(cookie_store),
+            ));
+            Ok(())
+        }
+        Err(e) => {
+            log::info!("Error initializing app: {}", e);
+            PREFERENCES.set(RwLock::new(PreferenceModel::new()));
+            FOLDERS.set(RwLock::new(vec![]));
+            WORLDS.set(RwLock::new(vec![]));
+            INITSTATE.set(tokio::sync::RwLock::new(InitState::error(e.clone())));
+            AUTHENTICATOR.set(tokio::sync::RwLock::new(VRChatAPIClientAuthenticator::new(
+                String::new(),
+            )));
+            Err(e)
+        }
+    }
 }

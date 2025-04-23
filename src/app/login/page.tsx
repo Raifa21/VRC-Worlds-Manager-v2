@@ -12,13 +12,14 @@ import {
 } from '@/components/ui/dialog';
 import { commands } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
+import { info, error } from '@tauri-apps/plugin-log';
 
 export default function Login() {
   const router = useRouter();
   const { t } = useLocalization();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [e, setE] = useState<string | null>(null);
   const [twoFactorCodeType, setTwoFactorCodeType] = useState('emailOtp');
   const [show2FA, setShow2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
@@ -27,32 +28,35 @@ export default function Login() {
     const result = await commands.loginWithCredentials(username, password);
 
     if (result.status === 'error') {
-      // Only set error if it's not a 2FA-related error
       if (result.error == '2fa-required') {
+        info('2FA required, showing 2FA dialog');
         setShow2FA(true);
-        setError(null);
+        setE(null);
         setTwoFactorCodeType('totp');
       } else if (result.error == 'email-2fa-required') {
+        info('Email 2FA required, showing 2FA dialog');
         setShow2FA(true);
-        setError(null);
+        setE(null);
         setTwoFactorCodeType('emailOtp');
       } else {
-        setError(result.error || t('login-page:error-invalid-credentials'));
+        const errorMessage =
+          result.error || t('login-page:error-invalid-credentials');
+        error(`Login failed: ${errorMessage}`);
+        setE(errorMessage);
       }
       return;
     }
 
     const status = result.data;
+    info(`Login status: ${status}`);
 
-    // Let's add some debug logging
-    console.log('Login status:', status);
-
-    // Check 2FA status and set dialog accordingly
     if (status === 'twoFactorAuth' || status === 'email2FA') {
+      info(`Setting up ${status} verification`);
       setShow2FA(true);
-      setError(null);
+      setE(null);
       setTwoFactorCodeType(status === 'twoFactorAuth' ? 'totp' : 'emailOtp');
     } else if (status === 'loggedIn') {
+      info('Login successful, redirecting to listview');
       router.push('/listview');
     }
   };
@@ -65,12 +69,17 @@ export default function Login() {
       );
 
       if (result.status === 'error') {
-        setError(result.error || t('login-page:error-invalid-2fa'));
+        const errorMessage = result.error || t('login-page:error-invalid-2fa');
+        error(`2FA verification failed: ${errorMessage}`);
+        setE(errorMessage);
         return;
       }
+      info('2FA verification successful, redirecting to listview');
       router.push('/listview');
-    } catch (err) {
-      setError((err as string) || t('login-page:error-invalid-2fa'));
+    } catch (e) {
+      const errorMessage = (e as string) || t('login-page:error-invalid-2fa');
+      error(`2FA error: ${errorMessage}`);
+      setE(errorMessage);
     }
   };
 
@@ -111,7 +120,7 @@ export default function Login() {
             // // ペーストした結果が setPassword されるよりも先にログイン試行が走るため？
             // onPaste={handleLogin}
           />
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {e && <p className="text-red-500 text-sm text-center">{e}</p>}
           <Button
             className="w-full"
             onClick={handleLogin}
@@ -150,9 +159,7 @@ export default function Login() {
                 }
               }}
             />
-            {error && (
-              <p className="text-red-500 text-sm text-center">{error}</p>
-            )}
+            {e && <p className="text-red-500 text-sm text-center">{e}</p>}
             <Button
               className="w-full"
               onClick={handle2FA}

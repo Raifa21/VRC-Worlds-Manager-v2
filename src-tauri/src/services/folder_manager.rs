@@ -613,6 +613,7 @@ impl FolderManager {
                 .find(|w| w.api_data.world_id == world_id);
             match existing_world {
                 Some(world) => {
+                    log::info!("World already exists, updating world data: {}", world_id);
                     world.api_data = new_world;
                     world.user_data.last_checked = chrono::Utc::now();
                 }
