@@ -81,7 +81,6 @@ impl FileService {
             std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
             _ => FileError::FileNotFound,
         })?;
-        debug!("Read auth file: {}", content);
         log::info!("Read auth file: {}", content);
 
         match serde_json::from_str::<AuthCookies>(&content) {
@@ -91,7 +90,7 @@ impl FileService {
                         if !auth.is_empty() {
                             cookies.auth_token =
                                 Some(EncryptionService::decrypt_aes(auth).map_err(|e| {
-                                    eprintln!("Failed to decrypt auth token: {}", e);
+                                    log::error!("Failed to decrypt auth token: {}", e);
                                     FileError::InvalidFile
                                 })?);
                         }
@@ -102,7 +101,7 @@ impl FileService {
                         if !tfa.is_empty() {
                             cookies.two_factor_auth =
                                 Some(EncryptionService::decrypt_aes(tfa).map_err(|e| {
-                                    eprintln!("Failed to decrypt two-factor auth token: {}", e);
+                                    log::error!("Failed to decrypt two-factor auth token: {}", e);
                                     FileError::InvalidFile
                                 })?);
                         }
@@ -114,7 +113,6 @@ impl FileService {
                     if let Some(auth) = cookies.auth_token {
                         cookies.auth_token =
                             Some(EncryptionService::encrypt_aes(&auth).unwrap_or_else(|e| {
-                                debug!("Failed to encrypt auth token: {}", e);
                                 log::error!("Failed to encrypt auth token: {}", e);
                                 String::new()
                             }));
@@ -122,7 +120,6 @@ impl FileService {
                     if let Some(tfa) = cookies.two_factor_auth {
                         cookies.two_factor_auth =
                             Some(EncryptionService::encrypt_aes(&tfa).unwrap_or_else(|e| {
-                                debug!("Failed to encrypt two-factor auth token: {}", e);
                                 log::error!("Failed to encrypt two-factor auth token: {}", e);
                                 String::new()
                             }));
