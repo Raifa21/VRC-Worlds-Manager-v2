@@ -750,7 +750,7 @@ mod tests {
         let _ = FolderManager::create_folder(name.clone(), &state.folders).unwrap();
         let result = FolderManager::delete_folder(name, &state.folders, &state.worlds);
         if let Err(e) = result.clone() {
-            eprintln!("Error deleting folder: {}", e);
+            log::error!("Error deleting folder: {}", e);
         }
         assert!(result.is_ok());
 
@@ -775,7 +775,7 @@ mod tests {
             &state.worlds,
         );
         if let Err(e) = result.clone() {
-            eprintln!("Error adding world to folder: {}", e);
+            log::error!("Error adding world to folder: {}", e);
         }
         assert!(result.is_ok());
     }
@@ -804,7 +804,7 @@ mod tests {
             &state.worlds,
         );
         if let Err(e) = result.clone() {
-            eprintln!("Error removing world from folder: {}", e);
+            log::error!("Error removing world from folder: {}", e);
         }
         assert!(result.is_ok());
     }
@@ -816,7 +816,7 @@ mod tests {
         let _ = FolderManager::create_folder(name.clone(), &state.folders).unwrap();
         let result = FolderManager::get_worlds(name, &state.folders, &state.worlds);
         if let Err(e) = result.clone() {
-            eprintln!("Error getting worlds: {}", e);
+            log::error!("Error getting worlds: {}", e);
         }
         assert!(result.is_ok());
     }
@@ -836,7 +836,7 @@ mod tests {
         add_test_world_to_state(world_id.clone(), &state.worlds).unwrap();
         let result = FolderManager::get_unclassified_worlds(&state.worlds);
         if let Err(e) = result.clone() {
-            eprintln!("Error getting unclassified worlds: {}", e);
+            log::error!("Error getting unclassified worlds: {}", e);
         }
         assert!(result.is_ok());
     }

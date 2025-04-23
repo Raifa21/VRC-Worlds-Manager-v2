@@ -1,6 +1,7 @@
 use crate::definitions::AuthCookies;
 use crate::definitions::{FolderModel, PreferenceModel, WorldModel};
 use crate::errors::FileError;
+use crate::services::EncryptionService;
 use directories::BaseDirs;
 use log::debug;
 use serde_json;
@@ -75,6 +76,68 @@ impl FileService {
             .and_then(|data| serde_json::from_str(&data).map_err(|_| FileError::InvalidFile))
     }
 
+    fn read_auth_file(path: &PathBuf) -> Result<AuthCookies, FileError> {
+        let content = fs::read_to_string(path).map_err(|e| match e.kind() {
+            std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
+            _ => FileError::FileNotFound,
+        })?;
+        log::info!("Read auth file: {}", content);
+
+        match serde_json::from_str::<AuthCookies>(&content) {
+            Ok(mut cookies) => {
+                if cookies.version == 1 {
+                    if let Some(auth) = &cookies.auth_token {
+                        if !auth.is_empty() {
+                            cookies.auth_token =
+                                Some(EncryptionService::decrypt_aes(auth).map_err(|e| {
+                                    log::error!("Failed to decrypt auth token: {}", e);
+                                    FileError::InvalidFile
+                                })?);
+                        }
+                    } else {
+                        cookies.auth_token = None;
+                    }
+                    if let Some(tfa) = &cookies.two_factor_auth {
+                        if !tfa.is_empty() {
+                            cookies.two_factor_auth =
+                                Some(EncryptionService::decrypt_aes(tfa).map_err(|e| {
+                                    log::error!("Failed to decrypt two-factor auth token: {}", e);
+                                    FileError::InvalidFile
+                                })?);
+                        }
+                    } else {
+                        cookies.two_factor_auth = None;
+                    }
+                    Ok(cookies)
+                } else {
+                    if let Some(auth) = cookies.auth_token {
+                        cookies.auth_token =
+                            Some(EncryptionService::encrypt_aes(&auth).unwrap_or_else(|e| {
+                                log::error!("Failed to encrypt auth token: {}", e);
+                                String::new()
+                            }));
+                    }
+                    if let Some(tfa) = cookies.two_factor_auth {
+                        cookies.two_factor_auth =
+                            Some(EncryptionService::encrypt_aes(&tfa).unwrap_or_else(|e| {
+                                log::error!("Failed to encrypt two-factor auth token: {}", e);
+                                String::new()
+                            }));
+                    }
+                    cookies.version = 1;
+
+                    // Write back encrypted version
+                    let encrypted_content = serde_json::to_string_pretty(&cookies)
+                        .map_err(|_| FileError::InvalidFile)?;
+                    fs::write(path, encrypted_content).map_err(|_| FileError::FileWriteError)?;
+
+                    Ok(cookies)
+                }
+            }
+            Err(_) => Err(FileError::InvalidFile),
+        }
+    }
+
     /// Loads data from disk
     /// Calls read_config and read_file to load data from disk
     ///
@@ -99,7 +162,7 @@ impl FileService {
         let preferences = Self::read_file(&config_path)?;
         let folders: Vec<FolderModel> = Self::read_file(&folders_path)?;
         let mut worlds: Vec<WorldModel> = Self::read_file(&worlds_path)?;
-        let cookies = Self::read_file(&cookies_path)?;
+        let cookies = Self::read_auth_file(&cookies_path)?;
 
         for world in worlds.iter_mut() {
             world.user_data.folders = folders
@@ -178,7 +241,31 @@ impl FileService {
     /// Returns a FileError if the data could not be written
     pub fn write_auth(cookies: &AuthCookies) -> Result<(), FileError> {
         let (_, _, _, auth_path) = Self::get_paths();
-        let data = serde_json::to_string_pretty(cookies).map_err(|_| FileError::InvalidFile)?;
+        let mut encrypted_cookies = cookies.clone();
+
+        // Ensure tokens are encrypted when writing
+        if let Some(auth) = &cookies.auth_token {
+            encrypted_cookies.auth_token = match EncryptionService::encrypt_aes(auth) {
+                Ok(encrypted) => Some(encrypted),
+                Err(e) => {
+                    log::error!("Failed to encrypt auth token: {}", e);
+                    None
+                }
+            };
+        }
+        if let Some(tfa) = &cookies.two_factor_auth {
+            encrypted_cookies.two_factor_auth = match EncryptionService::encrypt_aes(tfa) {
+                Ok(encrypted) => Some(encrypted),
+                Err(e) => {
+                    log::error!("Failed to encrypt two-factor auth token: {}", e);
+                    None
+                }
+            };
+        }
+        encrypted_cookies.version = 1;
+
+        let data =
+            serde_json::to_string_pretty(&encrypted_cookies).map_err(|_| FileError::InvalidFile)?;
         fs::write(auth_path, data).map_err(|_| FileError::FileWriteError)
     }
 
