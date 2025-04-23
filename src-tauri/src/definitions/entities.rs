@@ -327,6 +327,8 @@ pub struct AuthCookies {
     pub two_factor_auth: Option<String>,
     #[serde(rename = "auth")]
     pub auth_token: Option<String>,
+    #[serde(default)]
+    pub version: u8, // 0 = plaintext, 1 = AES
 }
 
 impl AuthCookies {
@@ -334,6 +336,7 @@ impl AuthCookies {
         Self {
             two_factor_auth: None,
             auth_token: None,
+            version: 1,
         }
     }
 
@@ -356,6 +359,7 @@ impl AuthCookies {
         AuthCookies {
             auth_token,
             two_factor_auth,
+            version: 1,
         }
     }
 }
