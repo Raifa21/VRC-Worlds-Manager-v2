@@ -87,24 +87,30 @@ impl FileService {
         match serde_json::from_str::<AuthCookies>(&content) {
             Ok(mut cookies) => {
                 if cookies.version == 1 {
-                    // Version 1 - decrypt tokens
                     if let Some(auth) = &cookies.auth_token {
-                        cookies.auth_token =
-                            Some(EncryptionService::decrypt_aes(auth).map_err(|e| {
-                                eprintln!("Failed to decrypt auth token: {}", e);
-                                FileError::InvalidFile
-                            })?);
+                        if !auth.is_empty() {
+                            cookies.auth_token =
+                                Some(EncryptionService::decrypt_aes(auth).map_err(|e| {
+                                    eprintln!("Failed to decrypt auth token: {}", e);
+                                    FileError::InvalidFile
+                                })?);
+                        }
+                    } else {
+                        cookies.auth_token = None;
                     }
                     if let Some(tfa) = &cookies.two_factor_auth {
-                        cookies.two_factor_auth =
-                            Some(EncryptionService::decrypt_aes(tfa).map_err(|e| {
-                                println!("Failed to decrypt two-factor auth token: {}", e);
-                                FileError::InvalidFile
-                            })?);
+                        if !tfa.is_empty() {
+                            cookies.two_factor_auth =
+                                Some(EncryptionService::decrypt_aes(tfa).map_err(|e| {
+                                    eprintln!("Failed to decrypt two-factor auth token: {}", e);
+                                    FileError::InvalidFile
+                                })?);
+                        }
+                    } else {
+                        cookies.two_factor_auth = None;
                     }
                     Ok(cookies)
                 } else {
-                    // Version 0 or unspecified - encrypt tokens
                     if let Some(auth) = cookies.auth_token {
                         cookies.auth_token =
                             Some(EncryptionService::encrypt_aes(&auth).unwrap_or_else(|e| {
@@ -157,11 +163,8 @@ impl FileService {
 
         log::info!("Reading files");
         let preferences = Self::read_file(&config_path)?;
-        debug!("Preferences: {:?}", preferences);
         let folders: Vec<FolderModel> = Self::read_file(&folders_path)?;
-        debug!("Folders: {:?}", folders);
         let mut worlds: Vec<WorldModel> = Self::read_file(&worlds_path)?;
-        debug!("Worlds: {:?}", worlds);
         let cookies = Self::read_auth_file(&cookies_path)?;
 
         for world in worlds.iter_mut() {
