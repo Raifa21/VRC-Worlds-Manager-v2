@@ -1,13 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { commands } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
+import { info, error } from '@tauri-apps/plugin-log';
 
 export default function Home() {
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { t } = useLocalization();
 
@@ -22,6 +21,7 @@ export default function Home() {
           const result = await commands.checkFilesLoaded();
 
           if (result.status === 'error') {
+            error(`Error loading files: ${result.error}`);
             router.push(
               `${'/error/read_data_error'}?${encodeURIComponent(result.error)}`,
             );
@@ -32,6 +32,7 @@ export default function Home() {
           const authResult = await commands.tryLogin();
 
           if (authResult.status === 'ok') {
+            info('User is authenticated');
             router.push('/listview');
           } else {
             router.push('/login');

@@ -10,7 +10,17 @@ use crate::WORLDS;
 #[tauri::command]
 #[specta::specta]
 pub async fn try_login() -> Result<(), String> {
-    ApiService::login_with_token(AUTHENTICATOR.get(), INITSTATE.get()).await
+    log::info!("Trying to login...");
+    ApiService::login_with_token(AUTHENTICATOR.get(), INITSTATE.get())
+        .await
+        .map_err(|e| e.to_string())
+        .map(|_| {
+            log::info!("Login successful");
+        })
+        .or_else(|_| {
+            log::info!("Login failed");
+            Err("Login failed".to_string())
+        })
 }
 
 #[tauri::command]

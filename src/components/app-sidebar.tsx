@@ -12,6 +12,7 @@ import { useLocalization } from '@/hooks/use-localization';
 import { Separator } from '@/components/ui/separator';
 
 import { SidebarGroup } from '@/components/ui/sidebar';
+import { info, error } from '@tauri-apps/plugin-log';
 
 import {
   ContextMenu,
@@ -102,10 +103,10 @@ export function AppSidebar({
       await commands.moveFolder(movedFolder, destination.index);
       // Only refresh if needed (in case of error or sync issues)
       await onFoldersChange();
-    } catch (error) {
+    } catch (e) {
       // Revert on error
       setLocalFolders(folders);
-      console.error('Failed to reorder folders:', error);
+      error(`Error moving folder: ${e}`);
     }
   };
 
