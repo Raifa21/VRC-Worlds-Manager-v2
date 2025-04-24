@@ -241,85 +241,6 @@ export function SettingsPage({
     }
   };
 
-  const handleOpenBackupFolder = async () => {
-    try {
-      info('Opening backup folder...');
-      await commands.openBackupFolder();
-    } catch (e) {
-      error(`Failed to open backup folder: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('settings-page:error-open-backup-folder'),
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDataMigration = async () => {
-    try {
-      info('Starting data migration...');
-      setShowMigrateConfirm(false);
-      const result = await commands.migrateData();
-
-      if (result.status === 'error') {
-        error(`Migration failed: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
-          description: t('settings-page:error-migrate-data'),
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      info('Data migration completed successfully');
-      toast({
-        title: t('settings-page:migrate-success-title'),
-        description: t('settings-page:migrate-success-description'),
-      });
-    } catch (e) {
-      error(`Migration error: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('settings-page:error-migrate-data'),
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDataDeletion = async () => {
-    try {
-      info('Deleting all data...');
-      setShowDeleteConfirm(false);
-      const result = await commands.deleteAllData();
-
-      if (result.status === 'error') {
-        error(`Data deletion failed: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
-          description: t('settings-page:error-delete-data'),
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      info('Data deletion completed successfully');
-      toast({
-        title: t('settings-page:delete-success-title'),
-        description: t('settings-page:delete-success-description'),
-      });
-
-      // Redirect to setup page after successful deletion
-      router.push('/setup');
-    } catch (e) {
-      error(`Data deletion error: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('settings-page:error-delete-data'),
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleLogout = async () => {
     try {
       info('Logging out...');
@@ -617,29 +538,6 @@ export function SettingsPage({
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Alert Dialog for Data Deletion */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('settings-page:delete-confirm-title')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('settings-page:delete-confirm-description')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('general:cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDataDeletion}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('settings-page:delete-confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
