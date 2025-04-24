@@ -224,7 +224,13 @@ impl MigrationService {
                             Utc,
                         )
                     } else {
-                        Utc::now()
+                        DateTime::from_naive_utc_and_offset(
+                            chrono::NaiveDateTime::new(
+                                chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap_or_default(),
+                                chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap_or_default(),
+                            ),
+                            Utc,
+                        )
                     }
                 },
                 description: old_world.description.clone(),
