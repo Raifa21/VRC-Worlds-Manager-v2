@@ -20,6 +20,7 @@ pub async fn try_login() -> Result<(), String> {
         .or_else(|e| {
             log::error!("Login failed: {}", e);
             Err(format!("Login failed: {}", e))
+        })
 }
 
 #[tauri::command]
