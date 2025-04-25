@@ -1,11 +1,11 @@
 use api::auth::VRChatAPIClientAuthenticator;
 use commands::generate_tauri_specta_builder;
 use definitions::{FolderModel, InitState, PreferenceModel, WorldModel};
-use reqwest::cookie::Jar;
 use services::ApiService;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use state::InitCell;
 use std::sync::RwLock;
+use tauri::Manager;
 use tauri_plugin_updater::UpdaterExt;
 
 mod api;
@@ -42,9 +42,24 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .target({
+                    let timestamp = chrono::Utc::now()
+                        .format("%Y-%m-%d_%H-%M-%S.%6f")
+                        .to_string();
+                    let log_path = format!("vrc-worlds-manager-{}.log", timestamp);
+                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
+                        file_name: Some(log_path),
+                    })
+                })
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
         .setup(|app| {
-            logging::initialize_logger(&app.handle());
             let handle = app.handle().clone();
+            let logs_dir = handle.path().app_log_dir().unwrap();
+            logging::purge_outdated_logs(&logs_dir).expect("Failed to purge outdated logs");
             tauri::async_runtime::spawn(async move {
                 update(handle).await.unwrap();
             });
