@@ -5,7 +5,6 @@ use reqwest::{
     cookie::{self, CookieStore, Jar},
     Response, StatusCode,
 };
-use vrchatapi::models::current_user;
 
 use crate::{
     api::common::{get_reqwest_client, API_BASE_URL},
@@ -57,6 +56,7 @@ impl VRChatAPIClientAuthenticator {
     }
 
     pub async fn verify_token(&mut self) -> Result<VRChatAuthStatus, String> {
+        log::info!("Verifying token...");
         let result = self
             .client
             .get(format!("{}/auth/user", API_BASE_URL))
@@ -106,6 +106,7 @@ impl VRChatAPIClientAuthenticator {
             let auth_cookies = AuthCookies::from_cookie_str(&cookie_str);
             self.phase = VRChatAuthPhase::LoggedIn;
 
+            log::info!("Logged in successfully.");
             return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 
@@ -118,6 +119,7 @@ impl VRChatAPIClientAuthenticator {
         &mut self,
         password: T,
     ) -> Result<VRChatAuthStatus, String> {
+        log::info!("Logging in with password...");
         let password = password.as_ref().to_string();
 
         let auth_header_value = self.generate_auth_header(&password);
@@ -170,6 +172,8 @@ impl VRChatAPIClientAuthenticator {
                 id: String::new(),
                 username: String::new(),
             };
+
+            log::info!("Logged in successfully.");
             return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 
@@ -186,6 +190,7 @@ impl VRChatAPIClientAuthenticator {
         &mut self,
         code: T,
     ) -> Result<VRChatAuthStatus, String> {
+        log::info!("Logging in with email 2FA...");
         if self.phase != VRChatAuthPhase::Email2FA {
             return Err("Not in email 2FA phase".to_string());
         }
@@ -211,6 +216,7 @@ impl VRChatAPIClientAuthenticator {
         &mut self,
         code: T,
     ) -> Result<VRChatAuthStatus, String> {
+        log::info!("Logging in with 2FA...");
         if self.phase != VRChatAuthPhase::TwoFactorAuth {
             return Err("Not in 2FA phase".to_string());
         }
@@ -268,6 +274,8 @@ impl VRChatAPIClientAuthenticator {
                 id: String::new(),
                 username: String::new(),
             };
+
+            log::info!("Logged in successfully.");
             return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 
@@ -282,6 +290,7 @@ impl VRChatAPIClientAuthenticator {
 }
 
 pub async fn logout(jar: &Arc<Jar>) -> Result<(), String> {
+    log::info!("Logging out...");
     let client = get_reqwest_client(&jar);
 
     let result = client
@@ -291,6 +300,7 @@ pub async fn logout(jar: &Arc<Jar>) -> Result<(), String> {
         .map_err(|e| format!("Failed to send logout request: {}", e))?;
 
     if result.status() == StatusCode::OK {
+        log::info!("Logout successful");
         return Ok(());
     }
 

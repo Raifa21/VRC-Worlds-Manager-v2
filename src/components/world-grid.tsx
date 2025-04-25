@@ -31,6 +31,7 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import * as Portal from '@radix-ui/react-portal';
+import { info, error } from '@tauri-apps/plugin-log';
 
 interface WorldGridProps {
   size: CardSize;
@@ -108,13 +109,6 @@ export function WorldGrid({
       containerRef.current?.clientWidth ?? window.innerWidth - 250;
     const numCols = Math.max(1, Math.floor(containerWidth / (cardWidth + gap)));
 
-    console.log({
-      cardWidth,
-      containerWidth,
-      numCols,
-      size,
-    });
-
     return numCols;
   };
 
@@ -191,8 +185,8 @@ export function WorldGrid({
           try {
             const date = new Date(dateStr);
             return date.getTime();
-          } catch (error) {
-            console.error('Error parsing date:', dateStr, error);
+          } catch (e) {
+            error(`Error parsing date: ${dateStr}, ${e}`);
             return 0;
           }
         };
@@ -209,15 +203,13 @@ export function WorldGrid({
           try {
             const date = new Date(dateStr);
             return date.getTime();
-          } catch (error) {
-            console.error('Error parsing date:', dateStr, error);
+          } catch (e) {
+            error(`Error parsing date: ${dateStr}, ${e}`);
             return 0;
           }
         };
         const dateA = getTimestamp(a.lastUpdated);
         const dateB = getTimestamp(b.lastUpdated);
-        console.log('Date A:', a.lastUpdated, 'Date B:', b.lastUpdated);
-        console.log('Date A:', dateA, 'Date B:', dateB);
 
         return multiplier * (dateA - dateB);
       }

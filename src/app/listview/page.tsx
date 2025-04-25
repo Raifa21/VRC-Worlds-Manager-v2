@@ -26,7 +26,8 @@ import {
   GroupInstancePermissionInfo,
 } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
-import { DiscoverPage } from '@/components/discover-page';
+import { FindPage } from '@/components/find-page';
+import { warn, debug, trace, info, error } from '@tauri-apps/plugin-log';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -36,7 +37,7 @@ export default function ListView() {
   const [showDeleteFolder, setShowDeleteFolder] = useState<string | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showDiscover, setShowDiscover] = useState(false);
+  const [showFind, setShowFind] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
   const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
@@ -56,7 +57,7 @@ export default function ListView() {
   }, []);
 
   const openHiddenFolder = async () => {
-    console.log('Opening hidden worlds');
+    info('Opening hidden worlds');
     try {
       const hiddenWorlds = await commands.getHiddenWorlds();
       if (hiddenWorlds.status === 'error') {
@@ -87,7 +88,7 @@ export default function ListView() {
   const handleSelectFolder = async (
     type:
       | SpecialFolders.All
-      | SpecialFolders.Discover
+      | SpecialFolders.Find
       | SpecialFolders.Unclassified
       | SpecialFolders.Hidden
       | 'folder',
@@ -96,13 +97,13 @@ export default function ListView() {
     try {
       setShowAbout(false);
       setShowSettings(false);
-      setShowDiscover(false);
+      setShowFind(false);
       switch (type) {
         case SpecialFolders.All:
           await loadAllWorlds();
           break;
-        case SpecialFolders.Discover:
-          setShowDiscover(true);
+        case SpecialFolders.Find:
+          setShowFind(true);
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
@@ -165,8 +166,8 @@ export default function ListView() {
 
       // Navigate to the new folder
       await loadFolderContents(newName);
-    } catch (error) {
-      console.error('Failed to create folder:', error);
+    } catch (e) {
+      error(`Failed to create folder: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-create-folder'),
@@ -176,19 +177,19 @@ export default function ListView() {
 
   const loadFolderContents = async (folder: string) => {
     try {
-      console.log('Folder:', folder);
+      info(`Folder: ${folder}`);
       const worlds = await invoke<WorldDisplayData[]>('get_worlds', {
         folderName: folder,
       });
-      console.log('Worlds:', worlds);
+      info(`Worlds in folder: ${worlds}`);
       setWorlds(worlds);
       setCurrentFolder(folder);
-    } catch (error) {
+    } catch (e) {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-worlds'),
       });
-      console.log('Failed to load worlds:', error);
+      error(`Error loading worlds: ${e}`);
     }
   };
 
@@ -196,14 +197,14 @@ export default function ListView() {
     const result = await commands.getFavoriteWorlds();
 
     if (result.status === 'error') {
-      const error = result.error;
+      const e = result.error;
 
       toast({
         title: t('general:error-title'),
-        description: error as string,
+        description: e as string,
         variant: 'destructive',
       });
-      console.error('Failed to reload:', error);
+      error(`Failed to reload: ${e}`);
       return;
     }
     if (currentFolder === SpecialFolders.All) {
@@ -225,8 +226,8 @@ export default function ListView() {
 
   const refreshCurrentView = async () => {
     try {
-      console.log('Refreshing current view');
-      console.log('Current folder:', currentFolder);
+      info('Refreshing current view');
+      info(`Current folder: ${currentFolder}`);
       switch (currentFolder) {
         case SpecialFolders.All:
           await loadAllWorlds();
@@ -283,8 +284,8 @@ export default function ListView() {
                     title: t('listview-page:restored-title'),
                     description: t('listview-page:worlds-restored'),
                   });
-                } catch (error) {
-                  console.error('Failed to restore worlds:', error);
+                } catch (e) {
+                  error(`Failed to restore worlds: ${e}`);
                   toast({
                     title: t('general:error-title'),
                     description: t('listview-page:error-restore-worlds'),
@@ -305,8 +306,8 @@ export default function ListView() {
       });
 
       await refreshCurrentView();
-    } catch (error) {
-      console.error('Failed to hide world:', error);
+    } catch (e) {
+      error(`Failed to hide world: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-hide-world'),
@@ -341,8 +342,8 @@ export default function ListView() {
                     title: 'Hidden',
                     description: 'Worlds hidden again',
                   });
-                } catch (error) {
-                  console.error('Failed to re-hide worlds:', error);
+                } catch (e) {
+                  error(`Failed to restore worlds: ${e}`);
                   toast({
                     title: 'Error',
                     description: 'Failed to re-hide worlds',
@@ -359,8 +360,8 @@ export default function ListView() {
       });
 
       await refreshCurrentView();
-    } catch (error) {
-      console.error('Failed to restore worlds:', error);
+    } catch (e) {
+      error(`Failed to restore worlds: ${e}`);
       toast({
         title: 'Error',
         description: 'Failed to restore worlds from hidden',
@@ -396,8 +397,8 @@ export default function ListView() {
                     title: t('listview-page:restored-title'),
                     description: t('listview-page:worlds-restored-to-folder'),
                   });
-                } catch (error) {
-                  console.error('Failed to restore worlds:', error);
+                } catch (e) {
+                  error(`Failed to restore worlds: ${e}`);
                   toast({
                     title: t('general:error-title'),
                     description: t('listview-page:error-restore-worlds'),
@@ -418,8 +419,8 @@ export default function ListView() {
       });
 
       await refreshCurrentView();
-    } catch (error) {
-      console.error('Failed to remove worlds:', error);
+    } catch (e) {
+      error(`Failed to remove worlds from folder: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-remove-from-folder'),
@@ -499,8 +500,8 @@ export default function ListView() {
                     title: t('listview-page:restored-title'),
                     description: t('listview-page:folder-changes-undone'),
                   });
-                } catch (error) {
-                  console.error('Failed to undo folder changes:', error);
+                } catch (e) {
+                  error(`Failed to undo folder changes: ${e}`);
                   toast({
                     title: t('general:error-title'),
                     description: t('listview-page:error-undo-folder-changes'),
@@ -523,8 +524,8 @@ export default function ListView() {
       await refreshCurrentView();
       setShowFolderDialog(false);
       setSelectedWorldsForFolder([]);
-    } catch (error) {
-      console.error('Failed to update folders:', error);
+    } catch (e) {
+      error(`Failed to update folders: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-update-folders'),
@@ -565,8 +566,8 @@ export default function ListView() {
         title: t('general:success-title'),
         description: t('listview-page:created-instance', instanceType),
       });
-    } catch (error) {
-      console.error('Failed to create instance:', error);
+    } catch (e) {
+      error(`Failed to create instance: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-create-instance'),
@@ -602,8 +603,8 @@ export default function ListView() {
         title: t('general:success-title'),
         description: t('listview-page:created-instance', instanceType),
       });
-    } catch (error) {
-      console.error('Failed to create group instance:', error);
+    } catch (e) {
+      error(`Failed to create group instance: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-create-group-instance'),
@@ -619,8 +620,8 @@ export default function ListView() {
         throw new Error(result.error);
       }
       return result.data;
-    } catch (error) {
-      console.error('Failed to get groups:', error);
+    } catch (e) {
+      error(`Failed to get groups: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-get-groups'),
@@ -639,8 +640,8 @@ export default function ListView() {
         throw new Error(result.error);
       }
       return result.data;
-    } catch (error) {
-      console.error('Failed to get group permissions:', error);
+    } catch (e) {
+      error(`Failed to get group permissions: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-get-group-permissions'),
@@ -656,8 +657,8 @@ export default function ListView() {
       if (result.status === 'ok') {
         setCardSize(CardSize[result.data as keyof typeof CardSize]);
       }
-    } catch (error) {
-      console.error('Failed to load card size:', error);
+    } catch (e) {
+      error(`Failed to load card size: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-card-size'),
@@ -679,11 +680,11 @@ export default function ListView() {
         title: 'Success',
         description: 'Folder renamed successfully',
       });
-    } catch (error) {
-      console.error('Failed to rename folder:', error);
+    } catch (e) {
+      error(`Failed to rename folder: ${e}`);
       toast({
-        title: 'Error',
-        description: 'Failed to rename folder',
+        title: t('general:error-title'),
+        description: t('listview-page:error-rename-folder'),
         variant: 'destructive',
       });
     }
@@ -698,11 +699,11 @@ export default function ListView() {
         title: 'Success',
         description: 'Folder deleted successfully',
       });
-    } catch (error) {
-      console.error('Failed to delete folder:', error);
+    } catch (e) {
+      error(`Failed to delete folder: ${e}`);
       toast({
-        title: 'Error',
-        description: 'Failed to delete folder',
+        title: t('general:error-title'),
+        description: t('listview-page:error-delete-folder'),
         variant: 'destructive',
       });
     }
@@ -724,14 +725,20 @@ export default function ListView() {
       );
     }
 
-    if (showDiscover) {
-      return <DiscoverPage />;
+    if (showFind) {
+      return <FindPage />;
     }
 
     return (
       <>
         <div className="p-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">{currentFolder}</h1>
+          <h1 className="text-xl font-bold">
+            {Object.values(SpecialFolders).includes(
+              currentFolder as SpecialFolders,
+            )
+              ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
+              : currentFolder}
+          </h1>
           <Button
             variant="outline"
             size="icon"
@@ -772,13 +779,13 @@ export default function ListView() {
         onSelectAbout={() => {
           setShowAbout(true);
           setShowSettings(false);
-          setShowDiscover(false);
+          setShowFind(false);
           setShowWorldDetails(false);
         }}
         onSelectSettings={() => {
           setShowSettings(true);
           setShowAbout(false);
-          setShowDiscover(false);
+          setShowFind(false);
           setShowWorldDetails(false);
         }}
         onRenameFolder={onRenameFolder}

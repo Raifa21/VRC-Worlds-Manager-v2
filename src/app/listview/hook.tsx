@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { warn, debug, trace, info, error } from '@tauri-apps/plugin-log';
 
 export function useFolders() {
   const [folders, setFolders] = useState<string[]>([]);
@@ -7,10 +8,12 @@ export function useFolders() {
   const loadFolders = async () => {
     try {
       const result = await invoke<string[]>('get_folders');
-      console.log('Folders:', result);
+      for (const folder of result) {
+        info(`Folder: ${folder}`);
+      }
       setFolders(result);
-    } catch (error) {
-      console.error('Failed to load folders:', error);
+    } catch (e) {
+      error(`Error loading folders: ${e}`);
     }
   };
 

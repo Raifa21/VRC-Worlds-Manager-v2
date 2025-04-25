@@ -393,7 +393,6 @@ impl ApiService {
             "JP" => instance::InstanceRegion::JP,
             _ => return Err("Invalid region".to_string()),
         };
-        log::info!("ID: {:?}", user_id.clone());
         // Create instance type based on string and user_id
         let instance_type = match instance_type_str.as_str() {
             "public" => instance::InstanceType::Public,

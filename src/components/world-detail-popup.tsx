@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { info, error } from '@tauri-apps/plugin-log';
 import Image from 'next/image';
 import {
   Dialog,
@@ -77,7 +78,7 @@ export function WorldDetailPopup({
   const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
   const [worldDetails, setWorldDetails] = useState<WorldDetails | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [errorState, setErrorState] = useState<string | null>(null);
   const [selectedInstanceType, setSelectedInstanceType] =
     useState<InstanceType>('public');
   const [selectedRegion, setSelectedRegion] = useState<Region>('JP');
@@ -97,13 +98,14 @@ export function WorldDetailPopup({
       if (!open) return;
 
       setIsLoading(true);
-      setError(null);
+      setErrorState(null);
 
       try {
         const details = await invoke<WorldDetails>('get_world', { worldId });
         setWorldDetails(details);
-      } catch (err) {
-        setError(err as string);
+      } catch (e) {
+        error(`Failed to fetch world details: ${e}`);
+        setErrorState(e as string);
       } finally {
         setIsLoading(false);
       }
@@ -124,13 +126,14 @@ export function WorldDetailPopup({
         isLoading: true, // Add isLoading to GroupInstance interface
       }));
       const groups = await onGetGroups();
+      info(`Loaded ${groups.length} groups`);
       setGroupInstanceState((prev) => ({
         ...prev,
         groups,
         isLoading: false,
       }));
-    } catch (error) {
-      console.error('Failed to load groups:', error);
+    } catch (e) {
+      error(`Failed to load groups: ${e}`);
       setGroupInstanceState((prev) => ({
         ...prev,
         isLoading: false,
@@ -184,7 +187,7 @@ export function WorldDetailPopup({
         onOpenChange(open);
       }}
     >
-      <DialogContent className="min-w-[80vw] h-[70vh] overflow-y-auto">
+      <DialogContent className="max-w-[800px] h-[70vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isLoading
@@ -208,7 +211,9 @@ export function WorldDetailPopup({
           />
         ) : (
           <>
-            {error && <div className="text-red-500 text-sm">{error}</div>}
+            {errorState && (
+              <div className="text-red-500 text-sm">{errorState}</div>
+            )}
 
             {isLoading ? (
               <div className="flex items-center justify-center p-4">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalization } from '@/hooks/use-localization';
@@ -17,8 +17,21 @@ import { CardSize } from '@/types/preferences';
 import { WorldCardPreview } from '@/components/world-card';
 import { Platform } from '@/types/worlds';
 import { commands } from '@/lib/bindings';
-import { Loader2 } from 'lucide-react';
+import {
+  Loader2,
+  LogOut,
+  Trash2,
+  Upload,
+  FolderOpen,
+  Save,
+} from 'lucide-react';
 import { LocalizationContext } from './localization-context';
+import { info, error } from '@tauri-apps/plugin-log';
+import { Card } from './ui/card';
+import { useRouter } from 'next/navigation';
+import { open } from '@tauri-apps/plugin-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RestoreBackupDialog } from '@/components/restore-backup-dialog';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
@@ -39,6 +52,10 @@ export function SettingsPage({
   const { t } = useLocalization();
   const [isSaving, setIsSaving] = React.useState(false);
   const { setLanguage } = useContext(LocalizationContext);
+  const router = useRouter();
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [showMigrateConfirm, setShowMigrateConfirm] = React.useState(false);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
 
   React.useEffect(() => {
     const loadPreferences = async () => {
@@ -118,8 +135,8 @@ export function SettingsPage({
 
       // Update local state after successful save
       setPreferences(newPreferences);
-    } catch (error) {
-      console.error('Failed to save preferences:', error);
+    } catch (e) {
+      error(`Failed to save preferences: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('settings-page:error-save-preferences'),
@@ -156,11 +173,115 @@ export function SettingsPage({
       setPreferences(newPreferences);
       // Notify parent component to update card size
       onCardSizeChange?.();
-    } catch (error) {
-      console.error('Failed to save preferences:', error);
+    } catch (e) {
+      error(`Failed to save card size: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('settings-page:error-save-preferences'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleBackup = async () => {
+    try {
+      info('Creating backup...');
+
+      // Ask user to select a directory for backup
+      const selectedDir = await open({
+        directory: true,
+        multiple: false,
+        title: t('settings-page:select-backup-directory'),
+      });
+
+      // If user cancelled the selection
+      if (selectedDir === null) {
+        info('Backup cancelled: No directory selected');
+        return;
+      }
+
+      const backupPath = selectedDir as string;
+      info(`Selected backup directory: ${backupPath}`);
+
+      const result = await commands.createBackup(backupPath);
+
+      if (result.status === 'error') {
+        error(`Backup creation failed: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('settings-page:error-create-backup'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      info(`Backup created successfully at: ${backupPath}`);
+      toast({
+        title: t('settings-page:backup-success-title'),
+        description: t('settings-page:backup-success-description'),
+      });
+    } catch (e) {
+      error(`Backup error: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-create-backup'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRestoreConfirm = async (path: string) => {
+    try {
+      info(`Restoring from backup: ${path}`);
+      const result = await commands.restoreFromBackup(path);
+
+      if (result.status === 'error') {
+        error(`Restore failed: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('settings-page:error-restore-backup'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      info('Restore completed successfully');
+      toast({
+        title: t('settings-page:restore-success-title'),
+        description: t('settings-page:restore-success-description'),
+      });
+    } catch (e) {
+      error(`Restore error: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-restore-backup'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      info('Logging out...');
+      const result = await commands.logout();
+
+      if (result.status === 'error') {
+        error(`Logout failed: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('settings-page:error-logout'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      info('Logged out successfully');
+      router.push('/login');
+    } catch (e) {
+      error(`Logout error: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-logout'),
         variant: 'destructive',
       });
     }
@@ -178,122 +299,270 @@ export function SettingsPage({
     <div className="container max-w-4xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold">{t('general:settings')}</h1>
 
-      <div className="space-y-4">
-        <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
-          <div className="flex flex-col space-y-1.5">
-            <Label className="text-base font-medium">
-              {t('general:theme-label')}
-            </Label>
-            <div className="text-sm text-muted-foreground">
-              {t('general:theme-description')}
-            </div>
-          </div>
-          <Select
-            value={preferences.theme}
-            onValueChange={(value) => handlePreferenceChange('theme', value)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Theme" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="light">{t('general:light')}</SelectItem>
-              <SelectItem value="dark">{t('general:dark')}</SelectItem>
-              <SelectItem value="system">{t('general:system')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <Tabs defaultValue="preferences" className="w-full">
+        <TabsList className="grid grid-cols-3 mb-6">
+          <TabsTrigger value="preferences">
+            {t('settings-page:section-preferences')}
+          </TabsTrigger>
+          <TabsTrigger value="data-management">
+            {t('settings-page:section-data-management')}
+          </TabsTrigger>
+          <TabsTrigger value="others">
+            {t('settings-page:section-others')}
+          </TabsTrigger>
+        </TabsList>
 
-        <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
-          <div className="flex flex-col space-y-1.5">
-            <Label className="text-base font-medium">
-              {t('general:language-label')}
-            </Label>
-            <div className="text-sm text-muted-foreground">
-              {t('general:language-description')}
-            </div>
-          </div>
-          <Select
-            value={preferences.language}
-            onValueChange={(value) => handlePreferenceChange('language', value)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Language" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ja-JP">日本語</SelectItem>
-              <SelectItem value="en-US">English (US)</SelectItem>
-              <SelectItem value="en-UK" disabled>
-                English (UK)
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-col items-start justify-between space-y-3 p-4 rounded-lg border">
-          <div className="flex flex-row justify-between w-full">
+        <TabsContent value="preferences" className="space-y-4">
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
             <div className="flex flex-col space-y-1.5">
               <Label className="text-base font-medium">
-                {t('settings-page:world-card-size')}
+                {t('general:theme-label')}
               </Label>
               <div className="text-sm text-muted-foreground">
-                {t('settings-page:world-card-description')}
+                {t('general:theme-description')}
               </div>
             </div>
             <Select
-              value={preferences.card_size}
-              onValueChange={handleCardSizeChange}
+              value={preferences.theme}
+              onValueChange={(value) => handlePreferenceChange('theme', value)}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Card Size" />
+                <SelectValue placeholder="Theme" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CardSize.Compact}>
-                  {t('general:compact')}
-                </SelectItem>
-                <SelectItem value={CardSize.Normal}>
-                  {t('general:normal')}
-                </SelectItem>
-                <SelectItem value={CardSize.Expanded}>
-                  {t('general:expanded')}
-                </SelectItem>
-                <SelectItem value={CardSize.Original}>
-                  {t('general:original')}
+                <SelectItem value="light">{t('general:light')}</SelectItem>
+                <SelectItem value="dark">{t('general:dark')}</SelectItem>
+                <SelectItem value="system">{t('general:system')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('general:language-label')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('general:language-description')}
+              </div>
+            </div>
+            <Select
+              value={preferences.language}
+              onValueChange={(value) =>
+                handlePreferenceChange('language', value)
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ja-JP">日本語</SelectItem>
+                <SelectItem value="en-US">English (US)</SelectItem>
+                <SelectItem value="en-UK" disabled>
+                  English (UK)
                 </SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <WorldCardPreview
-            size={preferences.card_size}
-            world={{
-              worldId: '1',
-              name: t('settings-page:preview-world'),
-              thumbnailUrl: 'icons/1.png',
-              authorName: t('general:sort-author'),
-              lastUpdated: '2025-02-28',
-              visits: 1911,
-              dateAdded: '2025-01-01',
-              favorites: 616,
-              platform: Platform.CrossPlatform,
-              folders: [],
-            }}
-          />
-        </div>
-        <div className="flex flex-row items-center justify-between p-4 rounded-lg border">
-          <div className="flex flex-col space-y-1.5">
-            <Label className="text-base font-medium">Hidden Folder</Label>
-            <div className="text-sm text-muted-foreground">
-              Access hidden worlds
+          </Card>
+
+          <Card className="flex flex-col items-start justify-between space-y-3 p-4 rounded-lg border">
+            <div className="flex flex-row justify-between w-full">
+              <div className="flex flex-col space-y-1.5">
+                <Label className="text-base font-medium">
+                  {t('settings-page:world-card-size')}
+                </Label>
+                <div className="text-sm text-muted-foreground">
+                  {t('settings-page:world-card-description')}
+                </div>
+              </div>
+              <Select
+                value={preferences.card_size}
+                onValueChange={handleCardSizeChange}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Card Size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CardSize.Compact}>
+                    {t('general:compact')}
+                  </SelectItem>
+                  <SelectItem value={CardSize.Normal}>
+                    {t('general:normal')}
+                  </SelectItem>
+                  <SelectItem value={CardSize.Expanded}>
+                    {t('general:expanded')}
+                  </SelectItem>
+                  <SelectItem value={CardSize.Original}>
+                    {t('general:original')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-          <Button
-            variant="outline"
-            onClick={onOpenHiddenFolder}
-            className="gap-2"
-          >
-            <span className="text-sm">Open Folder</span>
-          </Button>
-        </div>
-      </div>
+            <WorldCardPreview
+              size={preferences.card_size}
+              world={{
+                worldId: '1',
+                name: t('settings-page:preview-world'),
+                thumbnailUrl: 'icons/1.png',
+                authorName: t('general:sort-author'),
+                lastUpdated: '2025-02-28',
+                visits: 1911,
+                dateAdded: '2025-01-01',
+                favorites: 616,
+                platform: Platform.CrossPlatform,
+                folders: [],
+              }}
+            />
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="data-management" className="space-y-4">
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:hidden-folder')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:hidden-folder-description')}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={onOpenHiddenFolder}
+              className="gap-2"
+            >
+              <FolderOpen className="h-4 w-4" />
+              <span className="text-sm">{t('settings-page:open-folder')}</span>
+            </Button>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:backup-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:backup-description')}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                onClick={handleBackup}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                <span className="text-sm">
+                  {t('settings-page:create-backup')}
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowRestoreDialog(true)}
+                className="gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="text-sm">
+                  {t('settings-page:restore-backup')}
+                </span>
+              </Button>
+            </div>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:data-migration-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:data-migration-description')}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowMigrateConfirm(true)}
+              className="gap-2"
+              disabled
+            >
+              <span className="text-sm">{t('settings-page:migrate-data')}</span>
+            </Button>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border border-destructive bg-destructive/5">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:data-deletion-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:data-deletion-description')}
+              </div>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="gap-2"
+              disabled
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="text-sm">
+                {t('settings-page:delete-all-data')}
+              </span>
+            </Button>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="others" className="space-y-4">
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:logout-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:logout-description')}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="gap-2"
+              disabled
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="text-sm">{t('settings-page:logout')}</span>
+            </Button>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:update-channel-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:update-channel-description')}
+              </div>
+            </div>
+            <Select value="stable" onValueChange={() => {}} disabled>
+              <SelectTrigger className="w-fit px-2">
+                <SelectValue placeholder="Update Channel" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="stable">
+                  {t('settings-page:channel-stable')}
+                </SelectItem>
+                <SelectItem value="pre-release">
+                  {t('settings-page:channel-prerelease')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <RestoreBackupDialog
+        open={showRestoreDialog}
+        onOpenChange={setShowRestoreDialog}
+        onConfirm={handleRestoreConfirm}
+      />
     </div>
   );
 }

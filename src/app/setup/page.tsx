@@ -40,6 +40,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { info, error } from '@tauri-apps/plugin-log';
 
 const WelcomePage: React.FC = () => {
   const router = useRouter();
@@ -72,7 +73,7 @@ const WelcomePage: React.FC = () => {
   ]);
 
   useEffect(() => {
-    console.log('Current theme:', preferences.theme);
+    info(`Theme changed to: ${preferences.theme}`);
   }, [preferences.theme]);
 
   const handleNext = async () => {
@@ -82,15 +83,17 @@ const WelcomePage: React.FC = () => {
         if (hasDataResult.status === 'ok') {
           setHasExistingData(hasDataResult.data);
         } else {
-          console.error('Failed to fetch existing data:', hasDataResult.error);
+          error(`Failed to fetch existing data: ${hasDataResult.error}`);
         }
 
         const [worldsPath, foldersPath] = await invoke<[string, string]>(
           'detect_old_installation',
         );
 
-        console.log('Detected old installation:', worldsPath, foldersPath);
-        console.log('Default path:', defaultPath);
+        info(
+          `Detected old installation - Worlds: ${worldsPath}, Folders: ${foldersPath}`,
+        );
+        info(`Using default path: ${defaultPath}`);
         setMigrationPaths([worldsPath, foldersPath]);
         setPathValidation([true, true]);
       } catch (e) {
@@ -98,9 +101,9 @@ const WelcomePage: React.FC = () => {
           const defPath = await invoke<string>('pass_paths');
           setDefaultPath(defPath);
         } catch (e) {
-          console.error('Failed to get paths:', e);
+          error(`Failed to get paths: ${e}`);
         }
-        console.error('Failed to detect old installation:', e);
+        error(`Failed to detect old installation: ${e}`);
         setPathValidation([false, false]);
       }
     }
@@ -120,7 +123,7 @@ const WelcomePage: React.FC = () => {
           ),
         });
 
-        console.error('Failed to save preferences:', result.error);
+        error(`Failed to save preferences: ${result.error}`);
         setPage(4);
         return;
       }
@@ -182,7 +185,7 @@ const WelcomePage: React.FC = () => {
 
   const handleFilePick = async (index: number) => {
     const startPath = migrationPaths[index] || defaultPath || '/';
-    console.log('Opening file picker at:', startPath);
+    info(`Opening file picker at: ${startPath}`);
     const selected = await open({
       directory: false,
       multiple: false,
@@ -199,7 +202,7 @@ const WelcomePage: React.FC = () => {
       newValidation[index] = true;
       setPathValidation(newValidation);
 
-      console.log('Selected path:', selected);
+      info(`Selected path: ${selected}`);
     }
   };
 

@@ -1,12 +1,13 @@
 [package]
 name = "vrc-worlds-manager"
-version = "0.1.6"
+version = "0.1.7"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["Raifa", "siloneco"]
 license = ""
 repository = ""
 edition = "2021"
 rust-version = "1.77.2"
+build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -16,6 +17,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.0.4", features = [] }
+dotenv-build = "0.1.1"
 
 [dependencies]
 serde_json = "1.0"
@@ -23,7 +25,6 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.2.4", features = [] }
 tauri-plugin-log = "2"
-vrchatapi = "1.19.1"
 chrono = { version = "0.4", features = ["serde"] }
 directories = "6.0.0"
 tempfile = "3.18.0"
@@ -34,12 +35,16 @@ tauri-plugin-opener = "2"
 aes = "0.8"
 cbc = "0.1"
 base64 = "0.22.1"
-reqwest = "0.12.14"
+reqwest = { version = "0.12.14", features = ["cookies"] }
 tokio = "1.44.1"
 wiremock = "0.6.3"
 specta = {version = "=2.0.0-rc.22", features = ["uuid", "chrono"] }
 specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
+ringbuffer = "0.15.0"
+simplelog = "0.12.2"
+time = "0.3.41"
+
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

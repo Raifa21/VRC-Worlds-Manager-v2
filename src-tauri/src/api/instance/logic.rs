@@ -21,8 +21,6 @@ pub async fn create_instance<J: Into<Arc<Jar>>>(
         }
     };
 
-    log::info!("{body}");
-
     let result = client
         .post(format!("{API_BASE_URL}/instances"))
         .header("Content-Type", "application/json")

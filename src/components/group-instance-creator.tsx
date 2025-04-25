@@ -367,21 +367,21 @@ export function GroupInstanceCreator({
         <h3 className="font-medium">
           {t('group-instance-creator:select-group')}
         </h3>
-        <div className="space-y-2 overflow-y-auto max-h-[35vh]">
+        <div className="overflow-y-auto max-h-[35vh] grid grid-cols-2 gap-2">
           {groups.map((group) => (
             <Button
               key={group.groupId}
               variant="outline"
-              className="w-full h-12 justify-start relative overflow-hidden group"
+              className="w-full h-12 justify-start relative overflow-hidden group bg-black hover:bg-black"
               onClick={() => handleGroupSelect(group.groupId)}
             >
               {group.bannerUrl && (
                 <div
-                  className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:opacity-75 transition-opacity"
+                  className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:opacity-65 dark:opacity-40 dark:group-hover:opacity-55 transition-opacity"
                   style={{ backgroundImage: `url(${group.bannerUrl})` }}
                 />
               )}
-              <div className="relative z-10 font-medium text-lg text-foreground">
+              <div className="relative z-10 font-medium text-lg text-foreground truncate text-white">
                 {group.name}
               </div>
             </Button>
@@ -446,11 +446,6 @@ export function GroupInstanceCreator({
                   <span className="text-sm text-muted-foreground">
                     {description}
                   </span>
-                  {!hasPermission && (
-                    <span className="text-xs text-destructive">
-                      {t('group-instance-creator:missing-permission')}
-                    </span>
-                  )}
                 </div>
               </Button>
             );

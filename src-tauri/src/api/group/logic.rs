@@ -38,7 +38,6 @@ pub async fn get_user_groups<J: Into<Arc<Jar>>>(
     }
 
     let text = text.unwrap();
-    log::info!("Raw API Response: {}", text);
 
     let parsed: Vec<UserGroup> = match serde_json::from_str::<Vec<UserGroup>>(&text) {
         Ok(groups) => {
@@ -80,34 +79,13 @@ pub async fn get_permission_for_create_group_instance(
         format!("Failed to read response: {}", e)
     })?;
 
-    log::info!("Raw API Response: {}", text);
-
     let details: GroupDetails = match serde_json::from_str(&text) {
         Ok(d) => d,
         Err(e) => {
             // Parse the JSON into a Value for inspection
             let parsed: serde_json::Value =
                 serde_json::from_str(&text).unwrap_or_else(|_| serde_json::Value::Null);
-
-            log::info!("JSON structure:");
             if let Some(obj) = parsed.as_object() {
-                log::info!("Top level keys: {:?}", obj.keys().collect::<Vec<_>>());
-
-                // Inspect galleries array
-                if let Some(galleries) = obj.get("galleries").and_then(|g| g.as_array()) {
-                    log::info!("\nGalleries structure:");
-                    for (i, gallery) in galleries.iter().enumerate() {
-                        log::info!(
-                            "Gallery {}: Keys present: {:?}",
-                            i,
-                            gallery
-                                .as_object()
-                                .map(|o| o.keys().collect::<Vec<_>>())
-                                .unwrap_or_default()
-                        );
-                    }
-                }
-
                 // Inspect myMember object
                 if let Some(member) = obj.get("myMember") {
                     log::info!(
@@ -119,11 +97,6 @@ pub async fn get_permission_for_create_group_instance(
                     );
                 }
             }
-
-            log::info!("\nError details:");
-            log::info!("Location: line {}, column {}", e.line(), e.column());
-            log::info!("Kind: {:?}", e.classify());
-            log::info!("Full error: {}", e);
 
             return Err(format!(
                 "Failed to parse group details: {} at line {} column {}",
@@ -161,10 +134,11 @@ pub async fn get_permission_for_create_group_instance(
         let restricted = permissions.contains(&GroupPermission::GroupInstanceRestrictedCreate);
 
         log::info!(
-            "Permission check results - Normal: {}, Plus: {}, Public: {}",
+            "Permission check results - Normal: {}, Plus: {}, Public: {}, Restricted: {}",
             normal,
             plus,
-            public
+            public,
+            restricted
         );
 
         if !normal && !plus && !public && !restricted {

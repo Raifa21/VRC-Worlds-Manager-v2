@@ -12,6 +12,7 @@ import { useLocalization } from '@/hooks/use-localization';
 import { Separator } from '@/components/ui/separator';
 
 import { SidebarGroup } from '@/components/ui/sidebar';
+import { info, error } from '@tauri-apps/plugin-log';
 
 import {
   ContextMenu,
@@ -51,7 +52,7 @@ interface AppSidebarProps {
   onSelectFolder: (
     type:
       | SpecialFolders.All
-      | SpecialFolders.Discover
+      | SpecialFolders.Find
       | SpecialFolders.Unclassified
       | 'folder',
     folderName?: string,
@@ -102,10 +103,10 @@ export function AppSidebar({
       await commands.moveFolder(movedFolder, destination.index);
       // Only refresh if needed (in case of error or sync issues)
       await onFoldersChange();
-    } catch (error) {
+    } catch (e) {
       // Revert on error
       setLocalFolders(folders);
-      console.error('Failed to reorder folders:', error);
+      error(`Error moving folder: ${e}`);
     }
   };
 
@@ -161,7 +162,7 @@ export function AppSidebar({
           >
             <SaturnIcon className="h-[18px] w-[18px]" />
             <span className="text-sm font-medium">
-              {t('app-sidebar:all-worlds')}
+              {t('general:all-worlds')}
             </span>
           </div>
         </SidebarGroup>
@@ -169,11 +170,11 @@ export function AppSidebar({
         <SidebarGroup>
           <div
             className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => onSelectFolder(SpecialFolders.Discover)}
+            onClick={() => onSelectFolder(SpecialFolders.Find)}
           >
             <History className="h-5 w-5" />
             <span className="text-sm font-medium">
-              {t('app-sidebar:find-worlds')}
+              {t('general:find-worlds')}
             </span>
           </div>
           <div
@@ -182,7 +183,7 @@ export function AppSidebar({
           >
             <FileQuestion className="h-5 w-5" />
             <span className="text-sm font-medium">
-              {t('app-sidebar:unclassified-worlds')}
+              {t('general:unclassified-worlds')}
             </span>
           </div>
         </SidebarGroup>
