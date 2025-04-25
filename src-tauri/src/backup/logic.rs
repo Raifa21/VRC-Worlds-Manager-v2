@@ -1,3 +1,4 @@
+use crate::backup::BackupMetaData;
 use crate::FolderModel;
 use crate::WorldModel;
 use chrono::Utc;
@@ -109,16 +110,36 @@ pub fn create_backup(
         let file = File::create(&info_path).map_err(|e| e.to_string())?;
         let writer = BufWriter::new(file);
 
-        let info = serde_json::json!({
-            "timestamp": timestamp,
-            "app_version": env!("CARGO_PKG_VERSION"),
-            "created_at": Utc::now().to_rfc3339(),
-        });
-
+        let info = BackupMetaData {
+            date: timestamp,
+            number_of_folders: folders.read().unwrap().len() as u32,
+            number_of_worlds: worlds.read().unwrap().len() as u32,
+            app_version: env!("CARGO_PKG_VERSION").to_string(),
+        };
         serde_json::to_writer_pretty(writer, &info)
             .map_err(|e| format!("Failed to write backup info: {}", e))?;
     }
 
     log::info!("Backup created successfully at {}", backup_folder.display());
     Ok(())
+}
+
+pub fn get_backup_metadata(backup_path: String) -> Result<BackupMetaData, String> {
+    log::info!("Getting backup metadata from: {}", backup_path);
+    let backup_dir = Path::new(&backup_path);
+
+    if !backup_dir.exists() {
+        return Err("Backup directory does not exist".to_string());
+    }
+
+    let info_path = backup_dir.join("backup_info.json");
+    if !info_path.exists() {
+        return Err("Backup info file does not exist".to_string());
+    }
+    let file = File::open(&info_path).map_err(|e| e.to_string())?;
+    let reader = BufReader::new(file);
+    let metadata: BackupMetaData = serde_json::from_reader(reader)
+        .map_err(|e| format!("Failed to parse backup info: {}", e))?;
+    log::info!("Backup metadata retrieved successfully");
+    Ok(metadata)
 }

@@ -94,6 +94,12 @@ pub async fn migrate_old_data(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_backup_metadata(backup_path: String) -> Result<backup::BackupMetaData, String> {
+    backup::get_backup_metadata(backup_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn restore_from_backup(backup_path: String) -> Result<(), String> {
     backup::restore_from_backup(backup_path, WORLDS.get(), FOLDERS.get()).map_err(|e| e.to_string())
 }
