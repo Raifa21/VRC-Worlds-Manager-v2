@@ -18,7 +18,7 @@ pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
     let mut offset = 0;
     let n = 100; // Set page size to 100
     let mut current_page = 0;
-    let MAX_PAGES = 4; // VRChat only allows max 400 favorites
+    let max_pages = 4; // VRChat only allows max 400 favorites
 
     loop {
         log::info!(
@@ -71,8 +71,8 @@ pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
         }
 
         // Safeguard: Stop after max_pages to avoid excessive API calls
-        if current_page >= MAX_PAGES {
-            log::info!("Reached maximum page limit of {} pages", MAX_PAGES);
+        if current_page >= max_pages {
+            log::info!("Reached maximum page limit of {} pages", max_pages);
             break;
         }
     }
