@@ -81,8 +81,6 @@ impl FileService {
             std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
             _ => FileError::FileNotFound,
         })?;
-        log::info!("Read auth file: {}", content);
-
         match serde_json::from_str::<AuthCookies>(&content) {
             Ok(mut cookies) => {
                 if cookies.version == 1 {
