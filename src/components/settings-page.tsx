@@ -215,7 +215,7 @@ export function SettingsPage({
         return;
       }
 
-      info(`Backup created successfully at: ${result.data}`);
+      info(`Backup created successfully at: ${backupPath}`);
       toast({
         title: t('settings-page:backup-success-title'),
         description: t('settings-page:backup-success-description'),
