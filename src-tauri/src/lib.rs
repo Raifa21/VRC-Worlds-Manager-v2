@@ -9,6 +9,7 @@ use std::sync::RwLock;
 use tauri_plugin_updater::UpdaterExt;
 
 mod api;
+mod backup;
 mod commands;
 mod definitions;
 mod errors;
