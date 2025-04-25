@@ -189,7 +189,7 @@ export function RestoreBackupDialog({
                   <h4 className="font-medium text-amber-800 dark:text-amber-300">
                     {t('settings-page:warning')}
                   </h4>
-                  <p className="text-sm text-amber-700 dark:text-amber-400 white-space: pre-line">
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
                     {t('settings-page:restore-warning-1')}
                     <br />
                     {t('settings-page:restore-warning-2')}
