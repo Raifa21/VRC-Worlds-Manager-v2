@@ -127,6 +127,7 @@
   "world-grid:remove-single": "Remove world from folder",
   "world-grid:hide-multiple": "Hide {0} worlds",
   "world-grid:restore-world": "Restore world",
+  "world-grid:move-title": "Move to folder",
   "world-grid:remove-title": "Remove from Folder",
   "world-grid:remove-description": "This will remove this world from the current folder.",
   "world-grid:hide-description": "This hides this world from all folders.",

@@ -419,7 +419,7 @@ export function WorldGrid({
                             onShowFolderDialog(worldsToMove);
                           }}
                         >
-                          Move to folder
+                          {t('world-grid:move-title')}
                         </ContextMenuItem>
                       )}
                       {!isSpecialFolder && (
@@ -434,7 +434,7 @@ export function WorldGrid({
                           }}
                           className="text-destructive"
                         >
-                          Remove from folder
+                          {t('world-grid:remove-title')}
                         </ContextMenuItem>
                       )}
                       <ContextMenuItem
