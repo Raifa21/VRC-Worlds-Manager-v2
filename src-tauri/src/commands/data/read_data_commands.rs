@@ -1,7 +1,9 @@
+use crate::backup;
 use crate::services;
 use crate::services::migration_service::MigrationService;
-use crate::PREFERENCES;
+use crate::{FOLDERS, PREFERENCES, WORLDS};
 use directories::BaseDirs;
+
 /// Checks if the app is being run for the first time
 /// As this is called every time / is loaded from the frontend, cache result in the state
 #[tauri::command]
@@ -88,4 +90,10 @@ pub async fn migrate_old_data(
     MigrationService::migrate_old_data(worlds_path, folders_path, dont_overwrite)
         .await
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn restore_from_backup(backup_path: String) -> Result<(), String> {
+    backup::restore_from_backup(backup_path, WORLDS.get(), FOLDERS.get()).map_err(|e| e.to_string())
 }

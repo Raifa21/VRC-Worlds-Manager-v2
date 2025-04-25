@@ -14,6 +14,7 @@ mod definitions;
 mod errors;
 mod logging;
 mod services;
+mod backup;
 
 static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
 static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
