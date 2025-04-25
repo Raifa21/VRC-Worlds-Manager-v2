@@ -84,7 +84,7 @@ pub fn create_backup(
 
     // Save worlds.json
     {
-        let worlds_lock = worlds.read().unwrap();
+        let worlds_lock = worlds.read().map_err(|e| format!("Failed to acquire read lock for worlds: {}", e))?;
         let worlds_path = backup_folder.join("worlds.json");
         let file = File::create(&worlds_path).map_err(|e| e.to_string())?;
         let writer = BufWriter::new(file);
@@ -101,7 +101,7 @@ pub fn create_backup(
 
     // Save folders.json
     {
-        let folders_lock = folders.read().unwrap();
+        let folders_lock = folders.read().map_err(|e| format!("Failed to acquire read lock for folders: {}", e))?;
         let folders_path = backup_folder.join("folders.json");
         let file = File::create(&folders_path).map_err(|e| e.to_string())?;
         let writer = BufWriter::new(file);
