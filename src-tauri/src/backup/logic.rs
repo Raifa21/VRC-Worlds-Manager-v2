@@ -30,20 +30,32 @@ pub fn restore_from_backup(
             .map_err(|e| format!("Failed to parse folders.json: {}", e))?;
 
         {
-            let mut worlds_lock = worlds.write().unwrap();
+            let mut worlds_lock = worlds.write().map_err(|e| {
+                log::error!("Failed to acquire write lock for worlds: {}", e);
+                "Failed to acquire write lock for worlds".to_string()
+            })?;
             worlds_lock.clear();
             log::info!("Cleared existing worlds data");
         }
-        let mut worlds_lock = worlds.write().unwrap();
+        let mut worlds_lock = worlds.write().map_err(|e| {
+            log::error!("Failed to acquire write lock for worlds: {}", e);
+            "Failed to acquire write lock for worlds".to_string()
+        })?;
         worlds_lock.extend(worlds_data);
         log::info!("Restored {} worlds", worlds_lock.len());
 
         {
-            let mut folders_lock = folders.write().unwrap();
+            let mut folders_lock = folders.write().map_err(|e| {
+                log::error!("Failed to acquire write lock for folders: {}", e);
+                "Failed to acquire write lock for folders".to_string()
+            })?;
             folders_lock.clear();
             log::info!("Cleared existing folders data");
         }
-        let mut folders_lock = folders.write().unwrap();
+        let mut folders_lock = folders.write().map_err(|e| {
+            log::error!("Failed to acquire write lock for folders: {}", e);
+            "Failed to acquire write lock for folders".to_string()
+        })?;
         folders_lock.extend(folders_data);
         log::info!("Restored {} folders", folders_lock.len());
     } else {
