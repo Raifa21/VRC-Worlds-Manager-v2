@@ -5,7 +5,6 @@ use reqwest::{
     cookie::{self, CookieStore, Jar},
     Response, StatusCode,
 };
-use vrchatapi::models::current_user;
 
 use crate::{
     api::common::{get_reqwest_client, API_BASE_URL},

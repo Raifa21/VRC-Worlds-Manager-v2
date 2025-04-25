@@ -1,8 +1,6 @@
 use chrono::{DateTime, Utc};
 use reqwest::cookie::Jar;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use vrchatapi::models;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldApiData {
@@ -34,92 +32,6 @@ pub struct WorldApiData {
 }
 
 impl WorldApiData {
-    pub fn from_api_favorite_data(
-        world: models::FavoritedWorld,
-    ) -> Result<WorldApiData, chrono::ParseError> {
-        let publication_date = if world.publication_date == "none" {
-            None
-        } else {
-            Some(
-                DateTime::parse_from_rfc3339(&world.publication_date)
-                    .map_err(|e| {
-                        log::info!("Failed to parse publication_date: {}", e);
-                        e
-                    })?
-                    .with_timezone(&Utc),
-            )
-        };
-
-        let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
-
-        let platform: Vec<String> = world
-            .unity_packages
-            .iter()
-            .map(|package| package.platform.clone())
-            .collect();
-
-        Ok(WorldApiData {
-            image_url: world.image_url,
-            world_name: world.name,
-            world_id: world.id,
-            author_name: world.author_name,
-            author_id: world.author_id,
-            capacity: world.capacity,
-            recommended_capacity: None,
-            tags: world.tags,
-            publication_date,
-            last_update,
-            description: world.description,
-            visits: world.visits,
-            favorites: world.favorites,
-            platform,
-        })
-    }
-    pub fn from_api_data(world: models::World) -> Result<WorldApiData, chrono::ParseError> {
-        let publication_date = if world.publication_date == "none" {
-            None
-        } else {
-            Some(
-                DateTime::parse_from_rfc3339(&world.publication_date)
-                    .map_err(|e| {
-                        log::info!("Failed to parse publication_date: {}", e);
-                        e
-                    })?
-                    .with_timezone(&Utc),
-            )
-        };
-        let last_update = DateTime::parse_from_rfc3339(&world.updated_at)?.with_timezone(&Utc);
-
-        let platform = world
-            .unity_packages
-            .unwrap_or_default() // Handle None case
-            .iter()
-            .filter_map(|package| Some(package.platform.clone())) // Only keep Some values
-            .collect();
-
-        let recommended_capacity = if world.recommended_capacity == 0 {
-            None
-        } else {
-            Some(world.recommended_capacity)
-        };
-        Ok(WorldApiData {
-            image_url: world.image_url,
-            world_name: world.name,
-            world_id: world.id,
-            author_name: world.author_name,
-            author_id: world.author_id,
-            capacity: world.capacity,
-            recommended_capacity: recommended_capacity,
-            tags: world.tags,
-            publication_date,
-            last_update,
-            description: world.description,
-            visits: Some(world.visits),
-            favorites: world.favorites.unwrap_or(0),
-            platform,
-        })
-    }
-
     pub fn to_world_details(&self) -> WorldDetails {
         WorldDetails {
             world_id: self.world_id.clone(),
