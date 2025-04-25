@@ -44,8 +44,6 @@ runs:
       with:
         bun-version: latest
 
-    - run: node --version
-      shell: bash
     - run: bun --version
       shell: bash
 
