@@ -48,7 +48,7 @@ pub fn run() {
                     let timestamp = chrono::Utc::now()
                         .format("%Y-%m-%d_%H-%M-%S.%6f")
                         .to_string();
-                    let log_path = format!("vrc-worlds-manager-{}.log", timestamp);
+                    let log_path = format!("vrc-worlds-manager-{}", timestamp);
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
                         file_name: Some(log_path),
                     })
