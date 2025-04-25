@@ -77,7 +77,7 @@ fn is_outdated_timestamp(timestamp: &str) -> bool {
     {
         Ok(timestamp) => timestamp,
         Err(e) => {
-            log::error!("error while parsing timestamp: {}", e);
+            log::error!("error while parsing timestamp: {}, {}", e, timestamp);
             return false;
         }
     };
