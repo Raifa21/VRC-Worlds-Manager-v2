@@ -78,7 +78,7 @@ export function RestoreBackupDialog({
 
       setSelectedPath(backupPath);
 
-      let metadata: BackupMetadata = {
+      const metadata: BackupMetadata = {
         date: handleDateConversion(result.data.date),
         number_of_worlds: result.data.number_of_worlds,
         number_of_folders: result.data.number_of_folders,
