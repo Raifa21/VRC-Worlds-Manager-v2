@@ -254,7 +254,6 @@
   "group-instance-creator:all-roles-description": "All roles can join (You cannot create a restricted instance)",
   "group-instance-creator:selected-roles-description": "Selected roles can join",
   "group-instance-creator:all-roles-label": "(All roles)",
-  "group-instance-creator:missing-permission": "Missing required permission",
   "group-instance-creator:loading-roles": "Loading roles...",
   "group-instance-creator:everyone": "Everyone",
   "group-instance-creator:required": "(Required)",

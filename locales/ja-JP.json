@@ -254,7 +254,6 @@
   "group-instance-creator:all-roles-description": "すべてのロールが参加可能（制限付きインスタンスは作成できません）",
   "group-instance-creator:selected-roles-description": "選択したロールのみ参加可能",
   "group-instance-creator:all-roles-label": "（すべてのロール）",
-  "group-instance-creator:missing-permission": "必要な権限がありません",
   "group-instance-creator:loading-roles": "ロールを読み込み中...",
   "group-instance-creator:everyone": "全員",
   "group-instance-creator:required": "（必須）",

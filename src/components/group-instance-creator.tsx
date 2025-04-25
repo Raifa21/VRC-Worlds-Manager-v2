@@ -446,11 +446,6 @@ export function GroupInstanceCreator({
                   <span className="text-sm text-muted-foreground">
                     {description}
                   </span>
-                  {!hasPermission && (
-                    <span className="text-xs text-destructive">
-                      {t('group-instance-creator:missing-permission')}
-                    </span>
-                  )}
                 </div>
               </Button>
             );
