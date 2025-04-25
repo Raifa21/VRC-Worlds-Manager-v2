@@ -106,7 +106,7 @@ impl VRChatAPIClientAuthenticator {
             let auth_cookies = AuthCookies::from_cookie_str(&cookie_str);
             self.phase = VRChatAuthPhase::LoggedIn;
 
-            log::info!("Logged in as: {}", current_user.username);
+            log::info!("Logged in successfully.");
             return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 
@@ -173,7 +173,7 @@ impl VRChatAPIClientAuthenticator {
                 username: String::new(),
             };
 
-            log::info!("Logged in as: {}", current_user.username);
+            log::info!("Logged in successfully.");
             return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 
@@ -275,7 +275,7 @@ impl VRChatAPIClientAuthenticator {
                 username: String::new(),
             };
 
-            log::info!("Logged in as: {}", current_user.username);
+            log::info!("Logged in successfully.");
             return Ok(VRChatAuthStatus::Success(auth_cookies, current_user));
         }
 
