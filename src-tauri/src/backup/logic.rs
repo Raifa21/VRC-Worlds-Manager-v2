@@ -124,8 +124,8 @@ pub fn create_backup(
 
         let info = BackupMetaData {
             date: timestamp,
-            number_of_folders: folders.read().unwrap().len() as u32,
-            number_of_worlds: worlds.read().unwrap().len() as u32,
+            number_of_folders: folders.read().map_err(|e| format!("Failed to acquire read lock for folders: {}", e))?.len() as u32,
+            number_of_worlds: worlds.read().map_err(|e| format!("Failed to acquire read lock for worlds: {}", e))?.len() as u32,
             app_version: env!("CARGO_PKG_VERSION").to_string(),
         };
         serde_json::to_writer_pretty(writer, &info)
