@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalization } from '@/hooks/use-localization';
@@ -17,24 +17,21 @@ import { CardSize } from '@/types/preferences';
 import { WorldCardPreview } from '@/components/world-card';
 import { Platform } from '@/types/worlds';
 import { commands } from '@/lib/bindings';
-import { Loader2, LogOut, Trash2 } from 'lucide-react';
+import {
+  Loader2,
+  LogOut,
+  Trash2,
+  Upload,
+  FolderOpen,
+  Save,
+} from 'lucide-react';
 import { LocalizationContext } from './localization-context';
 import { info, error } from '@tauri-apps/plugin-log';
 import { Card } from './ui/card';
-import { FolderOpen, Save, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from './ui/alert-dialog';
-import { Separator } from './ui/separator';
+import { open } from '@tauri-apps/plugin-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RestoreBackupDialog } from '@/components/restore-backup-dialog';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
@@ -58,6 +55,7 @@ export function SettingsPage({
   const router = useRouter();
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [showMigrateConfirm, setShowMigrateConfirm] = React.useState(false);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
 
   React.useEffect(() => {
     const loadPreferences = async () => {
@@ -188,7 +186,25 @@ export function SettingsPage({
   const handleBackup = async () => {
     try {
       info('Creating backup...');
-      const result = await commands.createBackup();
+
+      // Ask user to select a directory for backup
+      const selectedDir = await open({
+        directory: true,
+        multiple: false,
+        title: t('settings-page:select-backup-directory'),
+      });
+
+      // If user cancelled the selection
+      if (selectedDir === null) {
+        info('Backup cancelled: No directory selected');
+        return;
+      }
+
+      const backupPath = selectedDir as string;
+      info(`Selected backup directory: ${backupPath}`);
+
+      const result = await commands.createBackup(backupPath);
+
       if (result.status === 'error') {
         error(`Backup creation failed: ${result.error}`);
         toast({
@@ -198,7 +214,8 @@ export function SettingsPage({
         });
         return;
       }
-      info('Backup created successfully');
+
+      info(`Backup created successfully at: ${result.data}`);
       toast({
         title: t('settings-page:backup-success-title'),
         description: t('settings-page:backup-success-description'),
@@ -213,10 +230,11 @@ export function SettingsPage({
     }
   };
 
-  const handleRestore = async () => {
+  const handleRestoreConfirm = async (path: string) => {
     try {
-      info('Restoring from backup...');
-      const result = await commands.restoreFromBackup();
+      info(`Restoring from backup: ${path}`);
+      const result = await commands.restoreFromBackup(path);
+
       if (result.status === 'error') {
         error(`Restore failed: ${result.error}`);
         toast({
@@ -226,6 +244,7 @@ export function SettingsPage({
         });
         return;
       }
+
       info('Restore completed successfully');
       toast({
         title: t('settings-page:restore-success-title'),
@@ -439,7 +458,7 @@ export function SettingsPage({
               </Button>
               <Button
                 variant="outline"
-                onClick={handleRestore}
+                onClick={() => setShowRestoreDialog(true)}
                 className="gap-2"
               >
                 <Upload className="h-4 w-4" />
@@ -538,6 +557,12 @@ export function SettingsPage({
           </Card>
         </TabsContent>
       </Tabs>
+
+      <RestoreBackupDialog
+        open={showRestoreDialog}
+        onOpenChange={setShowRestoreDialog}
+        onConfirm={handleRestoreConfirm}
+      />
     </div>
   );
 }

@@ -404,6 +404,30 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getBackupMetadata(
+    backupPath: string,
+  ): Promise<Result<BackupMetaData, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_backup_metadata', { backupPath }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async restoreFromBackup(backupPath: string): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('restore_from_backup', { backupPath }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async createEmptyAuth(): Promise<Result<null, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('create_empty_auth') };
@@ -439,6 +463,17 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async createBackup(backupPath: string): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('create_backup', { backupPath }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
 };
 
 /** user-defined events **/
@@ -447,6 +482,12 @@ export const commands = {
 
 /** user-defined types **/
 
+export type BackupMetaData = {
+  date: string;
+  number_of_folders: number;
+  number_of_worlds: number;
+  app_version: string;
+};
 export type CardSize = 'Compact' | 'Normal' | 'Expanded' | 'Original';
 export type GroupInstanceCreateAllowedType = {
   normal: boolean;
