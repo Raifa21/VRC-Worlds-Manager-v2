@@ -43,6 +43,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         data::read_data_commands::check_existing_data,
         data::read_data_commands::get_backup_metadata,
         data::read_data_commands::restore_from_backup,
+        data::read_data_commands::get_migration_metadata,
         data::write_data_commands::create_empty_auth,
         data::write_data_commands::create_empty_files,
         data::write_data_commands::set_preferences,

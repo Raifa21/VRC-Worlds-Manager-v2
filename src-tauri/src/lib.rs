@@ -14,6 +14,7 @@ mod commands;
 mod definitions;
 mod errors;
 mod logging;
+mod migration;
 mod services;
 
 static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();

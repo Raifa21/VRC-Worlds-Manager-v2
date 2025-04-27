@@ -1,87 +1,15 @@
 use crate::definitions::{FolderModel, WorldApiData, WorldModel, WorldUserData};
+use crate::migration::{PreviousFolderCollection, PreviousMetadata, PreviousWorldModel};
 use crate::services::EncryptionService;
 use crate::services::FileService;
 use crate::FOLDERS;
 use crate::WORLDS;
 use chrono::{DateTime, Duration, Utc};
 use directories::BaseDirs;
-use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 
 pub struct MigrationService;
-
-fn deserialize_datetime<'de, D>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error>
-where
-    D: serde::de::Deserializer<'de>,
-{
-    let s: Option<String> = Option::deserialize(deserializer)?;
-    if let Some(s) = s {
-        DateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S%.f%:z")
-            .map(|dt| Some(dt.with_timezone(&Utc)))
-            .map_err(serde::de::Error::custom)
-    } else {
-        Ok(None)
-    }
-}
-
-#[derive(Debug, Deserialize, Clone)]
-struct PreviousWorldModel {
-    #[serde(rename = "ThumbnailImageUrl")]
-    thumbnail_image_url: String,
-    #[serde(rename = "WorldName")]
-    world_name: String,
-    #[serde(rename = "WorldId")]
-    world_id: String,
-    #[serde(rename = "AuthorName")]
-    author_name: String,
-    #[serde(rename = "AuthorId")]
-    author_id: String,
-    #[serde(rename = "Capacity")]
-    capacity: i32,
-    #[serde(rename = "LastUpdate")]
-    last_update: String,
-    #[serde(rename = "Description")]
-    description: String,
-    #[serde(rename = "Visits")]
-    visits: Option<i32>,
-    #[serde(rename = "Favorites")]
-    favorites: i32,
-    #[serde(rename = "DateAdded", deserialize_with = "deserialize_datetime")]
-    date_added: Option<DateTime<Utc>>,
-    #[serde(rename = "Platform")]
-    platform: Option<Vec<String>>,
-    #[serde(rename = "UserMemo")]
-    user_memo: Option<String>,
-}
-
-impl Default for PreviousWorldModel {
-    fn default() -> Self {
-        PreviousWorldModel {
-            thumbnail_image_url: String::default(),
-            world_name: String::default(),
-            world_id: String::default(),
-            author_name: String::default(),
-            author_id: String::default(),
-            capacity: 0,
-            last_update: String::default(),
-            description: String::default(),
-            visits: None,
-            favorites: 0,
-            date_added: None,
-            platform: None,
-            user_memo: None,
-        }
-    }
-}
-
-#[derive(Debug, Deserialize)]
-struct PreviousFolderCollection {
-    #[serde(rename = "Name")]
-    name: String,
-    #[serde(rename = "Worlds")]
-    worlds: Vec<PreviousWorldModel>,
-}
 
 impl MigrationService {
     /// Tries to locate the old VRC Worlds Manager Data
@@ -155,12 +83,8 @@ impl MigrationService {
     }
 
     fn parse_folder_data(folders_json: &str) -> Result<Vec<PreviousFolderCollection>, String> {
-        log::info!("Folders JSON content: {}", folders_json);
-
         let decrypted = EncryptionService::decrypt_aes(folders_json)
             .map_err(|e| format!("Failed to decrypt folders: {}", e))?;
-
-        log::info!("Decrypted folders: {}", decrypted);
 
         serde_json::from_str(&decrypted).map_err(|e| format!("Failed to parse folders: {}", e))
     }
@@ -378,6 +302,44 @@ impl MigrationService {
         }
 
         Ok(())
+    }
+
+    /// Generate metadata from the previous worlds and folders
+    ///
+    /// # Arguments
+    /// * old_worlds_path - The path to the old VRC Worlds Manager Worlds file
+    /// * old_folders_path - The path to the old VRC Worlds Manager Folders file
+    ///
+    /// # Returns
+    /// Returns the metadata of the old VRC Worlds Manager Data
+    ///
+    /// # Errors
+    /// Returns an error message if the metadata could not be generated
+    pub async fn get_migration_metadata(
+        old_worlds_path: String,
+        old_folders_path: String,
+    ) -> Result<PreviousMetadata, String> {
+        let (worlds_content, folders_content) =
+            Self::read_data_files(&old_worlds_path, &old_folders_path)
+                .await
+                .map_err(|e| format!("Failed to read data files: {}", e))?;
+
+        let old_worlds = Self::parse_world_data(&worlds_content)
+            .map_err(|e| format!("Failed to parse worlds: {}", e))?;
+        let old_folders = Self::parse_folder_data(&folders_content)
+            .map_err(|e| format!("Failed to parse folders: {}", e))?;
+
+        // Deduplicate worlds
+        let old_worlds = Self::deduplicate_with_pattern(old_worlds);
+        log::info!(
+            "Count: Worlds: {}, Folders: {}",
+            old_worlds.len(),
+            old_folders.len()
+        );
+        Ok(PreviousMetadata {
+            number_of_folders: old_folders.len() as u32,
+            number_of_worlds: old_worlds.len() as u32,
+        })
     }
 }
 
