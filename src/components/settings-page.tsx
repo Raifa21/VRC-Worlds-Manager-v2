@@ -37,11 +37,13 @@ import { MigrationPopup } from '@/components/migration-popup';
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
   onOpenHiddenFolder: () => void;
+  onDataChange: () => void;
 }
 
 export function SettingsPage({
   onCardSizeChange,
   onOpenHiddenFolder,
+  onDataChange,
 }: SettingsPageProps) {
   const [preferences, setPreferences] = React.useState<{
     theme: string;
@@ -251,6 +253,7 @@ export function SettingsPage({
         title: t('settings-page:restore-success-title'),
         description: t('settings-page:restore-success-description'),
       });
+      onDataChange();
     } catch (e) {
       error(`Restore error: ${e}`);
       toast({
@@ -287,6 +290,7 @@ export function SettingsPage({
         title: t('settings-page:migration-success-title'),
         description: t('settings-page:migration-success-description'),
       });
+      onDataChange();
     } catch (e) {
       error(`Migration error: ${e}`);
       toast({
