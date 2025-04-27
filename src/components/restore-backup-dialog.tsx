@@ -190,9 +190,9 @@ export function RestoreBackupDialog({
                     {t('settings-page:warning')}
                   </h4>
                   <p className="text-sm text-amber-700 dark:text-amber-400">
-                    {t('settings-page:restore-warning-1')}
+                    {t('settings-page:warning-text-1')}
                     <br />
-                    {t('settings-page:restore-warning-2')}
+                    {t('settings-page:warning-text-2')}
                   </p>
                 </div>
               </div>
