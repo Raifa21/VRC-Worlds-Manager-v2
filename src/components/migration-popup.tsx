@@ -34,7 +34,7 @@ interface MigrationData {
 interface MigrationPopupProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (folders_path: string, worlds_path: string) => Promise<void>;
+  onConfirm: (worlds_path: string, folders_path: string) => Promise<void>;
 }
 
 export function MigrationPopup({

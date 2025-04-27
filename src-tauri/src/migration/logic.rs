@@ -6,6 +6,7 @@ use crate::FOLDERS;
 use crate::WORLDS;
 use chrono::{DateTime, Duration, Utc};
 use directories::BaseDirs;
+use serde::de;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 
@@ -74,18 +75,14 @@ impl MigrationService {
     }
 
     fn parse_world_data(worlds_json: &str) -> Result<Vec<PreviousWorldModel>, String> {
-        EncryptionService::decrypt_aes(worlds_json)
-            .map_err(|e| format!("Failed to decrypt worlds: {}", e))
-            .and_then(|decrypted| {
-                serde_json::from_str(&decrypted)
-                    .map_err(|e| format!("Failed to parse worlds: {}", e))
-            })
+        let decrypted = EncryptionService::decrypt_aes(worlds_json)
+            .map_err(|e| format!("Failed to decrypt worlds: {}", e))?;
+        serde_json::from_str(&decrypted).map_err(|e| format!("Failed to parse worlds: {}", e))
     }
 
     fn parse_folder_data(folders_json: &str) -> Result<Vec<PreviousFolderCollection>, String> {
         let decrypted = EncryptionService::decrypt_aes(folders_json)
             .map_err(|e| format!("Failed to decrypt folders: {}", e))?;
-
         serde_json::from_str(&decrypted).map_err(|e| format!("Failed to parse folders: {}", e))
     }
 
@@ -218,6 +215,7 @@ impl MigrationService {
     /// # Arguments
     /// * `path_to_worlds` - The path to the old VRC Worlds Manager Worlds file
     /// * `path_to_folders` - The path to the old VRC Worlds Manager Folders file
+    /// * `dont_overwrite` - A boolean array indicating if the worlds and folders should be overwritten
     ///
     /// # Errors
     /// Returns an error message if the old VRC Worlds Manager Data could not be migrated
