@@ -133,7 +133,7 @@ export function MigrationPopup({
 
     try {
       // Pass both paths to the parent component
-      await onConfirm(migrationPaths[1], migrationPaths[0]); // folders_path, worlds_path
+      await onConfirm(migrationPaths[0], migrationPaths[1]); // worlds_path, folders_path
 
       // Clean up and close dialog on success
       setMigrationPaths(['', '']);
