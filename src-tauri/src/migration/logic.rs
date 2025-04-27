@@ -2,13 +2,11 @@ use crate::definitions::{FolderModel, WorldApiData, WorldModel, WorldUserData};
 use crate::migration::{PreviousFolderCollection, PreviousMetadata, PreviousWorldModel};
 use crate::services::EncryptionService;
 use crate::services::FileService;
-use crate::FOLDERS;
-use crate::WORLDS;
 use chrono::{DateTime, Duration, Utc};
 use directories::BaseDirs;
-use serde::de;
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::sync::RwLock;
 
 pub struct MigrationService;
 
@@ -223,9 +221,14 @@ impl MigrationService {
         path_to_worlds: String,
         path_to_folders: String,
         dont_overwrite: [bool; 2], // [worlds, folders]
+        worlds: &RwLock<Vec<WorldModel>>,
+        folders: &RwLock<Vec<FolderModel>>,
     ) -> Result<(), String> {
         let (worlds_content, folders_content) =
             Self::read_data_files(&path_to_worlds, &path_to_folders).await?;
+        log::info!("Reading worlds and folders data...");
+        log::info!("Path to worlds: {}", path_to_worlds);
+        log::info!("Path to folders: {}", path_to_folders);
 
         let old_worlds = Self::parse_world_data(&worlds_content)?;
         let old_folders = Self::parse_folder_data(&folders_content)?;
@@ -280,23 +283,39 @@ impl MigrationService {
 
         // Store migrated data, respecting dont_overwrite flags
         if !dont_overwrite[0] {
-            let mut worlds_lock = WORLDS
-                .get()
-                .write()
-                .map_err(|e| format!("Failed to acquire worlds lock: {}", e))?;
-            *worlds_lock = new_worlds;
-            FileService::write_worlds(&worlds_lock)
-                .map_err(|e| format!("Failed to write worlds: {}", e))?;
+            {
+                let mut worlds_lock = worlds.write().map_err(|e| {
+                    log::error!("Failed to acquire write lock for worlds: {}", e);
+                    "Failed to acquire write lock for worlds".to_string()
+                })?;
+                worlds_lock.clear();
+                log::info!("Cleared existing worlds data");
+            }
+            let mut worlds_lock = worlds.write().map_err(|e| {
+                log::error!("Failed to acquire write lock for worlds: {}", e);
+                "Failed to acquire write lock for worlds".to_string()
+            })?;
+            worlds_lock.extend(new_worlds);
+            FileService::write_worlds(&*worlds_lock).map_err(|e| e.to_string())?;
+            log::info!("Retrieved {} worlds", worlds_lock.len());
         }
 
         if !dont_overwrite[1] {
-            let mut folders_lock = FOLDERS
-                .get()
-                .write()
-                .map_err(|e| format!("Failed to acquire folders lock: {}", e))?;
-            *folders_lock = new_folders;
-            FileService::write_folders(&folders_lock)
-                .map_err(|e| format!("Failed to write folders: {}", e))?;
+            {
+                let mut folders_lock = folders.write().map_err(|e| {
+                    log::error!("Failed to acquire write lock for folders: {}", e);
+                    "Failed to acquire write lock for folders".to_string()
+                })?;
+                folders_lock.clear();
+                log::info!("Cleared existing folders data");
+            }
+            let mut folders_lock = folders.write().map_err(|e| {
+                log::error!("Failed to acquire write lock for folders: {}", e);
+                "Failed to acquire write lock for folders".to_string()
+            })?;
+            folders_lock.extend(new_folders);
+            FileService::write_folders(&*folders_lock).map_err(|e| e.to_string())?;
+            log::info!("Retrieved {} folders", folders_lock.len());
         }
 
         Ok(())
