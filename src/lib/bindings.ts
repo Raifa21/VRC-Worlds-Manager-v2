@@ -359,25 +359,6 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async migrateOldData(
-    worldsPath: string,
-    foldersPath: string,
-    dontOverwrite: [boolean, boolean],
-  ): Promise<Result<null, string>> {
-    try {
-      return {
-        status: 'ok',
-        data: await TAURI_INVOKE('migrate_old_data', {
-          worldsPath,
-          foldersPath,
-          dontOverwrite,
-        }),
-      };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
   /**
    * Passes the paths to the frontend
    * Gets the path to the local app data directory
@@ -417,11 +398,17 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async restoreFromBackup(backupPath: string): Promise<Result<null, string>> {
+  async getMigrationMetadata(
+    worldsPath: string,
+    foldersPath: string,
+  ): Promise<Result<PreviousMetadata, string>> {
     try {
       return {
         status: 'ok',
-        data: await TAURI_INVOKE('restore_from_backup', { backupPath }),
+        data: await TAURI_INVOKE('get_migration_metadata', {
+          worldsPath,
+          foldersPath,
+        }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -468,6 +455,36 @@ export const commands = {
       return {
         status: 'ok',
         data: await TAURI_INVOKE('create_backup', { backupPath }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async restoreFromBackup(backupPath: string): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('restore_from_backup', { backupPath }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async migrateOldData(
+    worldsPath: string,
+    foldersPath: string,
+    dontOverwrite: [boolean, boolean],
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('migrate_old_data', {
+          worldsPath,
+          foldersPath,
+          dontOverwrite,
+        }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -543,6 +560,10 @@ export type PatreonData = {
   basicSupporter: string[];
 };
 export type Platform = 'PC' | 'Quest' | 'Cross-Platform';
+export type PreviousMetadata = {
+  number_of_folders: number;
+  number_of_worlds: number;
+};
 export type UserGroup = {
   id: string;
   name: string;

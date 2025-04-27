@@ -1,4 +1,5 @@
 use crate::backup::BackupMetaData;
+use crate::services::FileService;
 use crate::FolderModel;
 use crate::WorldModel;
 use chrono::Utc;
@@ -42,6 +43,7 @@ pub fn restore_from_backup(
             "Failed to acquire write lock for worlds".to_string()
         })?;
         worlds_lock.extend(worlds_data);
+        FileService::write_worlds(&*worlds_lock).map_err(|e| e.to_string())?;
         log::info!("Restored {} worlds", worlds_lock.len());
 
         {
@@ -57,6 +59,7 @@ pub fn restore_from_backup(
             "Failed to acquire write lock for folders".to_string()
         })?;
         folders_lock.extend(folders_data);
+        FileService::write_folders(&*folders_lock).map_err(|e| e.to_string())?;
         log::info!("Restored {} folders", folders_lock.len());
     } else {
         log::error!("Backup files not found in the specified path");

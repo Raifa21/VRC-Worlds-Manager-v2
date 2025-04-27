@@ -1,6 +1,6 @@
 use crate::backup;
+use crate::migration;
 use crate::services;
-use crate::services::migration_service::MigrationService;
 use crate::{FOLDERS, PREFERENCES, WORLDS};
 use directories::BaseDirs;
 
@@ -50,13 +50,13 @@ pub async fn check_files_loaded() -> Result<bool, String> {
 #[tauri::command]
 #[specta::specta]
 pub async fn detect_old_installation() -> Result<(String, String), String> {
-    MigrationService::detect_old_installation()
+    migration::MigrationService::detect_old_installation()
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn check_existing_data() -> Result<(bool, bool), String> {
-    MigrationService::check_existing_data().map_err(|e| e.to_string())
+    migration::MigrationService::check_existing_data().map_err(|e| e.to_string())
 }
 
 /// Passes the paths to the frontend
@@ -82,24 +82,17 @@ pub async fn pass_paths() -> Result<String, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn migrate_old_data(
-    worlds_path: String,
-    folders_path: String,
-    dont_overwrite: [bool; 2],
-) -> Result<(), String> {
-    MigrationService::migrate_old_data(worlds_path, folders_path, dont_overwrite)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-#[specta::specta]
 pub async fn get_backup_metadata(backup_path: String) -> Result<backup::BackupMetaData, String> {
     backup::get_backup_metadata(backup_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn restore_from_backup(backup_path: String) -> Result<(), String> {
-    backup::restore_from_backup(backup_path, WORLDS.get(), FOLDERS.get()).map_err(|e| e.to_string())
+pub async fn get_migration_metadata(
+    worlds_path: String,
+    folders_path: String,
+) -> Result<migration::PreviousMetadata, String> {
+    migration::MigrationService::get_migration_metadata(worlds_path, folders_path)
+        .await
+        .map_err(|e| e.to_string())
 }

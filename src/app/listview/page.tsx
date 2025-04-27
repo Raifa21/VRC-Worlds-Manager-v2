@@ -181,7 +181,6 @@ export default function ListView() {
       const worlds = await invoke<WorldDisplayData[]>('get_worlds', {
         folderName: folder,
       });
-      info(`Worlds in folder: ${worlds}`);
       setWorlds(worlds);
       setCurrentFolder(folder);
     } catch (e) {
@@ -721,6 +720,7 @@ export default function ListView() {
           onOpenHiddenFolder={() => {
             handleSelectFolder(SpecialFolders.Hidden);
           }}
+          onDataChange={loadFolders}
         />
       );
     }

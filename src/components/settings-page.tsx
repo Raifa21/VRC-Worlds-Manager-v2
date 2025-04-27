@@ -32,15 +32,18 @@ import { useRouter } from 'next/navigation';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RestoreBackupDialog } from '@/components/restore-backup-dialog';
+import { MigrationPopup } from '@/components/migration-popup';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
   onOpenHiddenFolder: () => void;
+  onDataChange: () => void;
 }
 
 export function SettingsPage({
   onCardSizeChange,
   onOpenHiddenFolder,
+  onDataChange,
 }: SettingsPageProps) {
   const [preferences, setPreferences] = React.useState<{
     theme: string;
@@ -54,7 +57,7 @@ export function SettingsPage({
   const { setLanguage } = useContext(LocalizationContext);
   const router = useRouter();
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const [showMigrateConfirm, setShowMigrateConfirm] = React.useState(false);
+  const [showMigrateDialog, setShowMigrateDialog] = React.useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
 
   React.useEffect(() => {
@@ -250,11 +253,49 @@ export function SettingsPage({
         title: t('settings-page:restore-success-title'),
         description: t('settings-page:restore-success-description'),
       });
+      onDataChange();
     } catch (e) {
       error(`Restore error: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('settings-page:error-restore-backup'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMigrationConfirm = async (
+    worldsPath: string,
+    foldersPath: string,
+  ) => {
+    try {
+      info(`Migrating data from ${worldsPath} and ${foldersPath}`);
+      const result = await commands.migrateOldData(worldsPath, foldersPath, [
+        false,
+        false,
+      ]);
+
+      if (result.status === 'error') {
+        error(`Migration failed: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('settings-page:error-migrate-data'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      info('Migration completed successfully');
+      toast({
+        title: t('settings-page:migration-success-title'),
+        description: t('settings-page:migration-success-description'),
+      });
+      onDataChange();
+    } catch (e) {
+      error(`Migration error: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-migrate-data'),
         variant: 'destructive',
       });
     }
@@ -480,9 +521,8 @@ export function SettingsPage({
             </div>
             <Button
               variant="outline"
-              onClick={() => setShowMigrateConfirm(true)}
+              onClick={() => setShowMigrateDialog(true)}
               className="gap-2"
-              disabled
             >
               <span className="text-sm">{t('settings-page:migrate-data')}</span>
             </Button>
@@ -562,6 +602,12 @@ export function SettingsPage({
         open={showRestoreDialog}
         onOpenChange={setShowRestoreDialog}
         onConfirm={handleRestoreConfirm}
+      />
+
+      <MigrationPopup
+        open={showMigrateDialog}
+        onOpenChange={setShowMigrateDialog}
+        onConfirm={handleMigrationConfirm}
       />
     </div>
   );

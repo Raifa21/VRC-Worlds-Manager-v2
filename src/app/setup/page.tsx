@@ -339,7 +339,7 @@ const WelcomePage: React.FC = () => {
                       className="text-muted-foreground"
                     />
                     <Button variant="outline" onClick={() => handleFilePick(0)}>
-                      {t('setup-page:select-button')}
+                      {t('general:select-button')}
                     </Button>
                   </div>
                   <div className="h-3">
@@ -364,7 +364,7 @@ const WelcomePage: React.FC = () => {
                       className="text-muted-foreground"
                     />
                     <Button variant="outline" onClick={() => handleFilePick(1)}>
-                      {t('setup-page:select-button')}
+                      {t('general:select-button')}
                     </Button>
                   </div>
                   <div className="h-3">
