@@ -3,7 +3,10 @@ use std::sync::Arc;
 use reqwest::cookie::Jar;
 use serde::Deserialize;
 
-use crate::api::common::{get_reqwest_client, API_BASE_URL};
+use crate::api::common::{
+    check_rate_limit, get_reqwest_client, handle_api_response, record_rate_limit, reset_backoff,
+    API_BASE_URL,
+};
 
 use super::definitions::{
     FavoriteWorld, FavoriteWorldParser, VRChatWorld, WorldDetails, WorldSearchParameters,
@@ -12,6 +15,8 @@ use super::definitions::{
 pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
     cookie: J,
 ) -> Result<Vec<FavoriteWorld>, String> {
+    const OPERATION: &str = "get_favorite_worlds";
+
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
     let mut all_favorites = Vec::new();
@@ -27,12 +32,25 @@ pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
             offset
         );
 
+        check_rate_limit(OPERATION)?;
+
         let result = client
             .get(format!("{}/worlds/favorites", API_BASE_URL))
             .query(&[("n", n), ("offset", offset)])
             .send()
             .await
             .map_err(|e| e.to_string())?;
+
+        let result = match handle_api_response(result, OPERATION).await {
+            Ok(response) => response,
+            Err(e) => {
+                log::error!("Failed to handle API response: {}", e);
+                record_rate_limit(OPERATION);
+                return Err(e);
+            }
+        };
+
+        reset_backoff(OPERATION);
 
         let text = result
             .text()
@@ -88,6 +106,11 @@ pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
 pub async fn get_recently_visited_worlds<J: Into<Arc<Jar>>>(
     cookie: J,
 ) -> Result<Vec<VRChatWorld>, String> {
+    const OPERATION: &str = "get_recently_visited_worlds";
+
+    // Check for rate limit
+    check_rate_limit(OPERATION)?;
+
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
 
@@ -96,6 +119,17 @@ pub async fn get_recently_visited_worlds<J: Into<Arc<Jar>>>(
         .send()
         .await
         .map_err(|e| format!("Failed to get recently visited worlds: {}", e.to_string()))?;
+
+    let result = match handle_api_response(result, OPERATION).await {
+        Ok(response) => response,
+        Err(e) => {
+            log::error!("Failed to handle API response: {}", e);
+            record_rate_limit(OPERATION);
+            return Err(e);
+        }
+    };
+
+    reset_backoff(OPERATION);
 
     let text = result.text().await;
 
@@ -124,6 +158,10 @@ pub async fn get_world_by_id<J: Into<Arc<Jar>>, S: AsRef<str>>(
     cookie: J,
     id: S,
 ) -> Result<WorldDetails, String> {
+    const OPERATION: &str = "get_world_by_id";
+
+    check_rate_limit(OPERATION)?;
+
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
 
@@ -132,6 +170,17 @@ pub async fn get_world_by_id<J: Into<Arc<Jar>>, S: AsRef<str>>(
         .send()
         .await
         .map_err(|e| format!("Failed to get world by ID: {}", e.to_string()))?;
+
+    let result = match handle_api_response(result, OPERATION).await {
+        Ok(response) => response,
+        Err(e) => {
+            log::error!("Failed to handle API response: {}", e);
+            record_rate_limit(OPERATION);
+            return Err(e);
+        }
+    };
+
+    reset_backoff(OPERATION);
 
     let text = result.text().await;
 
@@ -157,6 +206,10 @@ pub async fn search_worlds<J: Into<Arc<Jar>>>(
     cookie: J,
     search_parameters: &WorldSearchParameters,
 ) -> Result<Vec<VRChatWorld>, String> {
+    const OPERATION: &str = "search_worlds";
+
+    check_rate_limit(OPERATION)?;
+
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
 
@@ -166,6 +219,17 @@ pub async fn search_worlds<J: Into<Arc<Jar>>>(
         .send()
         .await
         .expect("Failed to search worlds");
+
+    let result = match handle_api_response(result, OPERATION).await {
+        Ok(response) => response,
+        Err(e) => {
+            log::error!("Failed to handle API response: {}", e);
+            record_rate_limit(OPERATION);
+            return Err(e);
+        }
+    };
+
+    reset_backoff(OPERATION);
 
     let text = result.text().await;
 

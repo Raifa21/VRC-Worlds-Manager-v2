@@ -32,15 +32,19 @@ import { useRouter } from 'next/navigation';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RestoreBackupDialog } from '@/components/restore-backup-dialog';
+import { MigrationPopup } from '@/components/migration-popup';
+import { DeleteDataConfirmationDialog } from '@/components/delete-data-confirmation-dialog';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
   onOpenHiddenFolder: () => void;
+  onDataChange: () => void;
 }
 
 export function SettingsPage({
   onCardSizeChange,
   onOpenHiddenFolder,
+  onDataChange,
 }: SettingsPageProps) {
   const [preferences, setPreferences] = React.useState<{
     theme: string;
@@ -54,7 +58,7 @@ export function SettingsPage({
   const { setLanguage } = useContext(LocalizationContext);
   const router = useRouter();
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const [showMigrateConfirm, setShowMigrateConfirm] = React.useState(false);
+  const [showMigrateDialog, setShowMigrateDialog] = React.useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
 
   React.useEffect(() => {
@@ -250,11 +254,80 @@ export function SettingsPage({
         title: t('settings-page:restore-success-title'),
         description: t('settings-page:restore-success-description'),
       });
+      onDataChange();
     } catch (e) {
       error(`Restore error: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('settings-page:error-restore-backup'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMigrationConfirm = async (
+    worldsPath: string,
+    foldersPath: string,
+  ) => {
+    try {
+      info(`Migrating data from ${worldsPath} and ${foldersPath}`);
+      const result = await commands.migrateOldData(worldsPath, foldersPath, [
+        false,
+        false,
+      ]);
+
+      if (result.status === 'error') {
+        error(`Migration failed: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('settings-page:error-migrate-data'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      info('Migration completed successfully');
+      toast({
+        title: t('settings-page:migration-success-title'),
+        description: t('settings-page:migration-success-description'),
+      });
+      onDataChange();
+    } catch (e) {
+      error(`Migration error: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-migrate-data'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      info('Deleting all data...');
+      const result = await commands.deleteData();
+      if (result.status === 'error') {
+        error(`Data deletion failed: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('settings-page:error-delete-data'),
+          variant: 'destructive',
+        });
+        return;
+      }
+      info('Data deleted successfully');
+      toast({
+        title: t('settings-page:delete-success-title'),
+        description: t('settings-page:delete-success-description'),
+      });
+
+      setShowDeleteConfirm(false);
+      onDataChange();
+    } catch (e) {
+      error(`Data deletion error: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-delete-data'),
         variant: 'destructive',
       });
     }
@@ -480,9 +553,8 @@ export function SettingsPage({
             </div>
             <Button
               variant="outline"
-              onClick={() => setShowMigrateConfirm(true)}
+              onClick={() => setShowMigrateDialog(true)}
               className="gap-2"
-              disabled
             >
               <span className="text-sm">{t('settings-page:migrate-data')}</span>
             </Button>
@@ -501,7 +573,6 @@ export function SettingsPage({
               variant="destructive"
               onClick={() => setShowDeleteConfirm(true)}
               className="gap-2"
-              disabled
             >
               <Trash2 className="h-4 w-4" />
               <span className="text-sm">
@@ -521,12 +592,7 @@ export function SettingsPage({
                 {t('settings-page:logout-description')}
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="gap-2"
-              disabled
-            >
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
               <LogOut className="h-4 w-4" />
               <span className="text-sm">{t('settings-page:logout')}</span>
             </Button>
@@ -547,10 +613,10 @@ export function SettingsPage({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="stable">
-                  {t('settings-page:channel-stable')}
+                  {t('settings-page:update-channel-stable')}
                 </SelectItem>
                 <SelectItem value="pre-release">
-                  {t('settings-page:channel-prerelease')}
+                  {t('settings-page:update-channel-prerelease')}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -562,6 +628,17 @@ export function SettingsPage({
         open={showRestoreDialog}
         onOpenChange={setShowRestoreDialog}
         onConfirm={handleRestoreConfirm}
+      />
+
+      <MigrationPopup
+        open={showMigrateDialog}
+        onOpenChange={setShowMigrateDialog}
+        onConfirm={handleMigrationConfirm}
+      />
+      <DeleteDataConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDeleteConfirm}
       />
     </div>
   );

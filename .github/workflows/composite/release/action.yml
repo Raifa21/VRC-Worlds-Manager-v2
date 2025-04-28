@@ -40,18 +40,14 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+    - uses: oven-sh/setup-bun@v2
       with:
-        node-version: 23
-        cache: npm
-        cache-dependency-path: package-lock.json
+        bun-version: latest
 
-    - run: node --version
-      shell: bash
-    - run: npm --version
+    - run: bun --version
       shell: bash
 
-    - run: npm ci
+    - run: bun install --frozen-lockfile
       shell: bash
 
     - uses: dtolnay/rust-toolchain@stable

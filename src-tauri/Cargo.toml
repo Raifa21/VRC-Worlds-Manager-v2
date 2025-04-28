@@ -1,6 +1,6 @@
 [package]
 name = "vrc-worlds-manager"
-version = "0.1.7"
+version = "0.1.8"
 description = "A Tauri App"
 authors = ["Raifa", "siloneco"]
 license = ""
@@ -44,6 +44,7 @@ tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 ringbuffer = "0.15.0"
 simplelog = "0.12.2"
 time = "0.3.41"
+rand = "0.9.1"
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

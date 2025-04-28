@@ -14,6 +14,7 @@ mod commands;
 mod definitions;
 mod errors;
 mod logging;
+mod migration;
 mod services;
 
 static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
@@ -21,6 +22,7 @@ static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
 static WORLDS: InitCell<RwLock<Vec<WorldModel>>> = InitCell::new();
 static INITSTATE: InitCell<tokio::sync::RwLock<InitState>> = InitCell::new();
 static AUTHENTICATOR: InitCell<tokio::sync::RwLock<VRChatAPIClientAuthenticator>> = InitCell::new();
+static RATE_LIMIT_STORE: InitCell<RwLock<api::RateLimitStore>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -60,6 +62,17 @@ pub fn run() {
             let handle = app.handle().clone();
             let logs_dir = handle.path().app_log_dir().unwrap();
             logging::purge_outdated_logs(&logs_dir).expect("Failed to purge outdated logs");
+
+            let app_data_dir = handle.path().app_data_dir().unwrap_or_else(|_| {
+                log::warn!(
+                    "Could not resolve app data directory, using temp dir for rate limit data"
+                );
+                std::env::temp_dir()
+            });
+            let rate_limit_path = app_data_dir.join("rate_limits.json");
+            RATE_LIMIT_STORE.set(RwLock::new(api::RateLimitStore::load(rate_limit_path)));
+            log::info!("Rate limit store initialized");
+
             tauri::async_runtime::spawn(async move {
                 update(handle).await.unwrap();
             });
