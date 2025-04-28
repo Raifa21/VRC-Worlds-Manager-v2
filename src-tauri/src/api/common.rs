@@ -97,6 +97,7 @@ pub fn reset_backoff(endpoint: &str) {
         if data.consecutive_failures > 0 {
             data.consecutive_failures = 0;
             data.current_backoff_ms = 600000; // Reset to base
+            data.last_rate_limited = None; // Clear last rate limited time
             store.save();
             log::info!("Reset rate limit backoff for {}", endpoint);
         }
