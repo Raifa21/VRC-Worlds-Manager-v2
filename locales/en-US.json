@@ -241,6 +241,17 @@
   "settings-page:error-migrate-data": "Failed to migrate data",
   "settings-page:migration-success-title": "Migration Complete",
   "settings-page:migration-success-description": "Your data has been successfully migrated",
+  "settings-page:error-delete-data": "Failed to delete data",
+  "settings-page:delete-success-title": "Data Deleted",
+  "settings-page:delete-success-description": "Your data has been successfully deleted",
+
+  "delete-data:warning-title": "Delete Data",
+  "delete-data:warning-description": "Delete world and folder data",
+  "delete-data:deletion-warning": "Warning",
+  "delete-data:deletion-warning-description": "Are you sure you want to delete your data?",
+  "delete-data:deletion-irreversible": "This action cannot be undone!",
+  "delete-data:hold-to-delete": "Hold to Delete",
+  "delete-data:deleting": "Deleting...",
 
   "find-page:under-development": "This feature is currently under development. Stay tuned!",
 

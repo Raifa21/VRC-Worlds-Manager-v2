@@ -33,6 +33,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RestoreBackupDialog } from '@/components/restore-backup-dialog';
 import { MigrationPopup } from '@/components/migration-popup';
+import { DeleteDataConfirmationDialog } from '@/components/delete-data-confirmation-dialog';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
@@ -301,6 +302,37 @@ export function SettingsPage({
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    try {
+      info('Deleting all data...');
+      const result = await commands.deleteData();
+      if (result.status === 'error') {
+        error(`Data deletion failed: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('settings-page:error-delete-data'),
+          variant: 'destructive',
+        });
+        return;
+      }
+      info('Data deleted successfully');
+      toast({
+        title: t('settings-page:delete-success-title'),
+        description: t('settings-page:delete-success-description'),
+      });
+
+      setShowDeleteConfirm(false);
+      onDataChange();
+    } catch (e) {
+      error(`Data deletion error: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-delete-data'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleLogout = async () => {
     try {
       info('Logging out...');
@@ -541,7 +573,6 @@ export function SettingsPage({
               variant="destructive"
               onClick={() => setShowDeleteConfirm(true)}
               className="gap-2"
-              disabled
             >
               <Trash2 className="h-4 w-4" />
               <span className="text-sm">
@@ -608,6 +639,11 @@ export function SettingsPage({
         open={showMigrateDialog}
         onOpenChange={setShowMigrateDialog}
         onConfirm={handleMigrationConfirm}
+      />
+      <DeleteDataConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDeleteConfirm}
       />
     </div>
   );

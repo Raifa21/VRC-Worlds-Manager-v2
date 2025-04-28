@@ -241,7 +241,18 @@
   "settings-page:error-migrate-data": "データの移行に失敗しました",
   "settings-page:migration-success-title": "移行完了",
   "settings-page:migration-success-description": "データが正常に移行されました",
+  "settings-page:error-delete-data": "データの削除に失敗しました",
+  "settings-page:delete-success-title": "データ削除完了",
+  "settings-page:delete-success-description": "データが正常に削除されました",
 
+  "delete-data:warning-title": "データ削除",
+  "delete-data:warning-description": "ワールドとフォルダのデータを削除します",
+  "delete-data:deletion-warning": "警告",
+  "delete-data:deletion-warning-description": "本当にデータを削除しますか？",
+  "delete-data:deletion-irreversible": "この操作は元に戻せません！",
+  "delete-data:hold-to-delete": "長押しして削除",
+  "delete-data:deleting": "削除中...",
+  
   "find-page:under-development": "この機能は現在開発中です。乞うご期待！",
 
   "add-to-folder-dialog:title": "フォルダの管理",
