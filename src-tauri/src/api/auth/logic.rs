@@ -6,9 +6,11 @@ use reqwest::{
     Response, StatusCode,
 };
 
-use crate::{
-    api::common::{get_reqwest_client, API_BASE_URL},
-    definitions::AuthCookies,
+use crate::definitions::AuthCookies;
+
+use crate::api::common::{
+    check_rate_limit, get_reqwest_client, handle_api_response, record_rate_limit, reset_backoff,
+    API_BASE_URL,
 };
 
 use super::definitions::{
@@ -56,6 +58,10 @@ impl VRChatAPIClientAuthenticator {
     }
 
     pub async fn verify_token(&mut self) -> Result<VRChatAuthStatus, String> {
+        const OPERATION: &str = "verify_token";
+
+        check_rate_limit(OPERATION)?;
+
         log::info!("Verifying token...");
         let result = self
             .client
@@ -63,6 +69,17 @@ impl VRChatAPIClientAuthenticator {
             .send()
             .await
             .map_err(|e| format!("Failed to send auth request: {}", e))?;
+
+        let result = match handle_api_response(result, OPERATION).await {
+            Ok(response) => response,
+            Err(e) => {
+                log::error!("Failed to handle API response: {}", e);
+                record_rate_limit(OPERATION);
+                return Err(e);
+            }
+        };
+
+        reset_backoff(OPERATION);
 
         if result.status() == StatusCode::UNAUTHORIZED {
             self.cookie = Arc::new(Jar::default());
@@ -119,6 +136,10 @@ impl VRChatAPIClientAuthenticator {
         &mut self,
         password: T,
     ) -> Result<VRChatAuthStatus, String> {
+        const OPERATION: &str = "login_with_password";
+
+        check_rate_limit(OPERATION)?;
+
         log::info!("Logging in with password...");
         let password = password.as_ref().to_string();
 
@@ -131,6 +152,17 @@ impl VRChatAPIClientAuthenticator {
             .send()
             .await
             .map_err(|e| format!("Failed to send auth request: {}", e))?;
+
+        let result = match handle_api_response(result, OPERATION).await {
+            Ok(response) => response,
+            Err(e) => {
+                log::error!("Failed to handle API response: {}", e);
+                record_rate_limit(OPERATION);
+                return Err(e);
+            }
+        };
+
+        reset_backoff(OPERATION);
 
         if result.status() == StatusCode::UNAUTHORIZED {
             return Ok(VRChatAuthStatus::InvalidCredentials);
@@ -190,6 +222,8 @@ impl VRChatAPIClientAuthenticator {
         &mut self,
         code: T,
     ) -> Result<VRChatAuthStatus, String> {
+        const OPERATION: &str = "login_with_2fa";
+
         log::info!("Logging in with email 2FA...");
         if self.phase != VRChatAuthPhase::Email2FA {
             return Err("Not in email 2FA phase".to_string());
@@ -209,6 +243,17 @@ impl VRChatAPIClientAuthenticator {
             .await
             .map_err(|e| format!("Failed to send login request: {}", e))?;
 
+        let response = match handle_api_response(response, OPERATION).await {
+            Ok(response) => response,
+            Err(e) => {
+                log::error!("Failed to handle API response: {}", e);
+                record_rate_limit(OPERATION);
+                return Err(e);
+            }
+        };
+
+        reset_backoff(OPERATION);
+
         self.process_2fa_response(response).await
     }
 
@@ -216,6 +261,10 @@ impl VRChatAPIClientAuthenticator {
         &mut self,
         code: T,
     ) -> Result<VRChatAuthStatus, String> {
+        const OPERATION: &str = "login_with_2fa";
+
+        check_rate_limit(OPERATION)?;
+
         log::info!("Logging in with 2FA...");
         if self.phase != VRChatAuthPhase::TwoFactorAuth {
             return Err("Not in 2FA phase".to_string());
@@ -231,6 +280,17 @@ impl VRChatAPIClientAuthenticator {
             .send()
             .await
             .map_err(|e| format!("Failed to send login request: {}", e))?;
+
+        let response = match handle_api_response(response, OPERATION).await {
+            Ok(response) => response,
+            Err(e) => {
+                log::error!("Failed to handle API response: {}", e);
+                record_rate_limit(OPERATION);
+                return Err(e);
+            }
+        };
+
+        reset_backoff(OPERATION);
 
         self.process_2fa_response(response).await
     }
@@ -290,6 +350,10 @@ impl VRChatAPIClientAuthenticator {
 }
 
 pub async fn logout(jar: &Arc<Jar>) -> Result<(), String> {
+    const OPERATION: &str = "logout";
+
+    check_rate_limit(OPERATION)?;
+
     log::info!("Logging out...");
     let client = get_reqwest_client(&jar);
 
@@ -298,6 +362,17 @@ pub async fn logout(jar: &Arc<Jar>) -> Result<(), String> {
         .send()
         .await
         .map_err(|e| format!("Failed to send logout request: {}", e))?;
+
+    let result = match handle_api_response(result, OPERATION).await {
+        Ok(response) => response,
+        Err(e) => {
+            log::error!("Failed to handle API response: {}", e);
+            record_rate_limit(OPERATION);
+            return Err(e);
+        }
+    };
+
+    reset_backoff(OPERATION);
 
     if result.status() == StatusCode::OK {
         log::info!("Logout successful");

@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use reqwest::cookie::Jar;
 
-use crate::api::common::{get_reqwest_client, API_BASE_URL};
+use crate::api::common::{
+    check_rate_limit, get_reqwest_client, handle_api_response, record_rate_limit, reset_backoff,
+    API_BASE_URL,
+};
 
 use super::definitions::{
     GroupDetails, GroupInstanceCreatePermission, GroupInstancePermissionInfo, GroupPermission,
@@ -13,6 +16,10 @@ pub async fn get_user_groups<J: Into<Arc<Jar>>>(
     cookie: J,
     user_id: &str,
 ) -> Result<Vec<UserGroup>, String> {
+    const OPERATION: &str = "get_user_groups";
+
+    check_rate_limit(OPERATION)?;
+
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
 
@@ -27,6 +34,17 @@ pub async fn get_user_groups<J: Into<Arc<Jar>>>(
         .send()
         .await
         .map_err(|e| e.to_string())?;
+
+    let result = match handle_api_response(result, OPERATION).await {
+        Ok(response) => response,
+        Err(e) => {
+            log::error!("Failed to handle API response: {}", e);
+            record_rate_limit(OPERATION);
+            return Err(e);
+        }
+    };
+
+    reset_backoff(OPERATION);
 
     log::info!("API Response status: {}", result.status());
 
@@ -58,6 +76,10 @@ pub async fn get_permission_for_create_group_instance(
     cookie: Arc<Jar>,
     group_id: &str,
 ) -> Result<GroupInstancePermissionInfo, String> {
+    const OPERATION: &str = "get_permission_for_create_group_instance";
+
+    check_rate_limit(OPERATION)?;
+
     log::info!("Fetching permissions for group: {}", group_id);
     let client = get_reqwest_client(&cookie);
 
@@ -71,6 +93,17 @@ pub async fn get_permission_for_create_group_instance(
             log::info!("Failed to send request: {}", e);
             format!("Failed to fetch group: {}", e)
         })?;
+
+    let result = match handle_api_response(result, OPERATION).await {
+        Ok(response) => response,
+        Err(e) => {
+            log::error!("Failed to handle API response: {}", e);
+            record_rate_limit(OPERATION);
+            return Err(e);
+        }
+    };
+
+    reset_backoff(OPERATION);
 
     log::info!("API Response status: {}", result.status());
 
