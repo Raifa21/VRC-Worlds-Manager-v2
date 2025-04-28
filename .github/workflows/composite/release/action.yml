@@ -53,12 +53,7 @@ runs:
 
     - run: npm ci
       shell: bash
-
-    - name: Install Bun
-      uses: oven-sh/setup-bun@v1
-      with:
-        bun-version: latest
-
+      
     - uses: dtolnay/rust-toolchain@stable
     - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2
       with:
