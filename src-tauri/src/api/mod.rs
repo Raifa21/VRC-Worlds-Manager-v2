@@ -1,5 +1,7 @@
 mod common;
 mod definitions;
+#[cfg(test)]
+mod tests;
 
 pub use definitions::RateLimitStore;
 pub mod auth;
