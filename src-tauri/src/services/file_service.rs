@@ -311,6 +311,22 @@ impl FileService {
         }
         Ok(())
     }
+
+    /// Deletes data from the worlds and folders files
+    /// Overwrites the files with empty data
+    ///
+    /// # Returns
+    /// Ok(()) if the data was deleted successfully
+    ///
+    /// # Errors
+    /// Returns a FileError if the data could not be deleted
+    pub fn delete_worlds_and_folders() -> Result<(), FileError> {
+        let (_, folders_path, worlds_path, _) = Self::get_paths();
+        fs::write(folders_path, "[]").map_err(|_| FileError::FileWriteError)?;
+        fs::write(worlds_path, "[]").map_err(|_| FileError::FileWriteError)?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

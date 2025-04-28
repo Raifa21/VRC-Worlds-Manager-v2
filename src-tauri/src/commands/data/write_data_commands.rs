@@ -61,3 +61,11 @@ pub async fn migrate_old_data(
     .await
     .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_data() -> Result<(), String> {
+    services::delete_data(WORLDS.get(), FOLDERS.get())
+        .await
+        .map_err(|e| e.to_string())
+}
