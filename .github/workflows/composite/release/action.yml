@@ -54,12 +54,16 @@ runs:
     - run: npm ci
       shell: bash
 
+    - name: Install Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
     - uses: dtolnay/rust-toolchain@stable
     - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2
       with:
         workspaces: "./src-tauri -> target"
-        # Add this line to force a cache miss
-        key: "v1-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}"
+
     - name: Build and Create Release
       uses: tauri-apps/tauri-action@42e9df6c59070d114bf90dcd3943a1b8f138b113 # v0
       env:
@@ -69,7 +73,6 @@ runs:
         ENCRYPTION_KEY: ${{ inputs.ENCRYPTION_KEY }}
         ENCRYPTION_IV: ${{ inputs.ENCRYPTION_IV }}
       with:
-        packageManager: npm
         tagName: "vrc-world-manager-v__VERSION__"
         releaseName: "vrc-world-manager v__VERSION__"
         includeUpdaterJson: true
