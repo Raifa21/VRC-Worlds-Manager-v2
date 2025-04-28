@@ -47,7 +47,11 @@ pub fn record_rate_limit(endpoint: &str) -> u64 {
         let max_backoff = 3600000; // Max 1 hour
 
         // Use equal jitter algorithm for exponential backoff
-        let backoff = base_backoff * (2u64.pow(data.consecutive_failures as u32));
+        let backoff = if data.consecutive_failures > 0 {
+            base_backoff * (2u64.pow((data.consecutive_failures - 1) as u32))
+        } else {
+            base_backoff
+        };
 
         data.current_backoff_ms = backoff.min(max_backoff);
         temp = apply_jitter(data.current_backoff_ms);
