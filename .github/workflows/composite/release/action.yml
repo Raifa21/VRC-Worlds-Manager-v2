@@ -62,6 +62,8 @@ runs:
         key: "v1-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}"
     - name: Build and Create Release
       uses: tauri-apps/tauri-action@42e9df6c59070d114bf90dcd3943a1b8f138b113 # v0
+      with:
+        packageManager: npm
       env:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.TAURI_PRIVATE_KEY }}
