@@ -58,7 +58,8 @@ runs:
     - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2
       with:
         workspaces: "./src-tauri -> target"
-
+        # Add this line to force a cache miss
+        key: "v1-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}"
     - name: Build and Create Release
       uses: tauri-apps/tauri-action@42e9df6c59070d114bf90dcd3943a1b8f138b113 # v0
       env:
