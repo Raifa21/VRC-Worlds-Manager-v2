@@ -46,6 +46,13 @@ runs:
         cache: npm
         cache-dependency-path: package-lock.json
 
+    - name: Fix Tauri CLI installation
+    shell: bash
+    run: |
+      echo "Reinstalling Tauri CLI with platform binaries..."
+      npm uninstall @tauri-apps/cli
+      npm install @tauri-apps/cli
+
     - run: node --version
       shell: bash
     - run: npm --version
