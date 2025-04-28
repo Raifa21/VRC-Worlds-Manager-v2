@@ -27,7 +27,7 @@ export function DeleteDataConfirmationDialog({
   const [progress, setProgress] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const holdDuration = 3000; // 5 seconds in milliseconds
+  const holdDuration = 3000; // 3 seconds in milliseconds
   const stepInterval = 50; // Update every 50ms
 
   useEffect(() => {
