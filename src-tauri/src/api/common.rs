@@ -47,14 +47,10 @@ pub fn record_rate_limit(endpoint: &str) -> u64 {
         let max_backoff = 3600000; // Max 1 hour
 
         // Use equal jitter algorithm for exponential backoff
-        // temp = min(cap, base * 2 ^ attempt)
-        // sleep = temp/2 + random(0, temp/2)
-        temp = std::cmp::min(
-            max_backoff,
-            base_backoff * 2_u64.pow(data.consecutive_failures.saturating_sub(1)),
-        );
+        let backoff = base_backoff * (2u64.pow(data.consecutive_failures as u32));
 
-        data.current_backoff_ms = temp;
+        data.current_backoff_ms = backoff.min(max_backoff);
+        temp = apply_jitter(data.current_backoff_ms);
         log::warn!(
             "Rate limit recorded for {}: {} consecutive failures, backoff: {}ms",
             endpoint,
@@ -114,4 +110,18 @@ pub fn check_rate_limit(endpoint: &str) -> Result<(), String> {
         ));
     }
     Ok(())
+}
+
+pub fn apply_jitter(backoff_ms: u64) -> u64 {
+    use rand::Rng;
+
+    // Equal jitter algorithm:
+    // - Take half the backoff as a constant delay
+    // - Add a random amount between 0 and half the original backoff
+    // This reduces average wait time while still preventing retry storms
+
+    let half_backoff = backoff_ms / 2;
+    let jitter = rand::thread_rng().gen_range(0..=half_backoff);
+
+    half_backoff + jitter
 }
