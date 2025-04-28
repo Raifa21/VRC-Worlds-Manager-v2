@@ -244,6 +244,7 @@
   "settings-page:error-delete-data": "データの削除に失敗しました",
   "settings-page:delete-success-title": "データ削除完了",
   "settings-page:delete-success-description": "データが正常に削除されました",
+  "settings-page:error-logout": "ログアウトに失敗しました",
 
   "delete-data:warning-title": "データ削除",
   "delete-data:warning-description": "ワールドとフォルダのデータを削除します",

@@ -244,6 +244,7 @@
   "settings-page:error-delete-data": "Failed to delete data",
   "settings-page:delete-success-title": "Data Deleted",
   "settings-page:delete-success-description": "Your data has been successfully deleted",
+  "settings-page:error-logout": "Failed to logout",
 
   "delete-data:warning-title": "Delete Data",
   "delete-data:warning-description": "Delete world and folder data",
