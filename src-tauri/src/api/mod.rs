@@ -1,5 +1,7 @@
 mod common;
+mod definitions;
 
+pub use definitions::RateLimitStore;
 pub mod auth;
 pub mod group;
 pub mod instance;
