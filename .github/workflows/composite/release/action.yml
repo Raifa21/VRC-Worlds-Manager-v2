@@ -38,21 +38,21 @@ inputs:
     description: "The encryption IV for the application"
 
 runs:
-   using: "composite"
-   steps:
-     - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
-       with:
-         node-version: 23
-         cache: npm
-         cache-dependency-path: package-lock.json
- 
-     - run: node --version
-       shell: bash
-     - run: npm --version
-       shell: bash
- 
-     - run: npm ci
-       shell: bash
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+      with:
+        node-version: 23
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    - run: node --version
+      shell: bash
+    - run: npm --version
+      shell: bash
+
+    - run: npm ci
+      shell: bash
 
     - uses: dtolnay/rust-toolchain@stable
     - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2
