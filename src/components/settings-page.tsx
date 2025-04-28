@@ -592,12 +592,7 @@ export function SettingsPage({
                 {t('settings-page:logout-description')}
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="gap-2"
-              disabled
-            >
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
               <LogOut className="h-4 w-4" />
               <span className="text-sm">{t('settings-page:logout')}</span>
             </Button>
@@ -618,10 +613,10 @@ export function SettingsPage({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="stable">
-                  {t('settings-page:channel-stable')}
+                  {t('settings-page:update-channel-stable')}
                 </SelectItem>
                 <SelectItem value="pre-release">
-                  {t('settings-page:channel-prerelease')}
+                  {t('settings-page:update-channel-prerelease')}
                 </SelectItem>
               </SelectContent>
             </Select>
