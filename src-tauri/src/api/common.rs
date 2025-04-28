@@ -32,21 +32,6 @@ pub async fn handle_api_response(response: Response, operation: &str) -> Result<
     Ok(response)
 }
 
-/// Initialize rate limit service with app handle for persistent storage
-pub fn initialize(app_handle: &AppHandle) {
-    let app_data_dir = app_handle.path().app_data_dir().unwrap_or_else(|_| {
-        log::warn!("Could not resolve app data directory, using temp dir for rate limit data");
-        std::env::temp_dir()
-    });
-
-    let rate_limit_path = app_data_dir.join("rate_limits.json");
-
-    let mut store = RATE_LIMIT_STORE.get().write().unwrap();
-    *store = RateLimitStore::load(rate_limit_path);
-
-    log::info!("Initialized rate limit store at {:?}", store.data_path);
-}
-
 /// Record a rate limit for an endpoint and calculate backoff
 pub fn record_rate_limit(endpoint: &str) -> u64 {
     let mut store = RATE_LIMIT_STORE.get().write().unwrap();
@@ -116,15 +101,6 @@ pub fn reset_backoff(endpoint: &str) {
             log::info!("Reset rate limit backoff for {}", endpoint);
         }
     }
-}
-
-/// Apply equal jitter to a backoff time
-pub fn apply_jitter(backoff_ms: u64) -> u64 {
-    use rand::Rng;
-
-    // Equal jitter: half the backoff + random up to half
-    let half = backoff_ms / 2;
-    half + rand::rng().random_range(0..=half)
 }
 
 /// Check if an endpoint is rate limited and return a formatted error if it is
