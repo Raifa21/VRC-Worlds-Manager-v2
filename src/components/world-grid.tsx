@@ -179,22 +179,10 @@ export function WorldGrid({
       case 'favorites':
         return multiplier * (a.favorites - b.favorites);
       case 'dateAdded': {
-        const getTimestamp = (dateStr: string | null) => {
-          if (!dateStr) return 0;
+        const dateA = a.dateAdded || '';
+        const dateB = b.dateAdded || '';
 
-          try {
-            const date = new Date(dateStr);
-            return date.getTime();
-          } catch (e) {
-            error(`Error parsing date: ${dateStr}, ${e}`);
-            return 0;
-          }
-        };
-
-        const dateA = getTimestamp(a.dateAdded);
-        const dateB = getTimestamp(b.dateAdded);
-
-        return multiplier * (dateA - dateB);
+        return multiplier * dateA.localeCompare(dateB);
       }
       case 'lastUpdated': {
         const getTimestamp = (dateStr: string | null) => {

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, SecondsFormat, Utc};
 use reqwest::cookie::Jar;
 use serde::{Deserialize, Serialize};
 
@@ -114,8 +114,7 @@ impl WorldModel {
             date_added: self
                 .user_data
                 .date_added
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string(),
+                .to_rfc3339_opts(SecondsFormat::Millis, true),
             platform: if self
                 .api_data
                 .platform
