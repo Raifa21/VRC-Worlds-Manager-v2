@@ -249,6 +249,17 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async checkWorldInfo(worldId: string): Promise<Result<WorldDetails, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('check_world_info', { worldId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async createWorldInstance(
     worldId: string,
     instanceTypeStr: string,

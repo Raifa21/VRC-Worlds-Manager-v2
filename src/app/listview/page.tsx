@@ -11,13 +11,14 @@ import { Platform, WorldDisplayData } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react'; // For the reload icon
+import { Plus, RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
 import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
+import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
 import {
   GroupInstanceCreatePermission,
@@ -35,6 +36,7 @@ export default function ListView() {
   const { t } = useLocalization();
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showDeleteFolder, setShowDeleteFolder] = useState<string | null>(null);
+  const [isAddWorldOpen, setIsAddWorldOpen] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showFind, setShowFind] = useState(false);
@@ -171,6 +173,34 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-create-folder'),
+      });
+    }
+  };
+
+  const handleAddWorld = async (worldId: string) => {
+    try {
+      const world = await commands.getWorld(worldId);
+      if (world.status === 'error') {
+        throw new Error(world.error);
+      }
+      const worldData = world.data;
+      // if we are not in a special folder, add the world to the current folder
+      if (
+        !Object.values(SpecialFolders).includes(currentFolder as SpecialFolders)
+      ) {
+        await commands.addWorldToFolder(currentFolder, worldId);
+      }
+      toast({
+        title: t('listview-page:world-added-title'),
+        description: t('listview-page:world-added-description'),
+      });
+      await refreshCurrentView();
+    } catch (e) {
+      error(`Failed to add world: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-add-world'),
+        variant: 'destructive',
       });
     }
   };
@@ -739,14 +769,28 @@ export default function ListView() {
               ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
               : currentFolder}
           </h1>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleReload}
-            className="ml-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center">
+            {currentFolder !== SpecialFolders.Hidden && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsAddWorldOpen(true)}
+                  className="ml-2"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleReload}
+                  className="ml-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
         <div className="flex-1 overflow-auto">
           <WorldGrid
@@ -800,6 +844,22 @@ export default function ListView() {
           }
         }}
         onConfirm={handleCreateFolder}
+      />
+      <AddWorldPopup
+        open={isAddWorldOpen}
+        onConfirm={handleAddWorld}
+        onClose={() => setIsAddWorldOpen(false)}
+        existingWorlds={
+          Object.values(SpecialFolders).includes(
+            currentFolder as SpecialFolders,
+          )
+            ? worlds.map((world) => world.worldId)
+            : worlds
+                .filter((world) =>
+                  world.folders.includes(currentFolder as string),
+                )
+                .map((world) => world.worldId)
+        }
       />
       <WorldDetailPopup
         open={showWorldDetails}
