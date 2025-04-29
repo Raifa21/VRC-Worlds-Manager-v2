@@ -191,7 +191,7 @@
   "settings-page:restore-backup": "バックアップを復元",
   "settings-page:data-migration-title": "データ移行",
   "settings-page:data-migration-description": "旧 VRC Worlds Manager からデータを移行します",
-  "settings-page:migrate-data": "フォルダを選択", 
+  "settings-page:migrate-data": "データを選択", 
   "settings-page:data-deletion-title": "データ削除",
   "settings-page:data-deletion-description": "すべてのワールドとフォルダのデータを削除します。この操作は元に戻せません！",
   "settings-page:delete-all-data": "データを削除",

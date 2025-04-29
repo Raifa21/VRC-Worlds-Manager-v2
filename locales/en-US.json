@@ -191,7 +191,7 @@
   "settings-page:restore-backup": "Restore Backup",
   "settings-page:data-migration-title": "Data Migration",
   "settings-page:data-migration-description": "Migrate data from the original VRC Worlds Manager",
-  "settings-page:migrate-data": "Select Folder",
+  "settings-page:migrate-data": "Select Data",
   "settings-page:data-deletion-title": "Delete Data",
   "settings-page:data-deletion-description": "Delete all world and folder data. This action cannot be undone!",
   "settings-page:delete-all-data": "Delete Data",
