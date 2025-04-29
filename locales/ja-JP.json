@@ -82,6 +82,8 @@
   "listview-page:error-load-worlds": "ワールドの読み込みに失敗しました",
   "listview-page:error-create-folder": "フォルダの作成に失敗しました",
   "listview-page:worlds-fetched": "ワールドの取得に成功しました！",
+  "listview-page:world-added-title": "ワールドが追加されました",
+  "listview-page:world-added-description": "ワールドがフォルダに正常に追加されました",
   "listview-page:error-refresh-worlds": "ワールドの更新に失敗しました",
   "listview-page:worlds-hidden-title": "ワールドが非表示にされました",
   "listview-page:worlds-hidden-multiple": "\"{0}\" 他 {1} 件のワールドを非表示にしました",
@@ -107,6 +109,7 @@
   "listview-page:error-get-groups": "グループの取得に失敗しました",
   "listview-page:error-get-group-permissions": "グループ権限の取得に失敗しました",
   "listview-page:error-load-card-size": "カードサイズの設定の読み込みに失敗しました",
+  "listview-page:error-add-world": "ワールドの追加に失敗しました",
 
   "world-card:cross-platform": "クロスプラットフォーム",
   "world-card:pc": "PC",
@@ -153,6 +156,14 @@
   "world-detail:last-updated": "最終更新:",
   "world-detail:by": "作成者:",
   "world-detail:max": "最大",
+
+  "add-world-dialog:add": "ワールドを追加",
+  "add-world-dialog:description": "フォルダに追加するワールドのURLまたはワールドIDを入力してください",
+  "add-world-dialog:placeholder": "ワールドURLまたはIDを入力",
+  "add-world-dialog:check": "確認",
+  "add-world-dialog:preview": "ワールドプレビュー",
+  "add-world-dialog:author": "作成者: ",
+  "add-world-dialog:duplicate-warning": "このワールドはすでにフォルダに存在します",
 
   "app-sidebar:folders": "フォルダ",
   "app-sidebar:add-folder": "フォルダを追加",

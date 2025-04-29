@@ -24,6 +24,7 @@ import { Badge } from './ui/badge';
 import { WorldCardPreview } from './world-card';
 import { CardSize } from '@/types/preferences';
 import { useLocalization } from '@/hooks/use-localization';
+import { info, error as logError } from '@tauri-apps/plugin-log';
 
 interface AddWorldPopupProps {
   open: boolean;
@@ -86,11 +87,13 @@ export function AddWorldPopup({
     setIsDuplicate(false);
 
     const parsedWorldId = parseWorldId(input);
+    info(`Checking world ID: ${parsedWorldId}`);
 
     if (!parsedWorldId) {
       setError(
         'Invalid world ID format. Please enter a valid VRChat world ID (wrld_...)',
       );
+      logError('Invalid world ID format');
       setIsLoading(false);
       return;
     }
@@ -130,21 +133,6 @@ export function AddWorldPopup({
       onClose();
       return;
     }
-
-    // Otherwise parse the input directly
-    const parsedWorldId = parseWorldId(worldInput);
-
-    if (!parsedWorldId) {
-      setError(
-        'Invalid world ID format. Please enter a valid VRChat world ID (wrld_...)',
-      );
-      return;
-    }
-
-    setError(null);
-    onConfirm(parsedWorldId);
-    setWorldInput('');
-    onClose();
   };
 
   const handleCancel = () => {
@@ -159,9 +147,9 @@ export function AddWorldPopup({
     <Dialog open={open} onOpenChange={handleCancel}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add World</DialogTitle>
+          <DialogTitle>{t('add-world-dialog:add')}</DialogTitle>
           <DialogDescription>
-            Enter a VRChat world ID or URL to add it to your collection
+            {t('add-world-dialog:description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -171,7 +159,7 @@ export function AddWorldPopup({
               id="world-id"
               value={worldInput}
               onChange={(e) => setWorldInput(e.target.value)}
-              placeholder="wrld_1234abcd-5678-90ab-cdef-123456789012"
+              placeholder={t('add-world-dialog:placeholder')}
               className="col-span-3"
               autoFocus
             />
@@ -184,7 +172,7 @@ export function AddWorldPopup({
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                'Check'
+                t('add-world-dialog:check')
               )}
             </Button>
           </div>
@@ -227,7 +215,10 @@ export function AddWorldPopup({
                         {t('world-detail:details')}
                       </div>
                       <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                        <div className="text-gray-500">Author:</div>
+                        <div className="text-gray-500">
+                          {' '}
+                          {t('add-world-dialog:author')}{' '}
+                        </div>
                         <div className="truncate w-[100px]">
                           {previewWorld.authorName}
                         </div>
@@ -273,7 +264,7 @@ export function AddWorldPopup({
             <Alert className="col-span-4">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="pt-1">
-                This world is already present in your collection.
+                {t('add-world-dialog:duplicate-warning')}
               </AlertDescription>
             </Alert>
           )}
@@ -281,7 +272,7 @@ export function AddWorldPopup({
 
         <DialogFooter className="flex justify-between">
           <Button variant="outline" onClick={handleCancel}>
-            Cancel
+            {t('general:cancel')}
           </Button>
           <Button
             onClick={handleConfirm}
@@ -293,7 +284,7 @@ export function AddWorldPopup({
               !previewWorld
             }
           >
-            Add World
+            {t('add-world-dialog:add')}
           </Button>
         </DialogFooter>
       </DialogContent>

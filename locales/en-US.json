@@ -82,6 +82,8 @@
   "listview-page:error-load-worlds": "Failed to load worlds",
   "listview-page:error-create-folder": "Failed to create folder",
   "listview-page:worlds-fetched": "Worlds fetched successfully!",
+  "listview-page:world-added-title": "World added",
+  "listview-page:world-added-description": "World was successfully added to the folder",
   "listview-page:error-refresh-worlds": "Failed to refresh worlds",
   "listview-page:worlds-hidden-title": "Worlds hidden",
   "listview-page:worlds-hidden-multiple": "Hidden \"{0}\" and {1} more worlds",
@@ -107,6 +109,7 @@
   "listview-page:error-get-groups": "Failed to get groups",
   "listview-page:error-get-group-permissions": "Failed to get group permissions",
   "listview-page:error-load-card-size": "Failed to load card size preference",
+  "listview-page:error-add-world": "Failed to add world",
 
   "world-card:cross-platform": "Cross-platform",
   "world-card:pc": "PC",
@@ -153,6 +156,14 @@
   "world-detail:last-updated": "Last Updated:",
   "world-detail:by": "by",
   "world-detail:max": "max",
+
+  "add-world-dialog:add": "Add World",
+  "add-world-dialog:description": "Enter a world URL or world ID to add to the folder",
+  "add-world-dialog:placeholder": "Enter world URL or ID",
+  "add-world-dialog:check": "Check",
+  "add-world-dialog:preview": "World Preview",
+  "add-world-dialog:author": "Author: ",
+  "add-world-dialog:duplicate-warning": "This world is already in the folder",
 
   "app-sidebar:folders": "Folders",
   "app-sidebar:add-folder": "Add Folder",
