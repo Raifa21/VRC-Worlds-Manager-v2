@@ -770,14 +770,16 @@ export default function ListView() {
               : currentFolder}
           </h1>
           <div className="flex items-center">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsAddWorldOpen(true)}
-              className="ml-2"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            {currentFolder !== SpecialFolders.Hidden && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsAddWorldOpen(true)}
+                className="ml-2"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="outline"
               size="icon"
