@@ -845,10 +845,17 @@ export default function ListView() {
         open={isAddWorldOpen}
         onConfirm={handleAddWorld}
         onClose={() => setIsAddWorldOpen(false)}
-        // take the worlds which are in the current folder
-        existingWorlds={worlds
-          .filter((world) => world.folders.includes(currentFolder as string))
-          .map((world) => world.worldId)}
+        existingWorlds={
+          Object.values(SpecialFolders).includes(
+            currentFolder as SpecialFolders,
+          )
+            ? worlds.map((world) => world.worldId)
+            : worlds
+                .filter((world) =>
+                  world.folders.includes(currentFolder as string),
+                )
+                .map((world) => world.worldId)
+        }
       />
       <WorldDetailPopup
         open={showWorldDetails}
