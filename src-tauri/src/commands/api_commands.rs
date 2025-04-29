@@ -72,6 +72,9 @@ pub async fn get_favorite_worlds() -> Result<(), String> {
 
     log::info!("Received worlds: {:#?}", worlds); // Debug print the worlds
 
+    // Reverse the order to preserve the original date added order
+    let worlds = worlds.into_iter().rev().collect::<Vec<_>>();
+
     match FolderManager::add_worlds(WORLDS.get(), worlds) {
         Ok(_) => Ok(()),
         Err(e) => {
