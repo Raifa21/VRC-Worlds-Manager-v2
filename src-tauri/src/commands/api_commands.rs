@@ -107,6 +107,24 @@ pub async fn get_world(world_id: String) -> Result<WorldDetails, String> {
 
 #[tauri::command]
 #[specta::specta]
+pub async fn check_world_info(world_id: String) -> Result<WorldDetails, String> {
+    let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
+    let world_copy = WORLDS.get().read().unwrap().clone();
+
+    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy).await {
+        Ok(world) => world,
+        Err(e) => {
+            log::info!("Failed to fetch world: {}", e);
+            return Err(format!("Failed to fetch world: {}", e));
+        }
+    };
+
+    log::info!("Received world: {:#?}", world); // Debug print the world
+    Ok(world.to_world_details())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn create_world_instance(
     world_id: String,
     instance_type_str: String,
