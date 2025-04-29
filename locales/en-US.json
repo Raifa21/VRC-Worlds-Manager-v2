@@ -163,7 +163,7 @@
   "add-world-dialog:check": "Check",
   "add-world-dialog:preview": "World Preview",
   "add-world-dialog:author": "Author: ",
-  "add-world-dialog:duplicate-warning": "This world is already in the folder",
+  "add-world-dialog:duplicate-warning": "This world already exists!",
 
   "app-sidebar:folders": "Folders",
   "app-sidebar:add-folder": "Add Folder",

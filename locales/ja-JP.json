@@ -163,7 +163,7 @@
   "add-world-dialog:check": "確認",
   "add-world-dialog:preview": "ワールドプレビュー",
   "add-world-dialog:author": "作成者: ",
-  "add-world-dialog:duplicate-warning": "このワールドはすでにフォルダに存在します",
+  "add-world-dialog:duplicate-warning": "このワールドはすでに存在します！",
 
   "app-sidebar:folders": "フォルダ",
   "app-sidebar:add-folder": "フォルダを追加",
