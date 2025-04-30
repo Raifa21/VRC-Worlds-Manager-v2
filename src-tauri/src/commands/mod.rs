@@ -31,6 +31,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         api_commands::get_favorite_worlds,
         api_commands::get_world,
         api_commands::check_world_info,
+        api_commands::get_recently_visited_worlds,
         api_commands::create_world_instance,
         api_commands::get_user_groups,
         api_commands::get_permission_for_create_group_instance,

@@ -1,5 +1,6 @@
 use crate::api::group::GroupInstancePermissionInfo;
 use crate::api::group::UserGroup;
+use crate::api::world::VRChatWorld;
 use crate::definitions::WorldDetails;
 use crate::services::FolderManager;
 use crate::ApiService;
@@ -124,6 +125,22 @@ pub async fn check_world_info(world_id: String) -> Result<WorldDetails, String> 
 
     log::info!("Received world: {:#?}", world); // Debug print the world
     Ok(world.to_world_details())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_recently_visited_worlds() -> Result<Vec<VRChatWorld>, String> {
+    let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
+
+    let worlds = match ApiService::get_recently_visited_worlds(cookie_store).await {
+        Ok(worlds) => worlds,
+        Err(e) => {
+            log::info!("Failed to fetch recently visited worlds: {}", e);
+            return Err(format!("Failed to fetch recently visited worlds: {}", e));
+        }
+    };
+
+    Ok(worlds)
 }
 
 #[tauri::command]

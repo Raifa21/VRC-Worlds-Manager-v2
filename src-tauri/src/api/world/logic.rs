@@ -115,7 +115,7 @@ pub async fn get_recently_visited_worlds<J: Into<Arc<Jar>>>(
     let client = get_reqwest_client(&cookie_jar);
 
     let result = client
-        .get(format!("{}/worlds/recent", API_BASE_URL))
+        .get(format!("{}/worlds/recent?n=100", API_BASE_URL))
         .send()
         .await
         .map_err(|e| format!("Failed to get recently visited worlds: {}", e.to_string()))?;

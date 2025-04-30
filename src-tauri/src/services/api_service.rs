@@ -1,4 +1,5 @@
 use crate::api::auth::VRChatAPIClientAuthenticator;
+use crate::api::world::VRChatWorld;
 use crate::api::{auth, group, instance, invite, world};
 use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
 use crate::services::file_service::FileService;
@@ -354,6 +355,26 @@ impl ApiService {
         match invite::invite_self_to_instance(cookie_store, &world_id, &instance_id).await {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("Failed to invite self to instance: {}", e)),
+        }
+    }
+
+    /// Get the user's recently visited worlds  
+    ///
+    /// # Arguments
+    /// * `cookie_store` - The cookie store to use for the API
+    ///
+    /// # Returns
+    /// Returns a Result containing a vector of VRChatWorld if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn get_recently_visited_worlds(
+        cookie_store: Arc<Jar>,
+    ) -> Result<Vec<VRChatWorld>, String> {
+        match world::get_recently_visited_worlds(cookie_store).await {
+            Ok(worlds) => Ok(worlds),
+            Err(e) => Err(format!("Failed to fetch recently visited worlds: {}", e)),
         }
     }
 
