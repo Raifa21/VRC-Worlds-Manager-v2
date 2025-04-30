@@ -37,12 +37,10 @@ interface WorldGridProps {
   size: CardSize;
   worlds: WorldDisplayData[];
   folderName: string | SpecialFolders;
-  onWorldChange: () => Promise<void>;
-  onRemoveFromFolder: (worldId: string[]) => void;
-  onHideWorld: (worldId: string[], worldName: string[]) => void;
-  onUnhideWorld: (worldId: string[]) => void;
+  onRemoveFromFolder?: (worldId: string[]) => void;
+  onHideWorld?: (worldId: string[], worldName: string[]) => void;
+  onUnhideWorld?: (worldId: string[]) => void;
   onOpenWorldDetails: (worldId: string) => void;
-  onAddToFolder?: (worldIds: string[], folderName: string) => void;
   onShowFolderDialog?: (worlds: WorldDisplayData[]) => void;
 }
 
@@ -69,12 +67,10 @@ export function WorldGrid({
   size,
   worlds,
   folderName,
-  onWorldChange,
   onRemoveFromFolder,
   onHideWorld,
   onUnhideWorld,
   onOpenWorldDetails,
-  onAddToFolder,
   onShowFolderDialog,
 }: WorldGridProps) {
   const { t } = useLocalization();
@@ -216,6 +212,10 @@ export function WorldGrid({
     return folderName === SpecialFolders.Hidden;
   }, [folderName]);
 
+  const isFindPage = useMemo(() => {
+    return folderName === SpecialFolders.Find;
+  }, [folderName]);
+
   const handleDialogClose = () => {
     setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
     setTimeout(() => setDialogConfig(null), 150);
@@ -272,12 +272,6 @@ export function WorldGrid({
     setSelectedWorlds(new Set());
   };
 
-  const handleAddToFolder = (folder: string) => {
-    onAddToFolder?.(Array.from(selectedWorlds), folder);
-    clearSelection();
-    setIsSelectionMode(false);
-  };
-
   return (
     <div ref={containerRef} className="h-full flex flex-col">
       <div className="sticky top-0 z-10 bg-background">
@@ -285,50 +279,58 @@ export function WorldGrid({
           <Input
             type="search"
             placeholder={t('world-grid:search-placeholder')}
-            className="w-[calc(80vw-380px)]"
+            className="w-[calc(80vw-340px)]"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className="flex items-center gap-2">
-            <Select
-              value={sortField}
-              onValueChange={(value) => handleSort(value as SortField)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t('world-grid:sort-placeholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">
-                  {t('world-grid:sort-name')}
-                </SelectItem>
-                <SelectItem value="authorName">
-                  {t('general:sort-author')}
-                </SelectItem>
-                <SelectItem value="favorites">
-                  {t('world-grid:sort-favorites')}
-                </SelectItem>
-                <SelectItem value="dateAdded">
-                  {t('world-grid:sort-date-added')}
-                </SelectItem>
-                <SelectItem value="lastUpdated">
-                  {t('world-grid:sort-last-updated')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-              }
-              className="h-10 w-10"
-            >
-              {sortDirection === 'asc' ? (
-                <SortAsc className="h-4 w-4" />
-              ) : (
-                <SortDesc className="h-4 w-4" />
-              )}
-            </Button>
+            {!isFindPage && (
+              <div className="flex">
+                <Select
+                  value={sortField}
+                  onValueChange={(value) => handleSort(value as SortField)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue
+                      placeholder={t('world-grid:sort-placeholder')}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">
+                      {t('world-grid:sort-name')}
+                    </SelectItem>
+                    <SelectItem value="authorName">
+                      {t('general:sort-author')}
+                    </SelectItem>
+                    <SelectItem value="favorites">
+                      {t('world-grid:sort-favorites')}
+                    </SelectItem>
+                    <SelectItem value="dateAdded">
+                      {t('world-grid:sort-date-added')}
+                    </SelectItem>
+                    <SelectItem value="lastUpdated">
+                      {t('world-grid:sort-last-updated')}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    setSortDirection((prev) =>
+                      prev === 'asc' ? 'desc' : 'asc',
+                    )
+                  }
+                  className="h-10 w-10"
+                >
+                  {sortDirection === 'asc' ? (
+                    <SortAsc className="h-4 w-4" />
+                  ) : (
+                    <SortDesc className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            )}
             <Button
               variant={isSelectionMode ? 'secondary' : 'ghost'}
               size="icon"
@@ -375,7 +377,18 @@ export function WorldGrid({
                     }`}
                     onClick={(e) => handleClick(world.worldId, e)}
                   >
-                    <WorldCardPreview size={size} world={world} />
+                    {isFindPage ? (
+                      <WorldCardPreview
+                        size={size}
+                        world={world}
+                        findPage={true}
+                        onAddWorld={(worldId) => {
+                          onOpenWorldDetails(worldId);
+                        }}
+                      />
+                    ) : (
+                      <WorldCardPreview size={size} world={world} />
+                    )}
                     {isSelectionMode && (
                       <div className="absolute top-2 left-2 z-10">
                         {selectedWorlds.has(world.worldId) ? (
@@ -418,7 +431,7 @@ export function WorldGrid({
                               selectedWorlds.has(world.worldId)
                                 ? Array.from(selectedWorlds)
                                 : [world.worldId];
-                            onRemoveFromFolder(worldsToRemove);
+                            onRemoveFromFolder?.(worldsToRemove);
                           }}
                           className="text-destructive"
                         >
@@ -439,7 +452,7 @@ export function WorldGrid({
                                 '',
                             )
                             .filter(Boolean);
-                          onHideWorld(worldsToHide, worldNames);
+                          onHideWorld?.(worldsToHide, worldNames);
                         }}
                         className="text-destructive"
                       >
@@ -454,7 +467,7 @@ export function WorldGrid({
                           selectedWorlds.has(world.worldId)
                             ? Array.from(selectedWorlds)
                             : [world.worldId];
-                        onUnhideWorld(worldsToRestore);
+                        onUnhideWorld?.(worldsToRestore);
                       }}
                     >
                       {t('world-grid:restore-world')}
@@ -504,9 +517,9 @@ export function WorldGrid({
                   variant="destructive"
                   onClick={() => {
                     if (dialogConfig.type === 'remove') {
-                      onRemoveFromFolder([dialogConfig.worldId]);
+                      onRemoveFromFolder?.([dialogConfig.worldId]);
                     } else if (dialogConfig.worldName) {
-                      onHideWorld(
+                      onHideWorld?.(
                         [dialogConfig.worldId],
                         [dialogConfig.worldName],
                       );

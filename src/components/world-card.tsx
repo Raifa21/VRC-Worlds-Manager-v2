@@ -1,18 +1,27 @@
 import { CardSize } from '@/types/preferences';
-import { Heart } from 'lucide-react';
+import { Heart, Plus } from 'lucide-react';
 import Image from 'next/image';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
 import { Platform } from '@/types/worlds';
-import { WorldDisplayData, WorldCardPreviewProps } from '@/types/worlds';
+import { WorldDisplayData } from '@/types/worlds';
 import { useLocalization } from '@/hooks/use-localization';
+import { Button } from './ui/button';
 
-export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
+interface WorldCardPreviewProps {
+  size: CardSize;
+  world: WorldDisplayData;
+  findPage?: boolean;
+  onAddWorld?: (worldId: string) => void;
+}
+
+export function WorldCardPreview(props: WorldCardPreviewProps) {
+  const { size, world, findPage, onAddWorld } = props;
   const { t } = useLocalization();
   const sizeClasses: Record<CardSize, string> = {
     [CardSize.Compact]: 'w-48 h-32',
-    [CardSize.Normal]: 'w-52 h-48',
+    [CardSize.Normal]: findPage ? 'w-52 h-56' : 'w-52 h-48',
     [CardSize.Expanded]: 'w-64 h-64',
     [CardSize.Original]: 'w-64 h-48',
   };
@@ -45,9 +54,11 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
       <img
         src={world.thumbnailUrl}
         alt={world.name}
-        className="w-full h-2/3 object-cover rounded-t-lg"
+        className={`w-full ${findPage ? 'h-28' : 'h-2/3'} object-cover rounded-t-lg `}
         draggable="false"
       />
+
+      {/* Various size renderings... */}
 
       {size === CardSize.Compact && (
         <div className="p-2">
@@ -99,6 +110,22 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
           <p className="text-sm text-muted-foreground truncate">
             {t('world-card:by-author', world.authorName)}
           </p>
+        </div>
+      )}
+      {findPage && (
+        <div className="flex justify-center pt-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="rounded-md w-28"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddWorld?.(world.worldId);
+            }}
+            title={t('general:add-world', 'Add World')}
+          >
+            Add to folder
+          </Button>
         </div>
       )}
     </div>

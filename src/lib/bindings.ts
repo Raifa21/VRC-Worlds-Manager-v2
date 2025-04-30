@@ -260,6 +260,17 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getRecentlyVisitedWorlds(): Promise<Result<VRChatWorld[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_recently_visited_worlds'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async createWorldInstance(
     worldId: string,
     instanceTypeStr: string,
@@ -583,6 +594,8 @@ export type PreviousMetadata = {
   number_of_folders: number;
   number_of_worlds: number;
 };
+export type ReleaseStatus = 'public' | 'private' | 'hidden' | 'all';
+export type UnityPackage = { platform: string };
 export type UserGroup = {
   id: string;
   name: string;
@@ -597,6 +610,26 @@ export type UserGroup = {
   memberVisibility: GroupMemberVisibility;
   isRepresenting: boolean;
   mutualGroup: boolean;
+};
+export type VRChatWorld = {
+  authorId: string;
+  authorName: string;
+  capacity: number;
+  recommendedCapacity: number | null;
+  created_at: string;
+  favorites: number;
+  visits: number | null;
+  heat: number;
+  id: string;
+  imageUrl: string;
+  name: string;
+  popularity: number;
+  publicationDate: string;
+  releaseStatus: ReleaseStatus;
+  tags: string[];
+  thumbnailImageUrl: string;
+  unityPackages: UnityPackage[];
+  updated_at: string;
 };
 export type WorldDetails = {
   worldId: string;

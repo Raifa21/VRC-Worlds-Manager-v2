@@ -756,7 +756,19 @@ export default function ListView() {
     }
 
     if (showFind) {
-      return <FindPage />;
+      return (
+        <FindPage
+          worldIds={worlds.map((world) => world.worldId)}
+          onSelectWorld={(worldId) => {
+            handleOpenWorldDetails(worldId);
+          }}
+          onDataChange={loadFolders}
+          onShowFolderDialog={(worlds) => {
+            setSelectedWorldsForFolder(worlds);
+            setShowFolderDialog(true);
+          }}
+        />
+      );
     }
 
     return (
@@ -797,7 +809,6 @@ export default function ListView() {
             size={cardSize}
             worlds={worlds}
             folderName={currentFolder}
-            onWorldChange={refreshCurrentView}
             onRemoveFromFolder={removeWorldsFromFolder}
             onHideWorld={handleHideWorld}
             onUnhideWorld={handleRestoreWorld}

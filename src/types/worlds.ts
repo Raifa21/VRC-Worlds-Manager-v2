@@ -1,4 +1,3 @@
-import { CardSize } from './preferences';
 export enum Platform {
   PC = 'PC',
   Quest = 'Quest',
@@ -16,9 +15,4 @@ export interface WorldDisplayData {
   dateAdded: string;
   platform: Platform;
   folders: string[];
-}
-
-export interface WorldCardPreviewProps {
-  size: CardSize;
-  world: WorldDisplayData;
 }
