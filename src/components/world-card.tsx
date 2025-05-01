@@ -1,6 +1,6 @@
 import React from 'react';
 import { CardSize } from '@/types/preferences';
-import { Heart, Plus } from 'lucide-react';
+import { Check, Heart, Plus } from 'lucide-react';
 import Image from 'next/image';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
@@ -10,16 +10,18 @@ import { WorldDisplayData } from '@/types/worlds';
 import { useLocalization } from '@/hooks/use-localization';
 import { Button } from './ui/button';
 import { commands } from '@/lib/bindings';
+import { error, info } from '@tauri-apps/plugin-log';
 
 interface WorldCardPreviewProps {
   size: CardSize;
   world: WorldDisplayData;
   findPage?: boolean;
-  onAddWorld?: (worldId: string) => void;
+  onAddWorld?: (worlds: WorldDisplayData[]) => void;
+  worldExists?: boolean;
 }
 
 export function WorldCardPreview(props: WorldCardPreviewProps) {
-  const { size, world, findPage, onAddWorld } = props;
+  const { size, world, findPage, onAddWorld, worldExists } = props;
   const { t } = useLocalization();
   const sizeClasses: Record<CardSize, string> = {
     [CardSize.Compact]: 'w-48 h-32',
@@ -27,24 +29,6 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
     [CardSize.Expanded]: 'w-64 h-64',
     [CardSize.Original]: 'w-64 h-48',
   };
-
-  const [isInFolder, setIsInFolder] = React.useState<boolean | undefined>(undefined);
-
-  const isWorldInFolder = async (worldId: string) => {
-    const result = await commands.checkIfWorldExists(worldId);
-    if (result.status === "ok") {
-      setIsInFolder(result.data);
-    } else {
-      console.error(result.error);
-      setIsInFolder(false);
-    }
-  };
-
-  React.useEffect(() => {
-    if (findPage) {
-      isWorldInFolder(world.worldId);
-    }
-  }, [findPage, world.worldId]);
 
   return (
     <div
@@ -133,19 +117,19 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
         </div>
       )}
       {findPage && (
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center pt-1">
           <Button
             size="sm"
             variant="secondary"
             className="rounded-md w-28"
             onClick={(e) => {
               e.stopPropagation();
-              onAddWorld?.(world.worldId);
+              onAddWorld?.([world]);
             }}
             title={t('general:add-world', 'Add World')}
-            disabled={isInFolder}
+            disabled={worldExists}
           >
-            Add to folder
+            {worldExists ? <Check /> : 'Add to folder'}
           </Button>
         </div>
       )}

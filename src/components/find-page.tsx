@@ -5,7 +5,7 @@ import { useLocalization } from '@/hooks/use-localization';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { WorldGrid } from '@/components/world-grid';
-import { Link, RefreshCw } from 'lucide-react';
+import { Link, Loader2, RefreshCcw } from 'lucide-react';
 import { commands, VRChatWorld } from '@/lib/bindings';
 import { WorldDisplayData, Platform } from '@/types/worlds';
 import { CardSize } from '@/types/preferences';
@@ -103,7 +103,7 @@ export function FindPage({
               onClick={fetchRecentlyVisitedWorlds}
               disabled={isLoading}
             >
-              <RefreshCw
+              <RefreshCcw
                 className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
               />
               {t('general:reload', 'Reload')}
@@ -115,7 +115,7 @@ export function FindPage({
           {isLoading && recentlyVisitedWorlds.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="flex flex-col items-center gap-2">
-                <RefreshCw className="h-8 w-8 animate-spin" />
+                <Loader2 className="h-8 w-8 animate-spin" />
                 <p>{t('general:loading', 'Loading...')}</p>
               </div>
             </div>
@@ -128,6 +128,7 @@ export function FindPage({
               onOpenWorldDetails={(worldId) => {
                 onSelectWorld(worldId);
               }}
+              onWorldChange={onDataChange}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full">

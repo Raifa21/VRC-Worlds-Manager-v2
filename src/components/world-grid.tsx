@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import * as Portal from '@radix-ui/react-portal';
 import { info, error } from '@tauri-apps/plugin-log';
+import { commands } from '@/lib/bindings';
 
 interface WorldGridProps {
   size: CardSize;
@@ -42,6 +43,7 @@ interface WorldGridProps {
   onUnhideWorld?: (worldId: string[]) => void;
   onOpenWorldDetails: (worldId: string) => void;
   onShowFolderDialog?: (worlds: WorldDisplayData[]) => void;
+  onWorldChange?: () => void;
 }
 
 type SortOption =
@@ -72,6 +74,7 @@ export function WorldGrid({
   onUnhideWorld,
   onOpenWorldDetails,
   onShowFolderDialog,
+  onWorldChange,
 }: WorldGridProps) {
   const { t } = useLocalization();
   const cardWidths = {
@@ -97,6 +100,9 @@ export function WorldGrid({
   const [selectedWorlds, setSelectedWorlds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   const calculateCols = () => {
     const cardWidth = cardWidths[size];
@@ -133,6 +139,41 @@ export function WorldGrid({
     window.addEventListener('keydown', handleEscKey);
     return () => window.removeEventListener('keydown', handleEscKey);
   }, [isSelectionMode, selectedWorlds]);
+
+  const isFindPage = useMemo(() => {
+    return folderName === SpecialFolders.Find;
+  }, [folderName]);
+
+  useEffect(() => {
+    if (!isFindPage) return; // Only needed for find page
+
+    const checkWorldsExistence = async () => {
+      try {
+        // Get unique world IDs
+        const worldIds = worlds.map((world) => world.worldId);
+
+        // Check which worlds exist in the collection
+        const existingWorldsResult = await commands.getAllWorlds();
+        if (existingWorldsResult.status !== 'ok') {
+          error(`Error fetching worlds: ${existingWorldsResult.error}`);
+          throw new Error(existingWorldsResult.error);
+        }
+        const existingWorlds = existingWorldsResult.data as WorldDisplayData[];
+
+        //check if the worldId exists in the collection
+        const existingIds = worldIds.filter((id) =>
+          existingWorlds.some((world) => world.worldId === id),
+        );
+
+        // Update state with set of existing world IDs
+        setExistingWorldIds(new Set(existingIds));
+      } catch (err) {
+        error(`Error checking world existence: ${err}`);
+      }
+    };
+
+    checkWorldsExistence();
+  }, [worlds, isFindPage]);
 
   const filteredWorlds = worlds.filter(
     (world) =>
@@ -210,10 +251,6 @@ export function WorldGrid({
   // Check if current folder is Hidden folder
   const isHiddenFolder = useMemo(() => {
     return folderName === SpecialFolders.Hidden;
-  }, [folderName]);
-
-  const isFindPage = useMemo(() => {
-    return folderName === SpecialFolders.Find;
   }, [folderName]);
 
   const handleDialogClose = () => {
@@ -382,9 +419,10 @@ export function WorldGrid({
                         size={size}
                         world={world}
                         findPage={true}
-                        onAddWorld={(worldId) => {
-                          onOpenWorldDetails(worldId);
+                        onAddWorld={(world) => {
+                          onShowFolderDialog?.(world);
                         }}
+                        worldExists={existingWorldIds.has(world.worldId)}
                       />
                     ) : (
                       <WorldCardPreview size={size} world={world} />
