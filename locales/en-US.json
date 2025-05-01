@@ -268,6 +268,8 @@
   "find-page:recently-visited": "Recently Visited Worlds",
   "find-page:search-worlds": "Search Worlds",
   "find-page:no-recently-visited-worlds": "No recently visited worlds found.",
+  "find-page:fetch-recently-visited-worlds": "Fetched recently visited worlds",
+  "find-page:fetch-recently-visited-worlds-success": "Fetched {0} recently visited worlds",
 
   "add-to-folder-dialog:title": "Manage Folders",
   "add-to-folder-dialog:description-single": "Select folders to add or remove {0} world to",

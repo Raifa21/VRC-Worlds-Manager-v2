@@ -11,6 +11,7 @@ import { WorldDisplayData, Platform } from '@/types/worlds';
 import { CardSize } from '@/types/preferences';
 import { SpecialFolders } from '@/types/folders';
 import { info } from '@tauri-apps/plugin-log';
+import { useToast } from '@/hooks/use-toast';
 
 interface FindPageProps {
   worldIds: string[];
@@ -26,6 +27,7 @@ export function FindPage({
   onShowFolderDialog,
 }: FindPageProps) {
   const { t } = useLocalization();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('recently-visited');
   const [recentlyVisitedWorlds, setRecentlyVisitedWorlds] = useState<
     VRChatWorld[]
@@ -69,6 +71,10 @@ export function FindPage({
         info(`Fetched recently visited worlds: ${worlds.data.length}`);
         setRecentlyVisitedWorlds(worlds.data);
       }
+      toast({
+        title: t('find-page:fetch-recently-visited-worlds'),
+        description: t('find-page:fetch-recently-visited-worlds-success', worlds.data.length)
+      });
     } catch (error) {
       console.error('Error fetching recently visited worlds:', error);
     } finally {
@@ -78,7 +84,7 @@ export function FindPage({
 
   // Fetch recently visited worlds on initial load
   useEffect(() => {
-    if (recentlyVisitedWorlds.length === 0) {
+    if (recentlyVisitedWorlds.length === 0 && !isLoading) {
       fetchRecentlyVisitedWorlds();
     }
   }, []);
@@ -127,7 +133,7 @@ export function FindPage({
       <div className="flex-1 overflow-auto">
         {activeTab === 'recently-visited' && (
           <div className="flex flex-col gap-2">
-            {isLoading && recentlyVisitedWorlds.length === 0 ? (
+            {isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin" />
