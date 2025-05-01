@@ -20,6 +20,7 @@ import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
 import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
+import { useMemo } from 'react';
 import {
   GroupInstanceCreatePermission,
   UserGroup,
@@ -57,6 +58,10 @@ export default function ListView() {
   useEffect(() => {
     loadAllWorlds();
   }, []);
+
+  const isFindPage = useMemo(() => {
+    return currentFolder === SpecialFolders.Find;
+  }, [currentFolder]);
 
   const openHiddenFolder = async () => {
     info('Opening hidden worlds');
@@ -106,6 +111,7 @@ export default function ListView() {
           break;
         case SpecialFolders.Find:
           setShowFind(true);
+          setCurrentFolder(SpecialFolders.Find);
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
@@ -179,7 +185,7 @@ export default function ListView() {
 
   const handleAddWorld = async (worldId: string) => {
     try {
-      const world = await commands.getWorld(worldId);
+      const world = await commands.getWorld(worldId, null);
       if (world.status === 'error') {
         throw new Error(world.error);
       }
@@ -242,6 +248,9 @@ export default function ListView() {
       await loadUnclassifiedWorlds();
     } else if (currentFolder === SpecialFolders.Hidden) {
       await openHiddenFolder();
+    } else if (currentFolder === SpecialFolders.Find) {
+      setShowFind(true);
+      setCurrentFolder(SpecialFolders.Find);
     } else if (currentFolder) {
       await loadFolderContents(currentFolder);
     }
@@ -263,6 +272,10 @@ export default function ListView() {
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
+          break;
+        case SpecialFolders.Find:
+          setShowFind(true);
+          setCurrentFolder(SpecialFolders.Find);
           break;
         case SpecialFolders.Hidden:
           await openHiddenFolder();
@@ -764,8 +777,9 @@ export default function ListView() {
           }}
           onDataChange={loadFolders}
           onShowFolderDialog={(worlds) => {
-            setSelectedWorldsForFolder(worlds);
-            setShowFolderDialog(true);
+            for (const world of worlds) {
+              handleAddWorld(world.worldId);
+            }
           }}
         />
       );
@@ -886,6 +900,7 @@ export default function ListView() {
         onCreateGroupInstance={createGroupInstance}
         onGetGroups={getGroups}
         onGetGroupPermissions={getGroupPermissions}
+        dontSaveToLocal={isFindPage}
       />
       <AddToFolderDialog
         open={showFolderDialog}
