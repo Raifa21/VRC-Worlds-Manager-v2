@@ -1,3 +1,4 @@
+import React from 'react';
 import { CardSize } from '@/types/preferences';
 import { Heart, Plus } from 'lucide-react';
 import Image from 'next/image';
@@ -8,6 +9,7 @@ import { Platform } from '@/types/worlds';
 import { WorldDisplayData } from '@/types/worlds';
 import { useLocalization } from '@/hooks/use-localization';
 import { Button } from './ui/button';
+import { commands } from '@/lib/bindings';
 
 interface WorldCardPreviewProps {
   size: CardSize;
@@ -25,6 +27,24 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
     [CardSize.Expanded]: 'w-64 h-64',
     [CardSize.Original]: 'w-64 h-48',
   };
+
+  const [isInFolder, setIsInFolder] = React.useState<boolean | undefined>(undefined);
+
+  const isWorldInFolder = async (worldId: string) => {
+    const result = await commands.checkIfWorldExists(worldId);
+    if (result.status === "ok") {
+      setIsInFolder(result.data);
+    } else {
+      console.error(result.error);
+      setIsInFolder(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (findPage) {
+      isWorldInFolder(world.worldId);
+    }
+  }, [findPage, world.worldId]);
 
   return (
     <div
@@ -123,6 +143,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
               onAddWorld?.(world.worldId);
             }}
             title={t('general:add-world', 'Add World')}
+            disabled={isInFolder}
           >
             Add to folder
           </Button>

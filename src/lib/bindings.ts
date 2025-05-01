@@ -159,6 +159,17 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async checkIfWorldExists(worldId: string): Promise<Result<boolean, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('check_if_world_exists', { worldId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getTheme(): Promise<Result<string, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_theme') };

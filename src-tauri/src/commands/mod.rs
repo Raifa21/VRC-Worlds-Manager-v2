@@ -21,6 +21,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         folder_commands::get_all_worlds,
         folder_commands::get_unclassified_worlds,
         folder_commands::get_hidden_worlds,
+        folder_commands::check_if_world_exists,
         preferences_commands::get_theme,
         preferences_commands::get_language,
         preferences_commands::get_card_size,
