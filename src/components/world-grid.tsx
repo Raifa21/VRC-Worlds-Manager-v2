@@ -316,12 +316,12 @@ export function WorldGrid({
           <Input
             type="search"
             placeholder={t('world-grid:search-placeholder')}
-            className={isFindPage? "w-[calc(80vw)]" :"w-[calc(80vw-340px)]"}
+            className={isFindPage ? 'w-full' : 'w-[calc(80vw-340px)] z-1'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <div className="flex items-center gap-2">
-            {!isFindPage && (
+          {!isFindPage && (
+            <div className="flex items-center gap-2">
               <div className="flex">
                 <Select
                   value={sortField}
@@ -386,8 +386,8 @@ export function WorldGrid({
                   )}
                 </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -35,7 +35,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
       className={`border rounded-lg shadow hover:shadow-md transition-all duration-300 ${sizeClasses[size]}`}
     >
       <div className="relative w-full">
-        <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1">
+        <div className="absolute top-2 right-2 z-1 bg-black/50 rounded-full p-1">
           {world.platform == Platform.CrossPlatform ? (
             <Image
               src={QPcQ}
