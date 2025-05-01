@@ -238,11 +238,14 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async getWorld(worldId: string): Promise<Result<WorldDetails, string>> {
+  async getWorld(
+    worldId: string,
+    dontSaveToLocal: boolean | null,
+  ): Promise<Result<WorldDetails, string>> {
     try {
       return {
         status: 'ok',
-        data: await TAURI_INVOKE('get_world', { worldId }),
+        data: await TAURI_INVOKE('get_world', { worldId, dontSaveToLocal }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;

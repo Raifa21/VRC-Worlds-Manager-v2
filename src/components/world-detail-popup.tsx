@@ -56,6 +56,7 @@ interface WorldDetailDialogProps {
   onGetGroupPermissions: (
     groupId: string,
   ) => Promise<GroupInstancePermissionInfo>;
+  dontSaveToLocal?: boolean;
 }
 
 interface GroupInstance {
@@ -74,6 +75,7 @@ export function WorldDetailPopup({
   onCreateGroupInstance,
   onGetGroups,
   onGetGroupPermissions,
+  dontSaveToLocal,
 }: WorldDetailDialogProps) {
   const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
@@ -101,7 +103,11 @@ export function WorldDetailPopup({
       setErrorState(null);
 
       try {
-        const details = await invoke<WorldDetails>('get_world', { worldId });
+        info(`Is dontSaveToLocal: ${dontSaveToLocal}`);
+        const details = await invoke<WorldDetails>('get_world', {
+          worldId,
+          dontSaveToLocal,
+        });
         setWorldDetails(details);
       } catch (e) {
         error(`Failed to fetch world details: ${e}`);

@@ -87,7 +87,10 @@ pub async fn get_favorite_worlds() -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_world(world_id: String) -> Result<WorldDetails, String> {
+pub async fn get_world(
+    world_id: String,
+    dont_save_to_local: Option<bool>,
+) -> Result<WorldDetails, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
     let world_copy = WORLDS.get().read().unwrap().clone();
 
@@ -100,6 +103,12 @@ pub async fn get_world(world_id: String) -> Result<WorldDetails, String> {
     };
 
     log::info!("Received world: {:#?}", world); // Debug print the world
+    if let Some(dont_save) = dont_save_to_local {
+        if dont_save {
+            log::info!("Not saving world to local storage");
+            return Ok(world.to_world_details());
+        }
+    }
     match FolderManager::add_worlds(WORLDS.get(), vec![world.clone()]) {
         Ok(_) => Ok(world.to_world_details()),
         Err(e) => {
