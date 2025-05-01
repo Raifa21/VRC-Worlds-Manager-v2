@@ -316,7 +316,7 @@ export function WorldGrid({
           <Input
             type="search"
             placeholder={t('world-grid:search-placeholder')}
-            className="w-[calc(80vw-340px)]"
+            className={isFindPage? "w-[calc(80vw)]" :"w-[calc(80vw-340px)]"}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -366,27 +366,27 @@ export function WorldGrid({
                     <SortDesc className="h-4 w-4" />
                   )}
                 </Button>
+                <Button
+                  variant={isSelectionMode ? 'secondary' : 'ghost'}
+                  size="icon"
+                  onClick={() => {
+                    if (isSelectionMode) {
+                      clearSelection();
+                      setIsSelectionMode(false);
+                    } else {
+                      setIsSelectionMode(true);
+                    }
+                  }}
+                  className="h-10 w-10"
+                >
+                  {isSelectionMode ? (
+                    <CheckSquare className="h-4 w-4" />
+                  ) : (
+                    <Square className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
             )}
-            <Button
-              variant={isSelectionMode ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => {
-                if (isSelectionMode) {
-                  clearSelection();
-                  setIsSelectionMode(false);
-                } else {
-                  setIsSelectionMode(true);
-                }
-              }}
-              className="h-10 w-10"
-            >
-              {isSelectionMode ? (
-                <CheckSquare className="h-4 w-4" />
-              ) : (
-                <Square className="h-4 w-4" />
-              )}
-            </Button>
           </div>
         </div>
       </div>

@@ -80,21 +80,20 @@ export function FindPage({
   }, []);
 
   return (
-    <div className="flex flex-col h-full p-4 gap-4">
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="w-full h-full"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <TabsList>
-            <TabsTrigger value="recently-visited">
-              {t('find-page:recently-visited', 'Recently Visited')}
-            </TabsTrigger>
-            <TabsTrigger value="search">
-              {t('find-page:search-worlds', 'Search Worlds')}
-            </TabsTrigger>
-          </TabsList>
+    <div className="flex flex-col h-full">
+      {/* Header with tabs and reload button */}
+      <div className="p-4 sticky top-0 z-20 bg-background">
+        <div className="flex items-center justify-between mb-2">
+          <Tabs defaultValue='recently-visited' value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-0">
+              <TabsTrigger value="recently-visited">
+                {t('find-page:recently-visited')}
+              </TabsTrigger>
+              <TabsTrigger value="search">
+                {t('find-page:search-worlds')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           {activeTab === 'recently-visited' && (
             <Button
@@ -102,57 +101,56 @@ export function FindPage({
               size="sm"
               onClick={fetchRecentlyVisitedWorlds}
               disabled={isLoading}
+              className='mr-4'
             >
               <RefreshCcw
-                className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
+                className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
               />
-              {t('general:reload', 'Reload')}
             </Button>
           )}
         </div>
+      </div>
 
-        <TabsContent value="recently-visited" className="flex-1 h-full">
-          {isLoading && recentlyVisitedWorlds.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <p>{t('general:loading', 'Loading...')}</p>
+      {/* Main content area */}
+      <div className="flex-1 overflow-auto">
+        {activeTab === 'recently-visited' && (
+          <>
+            {isLoading && recentlyVisitedWorlds.length === 0 ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <p>{t('general:loading')}</p>
+                </div>
               </div>
-            </div>
-          ) : recentlyVisitedWorlds.length > 0 ? (
-            <WorldGrid
-              worlds={recentlyVisitedWorlds.map(convertToWorldDisplayData)}
-              folderName={SpecialFolders.Find}
-              onShowFolderDialog={onShowFolderDialog}
-              size={CardSize.Normal}
-              onOpenWorldDetails={(worldId) => {
-                onSelectWorld(worldId);
-              }}
-              onWorldChange={onDataChange}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full">
-              <p className="text-muted-foreground">
-                {t(
-                  'find-page:no-recently-visited-worlds',
-                  'No recently visited worlds found',
-                )}
-              </p>
-            </div>
-          )}
-        </TabsContent>
+            ) : recentlyVisitedWorlds.length > 0 ? (
+              <WorldGrid
+                worlds={recentlyVisitedWorlds.map(convertToWorldDisplayData)}
+                folderName={SpecialFolders.Find}
+                onShowFolderDialog={onShowFolderDialog}
+                size={CardSize.Normal}
+                onOpenWorldDetails={(worldId) => {
+                  onSelectWorld(worldId);
+                }}
+                onWorldChange={onDataChange}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64">
+                <p className="text-muted-foreground">
+                  {t('find-page:no-recently-visited-worlds')}
+                </p>
+              </div>
+            )}
+          </>
+        )}
 
-        <TabsContent value="search" className="flex-1 h-full">
-          <div className="flex flex-col items-center justify-center h-full">
+        {activeTab === 'search' && (
+          <div className="flex flex-col items-center justify-center h-64">
             <p className="text-muted-foreground">
-              {t(
-                'find-page:search-coming-soon',
-                'Search functionality coming soon',
-              )}
+              {t('find-page:search-coming-soon')}
             </p>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 }
