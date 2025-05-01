@@ -135,12 +135,3 @@ pub async fn get_hidden_worlds() -> Result<Vec<WorldDisplayData>, String> {
         e.to_string()
     })
 }
-
-#[tauri::command]
-#[specta::specta]
-pub async fn check_if_world_exists(world_id: String) -> Result<bool, String> {
-    FolderManager::check_if_world_exists(world_id, WORLDS.get()).map_err(|e| {
-        log::error!("Error checking if world exists: {}", e);
-        e.to_string()
-    })
-}

@@ -625,27 +625,6 @@ impl FolderManager {
         FileService::write_worlds(&*worlds_lock)?;
         Ok(())
     }
-
-    /// Check if a world exists in the list of worlds
-    ///
-    /// # Arguments
-    /// * `world_id` - The ID of the world to check
-    /// * `worlds` - The list of worlds, as a RwLock
-    ///
-    /// # Returns
-    /// True if the world exists, false otherwise
-    ///
-    /// # Errors
-    /// Returns an error if the worlds lock is poisoned
-    #[must_use]
-    pub fn check_if_world_exists(
-        world_id: String,
-        worlds: &RwLock<Vec<WorldModel>>,
-    ) -> Result<bool, AppError> {
-        let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
-        let exists = worlds_lock.iter().any(|w| w.api_data.world_id == world_id);
-        Ok(exists)
-    }
 }
 
 #[cfg(test)]
