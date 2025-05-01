@@ -249,8 +249,7 @@ export default function ListView() {
     } else if (currentFolder === SpecialFolders.Hidden) {
       await openHiddenFolder();
     } else if (currentFolder === SpecialFolders.Find) {
-      setShowFind(true);
-      setCurrentFolder(SpecialFolders.Find);
+      return;
     } else if (currentFolder) {
       await loadFolderContents(currentFolder);
     }
@@ -274,8 +273,6 @@ export default function ListView() {
           await loadUnclassifiedWorlds();
           break;
         case SpecialFolders.Find:
-          setShowFind(true);
-          setCurrentFolder(SpecialFolders.Find);
           break;
         case SpecialFolders.Hidden:
           await openHiddenFolder();

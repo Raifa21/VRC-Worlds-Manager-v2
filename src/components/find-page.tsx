@@ -73,7 +73,10 @@ export function FindPage({
       }
       toast({
         title: t('find-page:fetch-recently-visited-worlds'),
-        description: t('find-page:fetch-recently-visited-worlds-success', worlds.data.length)
+        description: t(
+          'find-page:fetch-recently-visited-worlds-success',
+          worlds.data.length,
+        ),
       });
     } catch (error) {
       console.error('Error fetching recently visited worlds:', error);
