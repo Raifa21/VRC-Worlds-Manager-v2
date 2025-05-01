@@ -265,7 +265,9 @@
   "delete-data:hold-to-delete": "Hold to Delete",
   "delete-data:deleting": "Deleting...",
 
-  "find-page:under-development": "This feature is currently under development. Stay tuned!",
+  "find-page:recently-visited": "Recently Visited Worlds",
+  "find-page:search-worlds": "Search Worlds",
+  "find-page:no-recently-visited-worlds": "No recently visited worlds found.",
 
   "add-to-folder-dialog:title": "Manage Folders",
   "add-to-folder-dialog:description-single": "Select folders to add or remove {0} world to",

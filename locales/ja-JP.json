@@ -265,7 +265,9 @@
   "delete-data:hold-to-delete": "長押しして削除",
   "delete-data:deleting": "削除中...",
   
-  "find-page:under-development": "この機能は現在開発中です。乞うご期待！",
+  "find-page:recently-visited": "最近訪れたワールド",
+  "find-page:search-worlds": "ワールドを検索",
+  "find-page:no-recently-visited-worlds": "最近訪れたワールドが見つかりませんでした。",
 
   "add-to-folder-dialog:title": "フォルダの管理",
   "add-to-folder-dialog:description-single": "{0} ワールドの追加または削除するフォルダを選択してください",
