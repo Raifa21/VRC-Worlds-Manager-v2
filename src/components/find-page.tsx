@@ -10,6 +10,7 @@ import { commands, VRChatWorld } from '@/lib/bindings';
 import { WorldDisplayData, Platform } from '@/types/worlds';
 import { CardSize } from '@/types/preferences';
 import { SpecialFolders } from '@/types/folders';
+import { info } from '@tauri-apps/plugin-log';
 
 interface FindPageProps {
   worldIds: string[];
@@ -65,6 +66,7 @@ export function FindPage({
       if (worlds.status !== 'ok') {
         throw new Error(worlds.error);
       } else {
+        info(`Fetched recently visited worlds: ${worlds.data.length}`);
         setRecentlyVisitedWorlds(worlds.data);
       }
     } catch (error) {
@@ -76,45 +78,55 @@ export function FindPage({
 
   // Fetch recently visited worlds on initial load
   useEffect(() => {
-    fetchRecentlyVisitedWorlds();
+    if (recentlyVisitedWorlds.length === 0) {
+      fetchRecentlyVisitedWorlds();
+    }
   }, []);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header with tabs and reload button */}
-      <div className="p-4 sticky top-0 z-20 bg-background">
-        <div className="flex items-center justify-between mb-2">
-          <Tabs defaultValue='recently-visited' value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-0">
-              <TabsTrigger value="recently-visited">
-                {t('find-page:recently-visited')}
-              </TabsTrigger>
-              <TabsTrigger value="search">
-                {t('find-page:search-worlds')}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+    <div className="p-1 flex flex-col h-full">
+      {/* Header with title and reload button */}
+      <div className="flex items-center justify-between p-4 bg-background">
+        <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
-          {activeTab === 'recently-visited' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchRecentlyVisitedWorlds}
-              disabled={isLoading}
-              className='mr-4'
-            >
-              <RefreshCcw
-                className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-              />
-            </Button>
-          )}
-        </div>
+        {activeTab === 'recently-visited' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchRecentlyVisitedWorlds}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCcw
+              className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+            />
+          </Button>
+        )}
+      </div>
+
+      {/* Tab bar with full-width tabs */}
+      <div className="sticky top-0 z-20 bg-background px-4 pb-2">
+        <Tabs
+          defaultValue="recently-visited"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
+          <TabsList className="w-full grid grid-cols-2">
+            <TabsTrigger value="recently-visited">
+              {t('find-page:recently-visited')}
+            </TabsTrigger>
+            <TabsTrigger value="search">
+              {t('find-page:search-worlds')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Main content area */}
       <div className="flex-1 overflow-auto">
         {activeTab === 'recently-visited' && (
-          <>
+          <div className="flex flex-col gap-2">
             {isLoading && recentlyVisitedWorlds.length === 0 ? (
               <div className="flex items-center justify-center h-64">
                 <div className="flex flex-col items-center gap-2">
@@ -140,7 +152,7 @@ export function FindPage({
                 </p>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {activeTab === 'search' && (
