@@ -215,7 +215,7 @@ pub async fn search_worlds<J: Into<Arc<Jar>>>(
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
 
-    let offset = (page - 1) * 100;
+    let offset = page.saturating_sub(1) * 100;
 
     info!("search parameters: {:?}", search_parameters);
 
