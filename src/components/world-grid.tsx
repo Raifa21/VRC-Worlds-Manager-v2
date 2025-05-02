@@ -32,18 +32,18 @@ import {
 } from '@/components/ui/alert-dialog';
 import * as Portal from '@radix-ui/react-portal';
 import { info, error } from '@tauri-apps/plugin-log';
+import { commands } from '@/lib/bindings';
 
 interface WorldGridProps {
   size: CardSize;
   worlds: WorldDisplayData[];
   folderName: string | SpecialFolders;
-  onWorldChange: () => Promise<void>;
-  onRemoveFromFolder: (worldId: string[]) => void;
-  onHideWorld: (worldId: string[], worldName: string[]) => void;
-  onUnhideWorld: (worldId: string[]) => void;
+  onRemoveFromFolder?: (worldId: string[]) => void;
+  onHideWorld?: (worldId: string[], worldName: string[]) => void;
+  onUnhideWorld?: (worldId: string[]) => void;
   onOpenWorldDetails: (worldId: string) => void;
-  onAddToFolder?: (worldIds: string[], folderName: string) => void;
   onShowFolderDialog?: (worlds: WorldDisplayData[]) => void;
+  onWorldChange?: () => void;
 }
 
 type SortOption =
@@ -69,13 +69,12 @@ export function WorldGrid({
   size,
   worlds,
   folderName,
-  onWorldChange,
   onRemoveFromFolder,
   onHideWorld,
   onUnhideWorld,
   onOpenWorldDetails,
-  onAddToFolder,
   onShowFolderDialog,
+  onWorldChange,
 }: WorldGridProps) {
   const { t } = useLocalization();
   const cardWidths = {
@@ -101,6 +100,9 @@ export function WorldGrid({
   const [selectedWorlds, setSelectedWorlds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   const calculateCols = () => {
     const cardWidth = cardWidths[size];
@@ -137,6 +139,49 @@ export function WorldGrid({
     window.addEventListener('keydown', handleEscKey);
     return () => window.removeEventListener('keydown', handleEscKey);
   }, [isSelectionMode, selectedWorlds]);
+
+  const isFindPage = useMemo(() => {
+    return folderName === SpecialFolders.Find;
+  }, [folderName]);
+
+  useEffect(() => {
+    if (!isFindPage) return; // Only needed for find page
+
+    const checkWorldsExistence = async () => {
+      try {
+        // Get unique world IDs
+        const worldIds = worlds.map((world) => world.worldId);
+
+        // Check which worlds exist in the collection
+        const existingWorldsResult = await commands.getAllWorlds();
+        if (existingWorldsResult.status !== 'ok') {
+          error(`Error fetching worlds: ${existingWorldsResult.error}`);
+          throw new Error(existingWorldsResult.error);
+        }
+        const existingWorlds = existingWorldsResult.data as WorldDisplayData[];
+
+        const hiddenWorldsResult = await commands.getHiddenWorlds();
+        if (hiddenWorldsResult.status !== 'ok') {
+          error(`Error fetching hidden worlds: ${hiddenWorldsResult.error}`);
+          throw new Error(hiddenWorldsResult.error);
+        }
+        const hiddenWorlds = hiddenWorldsResult.data as WorldDisplayData[];
+
+        //check if the worldId exists in the collection
+        const existingIds = worldIds.filter(
+          (id) =>
+            existingWorlds.some((world) => world.worldId === id) ||
+            hiddenWorlds.some((world) => world.worldId === id),
+        );
+
+        setExistingWorldIds(new Set(existingIds));
+      } catch (err) {
+        error(`Error checking world existence: ${err}`);
+      }
+    };
+
+    checkWorldsExistence();
+  }, [worlds, isFindPage]);
 
   const filteredWorlds = worlds.filter(
     (world) =>
@@ -272,84 +317,80 @@ export function WorldGrid({
     setSelectedWorlds(new Set());
   };
 
-  const handleAddToFolder = (folder: string) => {
-    onAddToFolder?.(Array.from(selectedWorlds), folder);
-    clearSelection();
-    setIsSelectionMode(false);
-  };
-
   return (
     <div ref={containerRef} className="h-full flex flex-col">
       <div className="sticky top-0 z-10 bg-background">
-        <div className="p-4 flex items-center gap-4">
-          <Input
-            type="search"
-            placeholder={t('world-grid:search-placeholder')}
-            className="w-[calc(80vw-380px)]"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <div className="flex items-center gap-2">
-            <Select
-              value={sortField}
-              onValueChange={(value) => handleSort(value as SortField)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t('world-grid:sort-placeholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">
-                  {t('world-grid:sort-name')}
-                </SelectItem>
-                <SelectItem value="authorName">
-                  {t('general:sort-author')}
-                </SelectItem>
-                <SelectItem value="favorites">
-                  {t('world-grid:sort-favorites')}
-                </SelectItem>
-                <SelectItem value="dateAdded">
-                  {t('world-grid:sort-date-added')}
-                </SelectItem>
-                <SelectItem value="lastUpdated">
-                  {t('world-grid:sort-last-updated')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-              }
-              className="h-10 w-10"
-            >
-              {sortDirection === 'asc' ? (
-                <SortAsc className="h-4 w-4" />
-              ) : (
-                <SortDesc className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant={isSelectionMode ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => {
-                if (isSelectionMode) {
-                  clearSelection();
-                  setIsSelectionMode(false);
-                } else {
-                  setIsSelectionMode(true);
+        {!isFindPage && (
+          <div className="p-4 flex items-center gap-4">
+            <Input
+              type="search"
+              placeholder={t('world-grid:search-placeholder')}
+              className={isFindPage ? 'w-full' : 'w-[calc(80vw-340px)] z-1'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="flex">
+              <Select
+                value={sortField}
+                onValueChange={(value) => handleSort(value as SortField)}
+              >
+                <SelectTrigger className="w-[180px] mt-0.5">
+                  <SelectValue placeholder={t('world-grid:sort-placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">
+                    {t('world-grid:sort-name')}
+                  </SelectItem>
+                  <SelectItem value="authorName">
+                    {t('general:sort-author')}
+                  </SelectItem>
+                  <SelectItem value="favorites">
+                    {t('world-grid:sort-favorites')}
+                  </SelectItem>
+                  <SelectItem value="dateAdded">
+                    {t('world-grid:sort-date-added')}
+                  </SelectItem>
+                  <SelectItem value="lastUpdated">
+                    {t('world-grid:sort-last-updated')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
                 }
-              }}
-              className="h-10 w-10"
-            >
-              {isSelectionMode ? (
-                <CheckSquare className="h-4 w-4" />
-              ) : (
-                <Square className="h-4 w-4" />
-              )}
-            </Button>
+                className="h-10 w-10"
+              >
+                {sortDirection === 'asc' ? (
+                  <SortAsc className="h-4 w-4" />
+                ) : (
+                  <SortDesc className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant={isSelectionMode ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => {
+                  if (isSelectionMode) {
+                    clearSelection();
+                    setIsSelectionMode(false);
+                  } else {
+                    setIsSelectionMode(true);
+                  }
+                }}
+                className="h-10 w-10"
+              >
+                {isSelectionMode ? (
+                  <CheckSquare className="h-4 w-4" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -375,7 +416,19 @@ export function WorldGrid({
                     }`}
                     onClick={(e) => handleClick(world.worldId, e)}
                   >
-                    <WorldCardPreview size={size} world={world} />
+                    {isFindPage ? (
+                      <WorldCardPreview
+                        size={size}
+                        world={world}
+                        findPage={true}
+                        onAddWorld={(world) => {
+                          onShowFolderDialog?.(world);
+                        }}
+                        worldExists={existingWorldIds.has(world.worldId)}
+                      />
+                    ) : (
+                      <WorldCardPreview size={size} world={world} />
+                    )}
                     {isSelectionMode && (
                       <div className="absolute top-2 left-2 z-10">
                         {selectedWorlds.has(world.worldId) ? (
@@ -390,77 +443,79 @@ export function WorldGrid({
                     )}
                   </div>
                 </ContextMenuTrigger>
-                <ContextMenuContent>
-                  {!isHiddenFolder ? (
-                    <>
-                      {onShowFolderDialog && (
+                {!isFindPage && (
+                  <ContextMenuContent>
+                    {!isHiddenFolder ? (
+                      <>
+                        {onShowFolderDialog && (
+                          <ContextMenuItem
+                            onSelect={(e) => {
+                              const worldsToMove =
+                                selectedWorlds.size > 0 &&
+                                selectedWorlds.has(world.worldId)
+                                  ? Array.from(selectedWorlds).map(
+                                      (id) =>
+                                        worlds.find((w) => w.worldId === id)!,
+                                    )
+                                  : [world];
+                              onShowFolderDialog(worldsToMove);
+                            }}
+                          >
+                            {t('world-grid:move-title')}
+                          </ContextMenuItem>
+                        )}
+                        {!isSpecialFolder && (
+                          <ContextMenuItem
+                            onSelect={(e) => {
+                              const worldsToRemove =
+                                selectedWorlds.size > 0 &&
+                                selectedWorlds.has(world.worldId)
+                                  ? Array.from(selectedWorlds)
+                                  : [world.worldId];
+                              onRemoveFromFolder?.(worldsToRemove);
+                            }}
+                            className="text-destructive"
+                          >
+                            {t('world-grid:remove-title')}
+                          </ContextMenuItem>
+                        )}
                         <ContextMenuItem
                           onSelect={(e) => {
-                            const worldsToMove =
-                              selectedWorlds.size > 0 &&
-                              selectedWorlds.has(world.worldId)
-                                ? Array.from(selectedWorlds).map(
-                                    (id) =>
-                                      worlds.find((w) => w.worldId === id)!,
-                                  )
-                                : [world];
-                            onShowFolderDialog(worldsToMove);
-                          }}
-                        >
-                          {t('world-grid:move-title')}
-                        </ContextMenuItem>
-                      )}
-                      {!isSpecialFolder && (
-                        <ContextMenuItem
-                          onSelect={(e) => {
-                            const worldsToRemove =
+                            const worldsToHide =
                               selectedWorlds.size > 0 &&
                               selectedWorlds.has(world.worldId)
                                 ? Array.from(selectedWorlds)
                                 : [world.worldId];
-                            onRemoveFromFolder(worldsToRemove);
+                            const worldNames = worldsToHide
+                              .map(
+                                (id) =>
+                                  worlds.find((w) => w.worldId === id)?.name ||
+                                  '',
+                              )
+                              .filter(Boolean);
+                            onHideWorld?.(worldsToHide, worldNames);
                           }}
                           className="text-destructive"
                         >
-                          {t('world-grid:remove-title')}
+                          {t('general:hide-title')}
                         </ContextMenuItem>
-                      )}
+                      </>
+                    ) : (
                       <ContextMenuItem
                         onSelect={(e) => {
-                          const worldsToHide =
+                          const worldsToRestore =
                             selectedWorlds.size > 0 &&
                             selectedWorlds.has(world.worldId)
                               ? Array.from(selectedWorlds)
                               : [world.worldId];
-                          const worldNames = worldsToHide
-                            .map(
-                              (id) =>
-                                worlds.find((w) => w.worldId === id)?.name ||
-                                '',
-                            )
-                            .filter(Boolean);
-                          onHideWorld(worldsToHide, worldNames);
+                          onUnhideWorld?.(worldsToRestore);
                         }}
-                        className="text-destructive"
                       >
-                        {t('general:hide-title')}
+                        {t('world-grid:restore-world')}
                       </ContextMenuItem>
-                    </>
-                  ) : (
-                    <ContextMenuItem
-                      onSelect={(e) => {
-                        const worldsToRestore =
-                          selectedWorlds.size > 0 &&
-                          selectedWorlds.has(world.worldId)
-                            ? Array.from(selectedWorlds)
-                            : [world.worldId];
-                        onUnhideWorld(worldsToRestore);
-                      }}
-                    >
-                      {t('world-grid:restore-world')}
-                    </ContextMenuItem>
-                  )}
-                </ContextMenuContent>
+                    )}
+                  </ContextMenuContent>
+                )}
               </ContextMenu>
             ))}
           </div>
@@ -504,9 +559,9 @@ export function WorldGrid({
                   variant="destructive"
                   onClick={() => {
                     if (dialogConfig.type === 'remove') {
-                      onRemoveFromFolder([dialogConfig.worldId]);
+                      onRemoveFromFolder?.([dialogConfig.worldId]);
                     } else if (dialogConfig.worldName) {
-                      onHideWorld(
+                      onHideWorld?.(
                         [dialogConfig.worldId],
                         [dialogConfig.worldName],
                       );

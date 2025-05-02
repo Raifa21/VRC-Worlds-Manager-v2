@@ -1,5 +1,6 @@
 use crate::api::group::GroupInstancePermissionInfo;
 use crate::api::group::UserGroup;
+use crate::api::world::VRChatWorld;
 use crate::definitions::WorldDetails;
 use crate::services::FolderManager;
 use crate::ApiService;
@@ -86,7 +87,10 @@ pub async fn get_favorite_worlds() -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_world(world_id: String) -> Result<WorldDetails, String> {
+pub async fn get_world(
+    world_id: String,
+    dont_save_to_local: Option<bool>,
+) -> Result<WorldDetails, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
     let world_copy = WORLDS.get().read().unwrap().clone();
 
@@ -99,6 +103,12 @@ pub async fn get_world(world_id: String) -> Result<WorldDetails, String> {
     };
 
     log::info!("Received world: {:#?}", world); // Debug print the world
+    if let Some(dont_save) = dont_save_to_local {
+        if dont_save {
+            log::info!("Not saving world to local storage");
+            return Ok(world.to_world_details());
+        }
+    }
     match FolderManager::add_worlds(WORLDS.get(), vec![world.clone()]) {
         Ok(_) => Ok(world.to_world_details()),
         Err(e) => {
@@ -124,6 +134,52 @@ pub async fn check_world_info(world_id: String) -> Result<WorldDetails, String> 
 
     log::info!("Received world: {:#?}", world); // Debug print the world
     Ok(world.to_world_details())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_recently_visited_worlds() -> Result<Vec<VRChatWorld>, String> {
+    let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
+
+    let worlds = match ApiService::get_recently_visited_worlds(cookie_store).await {
+        Ok(worlds) => worlds,
+        Err(e) => {
+            log::info!("Failed to fetch recently visited worlds: {}", e);
+            return Err(format!("Failed to fetch recently visited worlds: {}", e));
+        }
+    };
+
+    Ok(worlds)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn search_worlds(
+    sort: String,
+    tag: String,
+    search: String,
+    page: usize,
+) -> Result<Vec<VRChatWorld>, String> {
+    let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
+
+    let sort = if sort.is_empty() { None } else { Some(sort) };
+
+    let tag = if tag.is_empty() { None } else { Some(tag) };
+    let search = if search.is_empty() {
+        None
+    } else {
+        Some(search)
+    };
+
+    let worlds = match ApiService::search_worlds(cookie_store, sort, tag, search, page).await {
+        Ok(worlds) => worlds,
+        Err(e) => {
+            log::info!("Failed to fetch worlds: {}", e);
+            return Err(format!("Failed to fetch worlds: {}", e));
+        }
+    };
+
+    Ok(worlds)
 }
 
 #[tauri::command]

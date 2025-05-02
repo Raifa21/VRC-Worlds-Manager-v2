@@ -1,18 +1,31 @@
+import React from 'react';
 import { CardSize } from '@/types/preferences';
-import { Heart } from 'lucide-react';
+import { Check, Heart, Plus } from 'lucide-react';
 import Image from 'next/image';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
 import { Platform } from '@/types/worlds';
-import { WorldDisplayData, WorldCardPreviewProps } from '@/types/worlds';
+import { WorldDisplayData } from '@/types/worlds';
 import { useLocalization } from '@/hooks/use-localization';
+import { Button } from './ui/button';
+import { commands } from '@/lib/bindings';
+import { error, info } from '@tauri-apps/plugin-log';
 
-export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
+interface WorldCardPreviewProps {
+  size: CardSize;
+  world: WorldDisplayData;
+  findPage?: boolean;
+  onAddWorld?: (worlds: WorldDisplayData[]) => void;
+  worldExists?: boolean;
+}
+
+export function WorldCardPreview(props: WorldCardPreviewProps) {
+  const { size, world, findPage, onAddWorld, worldExists } = props;
   const { t } = useLocalization();
   const sizeClasses: Record<CardSize, string> = {
     [CardSize.Compact]: 'w-48 h-32',
-    [CardSize.Normal]: 'w-52 h-48',
+    [CardSize.Normal]: findPage ? 'w-52 h-56' : 'w-52 h-48',
     [CardSize.Expanded]: 'w-64 h-64',
     [CardSize.Original]: 'w-64 h-48',
   };
@@ -22,7 +35,7 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
       className={`border rounded-lg shadow hover:shadow-md transition-all duration-300 ${sizeClasses[size]}`}
     >
       <div className="relative w-full">
-        <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1">
+        <div className="absolute top-2 right-2 z-1 bg-black/50 rounded-full p-1">
           {world.platform == Platform.CrossPlatform ? (
             <Image
               src={QPcQ}
@@ -45,9 +58,11 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
       <img
         src={world.thumbnailUrl}
         alt={world.name}
-        className="w-full h-2/3 object-cover rounded-t-lg"
+        className={`w-full ${findPage ? 'h-28' : 'h-2/3'} object-cover rounded-t-lg `}
         draggable="false"
       />
+
+      {/* Various size renderings... */}
 
       {size === CardSize.Compact && (
         <div className="p-2">
@@ -99,6 +114,23 @@ export function WorldCardPreview({ size, world }: WorldCardPreviewProps) {
           <p className="text-sm text-muted-foreground truncate">
             {t('world-card:by-author', world.authorName)}
           </p>
+        </div>
+      )}
+      {findPage && (
+        <div className="flex justify-center pt-1">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="rounded-md w-28"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddWorld?.([world]);
+            }}
+            title={t('general:add-world')}
+            disabled={worldExists}
+          >
+            {worldExists ? <Check /> : <Plus />}
+          </Button>
         </div>
       )}
     </div>

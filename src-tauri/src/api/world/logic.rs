@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use log::info;
 use reqwest::cookie::Jar;
 use serde::Deserialize;
 
@@ -115,7 +116,7 @@ pub async fn get_recently_visited_worlds<J: Into<Arc<Jar>>>(
     let client = get_reqwest_client(&cookie_jar);
 
     let result = client
-        .get(format!("{}/worlds/recent", API_BASE_URL))
+        .get(format!("{}/worlds/recent?n=100", API_BASE_URL))
         .send()
         .await
         .map_err(|e| format!("Failed to get recently visited worlds: {}", e.to_string()))?;
@@ -205,6 +206,7 @@ pub async fn get_world_by_id<J: Into<Arc<Jar>>, S: AsRef<str>>(
 pub async fn search_worlds<J: Into<Arc<Jar>>>(
     cookie: J,
     search_parameters: &WorldSearchParameters,
+    page: usize,
 ) -> Result<Vec<VRChatWorld>, String> {
     const OPERATION: &str = "search_worlds";
 
@@ -213,8 +215,12 @@ pub async fn search_worlds<J: Into<Arc<Jar>>>(
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
 
+    let offset = (page - 1) * 100;
+
+    info!("search parameters: {:?}", search_parameters);
+
     let result = client
-        .get(format!("{}/worlds", API_BASE_URL))
+        .get(format!("{}/worlds?offset={}&n=100", API_BASE_URL, offset))
         .query(search_parameters)
         .send()
         .await

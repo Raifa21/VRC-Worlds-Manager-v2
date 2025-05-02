@@ -1,9 +1,10 @@
 use chrono::DateTime;
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 use crate::definitions::WorldApiData;
 
-#[derive(Debug, Eq, PartialEq, Hash, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Hash, Deserialize, Serialize, Clone, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum ReleaseStatus {
     Public,
@@ -18,7 +19,7 @@ impl Default for ReleaseStatus {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Type)]
 pub struct UnityPackage {
     #[serde(rename = "platform")]
     pub platform: String,
@@ -238,7 +239,7 @@ impl TryInto<WorldApiData> for WorldDetails {
     }
 }
 
-#[derive(Default, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Deserialize, Serialize, Type)]
 pub struct VRChatWorld {
     #[serde(rename = "authorId")]
     pub author_id: String,
@@ -375,6 +376,21 @@ pub enum SearchWorldSort {
     Magic,
     #[serde(rename = "name")]
     Name,
+}
+
+impl SearchWorldSort {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "popularity" => Some(Self::Popularity),
+            "heat" => Some(Self::Heat),
+            "random" => Some(Self::Random),
+            "favorites" => Some(Self::Favorites),
+            "publicationDate" => Some(Self::PublicationDate),
+            "created" => Some(Self::Created),
+            "updated" => Some(Self::Updated),
+            _ => None,
+        }
+    }
 }
 
 #[cfg(test)]
