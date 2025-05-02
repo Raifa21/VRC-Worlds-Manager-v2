@@ -104,6 +104,7 @@ pub async fn get_world(
 
     log::info!("Received world: {:#?}", world); // Debug print the world
     if let Some(dont_save) = dont_save_to_local {
+        // If the flag is set to true, skip saving the world to local storage.
         if dont_save {
             log::info!("Not saving world to local storage");
             return Ok(world.to_world_details());
