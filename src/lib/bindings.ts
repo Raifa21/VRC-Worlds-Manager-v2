@@ -159,6 +159,14 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getTagsByCount(): Promise<Result<string[], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_tags_by_count') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getTheme(): Promise<Result<string, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_theme') };
@@ -238,11 +246,52 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async getWorld(worldId: string): Promise<Result<WorldDetails, string>> {
+  async getWorld(
+    worldId: string,
+    dontSaveToLocal: boolean | null,
+  ): Promise<Result<WorldDetails, string>> {
     try {
       return {
         status: 'ok',
-        data: await TAURI_INVOKE('get_world', { worldId }),
+        data: await TAURI_INVOKE('get_world', { worldId, dontSaveToLocal }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async checkWorldInfo(worldId: string): Promise<Result<WorldDetails, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('check_world_info', { worldId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getRecentlyVisitedWorlds(): Promise<Result<VRChatWorld[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_recently_visited_worlds'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async searchWorlds(
+    sort: string,
+    tag: string,
+    search: string,
+    page: number,
+  ): Promise<Result<VRChatWorld[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('search_worlds', { sort, tag, search, page }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -572,6 +621,8 @@ export type PreviousMetadata = {
   number_of_folders: number;
   number_of_worlds: number;
 };
+export type ReleaseStatus = 'public' | 'private' | 'hidden' | 'all';
+export type UnityPackage = { platform: string };
 export type UserGroup = {
   id: string;
   name: string;
@@ -586,6 +637,26 @@ export type UserGroup = {
   memberVisibility: GroupMemberVisibility;
   isRepresenting: boolean;
   mutualGroup: boolean;
+};
+export type VRChatWorld = {
+  authorId: string;
+  authorName: string;
+  capacity: number;
+  recommendedCapacity: number | null;
+  created_at: string;
+  favorites: number;
+  visits: number | null;
+  heat: number;
+  id: string;
+  imageUrl: string;
+  name: string;
+  popularity: number;
+  publicationDate: string;
+  releaseStatus: ReleaseStatus;
+  tags: string[];
+  thumbnailImageUrl: string;
+  unityPackages: UnityPackage[];
+  updated_at: string;
 };
 export type WorldDetails = {
   worldId: string;

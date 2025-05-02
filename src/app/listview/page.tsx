@@ -11,14 +11,16 @@ import { Platform, WorldDisplayData } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react'; // For the reload icon
+import { Plus, RefreshCw } from 'lucide-react'; // For the reload icon
 import { commands } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
 import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
+import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
+import { useMemo } from 'react';
 import {
   GroupInstanceCreatePermission,
   UserGroup,
@@ -35,6 +37,7 @@ export default function ListView() {
   const { t } = useLocalization();
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showDeleteFolder, setShowDeleteFolder] = useState<string | null>(null);
+  const [isAddWorldOpen, setIsAddWorldOpen] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showFind, setShowFind] = useState(false);
@@ -55,6 +58,10 @@ export default function ListView() {
   useEffect(() => {
     loadAllWorlds();
   }, []);
+
+  const isFindPage = useMemo(() => {
+    return currentFolder === SpecialFolders.Find;
+  }, [currentFolder]);
 
   const openHiddenFolder = async () => {
     info('Opening hidden worlds');
@@ -104,6 +111,7 @@ export default function ListView() {
           break;
         case SpecialFolders.Find:
           setShowFind(true);
+          setCurrentFolder(SpecialFolders.Find);
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
@@ -175,6 +183,35 @@ export default function ListView() {
     }
   };
 
+  const handleAddWorld = async (worldId: string) => {
+    try {
+      const world = await commands.getWorld(worldId, null);
+      if (world.status === 'error') {
+        throw new Error(world.error);
+      }
+      const worldData = world.data;
+      // if we are not in a special folder, add the world to the current folder
+      if (
+        !Object.values(SpecialFolders).includes(currentFolder as SpecialFolders)
+      ) {
+        await commands.addWorldToFolder(currentFolder, worldId);
+      }
+      toast({
+        title: t('listview-page:world-added-title'),
+        description: t('listview-page:world-added-description'),
+        duration: 1000,
+      });
+      await refreshCurrentView();
+    } catch (e) {
+      error(`Failed to add world: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-add-world'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   const loadFolderContents = async (folder: string) => {
     try {
       info(`Folder: ${folder}`);
@@ -212,6 +249,8 @@ export default function ListView() {
       await loadUnclassifiedWorlds();
     } else if (currentFolder === SpecialFolders.Hidden) {
       await openHiddenFolder();
+    } else if (currentFolder === SpecialFolders.Find) {
+      return;
     } else if (currentFolder) {
       await loadFolderContents(currentFolder);
     }
@@ -233,6 +272,8 @@ export default function ListView() {
           break;
         case SpecialFolders.Unclassified:
           await loadUnclassifiedWorlds();
+          break;
+        case SpecialFolders.Find:
           break;
         case SpecialFolders.Hidden:
           await openHiddenFolder();
@@ -434,6 +475,9 @@ export default function ListView() {
     foldersToRemove: string[],
   ) => {
     try {
+      if (currentFolder === SpecialFolders.Find) {
+        handleAddWorld(worldsToAdd[0].worldId);
+      }
       // Store original state for each world-folder combination
       const originalStates = worldsToAdd.map((world) => ({
         worldId: world.worldId,
@@ -459,66 +503,68 @@ export default function ListView() {
         }
       }
 
-      toast({
-        title: t('listview-page:folders-updated-title'),
-        description: (
-          <div className="flex w-full items-center justify-between gap-2">
-            <span>
-              {worldsToAdd.length > 1
-                ? t(
-                    'listview-page:folders-updated-multiple',
-                    worldsToAdd[0].name,
-                    worldsToAdd.length - 1,
-                  )
-                : t(
-                    'listview-page:folders-updated-single',
-                    worldsToAdd[0].name,
-                  )}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                try {
-                  // Undo changes per world
-                  for (const state of originalStates) {
-                    // Remove from folders that were added
-                    for (const folder of state.addedTo) {
-                      await commands.removeWorldFromFolder(
-                        folder,
-                        state.worldId,
-                      );
+      if (currentFolder != SpecialFolders.Find) {
+        toast({
+          title: t('listview-page:folders-updated-title'),
+          description: (
+            <div className="flex w-full items-center justify-between gap-2">
+              <span>
+                {worldsToAdd.length > 1
+                  ? t(
+                      'listview-page:folders-updated-multiple',
+                      worldsToAdd[0].name,
+                      worldsToAdd.length - 1,
+                    )
+                  : t(
+                      'listview-page:folders-updated-single',
+                      worldsToAdd[0].name,
+                    )}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    // Undo changes per world
+                    for (const state of originalStates) {
+                      // Remove from folders that were added
+                      for (const folder of state.addedTo) {
+                        await commands.removeWorldFromFolder(
+                          folder,
+                          state.worldId,
+                        );
+                      }
+                      // Add back to folders that were removed
+                      for (const folder of state.removedFrom) {
+                        await commands.addWorldToFolder(folder, state.worldId);
+                      }
                     }
-                    // Add back to folders that were removed
-                    for (const folder of state.removedFrom) {
-                      await commands.addWorldToFolder(folder, state.worldId);
-                    }
+                    await refreshCurrentView();
+                    toast({
+                      title: t('listview-page:restored-title'),
+                      description: t('listview-page:folder-changes-undone'),
+                    });
+                  } catch (e) {
+                    error(`Failed to undo folder changes: ${e}`);
+                    toast({
+                      title: t('general:error-title'),
+                      description: t('listview-page:error-undo-folder-changes'),
+                      variant: 'destructive',
+                    });
                   }
-                  await refreshCurrentView();
-                  toast({
-                    title: t('listview-page:restored-title'),
-                    description: t('listview-page:folder-changes-undone'),
-                  });
-                } catch (e) {
-                  error(`Failed to undo folder changes: ${e}`);
-                  toast({
-                    title: t('general:error-title'),
-                    description: t('listview-page:error-undo-folder-changes'),
-                    variant: 'destructive',
-                  });
-                }
-              }}
-            >
-              Undo
-            </Button>
-          </div>
-        ),
-        duration: 3000,
-        className: 'relative',
-        style: {
-          '--progress': '100%',
-        } as React.CSSProperties,
-      });
+                }}
+              >
+                Undo
+              </Button>
+            </div>
+          ),
+          duration: 3000,
+          className: 'relative',
+          style: {
+            '--progress': '100%',
+          } as React.CSSProperties,
+        });
+      }
 
       await refreshCurrentView();
       setShowFolderDialog(false);
@@ -726,7 +772,19 @@ export default function ListView() {
     }
 
     if (showFind) {
-      return <FindPage />;
+      return (
+        <FindPage
+          worldIds={worlds.map((world) => world.worldId)}
+          onSelectWorld={(worldId) => {
+            handleOpenWorldDetails(worldId);
+          }}
+          onDataChange={loadFolders}
+          onShowFolderDialog={(worlds) => {
+            setSelectedWorldsForFolder(worlds);
+            setShowFolderDialog(true);
+          }}
+        />
+      );
     }
 
     return (
@@ -739,21 +797,34 @@ export default function ListView() {
               ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
               : currentFolder}
           </h1>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleReload}
-            className="ml-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center">
+            {currentFolder !== SpecialFolders.Hidden && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsAddWorldOpen(true)}
+                  className="ml-2"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleReload}
+                  className="ml-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1">
           <WorldGrid
             size={cardSize}
             worlds={worlds}
             folderName={currentFolder}
-            onWorldChange={refreshCurrentView}
             onRemoveFromFolder={removeWorldsFromFolder}
             onHideWorld={handleHideWorld}
             onUnhideWorld={handleRestoreWorld}
@@ -801,6 +872,22 @@ export default function ListView() {
         }}
         onConfirm={handleCreateFolder}
       />
+      <AddWorldPopup
+        open={isAddWorldOpen}
+        onConfirm={handleAddWorld}
+        onClose={() => setIsAddWorldOpen(false)}
+        existingWorlds={
+          Object.values(SpecialFolders).includes(
+            currentFolder as SpecialFolders,
+          )
+            ? worlds.map((world) => world.worldId)
+            : worlds
+                .filter((world) =>
+                  world.folders.includes(currentFolder as string),
+                )
+                .map((world) => world.worldId)
+        }
+      />
       <WorldDetailPopup
         open={showWorldDetails}
         onOpenChange={(open) => {
@@ -815,6 +902,7 @@ export default function ListView() {
         onCreateGroupInstance={createGroupInstance}
         onGetGroups={getGroups}
         onGetGroupPermissions={getGroupPermissions}
+        dontSaveToLocal={isFindPage}
       />
       <AddToFolderDialog
         open={showFolderDialog}
@@ -828,6 +916,7 @@ export default function ListView() {
             foldersToRemove,
           )
         }
+        isFindPage={isFindPage}
       />
       <DeleteFolderDialog
         folderName={showDeleteFolder}

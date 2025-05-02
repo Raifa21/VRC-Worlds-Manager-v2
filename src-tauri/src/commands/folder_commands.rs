@@ -135,3 +135,12 @@ pub async fn get_hidden_worlds() -> Result<Vec<WorldDisplayData>, String> {
         e.to_string()
     })
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_tags_by_count() -> Result<Vec<String>, String> {
+    FolderManager::get_tags_by_count(WORLDS.get()).map_err(|e| {
+        log::error!("Error getting tags by count: {}", e);
+        e.to_string()
+    })
+}

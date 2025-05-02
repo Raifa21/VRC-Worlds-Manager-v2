@@ -1,6 +1,8 @@
 use crate::api::auth::VRChatAPIClientAuthenticator;
+use crate::api::world::{SearchWorldSort, VRChatWorld, WorldSearchParametersBuilder};
 use crate::api::{auth, group, instance, invite, world};
 use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
+use crate::services::api_service::world::WorldSearchParameters;
 use crate::services::file_service::FileService;
 use crate::services::FolderManager;
 use crate::InitState;
@@ -354,6 +356,74 @@ impl ApiService {
         match invite::invite_self_to_instance(cookie_store, &world_id, &instance_id).await {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("Failed to invite self to instance: {}", e)),
+        }
+    }
+
+    /// Get the user's recently visited worlds  
+    ///
+    /// # Arguments
+    /// * `cookie_store` - The cookie store to use for the API
+    ///
+    /// # Returns
+    /// Returns a Result containing a vector of VRChatWorld if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn get_recently_visited_worlds(
+        cookie_store: Arc<Jar>,
+    ) -> Result<Vec<VRChatWorld>, String> {
+        match world::get_recently_visited_worlds(cookie_store).await {
+            Ok(worlds) => Ok(worlds),
+            Err(e) => Err(format!("Failed to fetch recently visited worlds: {}", e)),
+        }
+    }
+
+    /// Searches for worlds within the server, using the provided query
+    ///
+    /// # Arguments
+    /// * `cookie_store` - The cookie store to use for the API
+    /// * `sort` - The sort priority for the search
+    /// * `tag` - The tags that the worlds should have
+    /// * `platform` - The platforms which the worlds should be available on
+    /// * `search` - The search string to use
+    /// * `page` - The page number to fetch
+    ///
+    /// # Returns
+    /// Returns a Result containing a vector of VRChatWorld if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn search_worlds(
+        cookie_store: Arc<Jar>,
+        sort: Option<String>,
+        tag: Option<String>,
+        search: Option<String>,
+        page: usize,
+    ) -> Result<Vec<VRChatWorld>, String> {
+        let sort = SearchWorldSort::from_str(sort.unwrap_or_default().as_str());
+        // tag should be in the form author_tag_{tag}
+        let tag = if let Some(tag) = tag {
+            Some(format!("author_tag_{}", tag))
+        } else {
+            None
+        };
+
+        let mut parameter_builder = WorldSearchParametersBuilder::new();
+        if let Some(sort) = sort {
+            parameter_builder.sort = Some(sort);
+        }
+        if let Some(tag) = tag {
+            parameter_builder.tag = Some(tag);
+        }
+        if let Some(search) = search {
+            parameter_builder.search = Some(search);
+        }
+
+        match world::search_worlds(cookie_store, &parameter_builder.build(), page).await {
+            Ok(worlds) => Ok(worlds),
+            Err(e) => Err(format!("Failed to fetch worlds: {}", e)),
         }
     }
 
