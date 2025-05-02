@@ -320,83 +320,77 @@ export function WorldGrid({
   return (
     <div ref={containerRef} className="h-full flex flex-col">
       <div className="sticky top-0 z-10 bg-background">
-        <div className="p-4 flex items-center gap-4">
-          <Input
-            type="search"
-            placeholder={t('world-grid:search-placeholder')}
-            className={isFindPage ? 'w-full' : 'w-[calc(80vw-340px)] z-1'}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {!isFindPage && (
-            <div className="flex items-center gap-2">
-              <div className="flex">
-                <Select
-                  value={sortField}
-                  onValueChange={(value) => handleSort(value as SortField)}
-                >
-                  <SelectTrigger className="w-[180px] mt-0.5">
-                    <SelectValue
-                      placeholder={t('world-grid:sort-placeholder')}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name">
-                      {t('world-grid:sort-name')}
-                    </SelectItem>
-                    <SelectItem value="authorName">
-                      {t('general:sort-author')}
-                    </SelectItem>
-                    <SelectItem value="favorites">
-                      {t('world-grid:sort-favorites')}
-                    </SelectItem>
-                    <SelectItem value="dateAdded">
-                      {t('world-grid:sort-date-added')}
-                    </SelectItem>
-                    <SelectItem value="lastUpdated">
-                      {t('world-grid:sort-last-updated')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    setSortDirection((prev) =>
-                      prev === 'asc' ? 'desc' : 'asc',
-                    )
+        {!isFindPage && (
+          <div className="p-4 flex items-center gap-4">
+            <Input
+              type="search"
+              placeholder={t('world-grid:search-placeholder')}
+              className={isFindPage ? 'w-full' : 'w-[calc(80vw-340px)] z-1'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="flex">
+              <Select
+                value={sortField}
+                onValueChange={(value) => handleSort(value as SortField)}
+              >
+                <SelectTrigger className="w-[180px] mt-0.5">
+                  <SelectValue placeholder={t('world-grid:sort-placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">
+                    {t('world-grid:sort-name')}
+                  </SelectItem>
+                  <SelectItem value="authorName">
+                    {t('general:sort-author')}
+                  </SelectItem>
+                  <SelectItem value="favorites">
+                    {t('world-grid:sort-favorites')}
+                  </SelectItem>
+                  <SelectItem value="dateAdded">
+                    {t('world-grid:sort-date-added')}
+                  </SelectItem>
+                  <SelectItem value="lastUpdated">
+                    {t('world-grid:sort-last-updated')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                }
+                className="h-10 w-10"
+              >
+                {sortDirection === 'asc' ? (
+                  <SortAsc className="h-4 w-4" />
+                ) : (
+                  <SortDesc className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant={isSelectionMode ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => {
+                  if (isSelectionMode) {
+                    clearSelection();
+                    setIsSelectionMode(false);
+                  } else {
+                    setIsSelectionMode(true);
                   }
-                  className="h-10 w-10"
-                >
-                  {sortDirection === 'asc' ? (
-                    <SortAsc className="h-4 w-4" />
-                  ) : (
-                    <SortDesc className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  variant={isSelectionMode ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => {
-                    if (isSelectionMode) {
-                      clearSelection();
-                      setIsSelectionMode(false);
-                    } else {
-                      setIsSelectionMode(true);
-                    }
-                  }}
-                  className="h-10 w-10"
-                >
-                  {isSelectionMode ? (
-                    <CheckSquare className="h-4 w-4" />
-                  ) : (
-                    <Square className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+                }}
+                className="h-10 w-10"
+              >
+                {isSelectionMode ? (
+                  <CheckSquare className="h-4 w-4" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto">
