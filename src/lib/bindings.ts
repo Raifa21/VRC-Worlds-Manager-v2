@@ -159,6 +159,14 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getTagsByCount(): Promise<Result<string[], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_tags_by_count') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getTheme(): Promise<Result<string, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_theme') };
@@ -268,6 +276,22 @@ export const commands = {
       return {
         status: 'ok',
         data: await TAURI_INVOKE('get_recently_visited_worlds'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async searchWorlds(
+    sort: string | null,
+    tag: string | null,
+    search: string | null,
+    page: number,
+  ): Promise<Result<VRChatWorld[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('search_worlds', { sort, tag, search, page }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;

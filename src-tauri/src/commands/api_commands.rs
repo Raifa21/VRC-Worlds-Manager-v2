@@ -157,20 +157,18 @@ pub async fn get_recently_visited_worlds() -> Result<Vec<VRChatWorld>, String> {
 pub async fn search_worlds(
     sort: Option<String>,
     tag: Option<String>,
-    platform: Option<String>,
     search: Option<String>,
     page: usize,
 ) -> Result<Vec<VRChatWorld>, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
 
-    let worlds =
-        match ApiService::search_worlds(cookie_store, sort, tag, platform, search, page).await {
-            Ok(worlds) => worlds,
-            Err(e) => {
-                log::info!("Failed to fetch worlds: {}", e);
-                return Err(format!("Failed to fetch worlds: {}", e));
-            }
-        };
+    let worlds = match ApiService::search_worlds(cookie_store, sort, tag, search, page).await {
+        Ok(worlds) => worlds,
+        Err(e) => {
+            log::info!("Failed to fetch worlds: {}", e);
+            return Err(format!("Failed to fetch worlds: {}", e));
+        }
+    };
 
     Ok(worlds)
 }

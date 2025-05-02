@@ -399,11 +399,16 @@ impl ApiService {
         cookie_store: Arc<Jar>,
         sort: Option<String>,
         tag: Option<String>,
-        platform: Option<String>,
         search: Option<String>,
         page: usize,
     ) -> Result<Vec<VRChatWorld>, String> {
         let sort = SearchWorldSort::from_str(sort.unwrap_or_default().as_str());
+        // tag should be in the form author_tag_{tag}
+        let tag = if let Some(tag) = tag {
+            Some(format!("author_tag_{}", tag))
+        } else {
+            None
+        };
 
         let mut parameter_builder = WorldSearchParametersBuilder::new();
         if let Some(sort) = sort {
@@ -411,9 +416,6 @@ impl ApiService {
         }
         if let Some(tag) = tag {
             parameter_builder.tag = Some(tag);
-        }
-        if let Some(platform) = platform {
-            parameter_builder.platform = Some(platform);
         }
         if let Some(search) = search {
             parameter_builder.search = Some(search);

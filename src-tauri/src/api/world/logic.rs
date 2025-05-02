@@ -217,7 +217,7 @@ pub async fn search_worlds<J: Into<Arc<Jar>>>(
     let offset = (page - 1) * 100;
 
     let result = client
-        .get(format!("{}/worlds?offset={}", API_BASE_URL, offset))
+        .get(format!("{}/worlds?offset={}&n=100", API_BASE_URL, offset))
         .query(search_parameters)
         .send()
         .await

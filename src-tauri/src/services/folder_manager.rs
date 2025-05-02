@@ -643,7 +643,10 @@ impl FolderManager {
         let mut tag_map: HashMap<String, usize> = HashMap::new();
         for world in worlds_lock.iter() {
             for tag in &world.api_data.tags {
-                *tag_map.entry(tag.clone()).or_insert(0) += 1;
+                if tag.starts_with("author_tag_") {
+                    let stripped_tag = tag.strip_prefix("author_tag_").unwrap().to_string();
+                    *tag_map.entry(stripped_tag).or_insert(0) += 1;
+                }
             }
         }
         // sort the map by the number of worlds in each tag
