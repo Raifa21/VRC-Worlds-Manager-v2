@@ -77,6 +77,7 @@ export function FindPage({
           'find-page:fetch-recently-visited-worlds-success',
           worlds.data.length,
         ),
+        duration: 1000,
       });
     } catch (error) {
       console.error('Error fetching recently visited worlds:', error);

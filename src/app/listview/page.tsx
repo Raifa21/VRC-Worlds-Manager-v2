@@ -199,6 +199,7 @@ export default function ListView() {
       toast({
         title: t('listview-page:world-added-title'),
         description: t('listview-page:world-added-description'),
+        duration: 1000,
       });
       await refreshCurrentView();
     } catch (e) {
@@ -474,6 +475,9 @@ export default function ListView() {
     foldersToRemove: string[],
   ) => {
     try {
+      if (currentFolder === SpecialFolders.Find) {
+        handleAddWorld(worldsToAdd[0].worldId);
+      }
       // Store original state for each world-folder combination
       const originalStates = worldsToAdd.map((world) => ({
         worldId: world.worldId,
@@ -499,66 +503,68 @@ export default function ListView() {
         }
       }
 
-      toast({
-        title: t('listview-page:folders-updated-title'),
-        description: (
-          <div className="flex w-full items-center justify-between gap-2">
-            <span>
-              {worldsToAdd.length > 1
-                ? t(
-                    'listview-page:folders-updated-multiple',
-                    worldsToAdd[0].name,
-                    worldsToAdd.length - 1,
-                  )
-                : t(
-                    'listview-page:folders-updated-single',
-                    worldsToAdd[0].name,
-                  )}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                try {
-                  // Undo changes per world
-                  for (const state of originalStates) {
-                    // Remove from folders that were added
-                    for (const folder of state.addedTo) {
-                      await commands.removeWorldFromFolder(
-                        folder,
-                        state.worldId,
-                      );
+      if (currentFolder != SpecialFolders.Find) {
+        toast({
+          title: t('listview-page:folders-updated-title'),
+          description: (
+            <div className="flex w-full items-center justify-between gap-2">
+              <span>
+                {worldsToAdd.length > 1
+                  ? t(
+                      'listview-page:folders-updated-multiple',
+                      worldsToAdd[0].name,
+                      worldsToAdd.length - 1,
+                    )
+                  : t(
+                      'listview-page:folders-updated-single',
+                      worldsToAdd[0].name,
+                    )}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    // Undo changes per world
+                    for (const state of originalStates) {
+                      // Remove from folders that were added
+                      for (const folder of state.addedTo) {
+                        await commands.removeWorldFromFolder(
+                          folder,
+                          state.worldId,
+                        );
+                      }
+                      // Add back to folders that were removed
+                      for (const folder of state.removedFrom) {
+                        await commands.addWorldToFolder(folder, state.worldId);
+                      }
                     }
-                    // Add back to folders that were removed
-                    for (const folder of state.removedFrom) {
-                      await commands.addWorldToFolder(folder, state.worldId);
-                    }
+                    await refreshCurrentView();
+                    toast({
+                      title: t('listview-page:restored-title'),
+                      description: t('listview-page:folder-changes-undone'),
+                    });
+                  } catch (e) {
+                    error(`Failed to undo folder changes: ${e}`);
+                    toast({
+                      title: t('general:error-title'),
+                      description: t('listview-page:error-undo-folder-changes'),
+                      variant: 'destructive',
+                    });
                   }
-                  await refreshCurrentView();
-                  toast({
-                    title: t('listview-page:restored-title'),
-                    description: t('listview-page:folder-changes-undone'),
-                  });
-                } catch (e) {
-                  error(`Failed to undo folder changes: ${e}`);
-                  toast({
-                    title: t('general:error-title'),
-                    description: t('listview-page:error-undo-folder-changes'),
-                    variant: 'destructive',
-                  });
-                }
-              }}
-            >
-              Undo
-            </Button>
-          </div>
-        ),
-        duration: 3000,
-        className: 'relative',
-        style: {
-          '--progress': '100%',
-        } as React.CSSProperties,
-      });
+                }}
+              >
+                Undo
+              </Button>
+            </div>
+          ),
+          duration: 3000,
+          className: 'relative',
+          style: {
+            '--progress': '100%',
+          } as React.CSSProperties,
+        });
+      }
 
       await refreshCurrentView();
       setShowFolderDialog(false);
@@ -774,9 +780,8 @@ export default function ListView() {
           }}
           onDataChange={loadFolders}
           onShowFolderDialog={(worlds) => {
-            for (const world of worlds) {
-              handleAddWorld(world.worldId);
-            }
+            setSelectedWorldsForFolder(worlds);
+            setShowFolderDialog(true);
           }}
         />
       );
@@ -911,6 +916,7 @@ export default function ListView() {
             foldersToRemove,
           )
         }
+        isFindPage={isFindPage}
       />
       <DeleteFolderDialog
         folderName={showDeleteFolder}

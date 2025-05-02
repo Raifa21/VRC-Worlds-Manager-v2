@@ -9,9 +9,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, Minus } from 'lucide-react';
+import { Check, Info, Minus } from 'lucide-react';
 import { WorldDisplayData } from '@/types/worlds';
 import { useLocalization } from '@/hooks/use-localization';
+import { Alert, AlertDescription } from './ui/alert';
 
 interface AddToFolderDialogProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface AddToFolderDialogProps {
   selectedWorlds: WorldDisplayData[];
   folders: string[];
   onConfirm: (foldersToAdd: string[], foldersToRemove: string[]) => void;
+  isFindPage?: boolean;
 }
 
 export function AddToFolderDialog({
@@ -27,6 +29,7 @@ export function AddToFolderDialog({
   selectedWorlds,
   folders,
   onConfirm,
+  isFindPage,
 }: AddToFolderDialogProps) {
   const { t } = useLocalization();
   const [foldersToAdd, setFoldersToAdd] = useState<Set<string>>(new Set());
@@ -152,7 +155,12 @@ export function AddToFolderDialog({
                 )}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-[300px] pr-4">
+        {folders.length === 0 && (
+          <div className="text-muted-foreground">
+            {t('add-to-folder-dialog:no-folders')}
+          </div>
+        )}
+        <ScrollArea className="h-[300px]">
           <div className="space-y-2">
             {folders.map((folder) => {
               const state = getFolderState(folder);
@@ -173,6 +181,16 @@ export function AddToFolderDialog({
             })}
           </div>
         </ScrollArea>
+
+        {/* Info card for Find Page */}
+        {isFindPage && (
+          <Alert className="mt-2">
+            <AlertDescription className="flex gap-2">
+              <Info className="h-4 w-4 mt-0.5" />
+              {t('add-to-folder-dialog:find-page-info')}
+            </AlertDescription>
+          </Alert>
+        )}
         <DialogFooter>
           <Button variant="secondary" onClick={() => handleOpenChange(false)}>
             {t('general:cancel')}
