@@ -49,7 +49,7 @@ export function AddWorldPopup({
   // Parse input to extract world ID
   const parseWorldId = (input: string): string | null => {
     // Remove trailing slashes and whitespace
-    let cleaned = input.trim();
+    const cleaned = input.trim();
 
     // Extract world ID from URL or direct input
     const worldIdMatch = cleaned.match(
