@@ -155,12 +155,21 @@ pub async fn get_recently_visited_worlds() -> Result<Vec<VRChatWorld>, String> {
 #[tauri::command]
 #[specta::specta]
 pub async fn search_worlds(
-    sort: Option<String>,
-    tag: Option<String>,
-    search: Option<String>,
+    sort: String,
+    tag: String,
+    search: String,
     page: usize,
 ) -> Result<Vec<VRChatWorld>, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
+
+    let sort = if sort.is_empty() { None } else { Some(sort) };
+
+    let tag = if tag.is_empty() { None } else { Some(tag) };
+    let search = if search.is_empty() {
+        None
+    } else {
+        Some(search)
+    };
 
     let worlds = match ApiService::search_worlds(cookie_store, sort, tag, search, page).await {
         Ok(worlds) => worlds,

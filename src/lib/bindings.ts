@@ -283,9 +283,9 @@ export const commands = {
     }
   },
   async searchWorlds(
-    sort: string | null,
-    tag: string | null,
-    search: string | null,
+    sort: string,
+    tag: string,
+    search: string,
     page: number,
   ): Promise<Result<VRChatWorld[], string>> {
     try {

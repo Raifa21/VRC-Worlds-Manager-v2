@@ -35,6 +35,7 @@ interface SingleFilterItemSelectorProps {
   value?: string;
   candidates: Option[];
   onValueChange?: (value: string) => void;
+  allowCustomValues?: boolean;
 }
 
 const SingleFilterItemSelector = ({
@@ -42,22 +43,18 @@ const SingleFilterItemSelector = ({
   value = '',
   candidates,
   onValueChange,
+  allowCustomValues = true,
 }: SingleFilterItemSelectorProps) => {
   const { t } = useLocalization();
   const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+  const [inputValue, setInputValue] = useState('');
 
-  const formattedPlaceholder =
-    placeholder ?? t('mainsidebar:multi-filter-item-selector:placeholder');
+  const formattedPlaceholder = placeholder ?? t('find-page:select-tag');
 
-  const selectedOption = candidates.find((option) => option.value === value);
-
-  // Handle selecting an item
-  const handleSelect = (currentValue: string) => {
-    // Toggle selection (if already selected, deselect it)
-    onValueChange?.(currentValue === value ? '' : currentValue);
-    setOpen(false);
-  };
+  // Find the selected option from candidates, or create a custom option if not found
+  const selectedOption =
+    candidates.find((option) => option.value === value) ||
+    (value ? { value, label: value } : undefined);
 
   // Clear the selection
   const handleClear = (e: React.MouseEvent) => {
@@ -65,11 +62,24 @@ const SingleFilterItemSelector = ({
     onValueChange?.('');
   };
 
-  // Filter candidates based on search input
-  const filteredCandidates = candidates.filter(
-    (candidate) =>
-      candidate.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-      candidate.value.toLowerCase().includes(searchValue.toLowerCase()),
+  // Handle command selection (both for candidates and custom values)
+  const handleCommandSelect = (selectedValue: string) => {
+    // If it's a candidate value, use it directly
+    if (candidates.some((item) => item.value === selectedValue)) {
+      onValueChange?.(selectedValue);
+    }
+    // Otherwise use the input value as a custom value
+    else if (allowCustomValues && inputValue.trim()) {
+      onValueChange?.(inputValue.trim());
+    }
+
+    setOpen(false);
+    setInputValue('');
+  };
+
+  // Simple filter for candidates
+  const filteredItems = candidates.filter((item) =>
+    item.label.toLowerCase().includes(inputValue.toLowerCase()),
   );
 
   return (
@@ -88,7 +98,6 @@ const SingleFilterItemSelector = ({
                 className="mr-1 truncate flex items-center"
               >
                 <span className="truncate">{selectedOption.label}</span>
-                {/* Use span instead of button to avoid nesting issues */}
                 <span
                   className="ml-1 cursor-pointer rounded-full hover:bg-muted/50"
                   role="button"
@@ -112,35 +121,59 @@ const SingleFilterItemSelector = ({
           <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command shouldFilter={false}>
+
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+        side="bottom"
+        sideOffset={5}
+        alignOffset={0}
+        avoidCollisions={true}
+        collisionPadding={8}
+      >
+        <Command className="max-h-[300px]">
           <CommandInput
-            placeholder="Search..."
-            value={searchValue}
-            onValueChange={setSearchValue}
-            className="h-9"
+            placeholder={t('find-page:search-tag')}
+            value={inputValue}
+            onValueChange={setInputValue}
+            onKeyDown={(e) => {
+              // On Enter, use the current input value
+              if (e.key === 'Enter' && allowCustomValues && inputValue.trim()) {
+                e.preventDefault();
+                onValueChange?.(inputValue.trim());
+                setOpen(false);
+                setInputValue('');
+              }
+            }}
           />
-          {filteredCandidates.length === 0 ? (
-            <CommandEmpty>
-              {t('mainsidebar:multi-filter-item-selector:no-candidates')}
-            </CommandEmpty>
-          ) : (
-            <CommandGroup className="max-h-64 overflow-y-auto">
-              {filteredCandidates.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  onSelect={() => handleSelect(option.value)}
-                  className={cn(
-                    'cursor-pointer',
-                    value === option.value ? 'font-medium bg-accent' : '',
-                  )}
-                >
-                  {/* Simple text without checkbox */}
-                  <span>{option.label}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
+
+          <CommandEmpty>
+            {allowCustomValues ? (
+              <div className="px-2 py-1.5 text-sm">
+                Press Enter to use "{inputValue}"
+              </div>
+            ) : (
+              <div className="px-2 py-1.5 text-sm">
+                {t('find-page:no-matching-tags')}
+              </div>
+            )}
+          </CommandEmpty>
+
+          <CommandGroup className="overflow-y-auto max-h-[200px]">
+            {filteredItems.map((item) => (
+              <CommandItem
+                key={item.value}
+                value={item.value}
+                onSelect={handleCommandSelect}
+                className={cn(
+                  'cursor-pointer',
+                  value === item.value ? 'font-medium bg-accent' : '',
+                )}
+              >
+                {item.label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
         </Command>
       </PopoverContent>
     </Popover>

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use log::info;
 use reqwest::cookie::Jar;
 use serde::Deserialize;
 
@@ -215,6 +216,8 @@ pub async fn search_worlds<J: Into<Arc<Jar>>>(
     let client = get_reqwest_client(&cookie_jar);
 
     let offset = (page - 1) * 100;
+
+    info!("search parameters: {:?}", search_parameters);
 
     let result = client
         .get(format!("{}/worlds?offset={}&n=100", API_BASE_URL, offset))

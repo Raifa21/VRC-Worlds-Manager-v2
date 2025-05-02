@@ -169,7 +169,7 @@ export function FindPage({
 
         if (result.data.length === 0 && !loadMore) {
           toast({
-            title: t('find-page:no-results-found'),
+            title: t('find-page:no-more-results'),
             description: t('find-page:try-different-search'),
           });
         }
@@ -313,7 +313,7 @@ export function FindPage({
                   <Select value={selectedSort} onValueChange={setSelectedSort}>
                     <SelectTrigger id="sort">
                       <SelectValue
-                        placeholder={t('find-page:sort-placeholder')}
+                        placeholder={t('find-page:sort-popularity')}
                       />
                     </SelectTrigger>
                     <SelectContent>
@@ -396,24 +396,16 @@ export function FindPage({
                   {isLoadingMore ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>
-                        {t('find-page:loading-more', 'Loading more...')}
-                      </span>
+                      <span>{t('find-page:loading-more')}</span>
                     </div>
                   ) : hasMoreResults ? (
                     <p className="text-sm text-muted-foreground">
-                      {t(
-                        'find-page:scroll-for-more',
-                        'Scroll for more results',
-                      )}
+                      {t('find-page:scroll-for-more')}
                     </p>
                   ) : (
                     searchResults.length > 0 && (
                       <p className="text-sm text-muted-foreground">
-                        {t(
-                          'find-page:no-more-results',
-                          'No more results available',
-                        )}
+                        {t('find-page:no-more-results')}
                       </p>
                     )
                   )}
