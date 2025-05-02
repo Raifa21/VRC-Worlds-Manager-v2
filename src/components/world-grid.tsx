@@ -335,7 +335,7 @@ export function WorldGrid({
                   value={sortField}
                   onValueChange={(value) => handleSort(value as SortField)}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[180px] mt-0.5">
                     <SelectValue
                       placeholder={t('world-grid:sort-placeholder')}
                     />

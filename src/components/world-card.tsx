@@ -126,10 +126,10 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
               e.stopPropagation();
               onAddWorld?.([world]);
             }}
-            title={t('general:add-world', 'Add World')}
+            title={t('general:add-world')}
             disabled={worldExists}
           >
-            {worldExists ? <Check /> : 'Add to folder'}
+            {worldExists ? <Check /> : <Plus />}
           </Button>
         </div>
       )}

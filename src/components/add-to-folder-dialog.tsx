@@ -160,7 +160,7 @@ export function AddToFolderDialog({
             {t('add-to-folder-dialog:no-folders')}
           </div>
         )}
-        <ScrollArea className="h-[300px]">
+        <ScrollArea className={isFindPage ? 'h-[240px]' : 'h-[300px]'}>
           <div className="space-y-2">
             {folders.map((folder) => {
               const state = getFolderState(folder);
