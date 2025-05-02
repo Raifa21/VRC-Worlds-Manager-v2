@@ -205,6 +205,7 @@ pub async fn get_world_by_id<J: Into<Arc<Jar>>, S: AsRef<str>>(
 pub async fn search_worlds<J: Into<Arc<Jar>>>(
     cookie: J,
     search_parameters: &WorldSearchParameters,
+    page: usize,
 ) -> Result<Vec<VRChatWorld>, String> {
     const OPERATION: &str = "search_worlds";
 
@@ -213,8 +214,10 @@ pub async fn search_worlds<J: Into<Arc<Jar>>>(
     let cookie_jar: Arc<Jar> = cookie.into();
     let client = get_reqwest_client(&cookie_jar);
 
+    let offset = (page - 1) * 100;
+
     let result = client
-        .get(format!("{}/worlds", API_BASE_URL))
+        .get(format!("{}/worlds?offset={}", API_BASE_URL, offset))
         .query(search_parameters)
         .send()
         .await

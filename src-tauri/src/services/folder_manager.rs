@@ -1,6 +1,6 @@
 use crate::definitions::{FolderModel, WorldApiData, WorldDisplayData, WorldModel};
 use crate::errors::{AppError, ConcurrencyError, EntityError};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 
 use super::FileService;
@@ -624,6 +624,35 @@ impl FolderManager {
         }
         FileService::write_worlds(&*worlds_lock)?;
         Ok(())
+    }
+
+    /// return a list of tags, sorted by the number of worlds in each tag
+    ///
+    /// # Arguments
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// A vector of tags
+    ///
+    /// # Errors
+    /// Returns an error if the worlds lock is poisoned
+    #[must_use]
+    pub fn get_tags_by_count(worlds: &RwLock<Vec<WorldModel>>) -> Result<Vec<String>, AppError> {
+        let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        // create a map which contains the tag and the number of worlds in that tag
+        let mut tag_map: HashMap<String, usize> = HashMap::new();
+        for world in worlds_lock.iter() {
+            for tag in &world.api_data.tags {
+                *tag_map.entry(tag.clone()).or_insert(0) += 1;
+            }
+        }
+        // sort the map by the number of worlds in each tag
+        let mut tags: Vec<(String, usize)> = tag_map.into_iter().collect();
+        tags.sort_by(|a, b| b.1.cmp(&a.1));
+
+        let tags: Vec<String> = tags.into_iter().map(|(tag, _)| tag).collect();
+
+        Ok(tags)
     }
 }
 

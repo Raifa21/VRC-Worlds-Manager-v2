@@ -378,6 +378,32 @@ pub enum SearchWorldSort {
     Name,
 }
 
+impl SearchWorldSort {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "popularity" => Some(Self::Popularity),
+            "heat" => Some(Self::Heat),
+            "trust" => Some(Self::Trust),
+            "shuffle" => Some(Self::Shuffle),
+            "random" => Some(Self::Random),
+            "favorites" => Some(Self::Favorites),
+            "reportScore" => Some(Self::ReportScore),
+            "reportCount" => Some(Self::ReportCount),
+            "publicationDate" => Some(Self::PublicationDate),
+            "labsPublicationDate" => Some(Self::LabsPublicationDate),
+            "created" => Some(Self::Created),
+            "_created_at" => Some(Self::CreatedAt),
+            "updated" => Some(Self::Updated),
+            "_updated_at" => Some(Self::UpdatedAt),
+            "order" => Some(Self::Order),
+            "relevance" => Some(Self::Relevance),
+            "magic" => Some(Self::Magic),
+            "name" => Some(Self::Name),
+            _ => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
