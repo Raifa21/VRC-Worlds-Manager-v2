@@ -4,7 +4,6 @@ use crate::services::EncryptionService;
 use crate::services::FileService;
 use chrono::{DateTime, Duration, Utc};
 use directories::BaseDirs;
-use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::sync::RwLock;
@@ -97,9 +96,7 @@ impl MigrationService {
         // Serialize the cleaned JSON back to a string
         let cleaned_json = serde_json::to_string_pretty(&worlds).unwrap();
 
-        println!("Cleaned JSON: {}", cleaned_json);
-
-        serde_json::from_str(&decrypted).map_err(|e| format!("Failed to parse folders: {}", e))
+        serde_json::from_str(&cleaned_json).map_err(|e| format!("Failed to parse folders: {}", e))
     }
 
     fn calculate_dates(worlds: &[PreviousWorldModel]) -> (DateTime<Utc>, Vec<DateTime<Utc>>) {
