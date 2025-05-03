@@ -95,7 +95,8 @@ impl MigrationService {
         });
 
         // Serialize the cleaned JSON back to a string
-        let cleaned_json = serde_json::to_string_pretty(&worlds).unwrap();
+        let cleaned_json = serde_json::to_string_pretty(&worlds)
+            .map_err(|e| format!("Failed to serialize cleaned JSON: {}", e))?;
 
         serde_json::from_str(&cleaned_json).map_err(|e| format!("Failed to parse folders: {}", e))
     }
