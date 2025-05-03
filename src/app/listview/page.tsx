@@ -476,7 +476,7 @@ export default function ListView() {
   ) => {
     try {
       if (currentFolder === SpecialFolders.Find) {
-        handleAddWorld(worldsToAdd[0].worldId);
+        await handleAddWorld(worldsToAdd[0].worldId);
       }
       // Store original state for each world-folder combination
       const originalStates = worldsToAdd.map((world) => ({

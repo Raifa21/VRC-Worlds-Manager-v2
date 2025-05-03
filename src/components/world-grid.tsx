@@ -430,14 +430,16 @@ export function WorldGrid({
                       <WorldCardPreview size={size} world={world} />
                     )}
                     {isSelectionMode && (
-                      <div className="absolute top-2 left-2 z-10">
+                      <div className="absolute top-2 left-2 z-1">
                         {selectedWorlds.has(world.worldId) ? (
                           <>
                             <Square className="w-5 h-5 text-primary" />
-                            <div className="absolute inset-[4px] bg-primary rounded-sm" />
+                            <div className="absolute inset-[4px] bg-background rounded-sm" />
                           </>
                         ) : (
-                          <Square className="w-5 h-5 text-muted-foreground" />
+                          <>
+                            <Square className="w-5 h-5 text-muted-foreground" />
+                          </>
                         )}
                       </div>
                     )}

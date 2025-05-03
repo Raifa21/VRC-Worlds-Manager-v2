@@ -38,12 +38,34 @@ pub struct PreviousWorldModel {
     pub visits: Option<i32>,
     #[serde(rename = "Favorites")]
     pub favorites: i32,
-    #[serde(rename = "DateAdded", deserialize_with = "deserialize_datetime")]
-    pub date_added: Option<DateTime<Utc>>,
-    #[serde(rename = "Platform")]
-    pub platform: Option<Vec<String>>,
-    #[serde(rename = "UserMemo")]
-    pub user_memo: Option<String>,
+    #[serde(
+        rename = "DateAdded",
+        default = "default_date_added",
+        deserialize_with = "deserialize_datetime"
+    )]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date_added: Option<DateTime<Utc>>, // Optional field for DateAdded
+
+    #[serde(rename = "Platform", default = "default_platform")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub platform: Option<Vec<String>>, // Optional field for Platform
+
+    #[serde(rename = "UserMemo", default = "default_user_memo")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_memo: Option<String>, // Optional field for UserMemo
+}
+fn default_date_added() -> Option<DateTime<Utc>> {
+    None
+}
+
+// Default value for platform
+fn default_platform() -> Option<Vec<String>> {
+    Some(vec!["pc".to_string()])
+}
+
+// Default value for user_memo
+fn default_user_memo() -> Option<String> {
+    Some("".to_string())
 }
 
 impl Default for PreviousWorldModel {
