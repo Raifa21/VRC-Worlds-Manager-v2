@@ -79,7 +79,66 @@ impl EncryptionService {
             .map_err(|e| format!("Decryption failed: {}", e))?
             .len();
 
-        String::from_utf8(buffer[..decrypted_data_len].to_vec())
-            .map_err(|e| format!("Invalid UTF-8: {}", e))
+        // Convert decrypted bytes to a UTF-8 string
+        let decrypted_str = String::from_utf8(buffer[..decrypted_data_len].to_vec())
+            .map_err(|e| format!("Invalid UTF-8: {}", e))?;
+        // Return the decrypted string
+        Ok(decrypted_str)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    // use "decrypted.json" and encrypt, then write to "encrypted.json"
+    use super::*;
+    use serde_json::Value;
+    use std::fs::File;
+    use std::io::{BufReader, Read};
+    use std::path::Path;
+
+    #[test]
+    fn test_encryption_decryption() {
+        // Read the JSON file
+        let path = Path::new("decrypted.json");
+        let file = File::open(path).expect("Failed to open the file");
+        let mut reader = BufReader::new(file);
+        let mut json_data = String::new();
+        reader
+            .read_to_string(&mut json_data)
+            .expect("Failed to read the file");
+        // Encrypt the JSON data
+        let encrypted_data =
+            EncryptionService::encrypt_aes(&json_data).expect("Failed to encrypt the data");
+        // Write the encrypted data to a file
+        fs::write("encrypted.json", &encrypted_data)
+            .expect("Failed to write encrypted data to file");
+        // Decrypt the data
+        let decrypted_data =
+            EncryptionService::decrypt_aes(&encrypted_data).expect("Failed to decrypt the data");
+        // Parse the decrypted data to ensure it's valid JSON
+        let parsed_data: Value =
+            serde_json::from_str(&decrypted_data).expect("Failed to parse decrypted data as JSON");
+        // Check if the parsed data is equal to the original JSON data
+        let original_data: Value =
+            serde_json::from_str(&json_data).expect("Failed to parse original data as JSON");
+        assert_eq!(original_data, parsed_data);
+    }
+
+    #[test]
+    fn test_decryption() {
+        // Read the encrypted JSON file
+        let path = Path::new("encrypted.json");
+        let file = File::open(path).expect("Failed to open the file");
+        let mut reader = BufReader::new(file);
+        let mut encrypted_data = String::new();
+        reader
+            .read_to_string(&mut encrypted_data)
+            .expect("Failed to read the file");
+        // Decrypt the data
+        let decrypted_data =
+            EncryptionService::decrypt_aes(&encrypted_data).expect("Failed to decrypt the data");
+        // write the decrypted data to a file
+        fs::write("decrypted.json", &decrypted_data)
+            .expect("Failed to write decrypted data to file");
     }
 }
