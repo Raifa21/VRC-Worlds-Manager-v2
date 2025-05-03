@@ -83,7 +83,8 @@ impl MigrationService {
             .map_err(|e| format!("Failed to decrypt folders: {}", e))?;
 
         // Parse the JSON into a Vec of serde_json::Value
-        let mut worlds: Vec<serde_json::Value> = serde_json::from_str(&decrypted).unwrap();
+        let mut worlds: Vec<serde_json::Value> = serde_json::from_str(&decrypted)
+            .map_err(|e| format!("Failed to parse decrypted folders JSON: {}", e))?;
 
         // Filter out worlds where "ThumbnailImageUrl" is null
         worlds.retain(|world| {
