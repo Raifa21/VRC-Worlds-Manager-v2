@@ -76,12 +76,12 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
             <h3 className="font-medium truncate">{world.name}</h3>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground truncate">
               {world.authorName}
             </span>
             <div className="flex items-center gap-1">
               <Heart className="w-3.5 h-3.5" />
-              <span className="text-sm">{world.favorites}</span>
+              <span className="text-sm truncate">{world.favorites}</span>
             </div>
           </div>
         </div>
@@ -93,16 +93,18 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
             <h3 className="font-medium truncate">{world.name}</h3>
           </div>
           <div className="flex items-center text-muted-foreground text-sm justify-between">
-            <span>{world.authorName}</span>
-            <span>{t('world-card:visits', world.visits)}</span>
+            <span className="truncate">{world.authorName}</span>
+            <span className="truncate">
+              {t('world-card:visits', world.visits)}
+            </span>
           </div>
           <div className="flex justify-between whitespace-nowrap">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground truncate">
               {t('world-card:updated', world.lastUpdated)}
             </span>
             <div className="flex items-center gap-1">
               <Heart className="w-3.5 h-3.5" />
-              <span className="text-sm">{world.favorites}</span>
+              <span className="text-sm truncate">{world.favorites}</span>
             </div>
           </div>
         </div>
