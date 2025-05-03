@@ -4,6 +4,7 @@ use crate::services::EncryptionService;
 use crate::services::FileService;
 use chrono::{DateTime, Duration, Utc};
 use directories::BaseDirs;
+use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::sync::RwLock;
@@ -81,6 +82,23 @@ impl MigrationService {
     fn parse_folder_data(folders_json: &str) -> Result<Vec<PreviousFolderCollection>, String> {
         let decrypted = EncryptionService::decrypt_aes(folders_json)
             .map_err(|e| format!("Failed to decrypt folders: {}", e))?;
+
+        // Parse the JSON into a Vec of serde_json::Value
+        let mut worlds: Vec<serde_json::Value> = serde_json::from_str(&decrypted).unwrap();
+
+        // Filter out worlds where "ThumbnailImageUrl" is null
+        worlds.retain(|world| {
+            world
+                .get("ThumbnailImageUrl")
+                .and_then(|value| value.as_str())
+                .is_some()
+        });
+
+        // Serialize the cleaned JSON back to a string
+        let cleaned_json = serde_json::to_string_pretty(&worlds).unwrap();
+
+        println!("Cleaned JSON: {}", cleaned_json);
+
         serde_json::from_str(&decrypted).map_err(|e| format!("Failed to parse folders: {}", e))
     }
 
@@ -497,5 +515,29 @@ mod tests {
         );
 
         assert_eq!(converted.api_data.last_update, expected);
+    }
+
+    #[test]
+    fn test_purge_invalid_world() {
+        let string = r#"[{"ThumbnailImageUrl":"https://api.vrchat.cloud/api/1/image/file_938741da-11d9-460b-991f-346141dfa06a/5/256","WorldName":"THE Swimming Pool","WorldId":"wrld_f4e920ea-0bc3-402b-9d80-02691eeecbfb","AuthorName":"iyFale Edvifin","AuthorId":"usr_ffb6b2b7-22af-4e09-b9f3-7ec4305171d2","Capacity":32,"LastUpdate":"01/20/2025","Description":"If you are tired of looking at flat static water\u201A THE Swimming Pool brings you interactive 3d water to swim\u201A make splash and wave\u2024 Also included changing room\u201A public shower\u201A video player\u201A pen\u201A Billiards\u201A and Beer Pong\u2024 Inspired by existing world\u2024 1\u204420 Update\u02F8 The issue of player\u0027s view being instant camera\u0027s view should be gone now\u2024 However late-joiner photo sync is disabled\u2024 Increased capacity\u2024","Visits":56592,"Favorites":10984,"DateAdded":"2025-01-21T07:17:17.6379927+09:00","Platform":["standalonewindows"],"UserMemo":null},{"ThumbnailImageUrl":null,"WorldName":"info","WorldId":"wrld_ef5cabef-41ab-4c71-8866-3b799591b5bd:info","AuthorName":null,"AuthorId":null,"Capacity":80,"LastUpdate":"01/01/0001","Description":null,"Visits":null,"Favorites":0,"DateAdded":"2025-01-19T08:23:28.8066199+09:00","Platform":[],"UserMemo":null},{"ThumbnailImageUrl":"https://api.vrchat.cloud/api/1/image/file_e3edaa27-6365-4e55-a9c9-cdac5a1521be/4/256","WorldName":"Solar System","WorldId":"wrld_29daf324-96f9-4ba3-a9ad-2a4012effeef","AuthorName":"Niko\u2217","AuthorId":"usr_d74c8fe6-03f5-4ed5-89ec-dfcc76e4db9a","Capacity":60,"LastUpdate":"11/05/2024","Description":"Constantly updated Solar System with accurate size ratios of planets and moons and spectacular animations\u2024 Converted from AltspaceVR \uFF08RIP\uFF09\u2024","Visits":258719,"Favorites":21099,"DateAdded":"2025-01-14T16:54:53.7978511+09:00","Platform":["android","standalonewindows"],"UserMemo":null}]"#;
+
+        // Parse the JSON into a Vec of serde_json::Value
+        let mut worlds: Vec<serde_json::Value> = serde_json::from_str(string).unwrap();
+
+        // Filter out worlds where "ThumbnailImageUrl" is null
+        worlds.retain(|world| {
+            world
+                .get("ThumbnailImageUrl")
+                .and_then(|value| value.as_str())
+                .is_some()
+        });
+
+        // Serialize the cleaned JSON back to a string
+        let cleaned_json = serde_json::to_string_pretty(&worlds).unwrap();
+
+        println!("Cleaned JSON: {}", cleaned_json);
+
+        // Deserialize the cleaned JSON into the target struct
+        let worlds: Vec<PreviousWorldModel> = serde_json::from_str(&cleaned_json).unwrap();
     }
 }

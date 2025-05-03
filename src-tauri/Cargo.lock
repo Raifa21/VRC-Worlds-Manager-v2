@@ -5595,6 +5595,7 @@ dependencies = [
  "dotenv-build",
  "log",
  "rand 0.9.1",
+ "regex",
  "reqwest",
  "ringbuffer",
  "serde",
