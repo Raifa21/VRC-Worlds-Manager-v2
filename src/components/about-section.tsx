@@ -188,37 +188,31 @@ export function AboutSection() {
       <div className="w-full border-t bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-2 flex justify-between items-center">
           <div className="text-sm text-muted-foreground">
-            VRC Worlds Manager v.0.1.10b
+            VRC Worlds Manager v.0.1.11b
           </div>
 
           <div className="flex gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() =>
-                window.open(
-                  'https://github.com/Raifa21/vrc-world-manager',
-                  '_blank',
-                )
-              }
-            >
-              <SiGithub className="h-4 w-4" />
-              {t('about-section:source-code')}
+            <Button variant="ghost" size="sm" asChild>
+              <a
+                href="https://github.com/Raifa21/vrc-world-manager"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-row gap-2"
+              >
+                <SiGithub className="h-4 w-4" />
+                {t('about-section:source-code')}
+              </a>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() =>
-                window.open(
-                  'https://github.com/Raifa21/vrc-world-manager/issues',
-                  '_blank',
-                )
-              }
-            >
-              <SiDiscord className="h-4 w-4" />
-              {t('about-section:report-issue')}
+            <Button variant="ghost" size="sm" asChild>
+              <a
+                href="https://discord.gg/gNzbpux5xW"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-row gap-2"
+              >
+                <SiDiscord className="h-4 w-4" />
+                {t('about-section:report-issue')}
+              </a>
             </Button>
           </div>
         </div>

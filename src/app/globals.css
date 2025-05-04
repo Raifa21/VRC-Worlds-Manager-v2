@@ -152,6 +152,11 @@
   }
 }
 
+* {
+  /* Prevent full-width brackets from overlapping */
+  text-spacing-trim: space-all;
+}
+
 /* Toast progress animation */
 .toast-progress {
   position: relative;
