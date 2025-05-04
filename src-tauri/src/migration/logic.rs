@@ -83,21 +83,26 @@ impl MigrationService {
             .map_err(|e| format!("Failed to decrypt folders: {}", e))?;
 
         // Parse the JSON into a Vec of serde_json::Value
-        let mut worlds: Vec<serde_json::Value> = serde_json::from_str(&decrypted)
+        let mut folders: Vec<serde_json::Value> = serde_json::from_str(&decrypted)
             .map_err(|e| format!("Failed to parse decrypted folders JSON: {}", e))?;
 
-        // Filter out worlds where "ThumbnailImageUrl" is null
-        worlds.retain(|world| {
-            world
-                .get("ThumbnailImageUrl")
-                .and_then(|value| value.as_str())
-                .is_some()
-        });
+        // Iterate through each folder and filter out invalid worlds
+        for folder in &mut folders {
+            if let Some(worlds) = folder.get_mut("Worlds").and_then(|w| w.as_array_mut()) {
+                worlds.retain(|world| {
+                    world
+                        .get("ThumbnailImageUrl")
+                        .and_then(|value| value.as_str())
+                        .is_some()
+                });
+            }
+        }
 
         // Serialize the cleaned JSON back to a string
-        let cleaned_json = serde_json::to_string_pretty(&worlds)
+        let cleaned_json = serde_json::to_string_pretty(&folders)
             .map_err(|e| format!("Failed to serialize cleaned JSON: {}", e))?;
 
+        // Deserialize the cleaned JSON into the target struct
         serde_json::from_str(&cleaned_json).map_err(|e| format!("Failed to parse folders: {}", e))
     }
 
@@ -370,6 +375,13 @@ impl MigrationService {
             old_worlds.len(),
             old_folders.len()
         );
+
+        // Remove hidden and unclassified folders
+        let old_folders: Vec<PreviousFolderCollection> = old_folders
+            .into_iter()
+            .filter(|folder| folder.name != "Hidden" && folder.name != "Unclassified")
+            .collect();
+
         Ok(PreviousMetadata {
             number_of_folders: old_folders.len() as u32,
             number_of_worlds: old_worlds.len() as u32,
@@ -517,26 +529,104 @@ mod tests {
     }
 
     #[test]
-    fn test_purge_invalid_world() {
-        let string = r#"[{"ThumbnailImageUrl":"https://api.vrchat.cloud/api/1/image/file_938741da-11d9-460b-991f-346141dfa06a/5/256","WorldName":"THE Swimming Pool","WorldId":"wrld_f4e920ea-0bc3-402b-9d80-02691eeecbfb","AuthorName":"iyFale Edvifin","AuthorId":"usr_ffb6b2b7-22af-4e09-b9f3-7ec4305171d2","Capacity":32,"LastUpdate":"01/20/2025","Description":"If you are tired of looking at flat static water\u201A THE Swimming Pool brings you interactive 3d water to swim\u201A make splash and wave\u2024 Also included changing room\u201A public shower\u201A video player\u201A pen\u201A Billiards\u201A and Beer Pong\u2024 Inspired by existing world\u2024 1\u204420 Update\u02F8 The issue of player\u0027s view being instant camera\u0027s view should be gone now\u2024 However late-joiner photo sync is disabled\u2024 Increased capacity\u2024","Visits":56592,"Favorites":10984,"DateAdded":"2025-01-21T07:17:17.6379927+09:00","Platform":["standalonewindows"],"UserMemo":null},{"ThumbnailImageUrl":null,"WorldName":"info","WorldId":"wrld_ef5cabef-41ab-4c71-8866-3b799591b5bd:info","AuthorName":null,"AuthorId":null,"Capacity":80,"LastUpdate":"01/01/0001","Description":null,"Visits":null,"Favorites":0,"DateAdded":"2025-01-19T08:23:28.8066199+09:00","Platform":[],"UserMemo":null},{"ThumbnailImageUrl":"https://api.vrchat.cloud/api/1/image/file_e3edaa27-6365-4e55-a9c9-cdac5a1521be/4/256","WorldName":"Solar System","WorldId":"wrld_29daf324-96f9-4ba3-a9ad-2a4012effeef","AuthorName":"Niko\u2217","AuthorId":"usr_d74c8fe6-03f5-4ed5-89ec-dfcc76e4db9a","Capacity":60,"LastUpdate":"11/05/2024","Description":"Constantly updated Solar System with accurate size ratios of planets and moons and spectacular animations\u2024 Converted from AltspaceVR \uFF08RIP\uFF09\u2024","Visits":258719,"Favorites":21099,"DateAdded":"2025-01-14T16:54:53.7978511+09:00","Platform":["android","standalonewindows"],"UserMemo":null}]"#;
+    fn test_parse_folder_data_removes_invalid_worlds() -> Result<(), String> {
+        let decrypted = r#"
+        [
+            {
+            "Name": "Favorites",
+            "Worlds": [
+                {
+                "ThumbnailImageUrl": "https://example.com/image.jpg",
+                "WorldName": "Example World 1",
+                "WorldId": "wrld_123",
+                "AuthorName": "Author 1",
+                "AuthorId": "auth_123",
+                "Capacity": 16,
+                "LastUpdate": "2025-05-01",
+                "Description": "This is an example world.",
+                "Visits": 1000,
+                "Favorites": 500,
+                "date_added": "2025-05-01T12:00:00Z",
+                "Platform": ["PC", "Quest"],
+                "UserMemo": "This is a memo."
+                },
+                {
+                "ThumbnailImageUrl": null,
+                "WorldName": "Example World 2",
+                "WorldId": "wrld_456",
+                "AuthorName": "Author 2",
+                "AuthorId": "auth_456",
+                "Capacity": 32,
+                "LastUpdate": "2025-05-02",
+                "Description": "This world has a null thumbnail.",
+                "Visits": 2000,
+                "Favorites": 1000,
+                "date_added": "2025-05-02T12:00:00Z",
+                "Platform": ["PC"],
+                "UserMemo": "This is another memo."
+                }
+            ]
+            },
+            {
+            "Name": "Hidden",
+            "Worlds": [
+                {
+                "ThumbnailImageUrl": "https://example.com/image2.jpg",
+                "WorldName": "Example World 3",
+                "WorldId": "wrld_789",
+                "AuthorName": "Author 3",
+                "AuthorId": "auth_789",
+                "Capacity": 24,
+                "LastUpdate": "2025-05-03",
+                "Description": "This is a hidden world.",
+                "Visits": 3000,
+                "Favorites": 1500,
+                "date_added": "2025-05-03T12:00:00Z",
+                "Platform": ["Quest"],
+                "UserMemo": "This is a hidden memo."
+                }
+            ]
+            }
+            ]
+        "#;
 
         // Parse the JSON into a Vec of serde_json::Value
-        let mut worlds: Vec<serde_json::Value> = serde_json::from_str(string).unwrap();
+        let mut folders: Vec<serde_json::Value> = serde_json::from_str(&decrypted)
+            .map_err(|e| format!("Failed to parse decrypted folders JSON: {}", e))?;
 
-        // Filter out worlds where "ThumbnailImageUrl" is null
-        worlds.retain(|world| {
-            world
-                .get("ThumbnailImageUrl")
-                .and_then(|value| value.as_str())
-                .is_some()
-        });
+        // Iterate through each folder and filter out invalid worlds
+        for folder in &mut folders {
+            if let Some(worlds) = folder.get_mut("Worlds").and_then(|w| w.as_array_mut()) {
+                worlds.retain(|world| {
+                    world
+                        .get("ThumbnailImageUrl")
+                        .and_then(|value| value.as_str())
+                        .is_some()
+                });
+            }
+        }
 
         // Serialize the cleaned JSON back to a string
-        let cleaned_json = serde_json::to_string_pretty(&worlds).unwrap();
+        let cleaned_json = serde_json::to_string_pretty(&folders)
+            .map_err(|e| format!("Failed to serialize cleaned JSON: {}", e))?;
 
         println!("Cleaned JSON: {}", cleaned_json);
 
         // Deserialize the cleaned JSON into the target struct
-        let worlds: Vec<PreviousWorldModel> = serde_json::from_str(&cleaned_json).unwrap();
+        let result: Result<Vec<PreviousFolderCollection>, _> = serde_json::from_str(&cleaned_json)
+            .map_err(|e| format!("Failed to parse folders: {}", e));
+
+        println!("Result: {:?}", result);
+
+        assert!(result.is_ok());
+        let folders = result.unwrap();
+
+        // Verify the cleaned data
+        assert_eq!(folders.len(), 2); // Two folders remain
+        assert_eq!(folders[0].worlds.len(), 1); // Only one valid world in "Favorites"
+        assert_eq!(folders[0].worlds[0].world_id, "wrld_123");
+        assert_eq!(folders[1].worlds.len(), 1); // One valid world in "Hidden"
+        assert_eq!(folders[1].worlds[0].world_id, "wrld_789");
+        Ok(())
     }
 }
