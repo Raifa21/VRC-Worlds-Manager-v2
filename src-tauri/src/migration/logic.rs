@@ -235,14 +235,12 @@ impl MigrationService {
     /// # Arguments
     /// * `path_to_worlds` - The path to the old VRC Worlds Manager Worlds file
     /// * `path_to_folders` - The path to the old VRC Worlds Manager Folders file
-    /// * `dont_overwrite` - A boolean array indicating if the worlds and folders should be overwritten
     ///
     /// # Errors
     /// Returns an error message if the old VRC Worlds Manager Data could not be migrated
     pub async fn migrate_old_data(
         path_to_worlds: String,
         path_to_folders: String,
-        dont_overwrite: [bool; 2], // [worlds, folders]
         worlds: &RwLock<Vec<WorldModel>>,
         folders: &RwLock<Vec<FolderModel>>,
     ) -> Result<(), String> {
@@ -255,7 +253,28 @@ impl MigrationService {
         let old_worlds = Self::parse_world_data(&worlds_content)?;
         let old_folders = Self::parse_folder_data(&folders_content)?;
 
-        let (_, dates) = Self::calculate_dates(&old_worlds);
+        let mut world_map: HashMap<String, PreviousWorldModel> = old_worlds
+            .into_iter()
+            .map(|w| (w.world_id.clone(), w))
+            .collect();
+        for folder in &old_folders {
+            for world in &folder.worlds {
+                world_map
+                    .entry(world.world_id.clone())
+                    .or_insert_with(|| world.clone());
+            }
+        }
+        let merged_worlds: Vec<PreviousWorldModel> = world_map.into_values().collect();
+
+        // Deduplicate worlds
+        let merged_worlds = Self::deduplicate_with_pattern(merged_worlds);
+        log::info!(
+            "Count: Worlds: {}, Folders: {}",
+            merged_worlds.len(),
+            old_folders.len()
+        );
+
+        let (_, dates) = Self::calculate_dates(&merged_worlds);
 
         let mut new_worlds = Vec::new();
         let mut new_folders = Vec::new();
@@ -268,73 +287,56 @@ impl MigrationService {
             }
         }
 
-        // Deduplicate and convert worlds only if we're not keeping existing worlds
-        if !dont_overwrite[0] {
-            let old_worlds = Self::deduplicate_with_pattern(old_worlds);
-            for (idx, old_world) in old_worlds.iter().enumerate() {
-                let is_hidden = hidden_world_ids.contains(&old_world.world_id);
-                let utc_date =
-                    DateTime::from_naive_utc_and_offset(dates[idx].naive_utc(), chrono::Utc);
-                new_worlds.push(Self::convert_to_new_model(old_world, utc_date, is_hidden));
-            }
+        let merged_worlds = Self::deduplicate_with_pattern(merged_worlds);
+        for (idx, old_world) in merged_worlds.iter().enumerate() {
+            let is_hidden = hidden_world_ids.contains(&old_world.world_id);
+            let utc_date = DateTime::from_naive_utc_and_offset(
+                dates
+                    .get(idx)
+                    .map(|d| d.naive_utc())
+                    .unwrap_or_else(|| chrono::Utc::now().naive_utc()),
+                chrono::Utc,
+            );
+            new_worlds.push(Self::convert_to_new_model(old_world, utc_date, is_hidden));
         }
 
-        // Process folders only if we're not keeping existing folders
-        if !dont_overwrite[1] {
-            for folder in old_folders {
-                if folder.name != "Hidden" && folder.name != "Unclassified" {
-                    let world_ids: Vec<String> =
-                        folder.worlds.iter().map(|w| w.world_id.clone()).collect();
+        for folder in old_folders {
+            if folder.name != "Hidden" && folder.name != "Unclassified" {
+                let world_ids: Vec<String> =
+                    folder.worlds.iter().map(|w| w.world_id.clone()).collect();
 
-                    // Add folder name to corresponding worlds if we're also migrating worlds
-                    if !dont_overwrite[0] {
-                        for world in new_worlds.iter_mut() {
-                            if world_ids.contains(&world.api_data.world_id) {
-                                world.user_data.folders.push(folder.name.clone());
-                            }
-                        }
+                for world in new_worlds.iter_mut() {
+                    if world_ids.contains(&world.api_data.world_id) {
+                        world.user_data.folders.push(folder.name.clone());
                     }
-
-                    new_folders.push(FolderModel {
-                        folder_name: folder.name,
-                        world_ids,
-                    });
                 }
+
+                new_folders.push(FolderModel {
+                    folder_name: folder.name,
+                    world_ids,
+                });
             }
         }
 
-        // Store migrated data, respecting dont_overwrite flags
-        if !dont_overwrite[0] {
-            {
-                let mut worlds_lock = worlds.write().map_err(|e| {
-                    log::error!("Failed to acquire write lock for worlds: {}", e);
-                    "Failed to acquire write lock for worlds".to_string()
-                })?;
-                worlds_lock.clear();
-                log::info!("Cleared existing worlds data");
-            }
+        // Always overwrite both worlds and folders
+        {
             let mut worlds_lock = worlds.write().map_err(|e| {
                 log::error!("Failed to acquire write lock for worlds: {}", e);
                 "Failed to acquire write lock for worlds".to_string()
             })?;
+            worlds_lock.clear();
+            log::info!("Cleared existing worlds data");
             worlds_lock.extend(new_worlds);
             FileService::write_worlds(&*worlds_lock).map_err(|e| e.to_string())?;
             log::info!("Retrieved {} worlds", worlds_lock.len());
         }
-
-        if !dont_overwrite[1] {
-            {
-                let mut folders_lock = folders.write().map_err(|e| {
-                    log::error!("Failed to acquire write lock for folders: {}", e);
-                    "Failed to acquire write lock for folders".to_string()
-                })?;
-                folders_lock.clear();
-                log::info!("Cleared existing folders data");
-            }
+        {
             let mut folders_lock = folders.write().map_err(|e| {
                 log::error!("Failed to acquire write lock for folders: {}", e);
                 "Failed to acquire write lock for folders".to_string()
             })?;
+            folders_lock.clear();
+            log::info!("Cleared existing folders data");
             folders_lock.extend(new_folders);
             FileService::write_folders(&*folders_lock).map_err(|e| e.to_string())?;
             log::info!("Retrieved {} folders", folders_lock.len());
@@ -363,16 +365,30 @@ impl MigrationService {
                 .await
                 .map_err(|e| format!("Failed to read data files: {}", e))?;
 
-        let old_worlds = Self::parse_world_data(&worlds_content)
+        let mut old_worlds = Self::parse_world_data(&worlds_content)
             .map_err(|e| format!("Failed to parse worlds: {}", e))?;
         let old_folders = Self::parse_folder_data(&folders_content)
             .map_err(|e| format!("Failed to parse folders: {}", e))?;
 
+        // Merge in any worlds from folders.json not present in worlds.json
+        let mut world_map: HashMap<String, PreviousWorldModel> = old_worlds
+            .into_iter()
+            .map(|w| (w.world_id.clone(), w))
+            .collect();
+        for folder in &old_folders {
+            for world in &folder.worlds {
+                world_map
+                    .entry(world.world_id.clone())
+                    .or_insert_with(|| world.clone());
+            }
+        }
+        let merged_worlds: Vec<PreviousWorldModel> = world_map.into_values().collect();
+
         // Deduplicate worlds
-        let old_worlds = Self::deduplicate_with_pattern(old_worlds);
+        let merged_worlds = Self::deduplicate_with_pattern(merged_worlds);
         log::info!(
             "Count: Worlds: {}, Folders: {}",
-            old_worlds.len(),
+            merged_worlds.len(),
             old_folders.len()
         );
 
@@ -384,7 +400,7 @@ impl MigrationService {
 
         Ok(PreviousMetadata {
             number_of_folders: old_folders.len() as u32,
-            number_of_worlds: old_worlds.len() as u32,
+            number_of_worlds: merged_worlds.len() as u32,
         })
     }
 }

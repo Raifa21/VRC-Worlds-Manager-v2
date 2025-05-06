@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { info } from '@tauri-apps/plugin-log';
 
 interface SetupLayoutProps {
   title: string;
@@ -20,8 +21,8 @@ interface SetupLayoutProps {
   isFirstPage?: boolean;
   isLastPage?: boolean;
   isMigrationPage?: boolean;
-  alreadyMigrated?: boolean;
   isLoading?: boolean;
+  isValid?: boolean;
 }
 
 export function SetupLayout({
@@ -33,7 +34,7 @@ export function SetupLayout({
   isFirstPage = false,
   isLastPage = false,
   isMigrationPage = false,
-  alreadyMigrated = false,
+  isValid = false,
   isLoading = false,
 }: SetupLayoutProps) {
   const { t } = useLocalization();
@@ -46,18 +47,25 @@ export function SetupLayout({
         </CardHeader>
         <CardContent className="h-[355px]">{children}</CardContent>
         <CardFooter className="flex justify-between">
-          <Button
-            onClick={onBack}
-            disabled={isFirstPage}
-            variant={isFirstPage ? 'default' : 'outline'}
-          >
-            {t('general:back')}
-          </Button>
+          {/* Only show the Back button if not on the first page */}
+          {!isFirstPage ? (
+            <Button
+              onClick={onBack}
+              disabled={isFirstPage}
+              variant={isFirstPage ? 'default' : 'outline'}
+            >
+              {t('general:back')}
+            </Button>
+          ) : (
+            <div className="w-[100px]" />
+          )}
           <Button
             onClick={onNext}
             disabled={isMigrationPage && isLoading}
             variant={
-              isLastPage ? 'default' : isFirstPage ? 'default' : 'outline'
+              isLastPage || (isMigrationPage && isValid) || isFirstPage
+                ? 'default'
+                : 'outline'
             }
           >
             {isLoading ? (
@@ -69,8 +77,10 @@ export function SetupLayout({
               t('setup-layout:start')
             ) : isLastPage ? (
               t('setup-layout:finish')
-            ) : isMigrationPage && !alreadyMigrated ? (
+            ) : isMigrationPage && !isValid ? (
               t('setup-layout:skip')
+            ) : isMigrationPage && isValid ? (
+              t('setup-page:migrate-button')
             ) : (
               t('general:next')
             )}

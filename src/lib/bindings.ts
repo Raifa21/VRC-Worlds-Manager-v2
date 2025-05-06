@@ -524,7 +524,6 @@ export const commands = {
   async migrateOldData(
     worldsPath: string,
     foldersPath: string,
-    dontOverwrite: [boolean, boolean],
   ): Promise<Result<null, string>> {
     try {
       return {
@@ -532,7 +531,6 @@ export const commands = {
         data: await TAURI_INVOKE('migrate_old_data', {
           worldsPath,
           foldersPath,
-          dontOverwrite,
         }),
       };
     } catch (e) {
