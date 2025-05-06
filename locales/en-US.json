@@ -78,6 +78,10 @@
   "setup-page:toast:success:migrate:message": "Data migrated successfully!",
   "setup-page:toast:error:save-preference:message": "Failed to save preferences: {0}",
   "setup-page:toast:error:migrate:message": "Failed to migrate data: {0}",
+  "setup-page:migration-exists-title": "Existing Data Detected",
+  "setup-page:migration-exists-description": "Migration will overwrite existing data. Continue?",
+  "setup-page:migration-exists-cancel": "Keep existing data",
+  "setup-page:migration-exists-continue": "Import new data",
 
   "listview-page:error-load-worlds": "Failed to load worlds",
   "listview-page:error-create-folder": "Failed to create folder",

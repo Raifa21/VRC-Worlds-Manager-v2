@@ -9,13 +9,6 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { Platform } from '@/types/worlds';
 import { useRouter } from 'next/navigation';
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -27,8 +20,6 @@ import { WorldCardPreview } from '@/components/world-card';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Loader2, Globe } from 'lucide-react';
-import { ConfirmationPopup } from '@/components/confirmation-popup';
-import { MigrationConfirmationPopup } from '@/components/migration-confirmation-popup';
 import { commands } from '@/lib/bindings';
 import { CardSize } from '@/types/preferences';
 import { SetupLayout } from '@/components/setup-layout';
@@ -41,6 +32,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { info, error } from '@tauri-apps/plugin-log';
+import { SaturnIcon } from '@/components/icons/saturn-icon';
+import { FolderOpen, Info } from 'lucide-react';
+import { MigrationConfirmationPopup } from '@/components/migration-confirmation-popup';
 
 const WelcomePage: React.FC = () => {
   const router = useRouter();
@@ -66,15 +60,44 @@ const WelcomePage: React.FC = () => {
   ]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [alreadyMigrated, setAlreadyMigrated] = useState<boolean>(false);
-  const [showMigrationPopup, setShowMigrationPopup] = useState(false);
   const [hasExistingData, setHasExistingData] = useState<[boolean, boolean]>([
     false,
     false,
   ]);
+  const [migrationMeta, setMigrationMeta] = useState<{
+    number_of_worlds: number;
+    number_of_folders: number;
+  } | null>(null);
+  const [migrationMetaLoading, setMigrationMetaLoading] = useState(false);
+  const [migrationMetaError, setMigrationMetaError] = useState<string | null>(
+    null,
+  );
+  const [showMigrationConfirm, setShowMigrationConfirm] = useState(false);
 
   useEffect(() => {
     info(`Theme changed to: ${preferences.theme}`);
   }, [preferences.theme]);
+
+  const migrate = async () => {
+    const result = await commands.migrateOldData(
+      migrationPaths[0],
+      migrationPaths[1],
+    );
+    if (result.status === 'error') {
+      toast({
+        title: t('general:error-title'),
+        description: t('setup-page:toast:error:migrate:message', result.error),
+      });
+      setPage(2);
+      return;
+    }
+    setPage(3);
+    toast({
+      title: t('general:success-title'),
+      description: t('setup-page:toast:success:migrate:message'),
+      duration: 300,
+    });
+  };
 
   const handleNext = async () => {
     if (page === 1) {
@@ -106,6 +129,26 @@ const WelcomePage: React.FC = () => {
         error(`Failed to detect old installation: ${e}`);
         setPathValidation([false, false]);
       }
+    }
+    if (page === 2) {
+      if (
+        !pathValidation[0] ||
+        !pathValidation[1] ||
+        migrationMetaError !== null
+      ) {
+        setAlreadyMigrated(false);
+        setPage(3);
+        return;
+      }
+
+      if (hasExistingData[0] || hasExistingData[1]) {
+        setShowMigrationConfirm(true);
+        return;
+      }
+      setIsLoading(true);
+      await migrate();
+      setIsLoading(false);
+      setAlreadyMigrated(true);
     }
     if (page === 5) {
       const result = await commands.setPreferences(
@@ -143,46 +186,6 @@ const WelcomePage: React.FC = () => {
     setPage(page - 1);
   };
 
-  const handleMigration = async () => {
-    setIsLoading(true);
-
-    if (hasExistingData[0] || hasExistingData[1]) {
-      setIsLoading(false);
-      setShowMigrationPopup(true);
-      return;
-    }
-
-    try {
-      const result = await commands.migrateOldData(
-        migrationPaths[0],
-        migrationPaths[1],
-        [false, false],
-      );
-
-      if (result.status === 'error') {
-        toast({
-          title: t('general:error-title'),
-          description: t(
-            'setup-page:toast:error:migrate:message',
-            result.error,
-          ),
-        });
-        setPage(2);
-        return;
-      }
-
-      toast({
-        title: t('general:success-title'),
-        description: t('setup-page:toast:success:migrate:message'),
-        duration: 300,
-      });
-      setAlreadyMigrated(true);
-      handleNext();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleFilePick = async (index: number) => {
     const startPath = migrationPaths[index] || defaultPath || '/';
     info(`Opening file picker at: ${startPath}`);
@@ -206,48 +209,71 @@ const WelcomePage: React.FC = () => {
     }
   };
 
+  // Fetch migration metadata when both paths are valid
+  useEffect(() => {
+    const fetchMeta = async () => {
+      if (
+        pathValidation[0] &&
+        pathValidation[1] &&
+        migrationPaths[0] &&
+        migrationPaths[1]
+      ) {
+        setMigrationMetaLoading(true);
+        setMigrationMetaError(null);
+        setMigrationMeta(null);
+        try {
+          const result = await commands.getMigrationMetadata(
+            migrationPaths[0],
+            migrationPaths[1],
+          );
+          if (result.status === 'ok') {
+            setMigrationMeta(result.data);
+          } else {
+            setMigrationMetaError(result.error);
+          }
+        } catch (e: any) {
+          setMigrationMetaError(e?.message || 'Unknown error');
+        } finally {
+          setMigrationMetaLoading(false);
+        }
+      } else {
+        setMigrationMeta(null);
+        setMigrationMetaError(null);
+        setMigrationMetaLoading(false);
+      }
+    };
+    fetchMeta();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    migrationPaths[0],
+    migrationPaths[1],
+    pathValidation[0],
+    pathValidation[1],
+  ]);
+
+  const handleMigrationConfirm = () => {
+    setShowMigrationConfirm(false);
+    migrate();
+  };
+
+  const handleMigrationCancel = () => {
+    setShowMigrationConfirm(false);
+    setAlreadyMigrated(true);
+    setPage(3);
+  };
+
   return (
     <>
-      <MigrationConfirmationPopup
-        open={showMigrationPopup}
-        onOpenChange={setShowMigrationPopup}
-        hasExistingData={hasExistingData}
-        isLoading={isLoading}
-        onConfirm={async (keepExisting) => {
-          setShowMigrationPopup(false);
-          setIsLoading(true);
-          try {
-            // Pass the inverse of keepExisting since we want to overwrite when not keeping
-            const result = await commands.migrateOldData(
-              migrationPaths[0],
-              migrationPaths[1],
-              [!keepExisting[0], !keepExisting[1]],
-            );
-
-            if (result.status === 'error') {
-              toast({
-                title: t('general:error-title'),
-                description: t(
-                  'setup-page:toast:error:migrate:message',
-                  result.error,
-                ),
-              });
-              setPage(2);
-              return;
-            }
-
-            toast({
-              title: t('general:success-title'),
-              description: t('setup-page:toast:success:migrate:message'),
-            });
-            setAlreadyMigrated(true);
-            handleNext();
-          } finally {
-            setIsLoading(false);
-          }
-        }}
-      />
       <div className="welcome-page">
+        <MigrationConfirmationPopup
+          open={showMigrationConfirm}
+          onOpenChange={(open) => {
+            if (!open) setShowMigrationConfirm(false);
+          }}
+          onCancel={handleMigrationCancel}
+          onConfirm={handleMigrationConfirm}
+        />
+
         {page === 1 && (
           <SetupLayout
             title={t('setup-page:welcome-title')}
@@ -260,8 +286,14 @@ const WelcomePage: React.FC = () => {
               <div className="absolute top-0 right-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="w-9 px-0">
+                    <Button variant="outline" size="sm" className="gap-2">
                       <Globe className="h-4 w-4" />
+                      <span>
+                        {preferences.language === 'en-US'
+                          ? 'English'
+                          : '日本語'}
+                      </span>
+                      <span className="sr-only">Change Language</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -316,91 +348,132 @@ const WelcomePage: React.FC = () => {
             onBack={handleBack}
             onNext={handleNext}
             isMigrationPage={true}
-            alreadyMigrated={alreadyMigrated}
+            isValid={
+              pathValidation[0] &&
+              pathValidation[1] &&
+              migrationMetaError === null
+            }
           >
-            <div className="flex flex-col space-y-6">
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground text-center">
-                  {t('setup-page:migration-description')}
-                </p>
-              </div>
-
-              <div className="space-y-4">
+            <div className="flex flex-col flex-1 space-y-6 justify-between h-full min-h-[400px]">
+              <div>
                 <div className="space-y-2">
-                  <Label>{t('general:worlds-data')}</Label>
-                  <div className="flex space-x-2">
-                    <Input
-                      value={migrationPaths[0]}
-                      onChange={(e) =>
-                        setMigrationPaths([e.target.value, migrationPaths[1]])
-                      }
-                      placeholder={defaultPath}
-                      disabled={true}
-                      className="text-muted-foreground"
-                    />
-                    <Button variant="outline" onClick={() => handleFilePick(0)}>
-                      {t('general:select-button')}
-                    </Button>
-                  </div>
-                  <div className="h-3">
-                    {!pathValidation[0] && (
-                      <p className="text-sm text-red-500">
-                        {t('setup-page:worlds-file-error')}
-                      </p>
-                    )}
-                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    {t('setup-page:migration-description')}
+                  </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>{t('general:folders-data')}</Label>
-                  <div className="flex space-x-2">
-                    <Input
-                      value={migrationPaths[1]}
-                      onChange={(e) =>
-                        setMigrationPaths([migrationPaths[0], e.target.value])
-                      }
-                      placeholder={defaultPath}
-                      disabled={true}
-                      className="text-muted-foreground"
-                    />
-                    <Button variant="outline" onClick={() => handleFilePick(1)}>
-                      {t('general:select-button')}
-                    </Button>
+                <div className="space-y-4 mt-4">
+                  {/* Worlds file selection */}
+                  <div className="space-y-2">
+                    <Label>{t('general:worlds-data')}</Label>
+                    <div className="flex space-x-2 items-center">
+                      <Input
+                        value={migrationPaths[0]}
+                        onChange={(e) =>
+                          setMigrationPaths([e.target.value, migrationPaths[1]])
+                        }
+                        placeholder={defaultPath}
+                        disabled={true}
+                        className={
+                          pathValidation[0]
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                        }
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => handleFilePick(0)}
+                      >
+                        {t('general:select-button')}
+                      </Button>
+                    </div>
+                    <div className="h-3">
+                      {!pathValidation[0] && (
+                        <p className="text-sm text-red-500">
+                          {t('setup-page:worlds-file-error')}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="h-3">
-                    {!pathValidation[1] && (
-                      <p className="text-sm text-red-500">
-                        {t('setup-page:folders-file-error')}
-                      </p>
-                    )}
+
+                  {/* Folders file selection */}
+                  <div className="space-y-2">
+                    <Label>{t('general:folders-data')}</Label>
+                    <div className="flex space-x-2 items-center">
+                      <Input
+                        value={migrationPaths[1]}
+                        onChange={(e) =>
+                          setMigrationPaths([migrationPaths[0], e.target.value])
+                        }
+                        placeholder={defaultPath}
+                        disabled={true}
+                        className={
+                          pathValidation[1]
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                        }
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => handleFilePick(1)}
+                      >
+                        {t('general:select-button')}
+                      </Button>
+                    </div>
+                    <div className="h-3">
+                      {!pathValidation[1] && (
+                        <p className="text-sm text-red-500">
+                          {t('setup-page:folders-file-error')}
+                        </p>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Migration metadata preview */}
+                  {(migrationMetaLoading ||
+                    migrationMetaError ||
+                    migrationMeta) && (
+                    <div className="mt-4">
+                      {migrationMetaLoading && (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                          <span>
+                            {t('settings-page:loading-migration-data')}
+                          </span>
+                        </div>
+                      )}
+                      {migrationMetaError && (
+                        <div className="bg-destructive/10 text-destructive rounded p-3 flex items-start">
+                          <Info className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+                          <span>{migrationMetaError}</span>
+                        </div>
+                      )}
+                      {migrationMeta && (
+                        <div className="bg-muted rounded-md p-4 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <SaturnIcon className="h-4 w-4" />
+                            <span className="text-sm font-medium">
+                              {t('settings-page:worlds-count')}:
+                            </span>
+                            <span className="text-sm">
+                              {migrationMeta.number_of_worlds}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <FolderOpen className="h-4 w-4" />
+                            <span className="text-sm font-medium">
+                              {t('settings-page:folders-count')}:
+                            </span>
+                            <span className="text-sm">
+                              {migrationMeta.number_of_folders}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <Button
-                onClick={handleMigration}
-                disabled={
-                  isLoading ||
-                  !migrationPaths.every((path) => path !== '') ||
-                  !pathValidation.some((isValid) => isValid)
-                }
-                className="w-full"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('general:migrating')}
-                  </>
-                ) : (
-                  t('setup-page:migrate-button')
-                )}
-              </Button>
-
-              {!alreadyMigrated && !hasExistingData && (
-                <p className="text-sm text-muted-foreground text-center pb-3">
-                  {t('setup-page:skip-text')}
-                </p>
-              )}
             </div>
           </SetupLayout>
         )}

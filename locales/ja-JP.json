@@ -78,6 +78,10 @@
   "setup-page:toast:success:migrate:message": "データが正常に移行されました！",
   "setup-page:toast:error:save-preference:message": "設定の保存に失敗しました: {0}",
   "setup-page:toast:error:migrate:message": "データの移行に失敗しました: {0}",
+  "setup-page:migration-exists-title": "既存データが検出されました",
+  "setup-page:migration-exists-description": "移行により既存データが上書きされます。続行しますか？",
+  "setup-page:migration-exists-cancel": "既存データを保持する",
+  "setup-page:migration-exists-continue": "新しいデータをインポートする",
 
   "listview-page:error-load-worlds": "ワールドの読み込みに失敗しました",
   "listview-page:error-create-folder": "フォルダの作成に失敗しました",
