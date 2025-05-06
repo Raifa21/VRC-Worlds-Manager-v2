@@ -46,20 +46,10 @@ pub async fn restore_from_backup(backup_path: String) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn migrate_old_data(
-    worlds_path: String,
-    folders_path: String,
-    dont_overwrite: [bool; 2],
-) -> Result<(), String> {
-    MigrationService::migrate_old_data(
-        worlds_path,
-        folders_path,
-        dont_overwrite,
-        WORLDS.get(),
-        FOLDERS.get(),
-    )
-    .await
-    .map_err(|e| e.to_string())
+pub async fn migrate_old_data(worlds_path: String, folders_path: String) -> Result<(), String> {
+    MigrationService::migrate_old_data(worlds_path, folders_path, WORLDS.get(), FOLDERS.get())
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
