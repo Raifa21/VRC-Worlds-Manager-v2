@@ -253,7 +253,6 @@ impl MigrationService {
         let old_worlds = Self::parse_world_data(&worlds_content)?;
         let old_folders = Self::parse_folder_data(&folders_content)?;
 
-        // --- Merge in any worlds from folders.json not present in worlds.json ---
         let mut world_map: HashMap<String, PreviousWorldModel> = old_worlds
             .into_iter()
             .map(|w| (w.world_id.clone(), w))
@@ -274,8 +273,6 @@ impl MigrationService {
             merged_worlds.len(),
             old_folders.len()
         );
-
-        // --- End merge ---
 
         let (_, dates) = Self::calculate_dates(&merged_worlds);
 
