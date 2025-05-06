@@ -38,12 +38,13 @@ interface WorldGridProps {
   size: CardSize;
   worlds: WorldDisplayData[];
   folderName: string | SpecialFolders;
+  initialSelectedWorlds: string[];
   onRemoveFromFolder?: (worldId: string[]) => void;
   onHideWorld?: (worldId: string[], worldName: string[]) => void;
   onUnhideWorld?: (worldId: string[]) => void;
   onOpenWorldDetails: (worldId: string) => void;
   onShowFolderDialog?: (worlds: WorldDisplayData[]) => void;
-  onWorldChange?: () => void;
+  onSelectedWorldsChange: (worldIds: string[]) => void;
 }
 
 type SortOption =
@@ -69,12 +70,13 @@ export function WorldGrid({
   size,
   worlds,
   folderName,
+  initialSelectedWorlds,
   onRemoveFromFolder,
   onHideWorld,
   onUnhideWorld,
   onOpenWorldDetails,
   onShowFolderDialog,
-  onWorldChange,
+  onSelectedWorldsChange,
 }: WorldGridProps) {
   const { t } = useLocalization();
   const cardWidths = {
@@ -85,8 +87,6 @@ export function WorldGrid({
   };
 
   const [cols, setCols] = useState(1);
-  const [showWorld, setShowWorld] = useState(false);
-  const [worldId, setWorldId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -97,7 +97,9 @@ export function WorldGrid({
     worldName?: string;
     isOpen: boolean;
   } | null>(null);
-  const [selectedWorlds, setSelectedWorlds] = useState<Set<string>>(new Set());
+  const [selectedWorlds, setSelectedWorlds] = useState<string[]>(
+    initialSelectedWorlds,
+  );
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
@@ -130,7 +132,7 @@ export function WorldGrid({
     const handleEscKey = (event: KeyboardEvent) => {
       if (
         event.key === 'Escape' &&
-        (isSelectionMode || selectedWorlds.size > 0)
+        (isSelectionMode || selectedWorlds.length > 0)
       ) {
         clearSelection();
       }
@@ -139,6 +141,19 @@ export function WorldGrid({
     window.addEventListener('keydown', handleEscKey);
     return () => window.removeEventListener('keydown', handleEscKey);
   }, [isSelectionMode, selectedWorlds]);
+
+  useEffect(() => {
+    // when folder changes, set selected worlds if selection mode is on
+    if (isSelectionMode) {
+      setSelectedWorlds(initialSelectedWorlds);
+    } else {
+      setSelectedWorlds([]);
+    }
+  }, [folderName]);
+
+  useEffect(() => {
+    onSelectedWorldsChange(selectedWorlds);
+  }, [selectedWorlds]);
 
   const isFindPage = useMemo(() => {
     return folderName === SpecialFolders.Find;
@@ -272,10 +287,10 @@ export function WorldGrid({
 
     setSelectedWorlds((prev) => {
       const newSelection = new Set(prev);
-      if (event.shiftKey && prev.size > 0) {
+      if (event.shiftKey && prev.length > 0) {
         // Keep existing shift+click range selection
         const worldIds = sortedAndFilteredWorlds.map((w) => w.worldId);
-        const lastSelected = Array.from(prev)[prev.size - 1];
+        const lastSelected = Array.from(prev)[prev.length - 1];
         const lastIndex = worldIds.indexOf(lastSelected);
         const currentIndex = worldIds.indexOf(worldId);
         const [start, end] = [
@@ -301,7 +316,7 @@ export function WorldGrid({
           newSelection.add(worldId);
         }
       }
-      return newSelection;
+      return Array.from(newSelection);
     });
   };
 
@@ -314,7 +329,7 @@ export function WorldGrid({
   };
 
   const clearSelection = () => {
-    setSelectedWorlds(new Set());
+    setSelectedWorlds([]);
   };
 
   return (
@@ -410,7 +425,7 @@ export function WorldGrid({
                   <div
                     id={world.worldId}
                     className={`relative w-fit h-fit group rounded-lg ${
-                      selectedWorlds.has(world.worldId)
+                      selectedWorlds.includes(world.worldId)
                         ? 'ring-2 ring-primary'
                         : ''
                     }`}
@@ -431,7 +446,7 @@ export function WorldGrid({
                     )}
                     {isSelectionMode && (
                       <div className="absolute top-2 left-2 z-1">
-                        {selectedWorlds.has(world.worldId) ? (
+                        {selectedWorlds.includes(world.worldId) ? (
                           <>
                             <Square className="w-5 h-5 text-primary" />
                             <div className="absolute inset-[4px] bg-background rounded-sm" />
@@ -453,8 +468,8 @@ export function WorldGrid({
                           <ContextMenuItem
                             onSelect={(e) => {
                               const worldsToMove =
-                                selectedWorlds.size > 0 &&
-                                selectedWorlds.has(world.worldId)
+                                selectedWorlds.length > 0 &&
+                                selectedWorlds.includes(world.worldId)
                                   ? Array.from(selectedWorlds).map(
                                       (id) =>
                                         worlds.find((w) => w.worldId === id)!,
@@ -470,8 +485,8 @@ export function WorldGrid({
                           <ContextMenuItem
                             onSelect={(e) => {
                               const worldsToRemove =
-                                selectedWorlds.size > 0 &&
-                                selectedWorlds.has(world.worldId)
+                                selectedWorlds.length > 0 &&
+                                selectedWorlds.includes(world.worldId)
                                   ? Array.from(selectedWorlds)
                                   : [world.worldId];
                               onRemoveFromFolder?.(worldsToRemove);
@@ -484,8 +499,8 @@ export function WorldGrid({
                         <ContextMenuItem
                           onSelect={(e) => {
                             const worldsToHide =
-                              selectedWorlds.size > 0 &&
-                              selectedWorlds.has(world.worldId)
+                              selectedWorlds.length > 0 &&
+                              selectedWorlds.includes(world.worldId)
                                 ? Array.from(selectedWorlds)
                                 : [world.worldId];
                             const worldNames = worldsToHide
@@ -506,8 +521,8 @@ export function WorldGrid({
                       <ContextMenuItem
                         onSelect={(e) => {
                           const worldsToRestore =
-                            selectedWorlds.size > 0 &&
-                            selectedWorlds.has(world.worldId)
+                            selectedWorlds.length > 0 &&
+                            selectedWorlds.includes(world.worldId)
                               ? Array.from(selectedWorlds)
                               : [world.worldId];
                           onUnhideWorld?.(worldsToRestore);

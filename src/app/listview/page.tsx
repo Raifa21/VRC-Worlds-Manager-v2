@@ -30,6 +30,7 @@ import {
 import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
 import { warn, debug, trace, info, error } from '@tauri-apps/plugin-log';
+import { save } from '@tauri-apps/plugin-dialog';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -52,8 +53,11 @@ export default function ListView() {
   >(null);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [selectedWorldsForFolder, setSelectedWorldsForFolder] = useState<
-    WorldDisplayData[]
+    string[]
   >([]);
+  const [selectedWorldsState, setSelectedWorldsState] = useState<
+    Map<string | SpecialFolders, string[]>
+  >(new Map<string | SpecialFolders, string[]>());
 
   useEffect(() => {
     loadAllWorlds();
@@ -63,6 +67,99 @@ export default function ListView() {
     return currentFolder === SpecialFolders.Find;
   }, [currentFolder]);
 
+  const saveSelectedState = (type: string | SpecialFolders) => {
+    info(`Saving selected state for ${type}: ${selectedWorldsForFolder}`);
+    selectedWorldsState.set(type, selectedWorldsForFolder);
+    setSelectedWorldsState(new Map(selectedWorldsState));
+  };
+
+  const loadSelectedState = (type: string | SpecialFolders) => {
+    info(`Loading selected state for ${type}`);
+    const selected = selectedWorldsState.get(type);
+    if (selected) {
+      info(`Loading selected worlds for ${type}: ${selected}`);
+      setSelectedWorldsForFolder(selected);
+    } else {
+      setSelectedWorldsForFolder([]);
+    }
+  };
+
+  const handleSelectFolder = async (
+    type:
+      | SpecialFolders.All
+      | SpecialFolders.Find
+      | SpecialFolders.Unclassified
+      | SpecialFolders.Hidden
+      | 'folder',
+    folderName?: string,
+  ) => {
+    try {
+      saveSelectedState(currentFolder);
+
+      setShowAbout(false);
+      setShowSettings(false);
+      setShowFind(false);
+      switch (type) {
+        case SpecialFolders.All:
+          await loadAllWorlds();
+          setCurrentFolder(SpecialFolders.All);
+          loadSelectedState(type);
+          break;
+        case SpecialFolders.Find:
+          setShowFind(true);
+          setCurrentFolder(SpecialFolders.Find);
+          loadSelectedState(type);
+          break;
+        case SpecialFolders.Unclassified:
+          await loadUnclassifiedWorlds();
+          setCurrentFolder(SpecialFolders.Unclassified);
+          loadSelectedState(type);
+          break;
+        case SpecialFolders.Hidden:
+          await openHiddenFolder();
+          setCurrentFolder(SpecialFolders.Hidden);
+          loadSelectedState(type);
+          break;
+        case 'folder':
+          if (folderName) {
+            await loadFolderContents(folderName);
+            loadSelectedState(folderName);
+          }
+          break;
+      }
+    } catch (error) {
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-load-worlds'),
+        duration: 3000,
+      });
+    }
+  };
+
+  const loadAllWorlds = async () => {
+    try {
+      const worlds = await invoke<WorldDisplayData[]>('get_all_worlds');
+      setWorlds(worlds);
+    } catch (error) {
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-load-worlds'),
+      });
+    }
+  };
+  const loadUnclassifiedWorlds = async () => {
+    try {
+      const worlds = await invoke<WorldDisplayData[]>(
+        'get_unclassified_worlds',
+      );
+      setWorlds(worlds);
+    } catch (error) {
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-load-worlds'),
+      });
+    }
+  };
   const openHiddenFolder = async () => {
     info('Opening hidden worlds');
     try {
@@ -82,81 +179,11 @@ export default function ListView() {
           platform: world.platform as Platform,
         })),
       );
-      setCurrentFolder(SpecialFolders.Hidden);
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to load hidden worlds',
         variant: 'destructive',
-      });
-    }
-  };
-
-  const handleSelectFolder = async (
-    type:
-      | SpecialFolders.All
-      | SpecialFolders.Find
-      | SpecialFolders.Unclassified
-      | SpecialFolders.Hidden
-      | 'folder',
-    folderName?: string,
-  ) => {
-    try {
-      setShowAbout(false);
-      setShowSettings(false);
-      setShowFind(false);
-      switch (type) {
-        case SpecialFolders.All:
-          await loadAllWorlds();
-          break;
-        case SpecialFolders.Find:
-          setShowFind(true);
-          setCurrentFolder(SpecialFolders.Find);
-          break;
-        case SpecialFolders.Unclassified:
-          await loadUnclassifiedWorlds();
-          break;
-        case SpecialFolders.Hidden:
-          await openHiddenFolder();
-          break;
-        case 'folder':
-          if (folderName) {
-            await loadFolderContents(folderName);
-          }
-          break;
-      }
-    } catch (error) {
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-load-worlds'),
-        duration: 3000,
-      });
-    }
-  };
-
-  const loadAllWorlds = async () => {
-    try {
-      const worlds = await invoke<WorldDisplayData[]>('get_all_worlds');
-      setWorlds(worlds);
-      setCurrentFolder(SpecialFolders.All);
-    } catch (error) {
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-load-worlds'),
-      });
-    }
-  };
-  const loadUnclassifiedWorlds = async () => {
-    try {
-      const worlds = await invoke<WorldDisplayData[]>(
-        'get_unclassified_worlds',
-      );
-      setWorlds(worlds);
-      setCurrentFolder(SpecialFolders.Unclassified);
-    } catch (error) {
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-load-worlds'),
       });
     }
   };
@@ -470,13 +497,18 @@ export default function ListView() {
   };
 
   const handleAddToFolders = async (
-    worldsToAdd: WorldDisplayData[],
     foldersToAdd: string[],
     foldersToRemove: string[],
   ) => {
     try {
+      const worldsToAdd = worlds.filter((world) =>
+        selectedWorldsForFolder.includes(world.worldId),
+      );
+
       if (currentFolder === SpecialFolders.Find) {
-        await handleAddWorld(worldsToAdd[0].worldId);
+        for (const world of worldsToAdd) {
+          await handleAddWorld(world.worldId);
+        }
       }
       // Store original state for each world-folder combination
       const originalStates = worldsToAdd.map((world) => ({
@@ -779,8 +811,7 @@ export default function ListView() {
             handleOpenWorldDetails(worldId);
           }}
           onDataChange={loadFolders}
-          onShowFolderDialog={(worlds) => {
-            setSelectedWorldsForFolder(worlds);
+          onShowFolderDialog={() => {
             setShowFolderDialog(true);
           }}
         />
@@ -825,13 +856,17 @@ export default function ListView() {
             size={cardSize}
             worlds={worlds}
             folderName={currentFolder}
+            initialSelectedWorlds={selectedWorldsForFolder}
             onRemoveFromFolder={removeWorldsFromFolder}
             onHideWorld={handleHideWorld}
             onUnhideWorld={handleRestoreWorld}
             onOpenWorldDetails={handleOpenWorldDetails}
-            onShowFolderDialog={(worlds) => {
-              setSelectedWorldsForFolder(worlds);
+            onShowFolderDialog={() => {
               setShowFolderDialog(true);
+            }}
+            onSelectedWorldsChange={(selectedWorlds) => {
+              info(`Selected worlds changed: ${selectedWorlds}`);
+              setSelectedWorldsForFolder(selectedWorlds);
             }}
           />
         </div>
@@ -907,14 +942,12 @@ export default function ListView() {
       <AddToFolderDialog
         open={showFolderDialog}
         onOpenChange={setShowFolderDialog}
-        selectedWorlds={selectedWorldsForFolder}
+        selectedWorlds={worlds.filter((world) =>
+          selectedWorldsForFolder.includes(world.worldId),
+        )}
         folders={folders}
         onConfirm={(foldersToAdd, foldersToRemove) =>
-          handleAddToFolders(
-            selectedWorldsForFolder,
-            foldersToAdd,
-            foldersToRemove,
-          )
+          handleAddToFolders(foldersToAdd, foldersToRemove)
         }
         isFindPage={isFindPage}
       />
