@@ -81,6 +81,9 @@
 
   "listview-page:error-load-worlds": "Failed to load worlds",
   "listview-page:error-create-folder": "Failed to create folder",
+  "listview-page:worlds-added-title": "Worlds added",
+  "listview-page:worlds-added-description-single": "1 world was successfully added",
+  "listview-page:worlds-added-description-multiple": "{0} worlds were successfully added",
   "listview-page:worlds-fetched": "Worlds fetched successfully!",
   "listview-page:world-added-title": "World added",
   "listview-page:world-added-description": "World was successfully added to the folder",
@@ -300,7 +303,7 @@
   "add-to-folder-dialog:description-single": "Select folders to add or remove {0} world to",
   "add-to-folder-dialog:description-multiple": "Select folders to add or remove {0} worlds from",
   "add-to-folder-dialog:no-folders": "No folders available. Add a new folder from the sidebar.",
-  "add-to-folder-dialog:find-page-info-1": "If no folder is selected, the world will be added to the Unclassified folder.",
+  "add-to-folder-dialog:find-page-info": "If no folder is selected, the world will be added to the Unclassified folder.",
 
   "create-folder-dialog:title": "Create New Folder",
   "create-folder-dialog:placeholder": "Enter folder name",

@@ -81,6 +81,9 @@
 
   "listview-page:error-load-worlds": "ワールドの読み込みに失敗しました",
   "listview-page:error-create-folder": "フォルダの作成に失敗しました",
+  "listview-page:worlds-added-title": "ワールドが追加されました",
+  "listview-page:worlds-added-description-single": "1 件のワールドが正常に追加されました",
+  "listview-page:worlds-added-description-multiple": "{0} 件のワールドが正常に追加されました",
   "listview-page:worlds-fetched": "ワールドの取得に成功しました！",
   "listview-page:world-added-title": "ワールドが追加されました",
   "listview-page:world-added-description": "ワールドがフォルダに正常に追加されました",
