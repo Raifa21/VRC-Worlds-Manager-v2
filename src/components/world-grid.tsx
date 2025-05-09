@@ -105,7 +105,6 @@ export function WorldGrid({
   const [isSelectionMode, setIsSelectionMode] = useState(
     selectionModeControl?.valueOf() ?? false,
   );
-  const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
     new Set(),
   );
@@ -430,7 +429,6 @@ export function WorldGrid({
             {sortedAndFilteredWorlds.map((world) => (
               <ContextMenu
                 key={world.worldId}
-                onOpenChange={setContextMenuOpen}
               >
                 <ContextMenuTrigger asChild>
                   <div
