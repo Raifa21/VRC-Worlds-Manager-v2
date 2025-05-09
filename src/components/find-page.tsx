@@ -5,7 +5,14 @@ import { useLocalization } from '@/hooks/use-localization';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { WorldGrid } from '@/components/world-grid';
-import { Link, Loader2, RefreshCcw, Search } from 'lucide-react';
+import {
+  Link,
+  Loader2,
+  RefreshCcw,
+  Search,
+  CheckSquare,
+  Square,
+} from 'lucide-react';
 import { commands, VRChatWorld } from '@/lib/bindings';
 import { WorldDisplayData, Platform } from '@/types/worlds';
 import { CardSize } from '@/types/preferences';
@@ -25,17 +32,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import SingleFilterItemSelector from './single-filter-item-selector';
 
 interface FindPageProps {
-  worldIds: string[];
+  onWorldsChange: (worlds: WorldDisplayData[]) => void;
   onSelectWorld: (worldId: string) => void;
   onDataChange: () => void;
-  onShowFolderDialog?: (worlds: WorldDisplayData[]) => void;
+  onShowFolderDialog: (worlds: string[]) => void;
+  initialSelectedWorlds: string[];
+  onSelectedWorldsChange: (worlds: string[]) => void;
 }
 
 export function FindPage({
-  worldIds,
+  onWorldsChange,
   onSelectWorld,
-  onDataChange,
   onShowFolderDialog,
+  initialSelectedWorlds,
+  onSelectedWorldsChange,
 }: FindPageProps) {
   const { t } = useLocalization();
   const { toast } = useToast();
@@ -54,6 +64,7 @@ export function FindPage({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const convertToWorldDisplayData = (world: VRChatWorld): WorldDisplayData => {
     return {
@@ -84,7 +95,6 @@ export function FindPage({
   const fetchRecentlyVisitedWorlds = async () => {
     try {
       setIsLoading(true);
-      // Call the Tauri command to get recently visited worlds
       const worlds = await commands.getRecentlyVisitedWorlds();
       if (worlds.status !== 'ok') {
         throw new Error(worlds.error);
@@ -113,6 +123,20 @@ export function FindPage({
       fetchRecentlyVisitedWorlds();
     }
   }, []);
+
+  useEffect(() => {
+    const worlds = recentlyVisitedWorlds.map((world) =>
+      convertToWorldDisplayData(world),
+    );
+    onWorldsChange(worlds);
+  }, [recentlyVisitedWorlds]);
+
+  useEffect(() => {
+    const worlds = searchResults.map((world) =>
+      convertToWorldDisplayData(world),
+    );
+    onWorldsChange(worlds);
+  }, [searchResults]);
 
   // Load tags when the search tab is active
   useEffect(() => {
@@ -237,6 +261,20 @@ export function FindPage({
             />
           </Button>
         )}
+        <Button
+          variant={isSelectionMode ? 'secondary' : 'ghost'}
+          size="icon"
+          onClick={() => {
+            setIsSelectionMode((prev) => !prev); // Toggle the local state
+          }}
+          className="h-10 w-10"
+        >
+          {isSelectionMode ? (
+            <CheckSquare className="h-4 w-4" />
+          ) : (
+            <Square className="h-4 w-4" />
+          )}
+        </Button>
       </div>
 
       {/* Tab bar with full-width tabs */}
@@ -273,12 +311,12 @@ export function FindPage({
               <WorldGrid
                 worlds={recentlyVisitedWorlds.map(convertToWorldDisplayData)}
                 folderName={SpecialFolders.Find}
+                initialSelectedWorlds={initialSelectedWorlds}
                 onShowFolderDialog={onShowFolderDialog}
                 size={CardSize.Normal}
-                onOpenWorldDetails={(worldId) => {
-                  onSelectWorld(worldId);
-                }}
-                onWorldChange={onDataChange}
+                onOpenWorldDetails={onSelectWorld}
+                onSelectedWorldsChange={onSelectedWorldsChange}
+                selectionModeControl={isSelectionMode}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-64">
@@ -385,10 +423,12 @@ export function FindPage({
                 <WorldGrid
                   worlds={searchResults.map(convertToWorldDisplayData)}
                   folderName={SpecialFolders.Find}
+                  initialSelectedWorlds={initialSelectedWorlds}
                   onShowFolderDialog={onShowFolderDialog}
                   size={CardSize.Normal}
                   onOpenWorldDetails={onSelectWorld}
-                  onWorldChange={onDataChange}
+                  onSelectedWorldsChange={onSelectedWorldsChange}
+                  selectionModeControl={isSelectionMode}
                 />
 
                 {/* Load more indicator */}

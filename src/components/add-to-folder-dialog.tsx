@@ -17,7 +17,7 @@ import { Alert, AlertDescription } from './ui/alert';
 interface AddToFolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedWorlds: WorldDisplayData[];
+  selectedWorlds?: WorldDisplayData[];
   folders: string[];
   onConfirm: (foldersToAdd: string[], foldersToRemove: string[]) => void;
   isFindPage?: boolean;
@@ -38,12 +38,12 @@ export function AddToFolderDialog({
   );
 
   const getInitialState = (folder: string) => {
-    const worldsInFolder = selectedWorlds.filter((world) =>
+    const worldsInFolder = selectedWorlds?.filter((world) =>
       world.folders.includes(folder),
     ).length;
 
     if (worldsInFolder === 0) return 'none';
-    if (worldsInFolder === selectedWorlds.length) return 'all';
+    if (worldsInFolder === selectedWorlds?.length) return 'all';
     return 'some';
   };
 
@@ -144,14 +144,14 @@ export function AddToFolderDialog({
         <DialogHeader>
           <DialogTitle>{t('add-to-folder-dialog:title')}</DialogTitle>
           <DialogDescription>
-            {selectedWorlds.length === 1
+            {selectedWorlds?.length === 1
               ? t(
                   'add-to-folder-dialog:description-single',
                   selectedWorlds.length,
                 )
               : t(
                   'add-to-folder-dialog:description-multiple',
-                  selectedWorlds.length,
+                  selectedWorlds?.length,
                 )}
           </DialogDescription>
         </DialogHeader>

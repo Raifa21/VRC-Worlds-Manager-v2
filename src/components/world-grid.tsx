@@ -43,8 +43,9 @@ interface WorldGridProps {
   onHideWorld?: (worldId: string[], worldName: string[]) => void;
   onUnhideWorld?: (worldId: string[]) => void;
   onOpenWorldDetails: (worldId: string) => void;
-  onShowFolderDialog?: (worlds: WorldDisplayData[]) => void;
+  onShowFolderDialog?: (worlds: string[]) => void;
   onSelectedWorldsChange: (worldIds: string[]) => void;
+  selectionModeControl?: boolean;
 }
 
 type SortOption =
@@ -77,6 +78,7 @@ export function WorldGrid({
   onOpenWorldDetails,
   onShowFolderDialog,
   onSelectedWorldsChange,
+  selectionModeControl,
 }: WorldGridProps) {
   const { t } = useLocalization();
   const cardWidths = {
@@ -100,7 +102,9 @@ export function WorldGrid({
   const [selectedWorlds, setSelectedWorlds] = useState<string[]>(
     initialSelectedWorlds,
   );
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(
+    selectionModeControl?.valueOf() ?? false,
+  );
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
     new Set(),
@@ -115,6 +119,13 @@ export function WorldGrid({
 
     return numCols;
   };
+
+  useEffect(() => {
+    setIsSelectionMode(selectionModeControl?.valueOf() ?? false);
+    if (!selectionModeControl) {
+      clearSelection();
+    }
+  }, [selectionModeControl]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -437,7 +448,11 @@ export function WorldGrid({
                         world={world}
                         findPage={true}
                         onAddWorld={(world) => {
-                          onShowFolderDialog?.(world);
+                          onShowFolderDialog?.(
+                            isSelectionMode
+                              ? selectedWorlds
+                              : world.map((w) => w.worldId),
+                          );
                         }}
                         worldExists={existingWorldIds.has(world.worldId)}
                       />
@@ -475,7 +490,9 @@ export function WorldGrid({
                                         worlds.find((w) => w.worldId === id)!,
                                     )
                                   : [world];
-                              onShowFolderDialog(worldsToMove);
+                              onShowFolderDialog(
+                                worldsToMove.map((w) => w.worldId),
+                              );
                             }}
                           >
                             {t('world-grid:move-title')}

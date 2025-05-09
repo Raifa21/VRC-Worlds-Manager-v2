@@ -68,16 +68,13 @@ export default function ListView() {
   }, [currentFolder]);
 
   const saveSelectedState = (type: string | SpecialFolders) => {
-    info(`Saving selected state for ${type}: ${selectedWorldsForFolder}`);
     selectedWorldsState.set(type, selectedWorldsForFolder);
     setSelectedWorldsState(new Map(selectedWorldsState));
   };
 
   const loadSelectedState = (type: string | SpecialFolders) => {
-    info(`Loading selected state for ${type}`);
     const selected = selectedWorldsState.get(type);
     if (selected) {
-      info(`Loading selected worlds for ${type}: ${selected}`);
       setSelectedWorldsForFolder(selected);
     } else {
       setSelectedWorldsForFolder([]);
@@ -806,13 +803,20 @@ export default function ListView() {
     if (showFind) {
       return (
         <FindPage
-          worldIds={worlds.map((world) => world.worldId)}
+          onWorldsChange={(worlds) => {
+            setWorlds(worlds);
+          }}
           onSelectWorld={(worldId) => {
             handleOpenWorldDetails(worldId);
           }}
           onDataChange={loadFolders}
-          onShowFolderDialog={() => {
+          onShowFolderDialog={(worlds) => {
+            setSelectedWorldsForFolder(worlds);
             setShowFolderDialog(true);
+          }}
+          initialSelectedWorlds={selectedWorldsForFolder}
+          onSelectedWorldsChange={(selectedWorlds) => {
+            setSelectedWorldsForFolder(selectedWorlds);
           }}
         />
       );
@@ -861,11 +865,11 @@ export default function ListView() {
             onHideWorld={handleHideWorld}
             onUnhideWorld={handleRestoreWorld}
             onOpenWorldDetails={handleOpenWorldDetails}
-            onShowFolderDialog={() => {
+            onShowFolderDialog={(worlds) => {
+              setSelectedWorldsForFolder(worlds);
               setShowFolderDialog(true);
             }}
             onSelectedWorldsChange={(selectedWorlds) => {
-              info(`Selected worlds changed: ${selectedWorlds}`);
               setSelectedWorldsForFolder(selectedWorlds);
             }}
           />
