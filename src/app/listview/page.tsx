@@ -58,6 +58,8 @@ export default function ListView() {
   const [selectedWorldsState, setSelectedWorldsState] = useState<
     Map<string | SpecialFolders, string[]>
   >(new Map<string | SpecialFolders, string[]>());
+  const [shouldClearFindSelection, setShouldClearFindSelection] =
+    useState(false);
 
   useEffect(() => {
     loadAllWorlds();
@@ -68,6 +70,9 @@ export default function ListView() {
   }, [currentFolder]);
 
   const saveSelectedState = (type: string | SpecialFolders) => {
+    if (type === SpecialFolders.Find) {
+      return;
+    }
     selectedWorldsState.set(type, selectedWorldsForFolder);
     setSelectedWorldsState(new Map(selectedWorldsState));
   };
@@ -213,7 +218,6 @@ export default function ListView() {
       if (world.status === 'error') {
         throw new Error(world.error);
       }
-      const worldData = world.data;
       // if we are not in a special folder, add the world to the current folder
       if (
         !Object.values(SpecialFolders).includes(currentFolder as SpecialFolders)
@@ -503,9 +507,25 @@ export default function ListView() {
       );
 
       if (currentFolder === SpecialFolders.Find) {
-        for (const world of worldsToAdd) {
-          await handleAddWorld(world.worldId);
+        for (const worldData of worldsToAdd) {
+          const world = await commands.getWorld(worldData.worldId, null);
+          if (world.status === 'error') {
+            throw new Error(world.error);
+          }
         }
+        setSelectedWorldsForFolder([]);
+        setShouldClearFindSelection(true);
+        toast({
+          title: t('listview-page:worlds-added-title'),
+          description:
+            worldsToAdd.length > 1
+              ? t(
+                  'listview-page:worlds-added-description-multiple',
+                  worldsToAdd.length,
+                )
+              : t('listview-page:worlds-added-description-single'),
+          duration: 1000,
+        });
       }
       // Store original state for each world-folder combination
       const originalStates = worldsToAdd.map((world) => ({
@@ -809,15 +829,15 @@ export default function ListView() {
           onSelectWorld={(worldId) => {
             handleOpenWorldDetails(worldId);
           }}
-          onDataChange={loadFolders}
           onShowFolderDialog={(worlds) => {
             setSelectedWorldsForFolder(worlds);
             setShowFolderDialog(true);
           }}
-          initialSelectedWorlds={selectedWorldsForFolder}
           onSelectedWorldsChange={(selectedWorlds) => {
             setSelectedWorldsForFolder(selectedWorlds);
           }}
+          clearSelection={shouldClearFindSelection}
+          onClearSelectionComplete={() => setShouldClearFindSelection(false)}
         />
       );
     }

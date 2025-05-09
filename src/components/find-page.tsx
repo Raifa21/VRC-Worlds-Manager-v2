@@ -34,18 +34,19 @@ import SingleFilterItemSelector from './single-filter-item-selector';
 interface FindPageProps {
   onWorldsChange: (worlds: WorldDisplayData[]) => void;
   onSelectWorld: (worldId: string) => void;
-  onDataChange: () => void;
   onShowFolderDialog: (worlds: string[]) => void;
-  initialSelectedWorlds: string[];
   onSelectedWorldsChange: (worlds: string[]) => void;
+  clearSelection?: boolean; // Add this prop
+  onClearSelectionComplete?: () => void; // Add this prop
 }
 
 export function FindPage({
   onWorldsChange,
   onSelectWorld,
   onShowFolderDialog,
-  initialSelectedWorlds,
   onSelectedWorldsChange,
+  clearSelection,
+  onClearSelectionComplete,
 }: FindPageProps) {
   const { t } = useLocalization();
   const { toast } = useToast();
@@ -242,6 +243,18 @@ export function FindPage({
     return () => observer.disconnect();
   }, [searchResults, hasMoreResults, isLoadingMore, isSearching]);
 
+  // Listen for clearSelection prop changes
+  useEffect(() => {
+    if (clearSelection) {
+      // Need to both clear selection AND exit selection mode
+      setIsSelectionMode(false); // This is missing in your current code
+      onSelectedWorldsChange([]);
+
+      // Notify parent that clearing is done (only once)
+      onClearSelectionComplete?.();
+    }
+  }, [clearSelection, onSelectedWorldsChange, onClearSelectionComplete]);
+
   return (
     <div className="p-1 flex flex-col h-full">
       {/* Header with title and reload button */}
@@ -311,7 +324,7 @@ export function FindPage({
               <WorldGrid
                 worlds={recentlyVisitedWorlds.map(convertToWorldDisplayData)}
                 folderName={SpecialFolders.Find}
-                initialSelectedWorlds={initialSelectedWorlds}
+                initialSelectedWorlds={[]}
                 onShowFolderDialog={onShowFolderDialog}
                 size={CardSize.Normal}
                 onOpenWorldDetails={onSelectWorld}
@@ -423,7 +436,7 @@ export function FindPage({
                 <WorldGrid
                   worlds={searchResults.map(convertToWorldDisplayData)}
                   folderName={SpecialFolders.Find}
-                  initialSelectedWorlds={initialSelectedWorlds}
+                  initialSelectedWorlds={[]}
                   onShowFolderDialog={onShowFolderDialog}
                   size={CardSize.Normal}
                   onOpenWorldDetails={onSelectWorld}

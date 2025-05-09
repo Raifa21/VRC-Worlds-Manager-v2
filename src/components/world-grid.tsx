@@ -291,9 +291,30 @@ export function WorldGrid({
     setTimeout(() => setDialogConfig(null), 150);
   };
 
+  // Modify the handleClick function to check for existing worlds in isFindPage
+  const handleClick = (worldId: string, event: React.MouseEvent) => {
+    // Skip selection for existing worlds in Find page
+    if (isFindPage && existingWorldIds.has(worldId)) {
+      onOpenWorldDetails(worldId);
+      return;
+    }
+
+    if (isSelectionMode || event.ctrlKey || event.metaKey || event.shiftKey) {
+      handleSelect(worldId, event);
+    } else {
+      onOpenWorldDetails(worldId);
+    }
+  };
+
+  // Also update handleSelect to ignore worlds that already exist in Find page
   const handleSelect = (worldId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
+
+    // Don't allow selecting existing worlds in Find page
+    if (isFindPage && existingWorldIds.has(worldId)) {
+      return;
+    }
 
     setSelectedWorlds((prev) => {
       const newSelection = new Set(prev);
@@ -328,14 +349,6 @@ export function WorldGrid({
       }
       return Array.from(newSelection);
     });
-  };
-
-  const handleClick = (worldId: string, event: React.MouseEvent) => {
-    if (isSelectionMode || event.ctrlKey || event.metaKey || event.shiftKey) {
-      handleSelect(worldId, event);
-    } else {
-      onOpenWorldDetails(worldId);
-    }
   };
 
   const clearSelection = () => {
@@ -427,9 +440,7 @@ export function WorldGrid({
             }}
           >
             {sortedAndFilteredWorlds.map((world) => (
-              <ContextMenu
-                key={world.worldId}
-              >
+              <ContextMenu key={world.worldId}>
                 <ContextMenuTrigger asChild>
                   <div
                     id={world.worldId}
@@ -457,20 +468,21 @@ export function WorldGrid({
                     ) : (
                       <WorldCardPreview size={size} world={world} />
                     )}
-                    {isSelectionMode && (
-                      <div className="absolute top-2 left-2 z-1">
-                        {selectedWorlds.includes(world.worldId) ? (
-                          <>
-                            <Square className="w-5 h-5 text-primary" />
-                            <div className="absolute inset-[4px] bg-background rounded-sm" />
-                          </>
-                        ) : (
-                          <>
-                            <Square className="w-5 h-5 text-muted-foreground" />
-                          </>
-                        )}
-                      </div>
-                    )}
+                    {isSelectionMode &&
+                      (!isFindPage || !existingWorldIds.has(world.worldId)) && (
+                        <div className="absolute top-2 left-2 z-1">
+                          {selectedWorlds.includes(world.worldId) ? (
+                            <>
+                              <Square className="w-5 h-5 text-primary" />
+                              <div className="absolute inset-[4px] bg-background rounded-sm" />
+                            </>
+                          ) : (
+                            <>
+                              <Square className="w-5 h-5 text-muted-foreground" />
+                            </>
+                          )}
+                        </div>
+                      )}
                   </div>
                 </ContextMenuTrigger>
                 {!isFindPage && (

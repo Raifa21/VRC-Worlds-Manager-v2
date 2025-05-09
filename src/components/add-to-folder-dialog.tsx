@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, Info, Minus } from 'lucide-react';
+import { Check, Info, Loader2, Minus } from 'lucide-react';
 import { WorldDisplayData } from '@/types/worlds';
 import { useLocalization } from '@/hooks/use-localization';
 import { Alert, AlertDescription } from './ui/alert';
@@ -19,7 +19,10 @@ interface AddToFolderDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedWorlds?: WorldDisplayData[];
   folders: string[];
-  onConfirm: (foldersToAdd: string[], foldersToRemove: string[]) => void;
+  onConfirm: (
+    foldersToAdd: string[],
+    foldersToRemove: string[],
+  ) => Promise<void>;
   isFindPage?: boolean;
 }
 
@@ -33,6 +36,7 @@ export function AddToFolderDialog({
 }: AddToFolderDialogProps) {
   const { t } = useLocalization();
   const [foldersToAdd, setFoldersToAdd] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
   const [foldersToRemove, setFoldersToRemove] = useState<Set<string>>(
     new Set(),
   );
@@ -124,16 +128,19 @@ export function AddToFolderDialog({
     }
   };
 
-  const handleConfirm = () => {
-    onConfirm(Array.from(foldersToAdd), Array.from(foldersToRemove));
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    await onConfirm(Array.from(foldersToAdd), Array.from(foldersToRemove));
     setFoldersToAdd(new Set());
     setFoldersToRemove(new Set());
+    setIsLoading(false);
   };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       setFoldersToAdd(new Set());
       setFoldersToRemove(new Set());
+      setIsLoading(false);
     }
     onOpenChange(open);
   };
@@ -195,7 +202,13 @@ export function AddToFolderDialog({
           <Button variant="secondary" onClick={() => handleOpenChange(false)}>
             {t('general:cancel')}
           </Button>
-          <Button onClick={handleConfirm}>{t('general:confirm')}</Button>
+          <Button onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              t('general:confirm')
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
