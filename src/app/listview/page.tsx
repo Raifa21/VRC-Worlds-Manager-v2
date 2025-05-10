@@ -245,7 +245,6 @@ export default function ListView() {
 
   const loadFolderContents = async (folder: string) => {
     try {
-      info(`Folder: ${folder}`);
       const worlds = await invoke<WorldDisplayData[]>('get_worlds', {
         folderName: folder,
       });
