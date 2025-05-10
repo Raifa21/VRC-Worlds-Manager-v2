@@ -73,8 +73,11 @@ export default function ListView() {
     if (type === SpecialFolders.Find) {
       return;
     }
-    selectedWorldsState.set(type, selectedWorldsForFolder);
-    setSelectedWorldsState(new Map(selectedWorldsState));
+    setSelectedWorldsState((prev) => {
+      const newState = new Map(prev);
+      newState.set(type, selectedWorldsForFolder);
+      return newState;
+    });
   };
 
   const loadSelectedState = (type: string | SpecialFolders) => {
