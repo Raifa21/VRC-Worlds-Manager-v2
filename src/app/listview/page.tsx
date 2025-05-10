@@ -325,9 +325,19 @@ export default function ListView() {
 
   const handleHideWorld = async (worldId: string[], worldName: string[]) => {
     try {
+      // Store original folder information for each world before hiding
+      const worldFoldersMap = new Map<string, string[]>();
+
+      // Get folder information for each world (this is already fast - just in-memory lookup)
       for (const id of worldId) {
-        await commands.hideWorld(id);
+        const world = worlds.find((w) => w.worldId === id);
+        if (world) {
+          worldFoldersMap.set(id, [...world.folders]);
+        }
       }
+
+      // Hide worlds in parallel instead of one by one
+      await Promise.all(worldId.map((id) => commands.hideWorld(id)));
 
       toast({
         title: t('listview-page:worlds-hidden-title'),
@@ -347,9 +357,23 @@ export default function ListView() {
               size="sm"
               onClick={async () => {
                 try {
-                  for (const id of worldId) {
-                    await commands.unhideWorld(id);
-                  }
+                  // Parallel unhide and folder restoration
+                  await Promise.all(
+                    worldId.map(async (id) => {
+                      await commands.unhideWorld(id);
+
+                      // Restore folders for this world
+                      const originalFolders = worldFoldersMap.get(id);
+                      if (originalFolders?.length) {
+                        await Promise.all(
+                          originalFolders.map((folder) =>
+                            commands.addWorldToFolder(folder, id),
+                          ),
+                        );
+                      }
+                    }),
+                  );
+
                   await refreshCurrentView();
                   toast({
                     title: t('listview-page:restored-title'),
@@ -391,9 +415,8 @@ export default function ListView() {
     try {
       const restoredWorlds = worldIds;
 
-      for (const id of worldIds) {
-        await commands.unhideWorld(id);
-      }
+      // Unhide all worlds in parallel
+      await Promise.all(worldIds.map((id) => commands.unhideWorld(id)));
 
       toast({
         title: 'Worlds restored',
@@ -405,9 +428,11 @@ export default function ListView() {
               size="sm"
               onClick={async () => {
                 try {
-                  for (const id of restoredWorlds) {
-                    await commands.hideWorld(id);
-                  }
+                  // Hide all worlds in parallel
+                  await Promise.all(
+                    restoredWorlds.map((id) => commands.hideWorld(id)),
+                  );
+
                   await refreshCurrentView();
                   toast({
                     title: 'Hidden',
@@ -443,12 +468,13 @@ export default function ListView() {
 
   const removeWorldsFromFolder = async (worldIds: string[]) => {
     try {
-      // Store the world IDs for potential undo
       const removedWorlds = worldIds;
 
-      for (const id of worldIds) {
-        await commands.removeWorldFromFolder(currentFolder, id);
-      }
+      // Remove all worlds from folder in parallel
+      await Promise.all(
+        worldIds.map((id) => commands.removeWorldFromFolder(currentFolder, id)),
+      );
+
       toast({
         title: t('listview-page:worlds-removed-title'),
         description: (
@@ -459,10 +485,13 @@ export default function ListView() {
               size="sm"
               onClick={async () => {
                 try {
-                  // Restore the worlds
-                  for (const id of removedWorlds) {
-                    await commands.addWorldToFolder(currentFolder, id);
-                  }
+                  // Restore all worlds to folder in parallel
+                  await Promise.all(
+                    removedWorlds.map((id) =>
+                      commands.addWorldToFolder(currentFolder, id),
+                    ),
+                  );
+
                   await refreshCurrentView();
                   toast({
                     title: t('listview-page:restored-title'),
