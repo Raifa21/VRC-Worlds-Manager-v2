@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SortAsc, SortDesc, CheckSquare, Square } from 'lucide-react';
+import { SortAsc, SortDesc, CheckSquare, Square, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -489,7 +489,8 @@ export function WorldGrid({
                           {selectedWorlds.includes(world.worldId) ? (
                             <>
                               <Square className="w-5 h-5 text-primary" />
-                              <div className="absolute inset-[4px] bg-background rounded-sm" />
+                              <div className="absolute inset-[3px] bg-background" />
+                              <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
                             </>
                           ) : (
                             <>
