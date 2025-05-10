@@ -553,16 +553,44 @@ export default function ListView() {
       }));
 
       // Perform changes...
-      for (const folder of foldersToAdd) {
-        for (const world of worldsToAdd) {
-          await commands.addWorldToFolder(folder, world.worldId);
-        }
-      }
+      try {
+        const addPromises = [];
+        const removePromises = [];
 
-      for (const folder of foldersToRemove) {
-        for (const world of worldsToAdd) {
-          await commands.removeWorldFromFolder(folder, world.worldId);
+        // Gather all add operations
+        for (const folder of foldersToAdd) {
+          for (const world of worldsToAdd) {
+            addPromises.push(commands.addWorldToFolder(folder, world.worldId));
+          }
         }
+
+        // Gather all remove operations - with validation
+        const validFoldersToRemove = foldersToRemove.filter((folder) =>
+          folders.includes(folder),
+        );
+
+        for (const folder of validFoldersToRemove) {
+          for (const world of worldsToAdd) {
+            // Only remove if the world is actually in this folder
+            if (world.folders.includes(folder)) {
+              removePromises.push(
+                commands.removeWorldFromFolder(folder, world.worldId),
+              );
+            }
+          }
+        }
+
+        // Execute all operations in parallel
+        const results = await Promise.all([...addPromises, ...removePromises]);
+
+        // Check for errors in results if needed
+        const hasErrors = results.some((result) => result?.status === 'error');
+        if (hasErrors) {
+          throw new Error('One or more folder operations failed');
+        }
+      } catch (e) {
+        error(`Failed during folder operations: ${e}`);
+        throw e; // Re-throw to be caught by the outer try/catch
       }
 
       if (currentFolder != SpecialFolders.Find) {
