@@ -325,6 +325,20 @@ export default function ListView() {
 
   const handleHideWorld = async (worldId: string[], worldName: string[]) => {
     try {
+      // Store original folder information for each world before hiding
+      const worldFoldersMap = new Map<string, string[]>();
+
+      // Get folder information for each world
+      for (const id of worldId) {
+        // Find the world in the current list
+        const world = worlds.find((w) => w.worldId === id);
+        if (world) {
+          // Store its folders for restoration later
+          worldFoldersMap.set(id, [...world.folders]);
+        }
+      }
+
+      // Hide the worlds
       for (const id of worldId) {
         await commands.hideWorld(id);
       }
@@ -347,13 +361,25 @@ export default function ListView() {
               size="sm"
               onClick={async () => {
                 try {
+                  // First unhide all the worlds
                   for (const id of worldId) {
                     await commands.unhideWorld(id);
+
+                    // Then restore each world to its original folders
+                    const originalFolders = worldFoldersMap.get(id);
+                    if (originalFolders && originalFolders.length > 0) {
+                      for (const folder of originalFolders) {
+                        await commands.addWorldToFolder(folder, id);
+                      }
+                    }
                   }
+
                   await refreshCurrentView();
                   toast({
                     title: t('listview-page:restored-title'),
-                    description: t('listview-page:worlds-restored'),
+                    description: t(
+                      'listview-page:worlds-restored-with-folders',
+                    ),
                   });
                 } catch (e) {
                   error(`Failed to restore worlds: ${e}`);
