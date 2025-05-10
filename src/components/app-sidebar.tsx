@@ -82,6 +82,8 @@ export function AppSidebar({
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const composingRef = useRef(false);
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update local folders when prop changes
   useEffect(() => {
@@ -121,31 +123,84 @@ export function AppSidebar({
     }
   };
 
-  // Add this useEffect to handle clicks outside
+  // Add this effect for F8 key handling, similar to create-folder-dialog.tsx
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // F8 key handler - prevent focus loss and text selection
+      if (e.key === 'F8' && document.activeElement === inputRef.current) {
+        // Save current text length to restore cursor position later
+        const textLength = inputRef.current?.value.length || 0;
+
+        // Schedule focus restoration after the F8 key event completes
+        setTimeout(() => {
+          if (inputRef.current) {
+            // Restore focus
+            inputRef.current.focus();
+
+            // Place cursor at the end of text without selection
+            inputRef.current.setSelectionRange(textLength, textLength);
+          }
+        }, 10);
+      }
+    };
+
+    // Add global key listener
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Increase the timeout for focusing when editing starts
+  useEffect(() => {
+    if (editingFolder) {
+      // Use a longer timeout to ensure all other events have been processed
+      const focusTimer = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          // Optionally select all text for convenience
+          inputRef.current.select();
+        }
+      }, 50); // Increased from 10ms to 50ms
+
+      // Clean up timer on component unmount or when editingFolder changes
+      return () => clearTimeout(focusTimer);
+    }
+  }, [editingFolder]);
+
+  // Improve the click outside handler to be more precise
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Check if we're currently editing
-      if (!editingFolder) return;
+      // Skip if no active editing or during composition
+      if (!editingFolder || isComposing) return;
 
       // Get the clicked element
       const target = event.target as HTMLElement;
 
-      // Check if the click is outside the sidebar
-      const sidebar = document.querySelector(`.${SIDEBAR_CLASS}`);
-      if (sidebar && !sidebar.contains(target)) {
-        setEditingFolder(null);
-        setNewFolderName('');
+      // Check if click is inside the input or its parent container
+      if (
+        inputRef.current &&
+        (inputRef.current === target ||
+          inputRef.current.contains(target) ||
+          target.closest('.folder-edit-container'))
+      ) {
+        // Add this class to your container
+        return;
       }
+
+      // If we click anywhere else, cancel editing
+      setEditingFolder(null);
+      setNewFolderName('');
     };
 
-    // Add the event listener
+    // Use mousedown instead of click for better timing
     document.addEventListener('mousedown', handleClickOutside);
 
-    // Clean up
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [editingFolder]); // Only re-run if editingFolder changes
+  }, [editingFolder, isComposing]); // Add isComposing to deps
 
   return (
     <aside className={cn(sidebarStyles.container, SIDEBAR_CLASS)}>
@@ -221,7 +276,7 @@ export function AppSidebar({
                                 }
 
                                 // Cancel editing if we're editing a different folder
-                                if (editingFolder && editingFolder !== folder) {
+                                if (editingFolder) {
                                   setEditingFolder(null);
                                   setNewFolderName('');
                                 }
@@ -236,11 +291,21 @@ export function AppSidebar({
                                   onChange={(e) =>
                                     setNewFolderName(e.target.value)
                                   }
+                                  onFocus={() => {
+                                    // Clear any pending blur actions
+                                    if (blurTimeoutRef.current) {
+                                      clearTimeout(blurTimeoutRef.current);
+                                      blurTimeoutRef.current = null;
+                                    }
+                                  }}
                                   onKeyDown={(e) => {
                                     // Prevent event bubbling when typing
                                     e.stopPropagation();
 
-                                    if (e.key === 'Enter' && !isComposing) {
+                                    if (
+                                      e.key === 'Enter' &&
+                                      !composingRef.current
+                                    ) {
                                       e.preventDefault();
                                       handleRename(folder);
                                     } else if (e.key === 'Escape') {
@@ -251,17 +316,31 @@ export function AppSidebar({
                                   }}
                                   onClick={(e) => {
                                     // Prevent click from bubbling to parent
+                                    e.preventDefault();
                                     e.stopPropagation();
                                   }}
-                                  onCompositionStart={() =>
-                                    setIsComposing(true)
-                                  }
-                                  onCompositionEnd={(e) => {
-                                    setTimeout(() => {
-                                      setIsComposing(false);
-                                    }, 0);
+                                  onCompositionStart={() => {
+                                    composingRef.current = true;
+                                    setIsComposing(true);
                                   }}
-                                  className="h-6 py-0"
+                                  onCompositionEnd={() => {
+                                    composingRef.current = false;
+
+                                    // Use a longer timeout for IME operations
+                                    setTimeout(() => {
+                                      if (inputRef.current) {
+                                        const textLength =
+                                          inputRef.current.value.length;
+                                        inputRef.current.focus();
+                                        inputRef.current.setSelectionRange(
+                                          textLength,
+                                          textLength,
+                                        );
+                                      }
+                                      setIsComposing(false);
+                                    }, 150);
+                                  }}
+                                  className="h-6 py-0 folder-edit-container" // Added class for identifying container
                                   autoFocus
                                 />
                               ) : (

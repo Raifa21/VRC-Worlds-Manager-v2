@@ -5,7 +5,14 @@ import { useLocalization } from '@/hooks/use-localization';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { WorldGrid } from '@/components/world-grid';
-import { Link, Loader2, RefreshCcw, Search } from 'lucide-react';
+import {
+  Link,
+  Loader2,
+  RefreshCcw,
+  Search,
+  CheckSquare,
+  Square,
+} from 'lucide-react';
 import { commands, VRChatWorld } from '@/lib/bindings';
 import { WorldDisplayData, Platform } from '@/types/worlds';
 import { CardSize } from '@/types/preferences';
@@ -25,17 +32,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import SingleFilterItemSelector from './single-filter-item-selector';
 
 interface FindPageProps {
-  worldIds: string[];
+  onWorldsChange: (worlds: WorldDisplayData[]) => void;
   onSelectWorld: (worldId: string) => void;
-  onDataChange: () => void;
-  onShowFolderDialog?: (worlds: WorldDisplayData[]) => void;
+  onShowFolderDialog: (worlds: string[]) => void;
+  onSelectedWorldsChange: (worlds: string[]) => void;
+  clearSelection?: boolean; // Add this prop
+  onClearSelectionComplete?: () => void; // Add this prop
 }
 
 export function FindPage({
-  worldIds,
+  onWorldsChange,
   onSelectWorld,
-  onDataChange,
   onShowFolderDialog,
+  onSelectedWorldsChange,
+  clearSelection,
+  onClearSelectionComplete,
 }: FindPageProps) {
   const { t } = useLocalization();
   const { toast } = useToast();
@@ -54,6 +65,10 @@ export function FindPage({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  // Add this state to track when to trigger select all
+  const [triggerSelectAll, setTriggerSelectAll] = useState(false);
 
   const convertToWorldDisplayData = (world: VRChatWorld): WorldDisplayData => {
     return {
@@ -84,7 +99,6 @@ export function FindPage({
   const fetchRecentlyVisitedWorlds = async () => {
     try {
       setIsLoading(true);
-      // Call the Tauri command to get recently visited worlds
       const worlds = await commands.getRecentlyVisitedWorlds();
       if (worlds.status !== 'ok') {
         throw new Error(worlds.error);
@@ -113,6 +127,20 @@ export function FindPage({
       fetchRecentlyVisitedWorlds();
     }
   }, []);
+
+  useEffect(() => {
+    const worlds = recentlyVisitedWorlds.map((world) =>
+      convertToWorldDisplayData(world),
+    );
+    onWorldsChange(worlds);
+  }, [recentlyVisitedWorlds]);
+
+  useEffect(() => {
+    const worlds = searchResults.map((world) =>
+      convertToWorldDisplayData(world),
+    );
+    onWorldsChange(worlds);
+  }, [searchResults]);
 
   // Load tags when the search tab is active
   useEffect(() => {
@@ -218,25 +246,89 @@ export function FindPage({
     return () => observer.disconnect();
   }, [searchResults, hasMoreResults, isLoadingMore, isSearching]);
 
+  // Listen for clearSelection prop changes
+  useEffect(() => {
+    if (clearSelection) {
+      // Need to both clear selection AND exit selection mode
+      setIsSelectionMode(false); // This is missing in your current code
+      onSelectedWorldsChange([]);
+
+      // Notify parent that clearing is done (only once)
+      onClearSelectionComplete?.();
+    }
+  }, [clearSelection, onSelectedWorldsChange, onClearSelectionComplete]);
+
+  // Add this useEffect to reset the flag after a small delay
+  useEffect(() => {
+    if (triggerSelectAll) {
+      // Wait a moment for WorldGrid to process the selection
+      const timer = setTimeout(() => {
+        setTriggerSelectAll(false);
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [triggerSelectAll]);
+
   return (
     <div className="p-1 flex flex-col h-full">
       {/* Header with title and reload button */}
       <div className="flex items-center justify-between p-4 bg-background">
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
-        {activeTab === 'recently-visited' && (
+        <div className="flex items-center gap-2">
+          {/* Select All button - only visible when selection mode is on */}
+          {isSelectionMode && activeTab == 'recently-visited' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Trigger the select all action in WorldGrid
+                setTriggerSelectAll(true);
+              }}
+              className="flex items-center gap-1"
+            >
+              {t('general:select-all')}
+            </Button>
+          )}
+
+          {/* Selection mode toggle button */}
           <Button
-            variant="outline"
+            variant={isSelectionMode ? 'secondary' : 'outline'}
             size="sm"
-            onClick={fetchRecentlyVisitedWorlds}
-            disabled={isLoading}
-            className="flex items-center gap-2"
+            onClick={() => {
+              setIsSelectionMode((prev) => !prev);
+            }}
+            className="flex items-center gap-1"
           >
-            <RefreshCcw
-              className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-            />
+            {isSelectionMode ? (
+              <>
+                <CheckSquare className="h-4 w-4" />
+                <span>{t('general:cancel')}</span>
+              </>
+            ) : (
+              <>
+                <Square className="h-4 w-4" />
+                <span>{t('general:select-button')}</span>
+              </>
+            )}
           </Button>
-        )}
+
+          {/* Refresh button - moved to rightmost position */}
+          {activeTab === 'recently-visited' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchRecentlyVisitedWorlds}
+              disabled={isLoading}
+              className="flex items-center gap-1"
+            >
+              <RefreshCcw
+                className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+              />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Tab bar with full-width tabs */}
@@ -273,12 +365,13 @@ export function FindPage({
               <WorldGrid
                 worlds={recentlyVisitedWorlds.map(convertToWorldDisplayData)}
                 folderName={SpecialFolders.Find}
+                initialSelectedWorlds={[]}
                 onShowFolderDialog={onShowFolderDialog}
                 size={CardSize.Normal}
-                onOpenWorldDetails={(worldId) => {
-                  onSelectWorld(worldId);
-                }}
-                onWorldChange={onDataChange}
+                onOpenWorldDetails={onSelectWorld}
+                onSelectedWorldsChange={onSelectedWorldsChange}
+                selectionModeControl={isSelectionMode}
+                selectAll={triggerSelectAll}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-64">
@@ -385,10 +478,13 @@ export function FindPage({
                 <WorldGrid
                   worlds={searchResults.map(convertToWorldDisplayData)}
                   folderName={SpecialFolders.Find}
+                  initialSelectedWorlds={[]}
                   onShowFolderDialog={onShowFolderDialog}
                   size={CardSize.Normal}
                   onOpenWorldDetails={onSelectWorld}
-                  onWorldChange={onDataChange}
+                  onSelectedWorldsChange={onSelectedWorldsChange}
+                  selectionModeControl={isSelectionMode}
+                  selectAll={triggerSelectAll}
                 />
 
                 {/* Load more indicator */}

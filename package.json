@@ -1,6 +1,6 @@
 {
   "name": "vrc-world-manager",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -70,7 +70,7 @@
     "postcss": "^8",
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "5.8.3"
   },
   "optionalDependencies": {
     "@tauri-apps/cli-darwin-arm64": "2.5.0",

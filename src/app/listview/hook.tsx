@@ -8,9 +8,6 @@ export function useFolders() {
   const loadFolders = async () => {
     try {
       const result = await invoke<string[]>('get_folders');
-      for (const folder of result) {
-        info(`Folder: ${folder}`);
-      }
       setFolders(result);
     } catch (e) {
       error(`Error loading folders: ${e}`);

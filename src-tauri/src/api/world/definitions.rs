@@ -188,10 +188,6 @@ impl TryInto<WorldApiData> for WorldDetails {
     type Error = chrono::ParseError;
 
     fn try_into(self) -> Result<WorldApiData, Self::Error> {
-        log::info!("world: {:?}", self);
-
-        log::info!("world.publication_date: {:?}", self.publication_date);
-
         let publication_date = if self.publication_date == "none" {
             None
         } else {
@@ -205,14 +201,8 @@ impl TryInto<WorldApiData> for WorldDetails {
             )
         };
 
-        log::info!("publication_date: {:?}", publication_date);
-
-        log::info!("world.updated_at: {:?}", self.updated_at);
-
         let last_update =
             DateTime::parse_from_rfc3339(&self.updated_at)?.with_timezone(&chrono::Utc);
-
-        log::info!("last_update: {:?}", last_update);
 
         let platform: Vec<String> = self
             .unity_packages
