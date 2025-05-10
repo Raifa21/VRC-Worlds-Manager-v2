@@ -130,10 +130,15 @@ export function AddToFolderDialog({
 
   const handleConfirm = async () => {
     setIsLoading(true);
-    await onConfirm(Array.from(foldersToAdd), Array.from(foldersToRemove));
-    setFoldersToAdd(new Set());
-    setFoldersToRemove(new Set());
-    setIsLoading(false);
+    try {
+      await onConfirm(Array.from(foldersToAdd), Array.from(foldersToRemove));
+      setFoldersToAdd(new Set());
+      setFoldersToRemove(new Set());
+    } catch (error) {
+      console.error("Error during confirmation:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOpenChange = (open: boolean) => {
