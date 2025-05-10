@@ -285,11 +285,6 @@ export function FindPage({
               onClick={() => {
                 // Trigger the select all action in WorldGrid
                 setTriggerSelectAll(true);
-
-                // Get the current worlds based on active tab
-                const currentWorlds = recentlyVisitedWorlds.map(
-                  convertToWorldDisplayData,
-                );
               }}
               className="flex items-center gap-1"
             >

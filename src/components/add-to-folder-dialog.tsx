@@ -135,7 +135,7 @@ export function AddToFolderDialog({
       setFoldersToAdd(new Set());
       setFoldersToRemove(new Set());
     } catch (error) {
-      console.error("Error during confirmation:", error);
+      console.error('Error during confirmation:', error);
     } finally {
       setIsLoading(false);
     }

@@ -510,12 +510,22 @@ export default function ListView() {
       );
 
       if (currentFolder === SpecialFolders.Find) {
-        for (const worldData of worldsToAdd) {
-          const world = await commands.getWorld(worldData.worldId, null);
-          if (world.status === 'error') {
-            throw new Error(world.error);
-          }
+        // Create an array of promises for all world fetches
+        const worldPromises = worldsToAdd.map((worldData) =>
+          commands.getWorld(worldData.worldId, null),
+        );
+
+        // Wait for all promises to resolve in parallel
+        const worldResults = await Promise.all(worldPromises);
+
+        // Check if any of the results have errors
+        const errorResult = worldResults.find(
+          (result) => result.status === 'error',
+        );
+        if (errorResult) {
+          throw new Error(errorResult.error);
         }
+
         setSelectedWorldsForFolder([]);
         setShouldClearFindSelection(true);
         toast({
