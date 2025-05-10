@@ -328,20 +328,16 @@ export default function ListView() {
       // Store original folder information for each world before hiding
       const worldFoldersMap = new Map<string, string[]>();
 
-      // Get folder information for each world
+      // Get folder information for each world (this is already fast - just in-memory lookup)
       for (const id of worldId) {
-        // Find the world in the current list
         const world = worlds.find((w) => w.worldId === id);
         if (world) {
-          // Store its folders for restoration later
           worldFoldersMap.set(id, [...world.folders]);
         }
       }
 
-      // Hide the worlds
-      for (const id of worldId) {
-        await commands.hideWorld(id);
-      }
+      // Hide worlds in parallel instead of one by one
+      await Promise.all(worldId.map((id) => commands.hideWorld(id)));
 
       toast({
         title: t('listview-page:worlds-hidden-title'),
@@ -361,25 +357,27 @@ export default function ListView() {
               size="sm"
               onClick={async () => {
                 try {
-                  // First unhide all the worlds
-                  for (const id of worldId) {
-                    await commands.unhideWorld(id);
+                  // Parallel unhide and folder restoration
+                  await Promise.all(
+                    worldId.map(async (id) => {
+                      await commands.unhideWorld(id);
 
-                    // Then restore each world to its original folders
-                    const originalFolders = worldFoldersMap.get(id);
-                    if (originalFolders && originalFolders.length > 0) {
-                      for (const folder of originalFolders) {
-                        await commands.addWorldToFolder(folder, id);
+                      // Restore folders for this world
+                      const originalFolders = worldFoldersMap.get(id);
+                      if (originalFolders?.length) {
+                        await Promise.all(
+                          originalFolders.map((folder) =>
+                            commands.addWorldToFolder(folder, id),
+                          ),
+                        );
                       }
-                    }
-                  }
+                    }),
+                  );
 
                   await refreshCurrentView();
                   toast({
                     title: t('listview-page:restored-title'),
-                    description: t(
-                      'listview-page:worlds-restored-with-folders',
-                    ),
+                    description: t('listview-page:worlds-restored'),
                   });
                 } catch (e) {
                   error(`Failed to restore worlds: ${e}`);
@@ -417,9 +415,8 @@ export default function ListView() {
     try {
       const restoredWorlds = worldIds;
 
-      for (const id of worldIds) {
-        await commands.unhideWorld(id);
-      }
+      // Unhide all worlds in parallel
+      await Promise.all(worldIds.map((id) => commands.unhideWorld(id)));
 
       toast({
         title: 'Worlds restored',
@@ -431,9 +428,11 @@ export default function ListView() {
               size="sm"
               onClick={async () => {
                 try {
-                  for (const id of restoredWorlds) {
-                    await commands.hideWorld(id);
-                  }
+                  // Hide all worlds in parallel
+                  await Promise.all(
+                    restoredWorlds.map((id) => commands.hideWorld(id)),
+                  );
+
                   await refreshCurrentView();
                   toast({
                     title: 'Hidden',
@@ -469,12 +468,13 @@ export default function ListView() {
 
   const removeWorldsFromFolder = async (worldIds: string[]) => {
     try {
-      // Store the world IDs for potential undo
       const removedWorlds = worldIds;
 
-      for (const id of worldIds) {
-        await commands.removeWorldFromFolder(currentFolder, id);
-      }
+      // Remove all worlds from folder in parallel
+      await Promise.all(
+        worldIds.map((id) => commands.removeWorldFromFolder(currentFolder, id)),
+      );
+
       toast({
         title: t('listview-page:worlds-removed-title'),
         description: (
@@ -485,10 +485,13 @@ export default function ListView() {
               size="sm"
               onClick={async () => {
                 try {
-                  // Restore the worlds
-                  for (const id of removedWorlds) {
-                    await commands.addWorldToFolder(currentFolder, id);
-                  }
+                  // Restore all worlds to folder in parallel
+                  await Promise.all(
+                    removedWorlds.map((id) =>
+                      commands.addWorldToFolder(currentFolder, id),
+                    ),
+                  );
+
                   await refreshCurrentView();
                   toast({
                     title: t('listview-page:restored-title'),
