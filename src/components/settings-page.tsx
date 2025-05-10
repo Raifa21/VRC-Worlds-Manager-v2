@@ -271,10 +271,7 @@ export function SettingsPage({
   ) => {
     try {
       info(`Migrating data from ${worldsPath} and ${foldersPath}`);
-      const result = await commands.migrateOldData(worldsPath, foldersPath, [
-        false,
-        false,
-      ]);
+      const result = await commands.migrateOldData(worldsPath, foldersPath);
 
       if (result.status === 'error') {
         error(`Migration failed: ${result.error}`);
