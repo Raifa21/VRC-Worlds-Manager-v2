@@ -46,6 +46,7 @@ interface WorldGridProps {
   onShowFolderDialog?: (worlds: string[]) => void;
   onSelectedWorldsChange: (worldIds: string[]) => void;
   selectionModeControl?: boolean;
+  selectAll?: boolean; // Add this prop
 }
 
 type SortOption =
@@ -79,6 +80,7 @@ export function WorldGrid({
   onShowFolderDialog,
   onSelectedWorldsChange,
   selectionModeControl,
+  selectAll,
 }: WorldGridProps) {
   const { t } = useLocalization();
   const cardWidths = {
@@ -354,6 +356,19 @@ export function WorldGrid({
   const clearSelection = () => {
     setSelectedWorlds([]);
   };
+
+  useEffect(() => {
+    if (!selectAll) return;
+
+    // Select all applicable worlds (filter out existing worlds in Find page)
+    const worldsToSelect = sortedAndFilteredWorlds
+      .filter((world) => !isFindPage || !existingWorldIds.has(world.worldId))
+      .map((world) => world.worldId);
+
+    setSelectedWorlds(worldsToSelect);
+
+    onSelectedWorldsChange(worldsToSelect);
+  }, [selectAll, sortedAndFilteredWorlds, isFindPage, existingWorldIds]);
 
   return (
     <div ref={containerRef} className="h-full flex flex-col">

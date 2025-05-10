@@ -33,6 +33,7 @@
   "general:unclassified-worlds": "Unclassified Worlds",
   "general:hidden-worlds": "Hidden Worlds",
   "general:select-button": "Select",
+  "general:select-all": "Select All",
 
   "error-page:title": "Error Loading Application",
   "error-page:retry": "Retry",

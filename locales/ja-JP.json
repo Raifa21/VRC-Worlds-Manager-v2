@@ -33,7 +33,8 @@
   "general:unclassified-worlds": "未分類のワールド",
   "general:hidden-worlds": "非表示のワールド",
   "general:select-button": "選択",
-
+  "general:select-all": "すべて選択",
+  
   "error-page:title": "アプリケーションの読み込みエラー",
   "error-page:retry": "再試行",
 

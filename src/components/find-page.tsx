@@ -67,6 +67,9 @@ export function FindPage({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
+  // Add this state to track when to trigger select all
+  const [triggerSelectAll, setTriggerSelectAll] = useState(false);
+
   const convertToWorldDisplayData = (world: VRChatWorld): WorldDisplayData => {
     return {
       worldId: world.id,
@@ -255,39 +258,82 @@ export function FindPage({
     }
   }, [clearSelection, onSelectedWorldsChange, onClearSelectionComplete]);
 
+  // Add this useEffect to reset the flag after a small delay
+  useEffect(() => {
+    if (triggerSelectAll) {
+      // Wait a moment for WorldGrid to process the selection
+      const timer = setTimeout(() => {
+        setTriggerSelectAll(false);
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [triggerSelectAll]);
+
   return (
     <div className="p-1 flex flex-col h-full">
       {/* Header with title and reload button */}
       <div className="flex items-center justify-between p-4 bg-background">
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
-        {activeTab === 'recently-visited' && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchRecentlyVisitedWorlds}
-            disabled={isLoading}
-            className="flex items-center gap-2"
-          >
-            <RefreshCcw
-              className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-            />
-          </Button>
-        )}
-        <Button
-          variant={isSelectionMode ? 'secondary' : 'ghost'}
-          size="icon"
-          onClick={() => {
-            setIsSelectionMode((prev) => !prev); // Toggle the local state
-          }}
-          className="h-10 w-10"
-        >
-          {isSelectionMode ? (
-            <CheckSquare className="h-4 w-4" />
-          ) : (
-            <Square className="h-4 w-4" />
+        <div className="flex items-center gap-2">
+          {/* Select All button - only visible when selection mode is on */}
+          {isSelectionMode && activeTab == 'recently-visited' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Trigger the select all action in WorldGrid
+                setTriggerSelectAll(true);
+
+                // Get the current worlds based on active tab
+                const currentWorlds = recentlyVisitedWorlds.map(
+                  convertToWorldDisplayData,
+                );
+              }}
+              className="flex items-center gap-1"
+            >
+              {t('general:select-all')}
+            </Button>
           )}
-        </Button>
+
+          {/* Selection mode toggle button */}
+          <Button
+            variant={isSelectionMode ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => {
+              setIsSelectionMode((prev) => !prev);
+            }}
+            className="flex items-center gap-1"
+          >
+            {isSelectionMode ? (
+              <>
+                <CheckSquare className="h-4 w-4" />
+                <span>{t('general:cancel')}</span>
+              </>
+            ) : (
+              <>
+                <Square className="h-4 w-4" />
+                <span>{t('general:select-button')}</span>
+              </>
+            )}
+          </Button>
+
+          {/* Refresh button - moved to rightmost position */}
+          {activeTab === 'recently-visited' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchRecentlyVisitedWorlds}
+              disabled={isLoading}
+              className="flex items-center gap-1"
+            >
+              <RefreshCcw
+                className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+              />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Tab bar with full-width tabs */}
@@ -330,6 +376,7 @@ export function FindPage({
                 onOpenWorldDetails={onSelectWorld}
                 onSelectedWorldsChange={onSelectedWorldsChange}
                 selectionModeControl={isSelectionMode}
+                selectAll={triggerSelectAll}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-64">
@@ -442,6 +489,7 @@ export function FindPage({
                   onOpenWorldDetails={onSelectWorld}
                   onSelectedWorldsChange={onSelectedWorldsChange}
                   selectionModeControl={isSelectionMode}
+                  selectAll={triggerSelectAll}
                 />
 
                 {/* Load more indicator */}
