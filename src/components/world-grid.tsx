@@ -323,7 +323,7 @@ export function WorldGrid({
       if (event.shiftKey && prev.length > 0) {
         // Keep existing shift+click range selection
         const worldIds = sortedAndFilteredWorlds.map((w) => w.worldId);
-        const lastSelected = Array.from(prev)[prev.length - 1];
+        const lastSelected = prev[prev.length - 1];
         const lastIndex = worldIds.indexOf(lastSelected);
         const currentIndex = worldIds.indexOf(worldId);
         const [start, end] = [
