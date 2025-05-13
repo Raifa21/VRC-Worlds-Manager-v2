@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { toRomaji } from 'wanakana';
 import { SpecialFolders } from '@/types/folders';
-import { WorldDisplayData } from '@/types/worlds';
+import { WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import {
   ContextMenu,

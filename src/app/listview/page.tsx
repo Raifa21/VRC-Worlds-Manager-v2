@@ -7,12 +7,12 @@ import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
 import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-sidebar';
-import { Platform, WorldDisplayData } from '@/types/worlds';
+import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react'; // For the reload icon
-import { commands } from '@/lib/bindings';
+import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
@@ -143,8 +143,16 @@ export default function ListView() {
 
   const loadAllWorlds = async () => {
     try {
-      const worlds = await invoke<WorldDisplayData[]>('get_all_worlds');
-      setWorlds(worlds);
+      const worlds = await commands.getAllWorlds();
+      if (worlds.status === 'ok') {
+        setWorlds(worlds.data);
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: worlds.error,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       toast({
         title: t('general:error-title'),
@@ -154,10 +162,16 @@ export default function ListView() {
   };
   const loadUnclassifiedWorlds = async () => {
     try {
-      const worlds = await invoke<WorldDisplayData[]>(
-        'get_unclassified_worlds',
-      );
-      setWorlds(worlds);
+      const worlds = await commands.getUnclassifiedWorlds();
+      if (worlds.status === 'ok') {
+        setWorlds(worlds.data);
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: worlds.error,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       toast({
         title: t('general:error-title'),
@@ -245,15 +259,22 @@ export default function ListView() {
 
   const loadFolderContents = async (folder: string) => {
     try {
-      const worlds = await invoke<WorldDisplayData[]>('get_worlds', {
-        folderName: folder,
-      });
-      setWorlds(worlds);
-      setCurrentFolder(folder);
+      const result = await commands.getWorlds(folder);
+      if (result.status === 'ok') {
+        setWorlds(result.data);
+        setCurrentFolder(folder);
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: result.error,
+          variant: 'destructive',
+        });
+      }
     } catch (e) {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-worlds'),
+        variant: 'destructive',
       });
       error(`Error loading worlds: ${e}`);
     }
