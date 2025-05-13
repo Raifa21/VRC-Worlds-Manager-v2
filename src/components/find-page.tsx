@@ -13,8 +13,8 @@ import {
   CheckSquare,
   Square,
 } from 'lucide-react';
-import { commands, VRChatWorld } from '@/lib/bindings';
-import { WorldDisplayData, Platform } from '@/types/worlds';
+import { commands, WorldDisplayData } from '@/lib/bindings';
+import { Platform } from '@/types/worlds';
 import { CardSize } from '@/types/preferences';
 import { SpecialFolders } from '@/types/folders';
 import { info } from '@tauri-apps/plugin-log';
@@ -52,10 +52,10 @@ export function FindPage({
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('recently-visited');
   const [recentlyVisitedWorlds, setRecentlyVisitedWorlds] = useState<
-    VRChatWorld[]
+    WorldDisplayData[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<VRChatWorld[]>([]);
+  const [searchResults, setSearchResults] = useState<WorldDisplayData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSort, setSelectedSort] = useState('popularity');
   const [selectedTag, setSelectedTag] = useState('');
@@ -69,32 +69,6 @@ export function FindPage({
 
   // Add this state to track when to trigger select all
   const [triggerSelectAll, setTriggerSelectAll] = useState(false);
-
-  const convertToWorldDisplayData = (world: VRChatWorld): WorldDisplayData => {
-    return {
-      worldId: world.id,
-      name: world.name,
-      thumbnailUrl: world.thumbnailImageUrl,
-      authorName: world.authorName,
-      favorites: world.favorites,
-      lastUpdated: world.updated_at,
-      visits: world.visits ?? 0,
-      dateAdded: '',
-      platform: (() => {
-        const platforms = world.unityPackages.map((pkg) => pkg.platform);
-        if (platforms.includes('PC') && platforms.includes('Quest')) {
-          return Platform.CrossPlatform;
-        } else if (platforms.includes('PC')) {
-          return Platform.PC;
-        } else if (platforms.includes('Quest')) {
-          return Platform.Quest;
-        } else {
-          return Platform.PC; // Default to PC if no platform is found
-        }
-      })(),
-      folders: [],
-    };
-  };
 
   const fetchRecentlyVisitedWorlds = async () => {
     try {
@@ -129,16 +103,12 @@ export function FindPage({
   }, []);
 
   useEffect(() => {
-    const worlds = recentlyVisitedWorlds.map((world) =>
-      convertToWorldDisplayData(world),
-    );
+    const worlds = recentlyVisitedWorlds;
     onWorldsChange(worlds);
   }, [recentlyVisitedWorlds]);
 
   useEffect(() => {
-    const worlds = searchResults.map((world) =>
-      convertToWorldDisplayData(world),
-    );
+    const worlds = searchResults;
     onWorldsChange(worlds);
   }, [searchResults]);
 
@@ -363,7 +333,7 @@ export function FindPage({
               </div>
             ) : recentlyVisitedWorlds.length > 0 ? (
               <WorldGrid
-                worlds={recentlyVisitedWorlds.map(convertToWorldDisplayData)}
+                worlds={recentlyVisitedWorlds}
                 folderName={SpecialFolders.Find}
                 initialSelectedWorlds={[]}
                 onShowFolderDialog={onShowFolderDialog}
@@ -476,7 +446,7 @@ export function FindPage({
             {searchResults.length > 0 && (
               <div className="flex-1">
                 <WorldGrid
-                  worlds={searchResults.map(convertToWorldDisplayData)}
+                  worlds={searchResults}
                   folderName={SpecialFolders.Find}
                   initialSelectedWorlds={[]}
                   onShowFolderDialog={onShowFolderDialog}

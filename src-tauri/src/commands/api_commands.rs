@@ -1,7 +1,7 @@
 use crate::api::group::GroupInstancePermissionInfo;
 use crate::api::group::UserGroup;
-use crate::api::world::VRChatWorld;
 use crate::definitions::WorldDetails;
+use crate::definitions::WorldDisplayData;
 use crate::services::FolderManager;
 use crate::ApiService;
 use crate::AUTHENTICATOR;
@@ -139,7 +139,7 @@ pub async fn check_world_info(world_id: String) -> Result<WorldDetails, String> 
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_recently_visited_worlds() -> Result<Vec<VRChatWorld>, String> {
+pub async fn get_recently_visited_worlds() -> Result<Vec<WorldDisplayData>, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
 
     let worlds = match ApiService::get_recently_visited_worlds(cookie_store).await {
@@ -160,7 +160,7 @@ pub async fn search_worlds(
     tag: String,
     search: String,
     page: usize,
-) -> Result<Vec<VRChatWorld>, String> {
+) -> Result<Vec<WorldDisplayData>, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
 
     let sort = if sort.is_empty() { None } else { Some(sort) };
