@@ -404,7 +404,7 @@ export function WorldDetailPopup({
                         <div className="text-sm font-semibold mb-2">
                           {t('world-detail:description')}
                         </div>
-                        <div className="text-sm">
+                        <div className="text-sm break-words overflow-wrap-anywhere">
                           {worldDetails.description}
                         </div>
                       </div>
