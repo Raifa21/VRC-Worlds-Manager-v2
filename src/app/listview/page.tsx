@@ -58,8 +58,9 @@ export default function ListView() {
   const [selectedWorldsState, setSelectedWorldsState] = useState<
     Map<string | SpecialFolders, string[]>
   >(new Map<string | SpecialFolders, string[]>());
-  const [shouldClearFindSelection, setShouldClearFindSelection] =
+  const [shouldClearMultiSelection, setshouldClearMultiSelection] =
     useState(false);
+  const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]); // New state for added worlds
 
   useEffect(() => {
     loadAllWorlds();
@@ -567,6 +568,10 @@ export default function ListView() {
         // Wait for all promises to resolve in parallel
         const worldResults = await Promise.all(worldPromises);
 
+        const worldIds = worldsToAdd.map((world) => world.worldId);
+
+        setWorldsJustAdded(worldIds);
+
         // Check if any of the results have errors
         const errorResult = worldResults.find(
           (result) => result.status === 'error',
@@ -574,9 +579,6 @@ export default function ListView() {
         if (errorResult) {
           throw new Error(errorResult.error);
         }
-
-        setSelectedWorldsForFolder([]);
-        setShouldClearFindSelection(true);
         toast({
           title: t('listview-page:worlds-added-title'),
           description:
@@ -641,6 +643,9 @@ export default function ListView() {
         error(`Failed during folder operations: ${e}`);
         throw e; // Re-throw to be caught by the outer try/catch
       }
+
+      setSelectedWorldsForFolder([]);
+      setshouldClearMultiSelection(true);
 
       if (currentFolder != SpecialFolders.Find) {
         toast({
@@ -926,8 +931,10 @@ export default function ListView() {
           onSelectedWorldsChange={(selectedWorlds) => {
             setSelectedWorldsForFolder(selectedWorlds);
           }}
-          clearSelection={shouldClearFindSelection}
-          onClearSelectionComplete={() => setShouldClearFindSelection(false)}
+          clearSelection={shouldClearMultiSelection}
+          onClearSelectionComplete={() => setshouldClearMultiSelection(false)}
+          worldsJustAdded={worldsJustAdded}
+          onWorldsJustAddedProcessed={() => setWorldsJustAdded([])}
         />
       );
     }
@@ -982,6 +989,8 @@ export default function ListView() {
             onSelectedWorldsChange={(selectedWorlds) => {
               setSelectedWorldsForFolder(selectedWorlds);
             }}
+            shouldClearSelection={shouldClearMultiSelection}
+            onClearSelectionComplete={() => setshouldClearMultiSelection(false)}
           />
         </div>
       </>

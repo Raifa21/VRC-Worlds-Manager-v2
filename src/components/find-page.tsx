@@ -36,8 +36,10 @@ interface FindPageProps {
   onSelectWorld: (worldId: string) => void;
   onShowFolderDialog: (worlds: string[]) => void;
   onSelectedWorldsChange: (worlds: string[]) => void;
-  clearSelection?: boolean; // Add this prop
-  onClearSelectionComplete?: () => void; // Add this prop
+  clearSelection: boolean; // Add this prop
+  onClearSelectionComplete: () => void; // Add this prop
+  worldsJustAdded?: string[];
+  onWorldsJustAddedProcessed?: () => void;
 }
 
 export function FindPage({
@@ -47,6 +49,8 @@ export function FindPage({
   onSelectedWorldsChange,
   clearSelection,
   onClearSelectionComplete,
+  worldsJustAdded,
+  onWorldsJustAddedProcessed,
 }: FindPageProps) {
   const { t } = useLocalization();
   const { toast } = useToast();
@@ -216,18 +220,6 @@ export function FindPage({
     return () => observer.disconnect();
   }, [searchResults, hasMoreResults, isLoadingMore, isSearching]);
 
-  // Listen for clearSelection prop changes
-  useEffect(() => {
-    if (clearSelection) {
-      // Need to both clear selection AND exit selection mode
-      setIsSelectionMode(false); // This is missing in your current code
-      onSelectedWorldsChange([]);
-
-      // Notify parent that clearing is done (only once)
-      onClearSelectionComplete?.();
-    }
-  }, [clearSelection, onSelectedWorldsChange, onClearSelectionComplete]);
-
   // Add this useEffect to reset the flag after a small delay
   useEffect(() => {
     if (triggerSelectAll) {
@@ -340,6 +332,8 @@ export function FindPage({
                 size={CardSize.Normal}
                 onOpenWorldDetails={onSelectWorld}
                 onSelectedWorldsChange={onSelectedWorldsChange}
+                shouldClearSelection={clearSelection}
+                onClearSelectionComplete={onClearSelectionComplete}
                 selectionModeControl={isSelectionMode}
                 selectAll={triggerSelectAll}
               />
@@ -455,6 +449,10 @@ export function FindPage({
                   onSelectedWorldsChange={onSelectedWorldsChange}
                   selectionModeControl={isSelectionMode}
                   selectAll={triggerSelectAll}
+                  shouldClearSelection={clearSelection}
+                  onClearSelectionComplete={onClearSelectionComplete}
+                  worldsJustAdded={worldsJustAdded}
+                  onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
                 />
 
                 {/* Load more indicator */}
