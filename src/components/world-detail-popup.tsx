@@ -64,6 +64,7 @@ interface WorldDetailDialogProps {
     groupId: string,
   ) => Promise<GroupInstancePermissionInfo>;
   dontSaveToLocal?: boolean;
+  onDeleteWorld: (worldId: string) => void;
 }
 
 interface GroupInstance {
@@ -83,6 +84,7 @@ export function WorldDetailPopup({
   onGetGroups,
   onGetGroupPermissions,
   dontSaveToLocal,
+  onDeleteWorld,
 }: WorldDetailDialogProps) {
   const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
@@ -121,35 +123,35 @@ export function WorldDetailPopup({
           dontSaveToLocal ?? false,
         );
 
-        if (result.status === 'ok') {
-          setWorldDetails(result.data);
-        } else {
-          if (result.error.includes('World is not public')) {
-            setIsWorldNotPublic(true);
-            // Get cached world data
-            try {
-              const allWorldsResult = await commands.getAllWorlds();
-              const hiddenWorldsResult = await commands.getHiddenWorlds();
+        // if (result.status === 'ok') {
+        //   setWorldDetails(result.data);
+        // } else {
+        // if (result.error.includes('World is not public')) {
+        setIsWorldNotPublic(true);
+        // Get cached world data
+        try {
+          const allWorldsResult = await commands.getAllWorlds();
+          const hiddenWorldsResult = await commands.getHiddenWorlds();
 
-              let worldsList: WorldDisplayData[] = [];
-              if (allWorldsResult.status === 'ok') {
-                worldsList = allWorldsResult.data;
-              }
-
-              if (hiddenWorldsResult.status === 'ok') {
-                worldsList = [...worldsList, ...hiddenWorldsResult.data];
-              }
-
-              const cachedWorld = worldsList.find((w) => w.worldId === worldId);
-              if (cachedWorld) {
-                setCachedWorldData(cachedWorld);
-              }
-            } catch (cacheError) {
-              error(`Failed to fetch cached world data: ${cacheError}`);
-            }
+          let worldsList: WorldDisplayData[] = [];
+          if (allWorldsResult.status === 'ok') {
+            worldsList = allWorldsResult.data;
           }
-          setErrorState(result.error);
+
+          if (hiddenWorldsResult.status === 'ok') {
+            worldsList = [...worldsList, ...hiddenWorldsResult.data];
+          }
+
+          const cachedWorld = worldsList.find((w) => w.worldId === worldId);
+          if (cachedWorld) {
+            setCachedWorldData(cachedWorld);
+          }
+        } catch (cacheError) {
+          error(`Failed to fetch cached world data: ${cacheError}`);
         }
+        // }
+        // setErrorState(result.error);
+        // }
       } catch (e) {
         error(`Failed to fetch world details: ${e}`);
         setErrorState(e as string);
@@ -215,6 +217,13 @@ export function WorldDetailPopup({
       selectedRoles,
     );
     onOpenChange(false); // Close dialog after creating instance
+  };
+
+  const handleDeleteWorld = (worldId: string) => {
+    if (onDeleteWorld) {
+      onDeleteWorld(worldId);
+      onOpenChange(false); // Close dialog after deletion is initiated
+    }
   };
 
   return (
@@ -353,21 +362,32 @@ export function WorldDetailPopup({
                               <div>{cachedWorldData.lastUpdated}</div>
                             </div>
                           </div>
-                          <div className="mt-1">
-                            <a
-                              href={`https://vrchat.com/home/world/${cachedWorldData.worldId}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              title={t('world-detail:show-on-website')}
+                          <div className="mt-1 flex gap-2 flex-wrap">
+                            <Button
+                              variant="outline"
+                              className="flex items-center gap-1"
+                              asChild
                             >
-                              <Button
-                                variant="outline"
-                                className="w-full sm:w-auto flex items-center gap-2"
+                              <a
+                                href={`https://vrchat.com/home/world/${cachedWorldData.worldId}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={t('world-detail:show-on-website')}
                               >
                                 {t('world-detail:show-on-website')}
-                                <ExternalLink className="h-4 w-4 ml-1" />
-                              </Button>
-                            </a>
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+
+                            <Button
+                              variant="destructive"
+                              className="flex items-center gap-1 ml-auto"
+                              onClick={() =>
+                                handleDeleteWorld(cachedWorldData.worldId)
+                              }
+                            >
+                              {t('general:delete')}
+                            </Button>
                           </div>
                         </div>
                       </div>

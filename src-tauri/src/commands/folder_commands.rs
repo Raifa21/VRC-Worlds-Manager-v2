@@ -144,3 +144,12 @@ pub async fn get_tags_by_count() -> Result<Vec<String>, String> {
         e.to_string()
     })
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_world(world_id: String) -> Result<(), String> {
+    FolderManager::delete_world(world_id, FOLDERS.get(), WORLDS.get()).map_err(|e| {
+        log::error!("Error deleting world: {}", e);
+        e.to_string()
+    })
+}

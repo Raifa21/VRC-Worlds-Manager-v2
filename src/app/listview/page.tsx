@@ -31,6 +31,15 @@ import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
 import { warn, debug, trace, info, error } from '@tauri-apps/plugin-log';
 import { save } from '@tauri-apps/plugin-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { DeleteWorldDialog } from '@/components/delete-world-dialog';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -61,6 +70,11 @@ export default function ListView() {
   const [shouldClearMultiSelection, setShouldClearMultiSelection] =
     useState(false);
   const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]); // New state for added worlds
+  const [deleteConfirmWorld, setDeleteConfirmWorld] = useState<string | null>(
+    null,
+  );
+  const [deleteConfirmWorldName, setDeleteConfirmWorldName] =
+    useState<string>('');
 
   useEffect(() => {
     loadAllWorlds();
@@ -840,6 +854,72 @@ export default function ListView() {
     }
   };
 
+  // Add the onDelete function to handle world deletion
+  const onDelete = async (worldId: string) => {
+    try {
+      // Find the world name for the confirmation dialog
+      let worldName = 'this world';
+      const worldToDelete = worlds.find((w) => w.worldId === worldId);
+      if (worldToDelete) {
+        worldName = worldToDelete.name;
+      } else {
+        const allWorldsResult = await commands.getAllWorlds();
+        const hiddenWorldsResult = await commands.getHiddenWorlds();
+
+        let worldsList: WorldDisplayData[] = [];
+        if (allWorldsResult.status === 'ok') {
+          worldsList = allWorldsResult.data;
+        }
+        if (hiddenWorldsResult.status === 'ok') {
+          worldsList = [...worldsList, ...hiddenWorldsResult.data];
+        }
+
+        const foundWorld = worldsList.find((w) => w.worldId === worldId);
+        if (foundWorld) {
+          worldName = foundWorld.name;
+        }
+      }
+
+      setDeleteConfirmWorldName(worldName);
+      setDeleteConfirmWorld(worldId);
+    } catch (e) {
+      error(`Failed to prepare world deletion: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-delete-world'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const confirmDeleteWorld = async () => {
+    if (!deleteConfirmWorld) return;
+
+    try {
+      const worldId = deleteConfirmWorld;
+      const result = await commands.deleteWorld(worldId);
+
+      if (result.status === 'error') {
+        throw new Error(result.error);
+      }
+
+      setDeleteConfirmWorld(null);
+      await refreshCurrentView();
+      toast({
+        title: t('general:success-title'),
+        description: t('listview-page:world-deleted-success'),
+        duration: 2000,
+      });
+    } catch (e) {
+      error(`Failed to delete world: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-delete-world'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   const loadCardSize = async () => {
     try {
       const result = await commands.getCardSize();
@@ -1061,6 +1141,7 @@ export default function ListView() {
         onGetGroups={getGroups}
         onGetGroupPermissions={getGroupPermissions}
         dontSaveToLocal={isFindPage}
+        onDeleteWorld={onDelete}
       />
       <AddToFolderDialog
         open={showFolderDialog}
@@ -1082,6 +1163,14 @@ export default function ListView() {
           }
         }}
         onConfirm={handleDeleteFolder}
+      />
+      <DeleteWorldDialog
+        worldName={deleteConfirmWorldName}
+        isOpen={deleteConfirmWorld !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmWorld(null);
+        }}
+        onConfirm={confirmDeleteWorld}
       />
     </div>
   );

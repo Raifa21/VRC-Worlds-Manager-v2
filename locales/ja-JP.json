@@ -35,6 +35,7 @@
   "general:select-button": "選択",
   "general:select-all": "すべて選択",
   "general:date-added": "追加日",
+  "general:delete": "削除",
   
   "error-page:title": "アプリケーションの読み込みエラー",
   "error-page:retry": "再試行",
@@ -119,6 +120,10 @@
   "listview-page:error-get-group-permissions": "グループ権限の取得に失敗しました",
   "listview-page:error-load-card-size": "カードサイズの設定の読み込みに失敗しました",
   "listview-page:error-add-world": "ワールドの追加に失敗しました",
+  "listview-page:delete-world-title": "ワールドを削除",
+  "listview-page:delete-world-description": "ワールドを削除すると完全に消去されます。この操作は元に戻せません。",
+  "listview-page:world-deleted-success": "ワールドが削除されました",
+  "listview-page:error-delete-world": "ワールドの削除に失敗しました",
 
   "world-card:cross-platform": "クロスプラットフォーム",
   "world-card:pc": "PC",
