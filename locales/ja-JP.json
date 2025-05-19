@@ -34,6 +34,7 @@
   "general:hidden-worlds": "非表示のワールド",
   "general:select-button": "選択",
   "general:select-all": "すべて選択",
+  "general:date-added": "追加日",
   
   "error-page:title": "アプリケーションの読み込みエラー",
   "error-page:retry": "再試行",
@@ -130,7 +131,6 @@
   "world-grid:sort-placeholder": "並び替え...",
   "world-grid:sort-name": "名前",
   "world-grid:sort-favorites": "お気に入り",
-  "world-grid:sort-date-added": "追加日",
   "world-grid:sort-last-updated": "最終更新",
   "world-grid:move-multiple": "{0} 件のワールドをフォルダに移動",
   "world-grid:move-single": "ワールドをフォルダに移動",
@@ -164,6 +164,9 @@
   "world-detail:last-updated": "最終更新:",
   "world-detail:by": "作成者:",
   "world-detail:max": "最大",
+  "world-detail:world-name": "ワールド名",
+  "world-detail:show-on-website": "ウェブサイトで見る",
+  "world-detail:world-not-public": "このワールドは非公開、または削除されています。インスタンスを作成できません。",
 
   "add-world-dialog:add": "ワールドを追加",
   "add-world-dialog:description": "フォルダに追加するワールドのURLまたはワールドIDを入力してください",

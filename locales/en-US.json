@@ -34,6 +34,7 @@
   "general:hidden-worlds": "Hidden Worlds",
   "general:select-button": "Select",
   "general:select-all": "Select All",
+  "general:date-added": "Date Added",
 
   "error-page:title": "Error Loading Application",
   "error-page:retry": "Retry",
@@ -130,7 +131,6 @@
   "world-grid:sort-placeholder": "Sort by...",
   "world-grid:sort-name": "Name",
   "world-grid:sort-favorites": "Favorites",
-  "world-grid:sort-date-added": "Date Added",
   "world-grid:sort-last-updated": "Last Updated",
   "world-grid:move-multiple": "Move {0} worlds to folder",
   "world-grid:move-single": "Move world to folder",
@@ -164,6 +164,9 @@
   "world-detail:last-updated": "Last Updated:",
   "world-detail:by": "by",
   "world-detail:max": "max",
+  "world-detail:world-name": "World Name",
+  "world-detail:show-on-website": "Show on Website",
+  "world-detail:world-not-public": "This world is private or has been deleted. Instances cannot be created.",
 
   "add-world-dialog:add": "Add World",
   "add-world-dialog:description": "Enter a world URL or world ID to add to the folder",
