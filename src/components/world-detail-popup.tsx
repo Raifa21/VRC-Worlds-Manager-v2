@@ -123,35 +123,35 @@ export function WorldDetailPopup({
           dontSaveToLocal ?? false,
         );
 
-        // if (result.status === 'ok') {
-        //   setWorldDetails(result.data);
-        // } else {
-        // if (result.error.includes('World is not public')) {
-        setIsWorldNotPublic(true);
-        // Get cached world data
-        try {
-          const allWorldsResult = await commands.getAllWorlds();
-          const hiddenWorldsResult = await commands.getHiddenWorlds();
+        if (result.status === 'ok') {
+          setWorldDetails(result.data);
+        } else {
+          if (result.error.includes('World is not public')) {
+            setIsWorldNotPublic(true);
+            // Get cached world data
+            try {
+              const allWorldsResult = await commands.getAllWorlds();
+              const hiddenWorldsResult = await commands.getHiddenWorlds();
 
-          let worldsList: WorldDisplayData[] = [];
-          if (allWorldsResult.status === 'ok') {
-            worldsList = allWorldsResult.data;
-          }
+              let worldsList: WorldDisplayData[] = [];
+              if (allWorldsResult.status === 'ok') {
+                worldsList = allWorldsResult.data;
+              }
 
-          if (hiddenWorldsResult.status === 'ok') {
-            worldsList = [...worldsList, ...hiddenWorldsResult.data];
-          }
+              if (hiddenWorldsResult.status === 'ok') {
+                worldsList = [...worldsList, ...hiddenWorldsResult.data];
+              }
 
-          const cachedWorld = worldsList.find((w) => w.worldId === worldId);
-          if (cachedWorld) {
-            setCachedWorldData(cachedWorld);
+              const cachedWorld = worldsList.find((w) => w.worldId === worldId);
+              if (cachedWorld) {
+                setCachedWorldData(cachedWorld);
+              }
+            } catch (cacheError) {
+              error(`Failed to fetch cached world data: ${cacheError}`);
+            }
           }
-        } catch (cacheError) {
-          error(`Failed to fetch cached world data: ${cacheError}`);
+          setErrorState(result.error);
         }
-        // }
-        // setErrorState(result.error);
-        // }
       } catch (e) {
         error(`Failed to fetch world details: ${e}`);
         setErrorState(e as string);
