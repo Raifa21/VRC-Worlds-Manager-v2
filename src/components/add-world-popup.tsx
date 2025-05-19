@@ -189,7 +189,7 @@ export function AddWorldPopup({
           {previewWorld && (
             <Card className="col-span-4">
               <CardHeader>
-                <CardTitle>World Preview</CardTitle>
+                <CardTitle>{t('add-world-dialog:preview')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between">
