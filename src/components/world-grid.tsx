@@ -1,6 +1,6 @@
 import { WorldCardPreview } from './world-card';
 import { CardSize } from '@/types/preferences';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { toRomaji } from 'wanakana';
 import { SpecialFolders } from '@/types/folders';
@@ -129,6 +129,11 @@ export function WorldGrid({
     return numCols;
   };
 
+  // Wrap clearSelection in useCallback to prevent stale closures
+  const clearSelection = useCallback(() => {
+    setSelectedWorlds([]);
+  }, []);
+
   useEffect(() => {
     if (shouldClearSelection) {
       clearSelection();
@@ -136,14 +141,14 @@ export function WorldGrid({
 
       onClearSelectionComplete?.();
     }
-  }, [shouldClearSelection, onSelectedWorldsChange, onClearSelectionComplete]);
+  }, [shouldClearSelection, onClearSelectionComplete, clearSelection]);
 
   useEffect(() => {
     setIsSelectionMode(selectionModeControl?.valueOf() ?? false);
     if (!selectionModeControl) {
       clearSelection();
     }
-  }, [selectionModeControl]);
+  }, [selectionModeControl, clearSelection]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -169,7 +174,7 @@ export function WorldGrid({
 
     window.addEventListener('keydown', handleEscKey);
     return () => window.removeEventListener('keydown', handleEscKey);
-  }, [isSelectionMode, selectedWorlds]);
+  }, [isSelectionMode, selectedWorlds, clearSelection]);
 
   useEffect(() => {
     // when folder changes, set selected worlds if selection mode is on
@@ -368,10 +373,6 @@ export function WorldGrid({
       }
       return Array.from(newSelection);
     });
-  };
-
-  const clearSelection = () => {
-    setSelectedWorlds([]);
   };
 
   useEffect(() => {
