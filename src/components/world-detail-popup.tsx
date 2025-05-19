@@ -302,7 +302,7 @@ export function WorldDetailPopup({
                             favorites: cachedWorldData.favorites,
                             lastUpdated: cachedWorldData.lastUpdated,
                             visits: cachedWorldData.visits,
-                            dateAdded: '',
+                            dateAdded: cachedWorldData.dateAdded,
                             platform:
                               cachedWorldData.platform as unknown as import('@/types/worlds').Platform,
                             folders: [],
