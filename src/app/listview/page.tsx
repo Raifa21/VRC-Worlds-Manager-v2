@@ -172,6 +172,7 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-worlds'),
+        variant: 'destructive',
       });
     }
   };
@@ -191,6 +192,7 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-worlds'),
+        variant: 'destructive',
       });
     }
   };
@@ -240,6 +242,7 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-create-folder'),
+        variant: 'destructive',
       });
     }
   };

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { info, error } from '@tauri-apps/plugin-log';
 import Image from 'next/image';
 import {
@@ -19,7 +18,6 @@ import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
 import { ChevronRight } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
 import {
   GroupInstanceCreatePermission,
   UserGroup,

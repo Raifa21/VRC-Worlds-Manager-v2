@@ -9,8 +9,6 @@ import { Platform } from '@/types/worlds';
 import { WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { Button } from './ui/button';
-import { commands } from '@/lib/bindings';
-import { error, info } from '@tauri-apps/plugin-log';
 
 interface WorldCardPreviewProps {
   size: CardSize;
