@@ -31,7 +31,7 @@ export function DeleteWorldDialog({
         <DialogHeader>
           <DialogTitle>{t('listview-page:delete-world-title')}</DialogTitle>
           <DialogDescription>
-            {t('listview-page:delete-world-description', worldName)}
+            {t('listview-page:delete-world-description')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
