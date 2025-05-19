@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { info, error } from '@tauri-apps/plugin-log';
 import Image from 'next/image';
 import {
@@ -13,27 +12,33 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, ExternalLink } from 'lucide-react';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
 import { ChevronRight } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
 import {
   GroupInstanceCreatePermission,
   UserGroup,
   GroupInstancePermissionInfo,
   GroupRole,
+  commands,
 } from '@/lib/bindings';
+import { WorldDisplayData } from '@/lib/bindings';
+import { WorldDetails } from '@/lib/bindings';
+import { WorldCardPreview } from './world-card';
+import { CardSize } from '@/types/preferences';
 import { GroupInstanceCreator } from './group-instance-creator';
 import { Platform } from '@/types/worlds';
 import {
-  WorldDetails,
   GroupInstanceType,
   InstanceType,
   Region,
   GROUP_INSTANCE_TYPES,
 } from '@/types/instances';
 import { useLocalization } from '@/hooks/use-localization';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 interface WorldDetailDialogProps {
   open: boolean;
@@ -57,6 +62,7 @@ interface WorldDetailDialogProps {
     groupId: string,
   ) => Promise<GroupInstancePermissionInfo>;
   dontSaveToLocal?: boolean;
+  onDeleteWorld: (worldId: string) => void;
 }
 
 interface GroupInstance {
@@ -76,6 +82,7 @@ export function WorldDetailPopup({
   onGetGroups,
   onGetGroupPermissions,
   dontSaveToLocal,
+  onDeleteWorld,
 }: WorldDetailDialogProps) {
   const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
@@ -95,20 +102,54 @@ export function WorldDetailPopup({
     'normal' | 'group'
   >('normal');
 
+  const [isWorldNotPublic, setIsWorldNotPublic] = useState<boolean>(false);
+  const [cachedWorldData, setCachedWorldData] =
+    useState<WorldDisplayData | null>(null);
+
   useEffect(() => {
     const fetchWorldDetails = async () => {
       if (!open) return;
 
       setIsLoading(true);
       setErrorState(null);
+      setIsWorldNotPublic(false);
 
       try {
         info(`Is dontSaveToLocal: ${dontSaveToLocal}`);
-        const details = await invoke<WorldDetails>('get_world', {
+        const result = await commands.getWorld(
           worldId,
-          dontSaveToLocal,
-        });
-        setWorldDetails(details);
+          dontSaveToLocal ?? false,
+        );
+
+        if (result.status === 'ok') {
+          setWorldDetails(result.data);
+        } else {
+          if (result.error.includes('World is not public')) {
+            setIsWorldNotPublic(true);
+            // Get cached world data
+            try {
+              const allWorldsResult = await commands.getAllWorlds();
+              const hiddenWorldsResult = await commands.getHiddenWorlds();
+
+              let worldsList: WorldDisplayData[] = [];
+              if (allWorldsResult.status === 'ok') {
+                worldsList = allWorldsResult.data;
+              }
+
+              if (hiddenWorldsResult.status === 'ok') {
+                worldsList = [...worldsList, ...hiddenWorldsResult.data];
+              }
+
+              const cachedWorld = worldsList.find((w) => w.worldId === worldId);
+              if (cachedWorld) {
+                setCachedWorldData(cachedWorld);
+              }
+            } catch (cacheError) {
+              error(`Failed to fetch cached world data: ${cacheError}`);
+            }
+          }
+          setErrorState(result.error);
+        }
       } catch (e) {
         error(`Failed to fetch world details: ${e}`);
         setErrorState(e as string);
@@ -176,6 +217,11 @@ export function WorldDetailPopup({
     onOpenChange(false); // Close dialog after creating instance
   };
 
+  const handleDeleteWorld = (worldId: string) => {
+    onDeleteWorld(worldId);
+    onOpenChange(false); // Close dialog after deletion is initiated
+  };
+
   return (
     <Dialog
       open={open}
@@ -224,6 +270,126 @@ export function WorldDetailPopup({
             {isLoading ? (
               <div className="flex items-center justify-center p-4">
                 <span>{t('world-detail:loading-details')}</span>
+              </div>
+            ) : isWorldNotPublic && cachedWorldData ? (
+              // Show the 'world not public' display with cached data
+              <div className="flex flex-col gap-4">
+                <Card className="w-full">
+                  <CardHeader>
+                    <Alert className="flex">
+                      <span className="flex items-center h-full mr-2">
+                        <AlertCircle className="h-5 w-5" />
+                      </span>
+                      <AlertDescription>
+                        {t('world-detail:world-not-public')}
+                      </AlertDescription>
+                    </Alert>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col sm:flex-row gap-6 justify-between">
+                      <div className="flex justify-center items-center pl-8 w-full sm:w-1/3">
+                        <WorldCardPreview
+                          size={CardSize.Normal}
+                          world={{
+                            worldId: cachedWorldData.worldId,
+                            name: cachedWorldData.name,
+                            thumbnailUrl: cachedWorldData.thumbnailUrl,
+                            authorName: cachedWorldData.authorName,
+                            favorites: cachedWorldData.favorites,
+                            lastUpdated: cachedWorldData.lastUpdated,
+                            visits: cachedWorldData.visits,
+                            dateAdded: cachedWorldData.dateAdded,
+                            platform:
+                              cachedWorldData.platform as unknown as import('@/types/worlds').Platform,
+                            folders: [],
+                          }}
+                        />
+                      </div>
+                      <div className="ml-8 sm:pl-8 sm:border-l border-border sm:w-2/3">
+                        <div className="flex flex-col gap-4">
+                          <div>
+                            <div className="text-sm font-semibold mb-3">
+                              {t('world-detail:details')}
+                            </div>
+                            <div className="grid grid-cols-[1fr_1.5fr] sm:grid-cols-[120px_1fr] gap-x-6 gap-y-2 text-sm">
+                              <div className="text-gray-500">
+                                {t('world-detail:world-name')}:
+                              </div>
+                              <div className="truncate">
+                                {cachedWorldData.name}
+                              </div>
+
+                              <div className="text-gray-500">
+                                {t('general:sort-author')}:
+                              </div>
+                              <div className="truncate">
+                                {cachedWorldData.authorName}
+                              </div>
+
+                              <div className="text-gray-500">
+                                {t('general:date-added')}:
+                              </div>
+                              <div>
+                                {cachedWorldData.dateAdded
+                                  ? (() => {
+                                      const [date, time] =
+                                        cachedWorldData.dateAdded.split('T');
+                                      let timeWithoutMs = time
+                                        ?.split('.')[0]
+                                        ?.replace('Z', '');
+                                      return (
+                                        <>
+                                          {date}
+                                          {timeWithoutMs && (
+                                            <span className="text-gray-500">
+                                              {' '}
+                                              {timeWithoutMs}
+                                            </span>
+                                          )}
+                                        </>
+                                      );
+                                    })()
+                                  : ''}
+                              </div>
+
+                              <div className="text-gray-500">
+                                {t('world-detail:last-updated')}
+                              </div>
+                              <div>{cachedWorldData.lastUpdated}</div>
+                            </div>
+                          </div>
+                          <div className="mt-1 flex gap-2 flex-wrap">
+                            <Button
+                              variant="outline"
+                              className="flex items-center gap-1"
+                              asChild
+                            >
+                              <a
+                                href={`https://vrchat.com/home/world/${cachedWorldData.worldId}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={t('world-detail:show-on-website')}
+                              >
+                                {t('world-detail:show-on-website')}
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+
+                            <Button
+                              variant="destructive"
+                              className="flex items-center gap-1 ml-auto"
+                              onClick={() =>
+                                handleDeleteWorld(cachedWorldData.worldId)
+                              }
+                            >
+                              {t('general:delete')}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             ) : (
               worldDetails && (
@@ -404,7 +570,7 @@ export function WorldDetailPopup({
                         <div className="text-sm font-semibold mb-2">
                           {t('world-detail:description')}
                         </div>
-                        <div className="text-sm">
+                        <div className="text-sm break-words overflow-wrap-anywhere">
                           {worldDetails.description}
                         </div>
                       </div>

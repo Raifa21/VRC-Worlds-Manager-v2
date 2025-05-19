@@ -1,7 +1,7 @@
 use crate::api::group::GroupInstancePermissionInfo;
 use crate::api::group::UserGroup;
-use crate::api::world::VRChatWorld;
 use crate::definitions::WorldDetails;
+use crate::definitions::WorldDisplayData;
 use crate::services::FolderManager;
 use crate::ApiService;
 use crate::AUTHENTICATOR;
@@ -63,7 +63,9 @@ pub async fn logout() -> Result<(), String> {
 pub async fn get_favorite_worlds() -> Result<(), String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
 
-    let worlds = match ApiService::get_favorite_worlds(cookie_store).await {
+    let user_id = INITSTATE.get().read().await.user_id.clone();
+
+    let worlds = match ApiService::get_favorite_worlds(cookie_store, user_id).await {
         Ok(worlds) => worlds,
         Err(e) => {
             log::info!("Failed to fetch favorite worlds: {}", e);
@@ -94,7 +96,10 @@ pub async fn get_world(
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
     let world_copy = WORLDS.get().read().unwrap().clone();
 
-    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy).await {
+    let user_id = INITSTATE.get().read().await.user_id.clone();
+
+    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy, user_id).await
+    {
         Ok(world) => world,
         Err(e) => {
             log::info!("Failed to fetch world: {}", e);
@@ -125,7 +130,10 @@ pub async fn check_world_info(world_id: String) -> Result<WorldDetails, String> 
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
     let world_copy = WORLDS.get().read().unwrap().clone();
 
-    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy).await {
+    let user_id = INITSTATE.get().read().await.user_id.clone();
+
+    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy, user_id).await
+    {
         Ok(world) => world,
         Err(e) => {
             log::info!("Failed to fetch world: {}", e);
@@ -139,7 +147,7 @@ pub async fn check_world_info(world_id: String) -> Result<WorldDetails, String> 
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_recently_visited_worlds() -> Result<Vec<VRChatWorld>, String> {
+pub async fn get_recently_visited_worlds() -> Result<Vec<WorldDisplayData>, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
 
     let worlds = match ApiService::get_recently_visited_worlds(cookie_store).await {
@@ -160,7 +168,7 @@ pub async fn search_worlds(
     tag: String,
     search: String,
     page: usize,
-) -> Result<Vec<VRChatWorld>, String> {
+) -> Result<Vec<WorldDisplayData>, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
 
     let sort = if sort.is_empty() { None } else { Some(sort) };

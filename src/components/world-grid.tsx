@@ -1,10 +1,10 @@
 import { WorldCardPreview } from './world-card';
 import { CardSize } from '@/types/preferences';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { toRomaji } from 'wanakana';
 import { SpecialFolders } from '@/types/folders';
-import { WorldDisplayData } from '@/types/worlds';
+import { WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import {
   ContextMenu,
@@ -46,7 +46,11 @@ interface WorldGridProps {
   onShowFolderDialog?: (worlds: string[]) => void;
   onSelectedWorldsChange: (worldIds: string[]) => void;
   selectionModeControl?: boolean;
-  selectAll?: boolean; // Add this prop
+  selectAll?: boolean;
+  shouldClearSelection: boolean;
+  onClearSelectionComplete?: () => void;
+  worldsJustAdded?: string[];
+  onWorldsJustAddedProcessed?: () => void;
 }
 
 type SortOption =
@@ -81,6 +85,10 @@ export function WorldGrid({
   onSelectedWorldsChange,
   selectionModeControl,
   selectAll,
+  shouldClearSelection,
+  onClearSelectionComplete,
+  worldsJustAdded,
+  onWorldsJustAddedProcessed,
 }: WorldGridProps) {
   const { t } = useLocalization();
   const cardWidths = {
@@ -121,12 +129,26 @@ export function WorldGrid({
     return numCols;
   };
 
+  // Wrap clearSelection in useCallback to prevent stale closures
+  const clearSelection = useCallback(() => {
+    setSelectedWorlds([]);
+  }, []);
+
+  useEffect(() => {
+    if (shouldClearSelection) {
+      clearSelection();
+      info('Cleared selection');
+
+      onClearSelectionComplete?.();
+    }
+  }, [shouldClearSelection, onClearSelectionComplete, clearSelection]);
+
   useEffect(() => {
     setIsSelectionMode(selectionModeControl?.valueOf() ?? false);
     if (!selectionModeControl) {
       clearSelection();
     }
-  }, [selectionModeControl]);
+  }, [selectionModeControl, clearSelection]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -152,7 +174,7 @@ export function WorldGrid({
 
     window.addEventListener('keydown', handleEscKey);
     return () => window.removeEventListener('keydown', handleEscKey);
-  }, [isSelectionMode, selectedWorlds]);
+  }, [isSelectionMode, selectedWorlds, clearSelection]);
 
   useEffect(() => {
     // when folder changes, set selected worlds if selection mode is on
@@ -185,14 +207,14 @@ export function WorldGrid({
           error(`Error fetching worlds: ${existingWorldsResult.error}`);
           throw new Error(existingWorldsResult.error);
         }
-        const existingWorlds = existingWorldsResult.data as WorldDisplayData[];
+        const existingWorlds = existingWorldsResult.data;
 
         const hiddenWorldsResult = await commands.getHiddenWorlds();
         if (hiddenWorldsResult.status !== 'ok') {
           error(`Error fetching hidden worlds: ${hiddenWorldsResult.error}`);
           throw new Error(hiddenWorldsResult.error);
         }
-        const hiddenWorlds = hiddenWorldsResult.data as WorldDisplayData[];
+        const hiddenWorlds = hiddenWorldsResult.data;
 
         //check if the worldId exists in the collection
         const existingIds = worldIds.filter(
@@ -353,10 +375,6 @@ export function WorldGrid({
     });
   };
 
-  const clearSelection = () => {
-    setSelectedWorlds([]);
-  };
-
   useEffect(() => {
     if (!selectAll) return;
 
@@ -369,6 +387,19 @@ export function WorldGrid({
 
     onSelectedWorldsChange(worldsToSelect);
   }, [selectAll, sortedAndFilteredWorlds, isFindPage, existingWorldIds]);
+
+  useEffect(() => {
+    if (worldsJustAdded && worldsJustAdded.length > 0) {
+      setExistingWorldIds((prev) => {
+        const newWorldIds = new Set(prev);
+        worldsJustAdded.forEach((id) => newWorldIds.add(id));
+        return newWorldIds;
+      });
+
+      // Notify parent component that we've processed these
+      onWorldsJustAddedProcessed?.();
+    }
+  }, [worldsJustAdded, onWorldsJustAddedProcessed]);
 
   return (
     <div ref={containerRef} className="h-full flex flex-col">
@@ -401,7 +432,7 @@ export function WorldGrid({
                     {t('world-grid:sort-favorites')}
                   </SelectItem>
                   <SelectItem value="dateAdded">
-                    {t('world-grid:sort-date-added')}
+                    {t('general:date-added')}
                   </SelectItem>
                   <SelectItem value="lastUpdated">
                     {t('world-grid:sort-last-updated')}

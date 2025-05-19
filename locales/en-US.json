@@ -34,6 +34,8 @@
   "general:hidden-worlds": "Hidden Worlds",
   "general:select-button": "Select",
   "general:select-all": "Select All",
+  "general:date-added": "Date Added",
+  "general:delete": "Delete",
 
   "error-page:title": "Error Loading Application",
   "error-page:retry": "Retry",
@@ -118,6 +120,10 @@
   "listview-page:error-get-group-permissions": "Failed to get group permissions",
   "listview-page:error-load-card-size": "Failed to load card size preference",
   "listview-page:error-add-world": "Failed to add world",
+  "listview-page:delete-world-title": "Delete World",
+  "listview-page:delete-world-description": "This will remove the world completely. This action cannot be undone.",
+  "listview-page:world-deleted-success": "World deleted successfully",
+  "listview-page:error-delete-world": "Failed to delete world",
 
   "world-card:cross-platform": "Cross-platform",
   "world-card:pc": "PC",
@@ -130,7 +136,6 @@
   "world-grid:sort-placeholder": "Sort by...",
   "world-grid:sort-name": "Name",
   "world-grid:sort-favorites": "Favorites",
-  "world-grid:sort-date-added": "Date Added",
   "world-grid:sort-last-updated": "Last Updated",
   "world-grid:move-multiple": "Move {0} worlds to folder",
   "world-grid:move-single": "Move world to folder",
@@ -164,6 +169,10 @@
   "world-detail:last-updated": "Last Updated:",
   "world-detail:by": "by",
   "world-detail:max": "max",
+  "world-detail:world-name": "World Name",
+  "world-detail:show-on-website": "Show on Website",
+  "world-detail:world-not-public": "This world is private or has been deleted. Instances cannot be created.",
+
 
   "add-world-dialog:add": "Add World",
   "add-world-dialog:description": "Enter a world URL or world ID to add to the folder",

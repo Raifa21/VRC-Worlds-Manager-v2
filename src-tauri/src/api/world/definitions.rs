@@ -2,7 +2,7 @@ use chrono::DateTime;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::definitions::WorldApiData;
+use crate::definitions::{Platform, WorldApiData, WorldDisplayData};
 
 #[derive(Debug, Eq, PartialEq, Hash, Deserialize, Serialize, Clone, Type)]
 #[serde(rename_all = "camelCase")]
@@ -267,6 +267,39 @@ pub struct VRChatWorld {
     pub unity_packages: Vec<UnityPackage>,
     #[serde(rename = "updated_at")]
     pub updated_at: String,
+}
+
+impl TryInto<WorldDisplayData> for VRChatWorld {
+    type Error = chrono::ParseError;
+
+    fn try_into(self) -> Result<WorldDisplayData, Self::Error> {
+        let platform: Vec<String> = self
+            .unity_packages
+            .iter()
+            .map(|package| package.platform.clone())
+            .collect();
+
+        Ok(WorldDisplayData {
+            world_id: self.id.clone(),
+            name: self.name.clone(),
+            thumbnail_url: self.image_url.clone(),
+            author_name: self.author_name.clone(),
+            favorites: self.favorites,
+            last_updated: self.updated_at,
+            visits: self.visits.unwrap_or(0),
+            date_added: "".to_string(),
+            platform: if platform.contains(&"standalonewindows".to_string())
+                && platform.contains(&"android".to_string())
+            {
+                Platform::CrossPlatform
+            } else if platform.contains(&"android".to_string()) {
+                Platform::Quest
+            } else {
+                Platform::PC
+            },
+            folders: Vec::new(),
+        })
+    }
 }
 
 #[derive(Default, Debug, PartialEq, Serialize)]

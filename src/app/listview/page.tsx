@@ -7,12 +7,12 @@ import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
 import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-sidebar';
-import { Platform, WorldDisplayData } from '@/types/worlds';
+import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react'; // For the reload icon
-import { commands } from '@/lib/bindings';
+import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
@@ -31,6 +31,15 @@ import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
 import { warn, debug, trace, info, error } from '@tauri-apps/plugin-log';
 import { save } from '@tauri-apps/plugin-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { DeleteWorldDialog } from '@/components/delete-world-dialog';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -58,8 +67,14 @@ export default function ListView() {
   const [selectedWorldsState, setSelectedWorldsState] = useState<
     Map<string | SpecialFolders, string[]>
   >(new Map<string | SpecialFolders, string[]>());
-  const [shouldClearFindSelection, setShouldClearFindSelection] =
+  const [shouldClearMultiSelection, setShouldClearMultiSelection] =
     useState(false);
+  const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]); // New state for added worlds
+  const [deleteConfirmWorld, setDeleteConfirmWorld] = useState<string | null>(
+    null,
+  );
+  const [deleteConfirmWorldName, setDeleteConfirmWorldName] =
+    useState<string>('');
 
   useEffect(() => {
     loadAllWorlds();
@@ -143,25 +158,41 @@ export default function ListView() {
 
   const loadAllWorlds = async () => {
     try {
-      const worlds = await invoke<WorldDisplayData[]>('get_all_worlds');
-      setWorlds(worlds);
+      const worlds = await commands.getAllWorlds();
+      if (worlds.status === 'ok') {
+        setWorlds(worlds.data);
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: worlds.error,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-worlds'),
+        variant: 'destructive',
       });
     }
   };
   const loadUnclassifiedWorlds = async () => {
     try {
-      const worlds = await invoke<WorldDisplayData[]>(
-        'get_unclassified_worlds',
-      );
-      setWorlds(worlds);
+      const worlds = await commands.getUnclassifiedWorlds();
+      if (worlds.status === 'ok') {
+        setWorlds(worlds.data);
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: worlds.error,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-worlds'),
+        variant: 'destructive',
       });
     }
   };
@@ -211,6 +242,7 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-create-folder'),
+        variant: 'destructive',
       });
     }
   };
@@ -245,15 +277,22 @@ export default function ListView() {
 
   const loadFolderContents = async (folder: string) => {
     try {
-      const worlds = await invoke<WorldDisplayData[]>('get_worlds', {
-        folderName: folder,
-      });
-      setWorlds(worlds);
-      setCurrentFolder(folder);
+      const result = await commands.getWorlds(folder);
+      if (result.status === 'ok') {
+        setWorlds(result.data);
+        setCurrentFolder(folder);
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: result.error,
+          variant: 'destructive',
+        });
+      }
     } catch (e) {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-worlds'),
+        variant: 'destructive',
       });
       error(`Error loading worlds: ${e}`);
     }
@@ -546,6 +585,10 @@ export default function ListView() {
         // Wait for all promises to resolve in parallel
         const worldResults = await Promise.all(worldPromises);
 
+        const worldIds = worldsToAdd.map((world) => world.worldId);
+
+        setWorldsJustAdded(worldIds);
+
         // Check if any of the results have errors
         const errorResult = worldResults.find(
           (result) => result.status === 'error',
@@ -553,9 +596,6 @@ export default function ListView() {
         if (errorResult) {
           throw new Error(errorResult.error);
         }
-
-        setSelectedWorldsForFolder([]);
-        setShouldClearFindSelection(true);
         toast({
           title: t('listview-page:worlds-added-title'),
           description:
@@ -620,6 +660,9 @@ export default function ListView() {
         error(`Failed during folder operations: ${e}`);
         throw e; // Re-throw to be caught by the outer try/catch
       }
+
+      setSelectedWorldsForFolder([]);
+      setShouldClearMultiSelection(true);
 
       if (currentFolder != SpecialFolders.Find) {
         toast({
@@ -814,6 +857,72 @@ export default function ListView() {
     }
   };
 
+  // Add the onDelete function to handle world deletion
+  const onDelete = async (worldId: string) => {
+    try {
+      // Find the world name for the confirmation dialog
+      let worldName = 'this world';
+      const worldToDelete = worlds.find((w) => w.worldId === worldId);
+      if (worldToDelete) {
+        worldName = worldToDelete.name;
+      } else {
+        const allWorldsResult = await commands.getAllWorlds();
+        const hiddenWorldsResult = await commands.getHiddenWorlds();
+
+        let worldsList: WorldDisplayData[] = [];
+        if (allWorldsResult.status === 'ok') {
+          worldsList = allWorldsResult.data;
+        }
+        if (hiddenWorldsResult.status === 'ok') {
+          worldsList = [...worldsList, ...hiddenWorldsResult.data];
+        }
+
+        const foundWorld = worldsList.find((w) => w.worldId === worldId);
+        if (foundWorld) {
+          worldName = foundWorld.name;
+        }
+      }
+
+      setDeleteConfirmWorldName(worldName);
+      setDeleteConfirmWorld(worldId);
+    } catch (e) {
+      error(`Failed to prepare world deletion: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-delete-world'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const confirmDeleteWorld = async () => {
+    if (!deleteConfirmWorld) return;
+
+    try {
+      const worldId = deleteConfirmWorld;
+      const result = await commands.deleteWorld(worldId);
+
+      if (result.status === 'error') {
+        throw new Error(result.error);
+      }
+
+      setDeleteConfirmWorld(null);
+      await refreshCurrentView();
+      toast({
+        title: t('general:success-title'),
+        description: t('listview-page:world-deleted-success'),
+        duration: 2000,
+      });
+    } catch (e) {
+      error(`Failed to delete world: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-delete-world'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   const loadCardSize = async () => {
     try {
       const result = await commands.getCardSize();
@@ -905,8 +1014,10 @@ export default function ListView() {
           onSelectedWorldsChange={(selectedWorlds) => {
             setSelectedWorldsForFolder(selectedWorlds);
           }}
-          clearSelection={shouldClearFindSelection}
-          onClearSelectionComplete={() => setShouldClearFindSelection(false)}
+          clearSelection={shouldClearMultiSelection}
+          onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
+          worldsJustAdded={worldsJustAdded}
+          onWorldsJustAddedProcessed={() => setWorldsJustAdded([])}
         />
       );
     }
@@ -961,6 +1072,8 @@ export default function ListView() {
             onSelectedWorldsChange={(selectedWorlds) => {
               setSelectedWorldsForFolder(selectedWorlds);
             }}
+            shouldClearSelection={shouldClearMultiSelection}
+            onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
           />
         </div>
       </>
@@ -1031,6 +1144,7 @@ export default function ListView() {
         onGetGroups={getGroups}
         onGetGroupPermissions={getGroupPermissions}
         dontSaveToLocal={isFindPage}
+        onDeleteWorld={onDelete}
       />
       <AddToFolderDialog
         open={showFolderDialog}
@@ -1052,6 +1166,14 @@ export default function ListView() {
           }
         }}
         onConfirm={handleDeleteFolder}
+      />
+      <DeleteWorldDialog
+        worldName={deleteConfirmWorldName}
+        isOpen={deleteConfirmWorld !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmWorld(null);
+        }}
+        onConfirm={confirmDeleteWorld}
       />
     </div>
   );
