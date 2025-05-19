@@ -220,10 +220,8 @@ export function WorldDetailPopup({
   };
 
   const handleDeleteWorld = (worldId: string) => {
-    if (onDeleteWorld) {
-      onDeleteWorld(worldId);
-      onOpenChange(false); // Close dialog after deletion is initiated
-    }
+    onDeleteWorld(worldId);
+    onOpenChange(false); // Close dialog after deletion is initiated
   };
 
   return (
