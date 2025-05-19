@@ -962,4 +962,124 @@ mod tests {
         let result = FolderManager::move_folder("NonExistent".to_string(), 0, &state.folders);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_delete_world() {
+        let state = setup_test_state();
+        let world_id = "test_world_to_delete".to_string();
+        let folder_name = "Test Folder".to_string();
+
+        // Add a test world
+        add_test_world_to_state(world_id.clone(), &state.worlds).unwrap();
+
+        // Create a folder and add the world to it
+        let _ = FolderManager::create_folder(folder_name.clone(), &state.folders).unwrap();
+        let _ = FolderManager::add_world_to_folder(
+            folder_name.clone(),
+            world_id.clone(),
+            &state.folders,
+            &state.worlds,
+        )
+        .unwrap();
+
+        // Verify world is in the folder
+        let worlds_in_folder =
+            FolderManager::get_worlds(folder_name.clone(), &state.folders, &state.worlds).unwrap();
+        assert_eq!(worlds_in_folder.len(), 1);
+        assert_eq!(worlds_in_folder[0].world_id, world_id);
+
+        // Delete the world
+        let result = FolderManager::delete_world(world_id.clone(), &state.folders, &state.worlds);
+        assert!(result.is_ok());
+
+        // Verify world is removed from the folder
+        let worlds_in_folder =
+            FolderManager::get_worlds(folder_name, &state.folders, &state.worlds).unwrap();
+        assert_eq!(worlds_in_folder.len(), 0);
+
+        // Verify the world is no longer in the worlds list
+        let all_worlds = FolderManager::get_all_worlds(&state.worlds).unwrap();
+        assert!(all_worlds.iter().find(|w| w.world_id == world_id).is_none());
+
+        // Test deleting a non-existent world
+        let non_existent_id = "non_existent_world".to_string();
+        let result = FolderManager::delete_world(non_existent_id, &state.folders, &state.worlds);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_delete_world_in_multiple_folders() {
+        let state = setup_test_state();
+        let world_id = "test_world_multi_folders".to_string();
+        let folder1 = "Folder One".to_string();
+        let folder2 = "Folder Two".to_string();
+
+        // Add a test world
+        add_test_world_to_state(world_id.clone(), &state.worlds).unwrap();
+
+        // Create two folders and add the world to both
+        let _ = FolderManager::create_folder(folder1.clone(), &state.folders).unwrap();
+        let _ = FolderManager::create_folder(folder2.clone(), &state.folders).unwrap();
+
+        let _ = FolderManager::add_world_to_folder(
+            folder1.clone(),
+            world_id.clone(),
+            &state.folders,
+            &state.worlds,
+        )
+        .unwrap();
+
+        let _ = FolderManager::add_world_to_folder(
+            folder2.clone(),
+            world_id.clone(),
+            &state.folders,
+            &state.worlds,
+        )
+        .unwrap();
+
+        // Verify world is in both folders
+        let worlds_in_folder1 =
+            FolderManager::get_worlds(folder1.clone(), &state.folders, &state.worlds).unwrap();
+        assert_eq!(worlds_in_folder1.len(), 1);
+
+        let worlds_in_folder2 =
+            FolderManager::get_worlds(folder2.clone(), &state.folders, &state.worlds).unwrap();
+        assert_eq!(worlds_in_folder2.len(), 1);
+
+        // Delete the world
+        let result = FolderManager::delete_world(world_id.clone(), &state.folders, &state.worlds);
+        assert!(result.is_ok());
+
+        // Verify world is removed from both folders
+        let worlds_in_folder1 =
+            FolderManager::get_worlds(folder1, &state.folders, &state.worlds).unwrap();
+        assert_eq!(worlds_in_folder1.len(), 0);
+
+        let worlds_in_folder2 =
+            FolderManager::get_worlds(folder2, &state.folders, &state.worlds).unwrap();
+        assert_eq!(worlds_in_folder2.len(), 0);
+    }
+
+    #[test]
+    fn test_delete_hidden_world() {
+        let state = setup_test_state();
+        let world_id = "test_hidden_world".to_string();
+
+        // Add a test world and hide it
+        add_test_world_to_state(world_id.clone(), &state.worlds).unwrap();
+        let _ = FolderManager::hide_world(world_id.clone(), &state.folders, &state.worlds).unwrap();
+
+        // Verify the world is in hidden worlds
+        let hidden_worlds = FolderManager::get_hidden_worlds(&state.worlds).unwrap();
+        assert_eq!(hidden_worlds.len(), 1);
+        assert_eq!(hidden_worlds[0].world_id, world_id);
+
+        // Delete the hidden world
+        let result = FolderManager::delete_world(world_id.clone(), &state.folders, &state.worlds);
+        assert!(result.is_ok());
+
+        // Verify the world is no longer in hidden worlds
+        let hidden_worlds = FolderManager::get_hidden_worlds(&state.worlds).unwrap();
+        assert_eq!(hidden_worlds.len(), 0);
+    }
 }
