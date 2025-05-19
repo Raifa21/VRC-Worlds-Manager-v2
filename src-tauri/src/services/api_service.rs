@@ -302,8 +302,9 @@ impl ApiService {
         };
 
         for world in favorite_worlds {
-            // Only include public worlds, or worlds owned by the user
-            if world.release_status != ReleaseStatus::Public && world.author_id != user_id {
+            // Only include public worlds
+            // Worlds which belong to the user are not included, as only public worlds have the correct format when calling this endpoint.
+            if world.release_status != ReleaseStatus::Public {
                 log::info!("Skipping non-public world: {}", world.id);
 
                 continue;
