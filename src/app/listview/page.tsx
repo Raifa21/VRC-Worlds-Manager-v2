@@ -58,7 +58,7 @@ export default function ListView() {
   const [selectedWorldsState, setSelectedWorldsState] = useState<
     Map<string | SpecialFolders, string[]>
   >(new Map<string | SpecialFolders, string[]>());
-  const [shouldClearMultiSelection, setshouldClearMultiSelection] =
+  const [shouldClearMultiSelection, setShouldClearMultiSelection] =
     useState(false);
   const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]); // New state for added worlds
 
@@ -645,7 +645,7 @@ export default function ListView() {
       }
 
       setSelectedWorldsForFolder([]);
-      setshouldClearMultiSelection(true);
+      setShouldClearMultiSelection(true);
 
       if (currentFolder != SpecialFolders.Find) {
         toast({
@@ -932,7 +932,7 @@ export default function ListView() {
             setSelectedWorldsForFolder(selectedWorlds);
           }}
           clearSelection={shouldClearMultiSelection}
-          onClearSelectionComplete={() => setshouldClearMultiSelection(false)}
+          onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
           worldsJustAdded={worldsJustAdded}
           onWorldsJustAddedProcessed={() => setWorldsJustAdded([])}
         />
@@ -990,7 +990,7 @@ export default function ListView() {
               setSelectedWorldsForFolder(selectedWorlds);
             }}
             shouldClearSelection={shouldClearMultiSelection}
-            onClearSelectionComplete={() => setshouldClearMultiSelection(false)}
+            onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
           />
         </div>
       </>
