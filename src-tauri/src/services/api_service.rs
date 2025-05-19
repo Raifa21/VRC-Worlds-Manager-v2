@@ -339,7 +339,6 @@ impl ApiService {
                 // Check if world is public, or if the user is the owner
                 if world.release_status != ReleaseStatus::Public && world.author_id != user_id {
                     log::info!("World {} is not public", world_id);
-                    // TODO: remove world from local data
                     return Err("World is not public".to_string());
                 }
 

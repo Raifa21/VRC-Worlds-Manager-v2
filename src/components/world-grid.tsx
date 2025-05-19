@@ -431,7 +431,7 @@ export function WorldGrid({
                     {t('world-grid:sort-favorites')}
                   </SelectItem>
                   <SelectItem value="dateAdded">
-                    {t('world-grid:sort-date-added')}
+                    {t('general:date-added')}
                   </SelectItem>
                   <SelectItem value="lastUpdated">
                     {t('world-grid:sort-last-updated')}

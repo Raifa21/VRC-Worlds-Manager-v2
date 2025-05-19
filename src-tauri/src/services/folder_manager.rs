@@ -1,3 +1,5 @@
+use log::info;
+
 use crate::definitions::{FolderModel, WorldApiData, WorldDisplayData, WorldModel};
 use crate::errors::{AppError, ConcurrencyError, EntityError};
 use std::collections::{HashMap, HashSet};
@@ -656,6 +658,69 @@ impl FolderManager {
         let tags: Vec<String> = tags.into_iter().map(|(tag, _)| tag).collect();
 
         Ok(tags)
+    }
+
+    /// Completely delete a world
+    /// This is done by removing the world from all folders, and deleting the world
+    ///
+    /// # Arguments
+    /// * `world_id` - The ID of the world to delete
+    /// * `folders` - The list of folders, as a RwLock
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// Ok if the world was deleted successfully
+    ///
+    /// # Errors
+    /// Returns an error if the world is not found
+    /// Returns an error if the worlds lock is poisoned
+    /// Returns an error if the folders lock is poisoned
+    pub fn delete_world(
+        world_id: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<(), AppError> {
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let world = worlds_lock
+            .iter()
+            .position(|w| w.api_data.world_id == world_id);
+        if world.is_none() {
+            return Err(EntityError::WorldNotFound(world_id).into());
+        }
+        let world_index = world.unwrap();
+        let world = worlds_lock.remove(world_index);
+        info!("Deleting world: {}", world.api_data.world_id);
+        FileService::write_worlds(&*worlds_lock)?;
+        drop(worlds_lock);
+
+        // First, collect the folder names that contain the world
+        let folders_to_update: Vec<String> = folders
+            .read()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?
+            .iter()
+            .filter(|folder| folder.world_ids.contains(&world.api_data.world_id))
+            .map(|folder| folder.folder_name.clone())
+            .collect();
+
+        // Now, for each folder, remove the world from its world_ids
+        if !folders_to_update.is_empty() {
+            let mut folders_lock = folders
+                .write()
+                .map_err(|_| ConcurrencyError::PoisonedLock)?;
+            for folder_name in folders_to_update {
+                log::info!("Removing world from folder: {}", folder_name);
+                if let Some(folder) = folders_lock
+                    .iter_mut()
+                    .find(|f| f.folder_name == folder_name)
+                {
+                    if let Some(index) = folder.world_ids.iter().position(|id| id == &world_id) {
+                        folder.world_ids.remove(index);
+                    }
+                }
+            }
+            FileService::write_folders(&*folders_lock)?;
+        }
+        Ok(())
     }
 }
 
