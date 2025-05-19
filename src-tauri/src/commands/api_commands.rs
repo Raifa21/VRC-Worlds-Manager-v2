@@ -63,7 +63,9 @@ pub async fn logout() -> Result<(), String> {
 pub async fn get_favorite_worlds() -> Result<(), String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
 
-    let worlds = match ApiService::get_favorite_worlds(cookie_store).await {
+    let user_id = INITSTATE.get().read().await.user_id.clone();
+
+    let worlds = match ApiService::get_favorite_worlds(cookie_store, user_id).await {
         Ok(worlds) => worlds,
         Err(e) => {
             log::info!("Failed to fetch favorite worlds: {}", e);

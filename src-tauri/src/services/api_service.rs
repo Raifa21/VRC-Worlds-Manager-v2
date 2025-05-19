@@ -283,7 +283,10 @@ impl ApiService {
     }
 
     #[must_use]
-    pub async fn get_favorite_worlds(cookie_store: Arc<Jar>) -> Result<Vec<WorldApiData>, String> {
+    pub async fn get_favorite_worlds(
+        cookie_store: Arc<Jar>,
+        user_id: String,
+    ) -> Result<Vec<WorldApiData>, String> {
         let mut worlds = vec![];
 
         let result = world::get_favorite_worlds(cookie_store).await;
@@ -299,8 +302,8 @@ impl ApiService {
         };
 
         for world in favorite_worlds {
-            // Only include public worlds
-            if world.release_status != ReleaseStatus::Public {
+            // Only include public worlds, and worlds owned by the user
+            if world.release_status != ReleaseStatus::Public && world.author_id != user_id {
                 log::info!("Skipping non-public world: {}", world.id);
 
                 continue;
