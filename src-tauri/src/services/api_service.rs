@@ -283,7 +283,10 @@ impl ApiService {
     }
 
     #[must_use]
-    pub async fn get_favorite_worlds(cookie_store: Arc<Jar>) -> Result<Vec<WorldApiData>, String> {
+    pub async fn get_favorite_worlds(
+        cookie_store: Arc<Jar>,
+        user_id: String,
+    ) -> Result<Vec<WorldApiData>, String> {
         let mut worlds = vec![];
 
         let result = world::get_favorite_worlds(cookie_store).await;
@@ -299,8 +302,8 @@ impl ApiService {
         };
 
         for world in favorite_worlds {
-            // Only include public worlds
-            if world.release_status != ReleaseStatus::Public {
+            // Only include public worlds, or worlds owned by the user
+            if world.release_status != ReleaseStatus::Public && world.author_id != user_id {
                 log::info!("Skipping non-public world: {}", world.id);
 
                 continue;
@@ -320,6 +323,7 @@ impl ApiService {
         world_id: String,
         cookie_store: Arc<Jar>,
         worlds: Vec<WorldModel>,
+        user_id: String,
     ) -> Result<WorldApiData, String> {
         // First check if we have a cached version
         if let Some(existing_world) = worlds.iter().find(|w| w.api_data.world_id == world_id) {
@@ -332,8 +336,8 @@ impl ApiService {
         // Fetch from API
         match world::get_world_by_id(cookie_store, &world_id).await {
             Ok(world) => {
-                // Check release status
-                if world.release_status != ReleaseStatus::Public {
+                // Check if world is public, or if the user is the owner
+                if world.release_status != ReleaseStatus::Public && world.author_id != user_id {
                     log::info!("World {} is not public", world_id);
                     // TODO: remove world from local data
                     return Err("World is not public".to_string());
