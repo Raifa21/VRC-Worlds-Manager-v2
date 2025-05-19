@@ -7,12 +7,12 @@ import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
 import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-sidebar';
-import { Platform, WorldDisplayData } from '@/types/worlds';
+import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react'; // For the reload icon
-import { commands } from '@/lib/bindings';
+import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
@@ -58,8 +58,9 @@ export default function ListView() {
   const [selectedWorldsState, setSelectedWorldsState] = useState<
     Map<string | SpecialFolders, string[]>
   >(new Map<string | SpecialFolders, string[]>());
-  const [shouldClearFindSelection, setShouldClearFindSelection] =
+  const [shouldClearMultiSelection, setShouldClearMultiSelection] =
     useState(false);
+  const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]); // New state for added worlds
 
   useEffect(() => {
     loadAllWorlds();
@@ -143,8 +144,16 @@ export default function ListView() {
 
   const loadAllWorlds = async () => {
     try {
-      const worlds = await invoke<WorldDisplayData[]>('get_all_worlds');
-      setWorlds(worlds);
+      const worlds = await commands.getAllWorlds();
+      if (worlds.status === 'ok') {
+        setWorlds(worlds.data);
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: worlds.error,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       toast({
         title: t('general:error-title'),
@@ -154,10 +163,16 @@ export default function ListView() {
   };
   const loadUnclassifiedWorlds = async () => {
     try {
-      const worlds = await invoke<WorldDisplayData[]>(
-        'get_unclassified_worlds',
-      );
-      setWorlds(worlds);
+      const worlds = await commands.getUnclassifiedWorlds();
+      if (worlds.status === 'ok') {
+        setWorlds(worlds.data);
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: worlds.error,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       toast({
         title: t('general:error-title'),
@@ -245,15 +260,22 @@ export default function ListView() {
 
   const loadFolderContents = async (folder: string) => {
     try {
-      const worlds = await invoke<WorldDisplayData[]>('get_worlds', {
-        folderName: folder,
-      });
-      setWorlds(worlds);
-      setCurrentFolder(folder);
+      const result = await commands.getWorlds(folder);
+      if (result.status === 'ok') {
+        setWorlds(result.data);
+        setCurrentFolder(folder);
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: result.error,
+          variant: 'destructive',
+        });
+      }
     } catch (e) {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-worlds'),
+        variant: 'destructive',
       });
       error(`Error loading worlds: ${e}`);
     }
@@ -546,6 +568,10 @@ export default function ListView() {
         // Wait for all promises to resolve in parallel
         const worldResults = await Promise.all(worldPromises);
 
+        const worldIds = worldsToAdd.map((world) => world.worldId);
+
+        setWorldsJustAdded(worldIds);
+
         // Check if any of the results have errors
         const errorResult = worldResults.find(
           (result) => result.status === 'error',
@@ -553,9 +579,6 @@ export default function ListView() {
         if (errorResult) {
           throw new Error(errorResult.error);
         }
-
-        setSelectedWorldsForFolder([]);
-        setShouldClearFindSelection(true);
         toast({
           title: t('listview-page:worlds-added-title'),
           description:
@@ -620,6 +643,9 @@ export default function ListView() {
         error(`Failed during folder operations: ${e}`);
         throw e; // Re-throw to be caught by the outer try/catch
       }
+
+      setSelectedWorldsForFolder([]);
+      setShouldClearMultiSelection(true);
 
       if (currentFolder != SpecialFolders.Find) {
         toast({
@@ -905,8 +931,10 @@ export default function ListView() {
           onSelectedWorldsChange={(selectedWorlds) => {
             setSelectedWorldsForFolder(selectedWorlds);
           }}
-          clearSelection={shouldClearFindSelection}
-          onClearSelectionComplete={() => setShouldClearFindSelection(false)}
+          clearSelection={shouldClearMultiSelection}
+          onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
+          worldsJustAdded={worldsJustAdded}
+          onWorldsJustAddedProcessed={() => setWorldsJustAdded([])}
         />
       );
     }
@@ -961,6 +989,8 @@ export default function ListView() {
             onSelectedWorldsChange={(selectedWorlds) => {
               setSelectedWorldsForFolder(selectedWorlds);
             }}
+            shouldClearSelection={shouldClearMultiSelection}
+            onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
           />
         </div>
       </>

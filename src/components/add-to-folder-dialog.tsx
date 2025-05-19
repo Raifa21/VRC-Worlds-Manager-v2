@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Check, Info, Loader2, Minus } from 'lucide-react';
-import { WorldDisplayData } from '@/types/worlds';
+import { WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { Alert, AlertDescription } from './ui/alert';
 

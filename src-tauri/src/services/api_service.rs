@@ -1,7 +1,7 @@
 use crate::api::auth::VRChatAPIClientAuthenticator;
 use crate::api::world::{SearchWorldSort, VRChatWorld, WorldSearchParametersBuilder};
 use crate::api::{auth, group, instance, invite, world};
-use crate::definitions::{AuthCookies, WorldApiData, WorldModel};
+use crate::definitions::{AuthCookies, WorldApiData, WorldDisplayData, WorldModel};
 use crate::services::api_service::world::WorldSearchParameters;
 use crate::services::file_service::FileService;
 use crate::services::FolderManager;
@@ -365,16 +365,29 @@ impl ApiService {
     /// * `cookie_store` - The cookie store to use for the API
     ///
     /// # Returns
-    /// Returns a Result containing a vector of VRChatWorld if the request was successful
+    /// Returns a Result containing a vector of WorldDisplayData if the request was successful
     ///
     /// # Errors
     /// Returns a string error message if the request fails
     #[must_use]
     pub async fn get_recently_visited_worlds(
         cookie_store: Arc<Jar>,
-    ) -> Result<Vec<VRChatWorld>, String> {
+    ) -> Result<Vec<WorldDisplayData>, String> {
         match world::get_recently_visited_worlds(cookie_store).await {
-            Ok(worlds) => Ok(worlds),
+            Ok(worlds) => {
+                let converted_worlds = worlds
+                    .into_iter()
+                    .map(|world| world.try_into())
+                    .collect::<Result<Vec<_>, _>>();
+
+                match converted_worlds {
+                    Ok(worlds_vec) => Ok(worlds_vec),
+                    Err(e) => {
+                        log::info!("Failed to convert worlds: {}", e);
+                        Err(format!("Failed to convert worlds: {}", e))
+                    }
+                }
+            }
             Err(e) => Err(format!("Failed to fetch recently visited worlds: {}", e)),
         }
     }
@@ -390,7 +403,7 @@ impl ApiService {
     /// * `page` - The page number to fetch
     ///
     /// # Returns
-    /// Returns a Result containing a vector of VRChatWorld if the request was successful
+    /// Returns a Result containing a vector of WorldDisplayData if the request was successful
     ///
     /// # Errors
     /// Returns a string error message if the request fails
@@ -401,7 +414,7 @@ impl ApiService {
         tag: Option<String>,
         search: Option<String>,
         page: usize,
-    ) -> Result<Vec<VRChatWorld>, String> {
+    ) -> Result<Vec<WorldDisplayData>, String> {
         let sort = SearchWorldSort::from_str(sort.unwrap_or_default().as_str());
         // tag should be in the form author_tag_{tag}
         let tag = if let Some(tag) = tag {
@@ -422,7 +435,20 @@ impl ApiService {
         }
 
         match world::search_worlds(cookie_store, &parameter_builder.build(), page).await {
-            Ok(worlds) => Ok(worlds),
+            Ok(worlds) => {
+                let converted_worlds = worlds
+                    .into_iter()
+                    .map(|world| world.try_into())
+                    .collect::<Result<Vec<_>, _>>();
+
+                match converted_worlds {
+                    Ok(worlds_vec) => Ok(worlds_vec),
+                    Err(e) => {
+                        log::info!("Failed to convert worlds: {}", e);
+                        Err(format!("Failed to convert worlds: {}", e))
+                    }
+                }
+            }
             Err(e) => Err(format!("Failed to fetch worlds: {}", e)),
         }
     }

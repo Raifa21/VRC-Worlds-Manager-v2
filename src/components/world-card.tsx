@@ -6,7 +6,7 @@ import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
 import { Platform } from '@/types/worlds';
-import { WorldDisplayData } from '@/types/worlds';
+import { WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { Button } from './ui/button';
 import { commands } from '@/lib/bindings';
