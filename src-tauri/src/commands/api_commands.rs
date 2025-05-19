@@ -94,7 +94,10 @@ pub async fn get_world(
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
     let world_copy = WORLDS.get().read().unwrap().clone();
 
-    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy).await {
+    let user_id = INITSTATE.get().read().await.user_id.clone();
+
+    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy, user_id).await
+    {
         Ok(world) => world,
         Err(e) => {
             log::info!("Failed to fetch world: {}", e);
@@ -125,7 +128,10 @@ pub async fn check_world_info(world_id: String) -> Result<WorldDetails, String> 
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
     let world_copy = WORLDS.get().read().unwrap().clone();
 
-    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy).await {
+    let user_id = INITSTATE.get().read().await.user_id.clone();
+
+    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy, user_id).await
+    {
         Ok(world) => world,
         Err(e) => {
             log::info!("Failed to fetch world: {}", e);

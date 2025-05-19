@@ -320,6 +320,7 @@ impl ApiService {
         world_id: String,
         cookie_store: Arc<Jar>,
         worlds: Vec<WorldModel>,
+        user_id: String,
     ) -> Result<WorldApiData, String> {
         // First check if we have a cached version
         if let Some(existing_world) = worlds.iter().find(|w| w.api_data.world_id == world_id) {
@@ -332,8 +333,8 @@ impl ApiService {
         // Fetch from API
         match world::get_world_by_id(cookie_store, &world_id).await {
             Ok(world) => {
-                // Check release status
-                if world.release_status != ReleaseStatus::Public {
+                // Check if world is public, or if the user is the owner
+                if world.release_status != ReleaseStatus::Public && world.author_id != user_id {
                     log::info!("World {} is not public", world_id);
                     // TODO: remove world from local data
                     return Err("World is not public".to_string());
