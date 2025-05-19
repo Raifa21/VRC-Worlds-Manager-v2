@@ -38,8 +38,8 @@ interface FindPageProps {
   onSelectedWorldsChange: (worlds: string[]) => void;
   clearSelection: boolean; // Add this prop
   onClearSelectionComplete: () => void; // Add this prop
-  worldsJustAdded?: string[];
-  onWorldsJustAddedProcessed?: () => void;
+  worldsJustAdded: string[];
+  onWorldsJustAddedProcessed: () => void;
 }
 
 export function FindPage({
@@ -336,6 +336,8 @@ export function FindPage({
                 onClearSelectionComplete={onClearSelectionComplete}
                 selectionModeControl={isSelectionMode}
                 selectAll={triggerSelectAll}
+                worldsJustAdded={worldsJustAdded}
+                onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-64">
