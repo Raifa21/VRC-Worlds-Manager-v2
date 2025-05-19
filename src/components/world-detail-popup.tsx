@@ -334,7 +334,7 @@ export function WorldDetailPopup({
                                   ? (() => {
                                       const [date, time] =
                                         cachedWorldData.dateAdded.split('T');
-                                      let timeWithoutMs = time
+                                      const timeWithoutMs = time
                                         ?.split('.')[0]
                                         ?.replace('Z', '');
                                       return (
