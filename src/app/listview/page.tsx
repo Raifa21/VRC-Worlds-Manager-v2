@@ -47,6 +47,7 @@ export default function ListView() {
   const [showFind, setShowFind] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
   const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
     SpecialFolders.All,
   );
@@ -293,6 +294,7 @@ export default function ListView() {
   };
 
   const handleReload = async () => {
+    setIsLoading(true);
     const result = await commands.getFavoriteWorlds();
 
     if (result.status === 'error') {
@@ -304,20 +306,16 @@ export default function ListView() {
         variant: 'destructive',
       });
       error(`Failed to reload: ${e}`);
+      setIsLoading(false);
       return;
     }
     if (currentFolder === SpecialFolders.All) {
       await loadAllWorlds();
     } else if (currentFolder === SpecialFolders.Unclassified) {
       await loadUnclassifiedWorlds();
-    } else if (currentFolder === SpecialFolders.Hidden) {
-      await openHiddenFolder();
-    } else if (currentFolder === SpecialFolders.Find) {
-      return;
-    } else if (currentFolder) {
-      await loadFolderContents(currentFolder);
     }
 
+    setIsLoading(false);
     toast({
       title: t('general:success-title'),
       description: t('listview-page:worlds-fetched'),
@@ -1044,8 +1042,11 @@ export default function ListView() {
                   variant="outline"
                   onClick={handleReload}
                   className="ml-2 flex items-center gap-2"
+                  disabled={isLoading}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw
+                    className={`h-4 w-4${isLoading ? ' animate-spin' : ''}`}
+                  />
                   <span className="hidden sm:inline">
                     {t('listview-page:reload-worlds')}
                   </span>
