@@ -11,7 +11,7 @@ import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
-import { Plus, RefreshCw } from 'lucide-react'; // For the reload icon
+import { Menu, Plus, RefreshCw, Share } from 'lucide-react'; // For the reload icon
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
@@ -21,25 +21,19 @@ import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
 import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
 import { useMemo } from 'react';
-import {
-  GroupInstanceCreatePermission,
-  UserGroup,
-  GroupInstanceCreateAllowedType,
-  GroupInstancePermissionInfo,
-} from '@/lib/bindings';
+import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
-import { warn, debug, trace, info, error } from '@tauri-apps/plugin-log';
-import { save } from '@tauri-apps/plugin-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { info, error } from '@tauri-apps/plugin-log';
 import { DeleteWorldDialog } from '@/components/delete-world-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
@@ -1025,7 +1019,7 @@ export default function ListView() {
     return (
       <>
         <div className="p-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">
+          <h1 className="text-xl font-bold truncate">
             {Object.values(SpecialFolders).includes(
               currentFolder as SpecialFolders,
             )
@@ -1033,25 +1027,63 @@ export default function ListView() {
               : currentFolder}
           </h1>
           <div className="flex items-center">
-            {currentFolder !== SpecialFolders.Hidden && (
+            {(currentFolder === SpecialFolders.All ||
+              currentFolder === SpecialFolders.Unclassified) && (
               <>
                 <Button
                   variant="outline"
-                  size="icon"
                   onClick={() => setIsAddWorldOpen(true)}
-                  className="ml-2"
+                  className="ml-2 flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {t('listview-page:add-world')}
+                  </span>
                 </Button>
                 <Button
                   variant="outline"
-                  size="icon"
                   onClick={handleReload}
-                  className="ml-2"
+                  className="ml-2 flex items-center gap-2"
                 >
                   <RefreshCw className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {t('listview-page:reload-worlds')}
+                  </span>
                 </Button>
               </>
+            )}
+            {!Object.values(SpecialFolders).includes(
+              currentFolder as SpecialFolders,
+            ) && (
+              <div className="flex items-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 flex items-center gap-2 ml-2 mr-1"
+                    >
+                      <Menu className="h-10 w-10" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 cursor-pointer"
+                      onClick={() => setIsAddWorldOpen(true)}
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>{t('listview-page:add-world')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 text-muted-foreground"
+                      disabled={true}
+                    >
+                      <Share className="h-4 w-4" />
+                      <span>{t('listview-page:share-folder')}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             )}
           </div>
         </div>

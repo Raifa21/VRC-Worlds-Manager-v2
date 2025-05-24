@@ -86,6 +86,9 @@
   "setup-page:migration-exists-cancel": "Keep existing data",
   "setup-page:migration-exists-continue": "Import new data",
 
+  "listview-page:share-folder": "Share Folder",
+  "listview-page:add-world": "Add World",
+  "listview-page:reload-worlds": "Get Favorite Worlds",
   "listview-page:error-load-worlds": "Failed to load worlds",
   "listview-page:error-create-folder": "Failed to create folder",
   "listview-page:worlds-added-title": "Worlds added",

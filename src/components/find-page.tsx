@@ -248,7 +248,7 @@ export function FindPage({
                 // Trigger the select all action in WorldGrid
                 setTriggerSelectAll(true);
               }}
-              className="flex items-center gap-1"
+              className="ml-2 flex items-center gap-2"
             >
               {t('general:select-all')}
             </Button>
@@ -261,7 +261,7 @@ export function FindPage({
             onClick={() => {
               setIsSelectionMode((prev) => !prev);
             }}
-            className="flex items-center gap-1"
+            className="ml-2 flex items-center gap-2"
           >
             {isSelectionMode ? (
               <>
@@ -283,7 +283,7 @@ export function FindPage({
               size="sm"
               onClick={fetchRecentlyVisitedWorlds}
               disabled={isLoading}
-              className="flex items-center gap-1"
+              className="ml-2 flex items-center gap-2"
             >
               <RefreshCcw
                 className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
