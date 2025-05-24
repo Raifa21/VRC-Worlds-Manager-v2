@@ -183,7 +183,7 @@ export function AddToFolderDialog({
                   className="w-full justify-between group"
                   onClick={() => handleClick(folder)}
                 >
-                  <span>{folder}</span>
+                  <span className="w-[340px] truncate text-left">{folder}</span>
                   <span className="text-muted-foreground group-hover:text-primary">
                     {state === 'all' && <Check className="h-4 w-4" />}
                     {state === 'some' && <Minus className="h-4 w-4" />}
