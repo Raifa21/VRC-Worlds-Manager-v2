@@ -214,6 +214,8 @@ export function WorldDetailPopup({
       queueEnabled,
       selectedRoles,
     );
+    // Reset state after creating instance
+    setInstanceCreationType('normal');
     onOpenChange(false); // Close dialog after creating instance
   };
 
