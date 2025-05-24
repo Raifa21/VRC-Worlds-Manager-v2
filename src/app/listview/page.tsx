@@ -11,7 +11,7 @@ import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
-import { Ham, HamIcon, Menu, Plus, RefreshCw, Share } from 'lucide-react'; // For the reload icon
+import { Menu, Plus, RefreshCw, Share } from 'lucide-react'; // For the reload icon
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
