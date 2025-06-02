@@ -126,7 +126,7 @@ impl ApiService {
         auth: &tokio::sync::RwLock<VRChatAPIClientAuthenticator>,
     ) -> Result<(), String> {
         let mut auth_lock = auth.write().await;
-        *auth_lock = VRChatAPIClientAuthenticator::new(username.clone());
+        auth_lock.update_user_info(username);
         let result = auth_lock.login_with_password(&password).await;
 
         if result.is_err() {
