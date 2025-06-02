@@ -47,18 +47,8 @@ export default function Login() {
       return;
     }
 
-    const status = result.data;
-    info(`Login status: ${status}`);
-
-    if (status === 'twoFactorAuth' || status === 'email2FA') {
-      info(`Setting up ${status} verification`);
-      setShow2FA(true);
-      setE(null);
-      setTwoFactorCodeType(status === 'twoFactorAuth' ? 'totp' : 'emailOtp');
-    } else if (status === 'loggedIn') {
-      info('Login successful, redirecting to listview');
-      router.push('/listview');
-    }
+    info('Login successful, redirecting to listview');
+    router.push('/listview');
   };
 
   const handle2FA = async () => {
