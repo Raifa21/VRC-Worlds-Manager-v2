@@ -13,6 +13,7 @@ import {
 import { commands } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { info, error } from '@tauri-apps/plugin-log';
+import { Loader2 } from 'lucide-react';
 
 export default function Login() {
   const router = useRouter();
@@ -23,35 +24,45 @@ export default function Login() {
   const [twoFactorCodeType, setTwoFactorCodeType] = useState('emailOtp');
   const [show2FA, setShow2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loading2FA, setLoading2FA] = useState(false);
 
   const handleLogin = async () => {
-    const result = await commands.loginWithCredentials(username, password);
+    setLoading(true);
+    setE(null);
+    try {
+      const result = await commands.loginWithCredentials(username, password);
 
-    if (result.status === 'error') {
-      if (result.error == '2fa-required') {
-        info('2FA required, showing 2FA dialog');
-        setShow2FA(true);
-        setE(null);
-        setTwoFactorCodeType('totp');
-      } else if (result.error == 'email-2fa-required') {
-        info('Email 2FA required, showing 2FA dialog');
-        setShow2FA(true);
-        setE(null);
-        setTwoFactorCodeType('emailOtp');
-      } else {
-        const errorMessage =
-          result.error || t('login-page:error-invalid-credentials');
-        error(`Login failed: ${errorMessage}`);
-        setE(errorMessage);
+      if (result.status === 'error') {
+        if (result.error == '2fa-required') {
+          info('2FA required, showing 2FA dialog');
+          setShow2FA(true);
+          setE(null);
+          setTwoFactorCodeType('totp');
+        } else if (result.error == 'email-2fa-required') {
+          info('Email 2FA required, showing 2FA dialog');
+          setShow2FA(true);
+          setE(null);
+          setTwoFactorCodeType('emailOtp');
+        } else {
+          const errorMessage =
+            result.error || t('login-page:error-invalid-credentials');
+          error(`Login failed: ${errorMessage}`);
+          setE(errorMessage);
+        }
+        return;
       }
-      return;
-    }
 
-    info('Login successful, redirecting to listview');
-    router.push('/listview');
+      info('Login successful, redirecting to listview');
+      router.push('/listview');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handle2FA = async () => {
+    setLoading2FA(true);
+    setE(null);
     try {
       const result = await commands.loginWith2fa(
         twoFactorCode,
@@ -70,6 +81,8 @@ export default function Login() {
       const errorMessage = (e as string) || t('login-page:error-invalid-2fa');
       error(`2FA error: ${errorMessage}`);
       setE(errorMessage);
+    } finally {
+      setLoading2FA(false);
     }
   };
 
@@ -114,9 +127,13 @@ export default function Login() {
           <Button
             className="w-full"
             onClick={handleLogin}
-            disabled={!username || !password}
+            disabled={!username || !password || loading}
           >
-            {t('login-page:login-button')}
+            {loading ? (
+              <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+            ) : (
+              t('login-page:login-button')
+            )}
           </Button>
 
           <div className="mt-4 p-4 border-2 border-red-500 rounded-md">
@@ -153,9 +170,13 @@ export default function Login() {
             <Button
               className="w-full"
               onClick={handle2FA}
-              disabled={!twoFactorCode}
+              disabled={!twoFactorCode || loading2FA}
             >
-              {t('login-page:2fa-button')}
+              {loading2FA ? (
+                <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+              ) : (
+                t('login-page:2fa-button')
+              )}
             </Button>
           </div>
         </DialogContent>
