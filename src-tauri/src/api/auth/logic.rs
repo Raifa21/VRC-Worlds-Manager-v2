@@ -50,7 +50,6 @@ impl VRChatAPIClientAuthenticator {
 
     pub fn update_user_info(&mut self, username: String) {
         self.username = username;
-        self.phase = VRChatAuthPhase::LoggedIn;
     }
 
     pub fn get_cookies(&self) -> Arc<Jar> {
@@ -82,7 +81,7 @@ impl VRChatAPIClientAuthenticator {
         reset_backoff(OPERATION);
 
         if result.status() == StatusCode::UNAUTHORIZED {
-            self.cookie = Arc::new(Jar::default());
+            log::info!("Token is invalid or expired.");
             return Ok(VRChatAuthStatus::InvalidCredentials);
         }
 

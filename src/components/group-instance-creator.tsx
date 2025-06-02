@@ -257,6 +257,17 @@ export function GroupInstanceCreator({
       stepInfo.queueEnabled,
       rolesToPass,
     );
+
+    // Reset state after creation
+    setCurrentStep('group');
+    setIsLoading(false);
+    setStepInfo({
+      groupId: null,
+      instanceType: null,
+      region: 'JP',
+      queueEnabled: false,
+      selectedRoles: new Set(),
+    });
   };
 
   const handleInstanceTypeSelect = (type: GroupInstanceType) => {
