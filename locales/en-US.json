@@ -152,6 +152,7 @@
   "world-grid:hide-description": "This hides this world from all folders.",
   "world-grid:hide-note": "You can find the world in the \"Hidden Folder\" in settings to revert.",
   "world-grid:remove-button": "Remove",
+  "world-grid:exists-in-collection": "Added",
 
   "world-detail:create-group-instance": "Create Group Instance",
   "world-detail:world-details": "World Details",

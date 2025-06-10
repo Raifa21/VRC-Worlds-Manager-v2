@@ -152,6 +152,7 @@
   "world-grid:hide-description": "これにより、このワールドはすべてのフォルダから非表示になります。",
   "world-grid:hide-note": "元に戻すには、設定内の「非表示フォルダ」でワールドを見つけてください。",
   "world-grid:remove-button": "削除",
+    "world-grid:exists-in-collection": "追加済み",
 
   "world-detail:create-group-instance": "グループインスタンスを作成",
   "world-detail:world-details": "ワールド詳細",

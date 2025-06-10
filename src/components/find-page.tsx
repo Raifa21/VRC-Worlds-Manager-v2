@@ -69,7 +69,6 @@ export function FindPage({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   // Add this state to track when to trigger select all
   const [triggerSelectAll, setTriggerSelectAll] = useState(false);
@@ -240,7 +239,7 @@ export function FindPage({
 
         <div className="flex items-center gap-2">
           {/* Select All button - only visible when selection mode is on */}
-          {isSelectionMode && activeTab == 'recently-visited' && (
+          {activeTab == 'recently-visited' && (
             <Button
               variant="outline"
               size="sm"
@@ -253,28 +252,6 @@ export function FindPage({
               {t('general:select-all')}
             </Button>
           )}
-
-          {/* Selection mode toggle button */}
-          <Button
-            variant={isSelectionMode ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={() => {
-              setIsSelectionMode((prev) => !prev);
-            }}
-            className="ml-2 flex items-center gap-2"
-          >
-            {isSelectionMode ? (
-              <>
-                <CheckSquare className="h-4 w-4" />
-                <span>{t('general:cancel')}</span>
-              </>
-            ) : (
-              <>
-                <Square className="h-4 w-4" />
-                <span>{t('general:select-button')}</span>
-              </>
-            )}
-          </Button>
 
           {/* Refresh button - moved to rightmost position */}
           {activeTab === 'recently-visited' && (
@@ -334,7 +311,6 @@ export function FindPage({
                 onSelectedWorldsChange={onSelectedWorldsChange}
                 shouldClearSelection={clearSelection}
                 onClearSelectionComplete={onClearSelectionComplete}
-                selectionModeControl={isSelectionMode}
                 selectAll={triggerSelectAll}
                 worldsJustAdded={worldsJustAdded}
                 onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
@@ -449,7 +425,6 @@ export function FindPage({
                   size={CardSize.Normal}
                   onOpenWorldDetails={onSelectWorld}
                   onSelectedWorldsChange={onSelectedWorldsChange}
-                  selectionModeControl={isSelectionMode}
                   selectAll={triggerSelectAll}
                   shouldClearSelection={clearSelection}
                   onClearSelectionComplete={onClearSelectionComplete}

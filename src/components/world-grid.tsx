@@ -33,6 +33,7 @@ import {
 import * as Portal from '@radix-ui/react-portal';
 import { info, error } from '@tauri-apps/plugin-log';
 import { commands } from '@/lib/bindings';
+import { Badge } from './ui/badge';
 
 interface WorldGridProps {
   size: CardSize;
@@ -45,7 +46,6 @@ interface WorldGridProps {
   onOpenWorldDetails: (worldId: string) => void;
   onShowFolderDialog?: (worlds: string[]) => void;
   onSelectedWorldsChange: (worldIds: string[]) => void;
-  selectionModeControl?: boolean;
   selectAll?: boolean;
   shouldClearSelection: boolean;
   onClearSelectionComplete?: () => void;
@@ -83,7 +83,6 @@ export function WorldGrid({
   onOpenWorldDetails,
   onShowFolderDialog,
   onSelectedWorldsChange,
-  selectionModeControl,
   selectAll,
   shouldClearSelection,
   onClearSelectionComplete,
@@ -113,7 +112,7 @@ export function WorldGrid({
     initialSelectedWorlds,
   );
   const [isSelectionMode, setIsSelectionMode] = useState(
-    selectionModeControl?.valueOf() ?? false,
+    folderName === SpecialFolders.Find?.valueOf(),
   );
   const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
     new Set(),
@@ -142,13 +141,6 @@ export function WorldGrid({
       onClearSelectionComplete?.();
     }
   }, [shouldClearSelection, onClearSelectionComplete, clearSelection]);
-
-  useEffect(() => {
-    setIsSelectionMode(selectionModeControl?.valueOf() ?? false);
-    if (!selectionModeControl) {
-      clearSelection();
-    }
-  }, [selectionModeControl, clearSelection]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -497,39 +489,46 @@ export function WorldGrid({
                     }`}
                     onClick={(e) => handleClick(world.worldId, e)}
                   >
-                    {isFindPage ? (
-                      <WorldCardPreview
-                        size={size}
-                        world={world}
-                        findPage={true}
-                        onAddWorld={(world) => {
-                          onShowFolderDialog?.(
-                            isSelectionMode
-                              ? selectedWorlds
-                              : world.map((w) => w.worldId),
-                          );
-                        }}
-                        worldExists={existingWorldIds.has(world.worldId)}
-                      />
-                    ) : (
-                      <WorldCardPreview size={size} world={world} />
-                    )}
-                    {isSelectionMode &&
-                      (!isFindPage || !existingWorldIds.has(world.worldId)) && (
-                        <div className="absolute top-2 left-2 z-1">
-                          {selectedWorlds.includes(world.worldId) ? (
-                            <>
-                              <Square className="w-5 h-5 text-primary" />
-                              <div className="absolute inset-[3px] bg-background" />
-                              <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
-                            </>
-                          ) : (
-                            <>
+                    <WorldCardPreview size={size} world={world} />
+                    {isSelectionMode && (
+                      <>
+                        {!isFindPage ? (
+                          <div className="absolute top-2 left-2 z-1">
+                            {selectedWorlds.includes(world.worldId) ? (
+                              <>
+                                <Square className="w-5 h-5 text-primary" />
+                                <div className="absolute inset-[3px] bg-background" />
+                                <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
+                              </>
+                            ) : (
                               <Square className="w-5 h-5 text-muted-foreground" />
-                            </>
-                          )}
-                        </div>
-                      )}
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            {!existingWorldIds.has(world.worldId) ? (
+                              <div className="absolute top-2 left-2 z-1">
+                                {selectedWorlds.includes(world.worldId) ? (
+                                  <>
+                                    <Square className="w-5 h-5 text-primary" />
+                                    <div className="absolute inset-[3px] bg-background" />
+                                    <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
+                                  </>
+                                ) : (
+                                  <Square className="w-5 h-5 text-muted-foreground" />
+                                )}
+                              </div>
+                            ) : (
+                              <div className="absolute top-2 left-2 z-1">
+                                <Badge className="bg-green-100 text-green-700 border-green-300">
+                                  {t('world-grid:exists-in-collection')}
+                                </Badge>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
                 </ContextMenuTrigger>
                 {!isFindPage && (
