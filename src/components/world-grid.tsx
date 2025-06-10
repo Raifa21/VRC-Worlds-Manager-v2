@@ -668,6 +668,17 @@ export function WorldGrid({
           </AlertDialog>
         )}
       </Portal.Root>
+
+      {isFindPage && selectedWorlds.length > 0 && (
+        <Button
+          className="absolute xl:fixed bottom-4 ml-4 z-50 bg-blue-100 text-blue-700 rounded-full shadow-xl w-36 h-12 flex items-center justify-center hover:bg-blue-200 hover:text-blue-900 transition"
+          onClick={() => onShowFolderDialog?.(selectedWorlds)}
+        >
+          <span className="text-md font-semibold">
+            {t('world-grid:add-title')}
+          </span>
+        </Button>
+      )}
     </div>
   );
 }
