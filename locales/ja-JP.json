@@ -110,6 +110,8 @@
   "listview-page:removed-from-folder": "{0} から削除されました",
   "listview-page:worlds-restored-to-folder": "フォルダにワールドを復元しました",
   "listview-page:error-remove-from-folder": "フォルダからのワールド削除に失敗しました",
+  "listview-page:folder-created-title": "フォルダが作成されました",
+  "listview-page:folder-created-description": "フォルダ「{0}」が正常に作成されました",
   "listview-page:folders-updated-title": "フォルダが更新されました",
   "listview-page:folders-updated-multiple": "\"{0}\" 他 {1} 件のワールドのフォルダが更新されました",
   "listview-page:folders-updated-single": "\"{0}\" のフォルダが更新されました",

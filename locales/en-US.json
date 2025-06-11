@@ -110,6 +110,8 @@
   "listview-page:removed-from-folder": "Removed from {0}",
   "listview-page:worlds-restored-to-folder": "Worlds restored to folder",
   "listview-page:error-remove-from-folder": "Failed to remove worlds from folder",
+  "listview-page:folder-created-title": "Folder created",
+  "listview-page:folder-created-description": "Folder \"{0}\" was created successfully",
   "listview-page:folders-updated-title": "Folders updated",
   "listview-page:folders-updated-multiple": "Updated folders for \"{0}\" and {1} more worlds",
   "listview-page:folders-updated-single": "Updated folders for \"{0}\"",
