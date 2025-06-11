@@ -690,17 +690,29 @@ export function WorldGrid({
       </Portal.Root>
 
       {isFindPage && selectedWorlds.length > 0 && (
-        <Button
-          variant="default"
-          size="lg"
-          className="absolute xl:fixed bottom-4 left-[270px] z-50 rounded-lg flex items-center gap-2 px-4 py-3"
-          onClick={() => onShowFolderDialog?.(selectedWorlds)}
+        <div
+          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-center pointer-events-none w-full"
+          style={{ left: 'calc(50% + 125px)' }}
         >
-          <Plus className="w-5 h-5" />
-          <span className="text-md font-semibold">
-            {t('world-grid:add-title')}
-          </span>
-        </Button>
+          <div className="pointer-events-auto relative inline-block">
+            <div
+              className="absolute inset-0 rounded-lg bg-background"
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+              aria-hidden="true"
+            />
+            <Button
+              variant="default"
+              size="lg"
+              className="rounded-lg flex items-center gap-2 px-4 py-3 relative"
+              onClick={() => onShowFolderDialog?.(selectedWorlds)}
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-md font-semibold">
+                {t('world-grid:add-title')}
+              </span>
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
