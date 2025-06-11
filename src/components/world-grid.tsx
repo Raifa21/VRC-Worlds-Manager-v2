@@ -19,7 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SortAsc, SortDesc, CheckSquare, Square, Check } from 'lucide-react';
+import {
+  SortAsc,
+  SortDesc,
+  CheckSquare,
+  Square,
+  Check,
+  Plus,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -33,6 +40,7 @@ import {
 import * as Portal from '@radix-ui/react-portal';
 import { info, error } from '@tauri-apps/plugin-log';
 import { commands } from '@/lib/bindings';
+import { Badge } from './ui/badge';
 
 interface WorldGridProps {
   size: CardSize;
@@ -45,7 +53,6 @@ interface WorldGridProps {
   onOpenWorldDetails: (worldId: string) => void;
   onShowFolderDialog?: (worlds: string[]) => void;
   onSelectedWorldsChange: (worldIds: string[]) => void;
-  selectionModeControl?: boolean;
   selectAll?: boolean;
   shouldClearSelection: boolean;
   onClearSelectionComplete?: () => void;
@@ -83,7 +90,6 @@ export function WorldGrid({
   onOpenWorldDetails,
   onShowFolderDialog,
   onSelectedWorldsChange,
-  selectionModeControl,
   selectAll,
   shouldClearSelection,
   onClearSelectionComplete,
@@ -113,7 +119,7 @@ export function WorldGrid({
     initialSelectedWorlds,
   );
   const [isSelectionMode, setIsSelectionMode] = useState(
-    selectionModeControl?.valueOf() ?? false,
+    folderName === SpecialFolders.Find?.valueOf(),
   );
   const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
     new Set(),
@@ -142,13 +148,6 @@ export function WorldGrid({
       onClearSelectionComplete?.();
     }
   }, [shouldClearSelection, onClearSelectionComplete, clearSelection]);
-
-  useEffect(() => {
-    setIsSelectionMode(selectionModeControl?.valueOf() ?? false);
-    if (!selectionModeControl) {
-      clearSelection();
-    }
-  }, [selectionModeControl, clearSelection]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -313,21 +312,6 @@ export function WorldGrid({
   const handleDialogClose = () => {
     setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
     setTimeout(() => setDialogConfig(null), 150);
-  };
-
-  // Modify the handleClick function to check for existing worlds in isFindPage
-  const handleClick = (worldId: string, event: React.MouseEvent) => {
-    // Skip selection for existing worlds in Find page
-    if (isFindPage && existingWorldIds.has(worldId)) {
-      onOpenWorldDetails(worldId);
-      return;
-    }
-
-    if (isSelectionMode || event.ctrlKey || event.metaKey || event.shiftKey) {
-      handleSelect(worldId, event);
-    } else {
-      onOpenWorldDetails(worldId);
-    }
   };
 
   // Also update handleSelect to ignore worlds that already exist in Find page
@@ -495,41 +479,76 @@ export function WorldGrid({
                         ? 'ring-2 ring-primary'
                         : ''
                     }`}
-                    onClick={(e) => handleClick(world.worldId, e)}
+                    onClick={() => onOpenWorldDetails(world.worldId)}
                   >
-                    {isFindPage ? (
-                      <WorldCardPreview
-                        size={size}
-                        world={world}
-                        findPage={true}
-                        onAddWorld={(world) => {
-                          onShowFolderDialog?.(
-                            isSelectionMode
-                              ? selectedWorlds
-                              : world.map((w) => w.worldId),
-                          );
-                        }}
-                        worldExists={existingWorldIds.has(world.worldId)}
-                      />
-                    ) : (
-                      <WorldCardPreview size={size} world={world} />
+                    <WorldCardPreview size={size} world={world} />
+                    {isSelectionMode && (
+                      <>
+                        {!isFindPage ? (
+                          <div className="absolute top-2 left-2 z-1">
+                            {selectedWorlds.includes(world.worldId) ? (
+                              <div
+                                className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelect(world.worldId, e);
+                                }}
+                              >
+                                <Square className="w-5 h-5 z-10 text-primary" />
+                                <div className="absolute inset-[8px] bg-background rounded" />
+                                <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
+                              </div>
+                            ) : (
+                              <div
+                                className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelect(world.worldId, e);
+                                }}
+                              >
+                                <Square className="w-5 h-5 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            {!existingWorldIds.has(world.worldId) ? (
+                              <div className="absolute top-2 left-2 z-1">
+                                {selectedWorlds.includes(world.worldId) ? (
+                                  <div
+                                    className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelect(world.worldId, e);
+                                    }}
+                                  >
+                                    <Square className="w-5 h-5 z-10 text-primary" />
+                                    <div className="absolute inset-[8px] bg-background rounded" />
+                                    <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
+                                  </div>
+                                ) : (
+                                  <div
+                                    className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelect(world.worldId, e);
+                                    }}
+                                  >
+                                    <Square className="w-5 h-5 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="absolute top-2 left-2 z-1">
+                                <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
+                                  {t('world-grid:exists-in-collection')}
+                                </Badge>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </>
                     )}
-                    {isSelectionMode &&
-                      (!isFindPage || !existingWorldIds.has(world.worldId)) && (
-                        <div className="absolute top-2 left-2 z-1">
-                          {selectedWorlds.includes(world.worldId) ? (
-                            <>
-                              <Square className="w-5 h-5 text-primary" />
-                              <div className="absolute inset-[3px] bg-background" />
-                              <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
-                            </>
-                          ) : (
-                            <>
-                              <Square className="w-5 h-5 text-muted-foreground" />
-                            </>
-                          )}
-                        </div>
-                      )}
                   </div>
                 </ContextMenuTrigger>
                 {!isFindPage && (
@@ -669,6 +688,32 @@ export function WorldGrid({
           </AlertDialog>
         )}
       </Portal.Root>
+
+      {isFindPage && selectedWorlds.length > 0 && (
+        <div
+          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-center pointer-events-none w-full"
+          style={{ left: 'calc(50% + 125px)' }}
+        >
+          <div className="pointer-events-auto relative inline-block">
+            <div
+              className="absolute inset-0 rounded-lg bg-background"
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+              aria-hidden="true"
+            />
+            <Button
+              variant="default"
+              size="lg"
+              className="rounded-lg flex items-center gap-2 px-4 py-3 relative"
+              onClick={() => onShowFolderDialog?.(selectedWorlds)}
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-md font-semibold">
+                {t('world-grid:add-title')}
+              </span>
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

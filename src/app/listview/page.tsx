@@ -224,14 +224,21 @@ export default function ListView() {
       const newName = await invoke<string>('create_folder', { name: name });
       await loadFolders();
 
-      // Batch state updates before navigation
-      await Promise.all([
-        setCurrentFolder(newName),
-        setShowCreateFolder(false),
-      ]);
-
-      // Navigate to the new folder
-      await loadFolderContents(newName);
+      // Only navigate to the new folder if not in Find page
+      if (currentFolder !== SpecialFolders.Find) {
+        await Promise.all([
+          setCurrentFolder(newName),
+          setShowCreateFolder(false),
+        ]);
+        await loadFolderContents(newName);
+      } else {
+        setShowCreateFolder(false);
+      }
+      toast({
+        title: t('listview-page:folder-created-title'),
+        description: t('listview-page:folder-created-description', newName),
+        duration: 2000,
+      });
     } catch (e) {
       error(`Failed to create folder: ${e}`);
       toast({
