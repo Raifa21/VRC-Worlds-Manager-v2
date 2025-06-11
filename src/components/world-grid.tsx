@@ -314,21 +314,6 @@ export function WorldGrid({
     setTimeout(() => setDialogConfig(null), 150);
   };
 
-  // Modify the handleClick function to check for existing worlds in isFindPage
-  const handleClick = (worldId: string, event: React.MouseEvent) => {
-    // Skip selection for existing worlds in Find page
-    if (isFindPage && existingWorldIds.has(worldId)) {
-      onOpenWorldDetails(worldId);
-      return;
-    }
-
-    if (isSelectionMode || event.ctrlKey || event.metaKey || event.shiftKey) {
-      handleSelect(worldId, event);
-    } else {
-      onOpenWorldDetails(worldId);
-    }
-  };
-
   // Also update handleSelect to ignore worlds that already exist in Find page
   const handleSelect = (worldId: string, event: React.MouseEvent) => {
     event.preventDefault();
@@ -494,7 +479,7 @@ export function WorldGrid({
                         ? 'ring-2 ring-primary'
                         : ''
                     }`}
-                    onClick={(e) => handleClick(world.worldId, e)}
+                    onClick={() => onOpenWorldDetails(world.worldId)}
                   >
                     <WorldCardPreview size={size} world={world} />
                     {isSelectionMode && (
@@ -502,13 +487,27 @@ export function WorldGrid({
                         {!isFindPage ? (
                           <div className="absolute top-2 left-2 z-1">
                             {selectedWorlds.includes(world.worldId) ? (
-                              <>
-                                <Square className="w-5 h-5 text-primary" />
-                                <div className="absolute inset-[3px] bg-background" />
+                              <div
+                                className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelect(world.worldId, e);
+                                }}
+                              >
+                                <Square className="w-5 h-5 z-10 text-primary" />
+                                <div className="absolute inset-[8px] bg-background rounded" />
                                 <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
-                              </>
+                              </div>
                             ) : (
-                              <Square className="w-5 h-5 text-muted-foreground" />
+                              <div
+                                className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelect(world.worldId, e);
+                                }}
+                              >
+                                <Square className="w-5 h-5 text-muted-foreground" />
+                              </div>
                             )}
                           </div>
                         ) : (
@@ -516,13 +515,27 @@ export function WorldGrid({
                             {!existingWorldIds.has(world.worldId) ? (
                               <div className="absolute top-2 left-2 z-1">
                                 {selectedWorlds.includes(world.worldId) ? (
-                                  <>
-                                    <Square className="w-5 h-5 text-primary" />
-                                    <div className="absolute inset-[3px] bg-background" />
+                                  <div
+                                    className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelect(world.worldId, e);
+                                    }}
+                                  >
+                                    <Square className="w-5 h-5 z-10 text-primary" />
+                                    <div className="absolute inset-[8px] bg-background rounded" />
                                     <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
-                                  </>
+                                  </div>
                                 ) : (
-                                  <Square className="w-5 h-5 text-muted-foreground" />
+                                  <div
+                                    className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelect(world.worldId, e);
+                                    }}
+                                  >
+                                    <Square className="w-5 h-5 text-muted-foreground" />
+                                  </div>
                                 )}
                               </div>
                             ) : (
