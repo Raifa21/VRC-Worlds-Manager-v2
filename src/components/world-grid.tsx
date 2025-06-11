@@ -19,7 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SortAsc, SortDesc, CheckSquare, Square, Check } from 'lucide-react';
+import {
+  SortAsc,
+  SortDesc,
+  CheckSquare,
+  Square,
+  Check,
+  Plus,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -671,9 +678,12 @@ export function WorldGrid({
 
       {isFindPage && selectedWorlds.length > 0 && (
         <Button
-          className="absolute xl:fixed bottom-4 ml-4 z-50 bg-blue-100 text-blue-700 rounded-full shadow-xl w-36 h-12 flex items-center justify-center hover:bg-blue-200 hover:text-blue-900 transition"
+          variant="default"
+          size="lg"
+          className="absolute xl:fixed bottom-4 left-[270px] z-50 rounded-lg flex items-center gap-2 px-4 py-3"
           onClick={() => onShowFolderDialog?.(selectedWorlds)}
         >
+          <Plus className="w-5 h-5" />
           <span className="text-md font-semibold">
             {t('world-grid:add-title')}
           </span>

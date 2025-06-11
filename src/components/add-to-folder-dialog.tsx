@@ -168,7 +168,7 @@ export function AddToFolderDialog({
           </DialogDescription>
         </DialogHeader>
         {folders.length === 0 && (
-          <div className="text-muted-foreground">
+          <div className="border border-muted rounded-md px-2 py-2 text-xs text-center">
             {t('add-to-folder-dialog:no-folders')}
           </div>
         )}
@@ -199,8 +199,8 @@ export function AddToFolderDialog({
         {/* Info card for Find Page */}
         {isFindPage && (
           <Alert className="mt-2">
-            <AlertDescription className="flex gap-2">
-              <Info className="h-4 w-4 mt-0.5" />
+            <AlertDescription className="flex">
+              <Info className="h-4 w-4 mt-0.5 mr-2" />
               {t('add-to-folder-dialog:find-page-info')}
             </AlertDescription>
           </Alert>
