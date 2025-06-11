@@ -238,7 +238,7 @@ export function FindPage({
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
         <div className="flex items-center gap-2">
-          {/* Select All button - only visible when selection mode is on */}
+          {/* Select All button - in recently visited tab*/}
           {activeTab == 'recently-visited' && (
             <Button
               variant="outline"
@@ -253,7 +253,7 @@ export function FindPage({
             </Button>
           )}
 
-          {/* Refresh button - moved to rightmost position */}
+          {/* Refresh button - in world search tab */}
           {activeTab === 'recently-visited' && (
             <Button
               variant="outline"
