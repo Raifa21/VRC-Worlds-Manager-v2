@@ -540,7 +540,7 @@ export function WorldGrid({
                               </div>
                             ) : (
                               <div className="absolute top-2 left-2 z-1">
-                                <Badge className="bg-green-100 text-green-700 border-green-300">
+                                <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
                                   {t('world-grid:exists-in-collection')}
                                 </Badge>
                               </div>
