@@ -368,7 +368,7 @@ export function FindPage({
       )}
 
       {/* Main content area */}
-      <div className="flex-1 overflow-auto">
+      <div>
         {activeTab === 'recently-visited' && (
           <div className="flex flex-col gap-2">
             {isLoading ? (
