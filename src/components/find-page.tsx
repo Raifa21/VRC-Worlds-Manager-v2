@@ -230,41 +230,34 @@ export function FindPage({
       <div className="flex items-center justify-between p-4 bg-background">
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
-        <div className="flex items-center gap-2">
-          {/* Select All button - in recently visited tab*/}
-          {activeTab == 'recently-visited' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Trigger the select all action in WorldGrid
-                setTriggerSelectAll(true);
-              }}
-              className="ml-2 flex items-center gap-2"
-            >
-              {t('general:select-all')}
-            </Button>
-          )}
-
-          {/* Refresh button - in world search tab */}
-          {activeTab === 'recently-visited' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchRecentlyVisitedWorlds}
-              disabled={isLoading}
-              className="ml-2 flex items-center gap-2"
-            >
-              <RefreshCcw
-                className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-              />
-            </Button>
-          )}
+        <div className="flex items-center">
+          <Button
+            variant="outline"
+            onClick={() => setTriggerSelectAll(true)}
+            disabled={activeTab !== 'recently-visited'}
+            className={`ml-2 flex items-center gap-2 ${
+              activeTab !== 'recently-visited' ? 'invisible' : ''
+            }`}
+          >
+            {t('general:select-all')}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={fetchRecentlyVisitedWorlds}
+            disabled={activeTab !== 'recently-visited' || isLoading}
+            className={`ml-2 flex items-center gap-2 ${
+              activeTab !== 'recently-visited' ? 'invisible' : ''
+            }`}
+          >
+            <RefreshCcw
+              className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+            />
+          </Button>
         </div>
       </div>
 
       {/* Tab bar with full-width tabs */}
-      <div className="sticky top-0 z-20 bg-background px-4 pb-2">
+      <div className="bg-background px-4 pb-2">
         <Tabs
           defaultValue="recently-visited"
           value={activeTab}
@@ -281,6 +274,98 @@ export function FindPage({
           </TabsList>
         </Tabs>
       </div>
+
+      {/* Search and filter controls */}
+      {activeTab === 'search' && (
+        <div className="sticky top-0 z-30 bg-background border-b">
+          <Card className=" mx-4 border-0">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex gap-4 items-end">
+                {/* Search text input */}
+                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                  <Label htmlFor="search-query">
+                    {t('find-page:search-query')}
+                  </Label>
+                  <Input
+                    id="search-query"
+                    placeholder={t('find-page:search-placeholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Sort options */}
+                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                  <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
+                  <Select value={selectedSort} onValueChange={setSelectedSort}>
+                    <SelectTrigger id="sort">
+                      <SelectValue
+                        placeholder={t('find-page:sort-popularity')}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="popularity">
+                        {t('find-page:sort-popularity')}
+                      </SelectItem>
+                      <SelectItem value="heat">
+                        {t('find-page:sort-heat')}
+                      </SelectItem>
+                      <SelectItem value="random">
+                        {t('find-page:sort-random')}
+                      </SelectItem>
+                      <SelectItem value="favorites">
+                        {t('find-page:sort-favorites')}
+                      </SelectItem>
+                      <SelectItem value="publicationDate">
+                        {t('find-page:sort-publication-date')}
+                      </SelectItem>
+                      <SelectItem value="created">
+                        {t('find-page:sort-created')}
+                      </SelectItem>
+                      <SelectItem value="updated">
+                        {t('find-page:sort-updated')}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Tag combobox */}
+                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                  <Label htmlFor="tag">{t('find-page:tag')}</Label>
+                  <SingleFilterItemSelector
+                    placeholder={t('find-page:tag-placeholder')}
+                    candidates={availableTags.map((tag) => ({
+                      value: tag,
+                      label: tag,
+                    }))}
+                    value={selectedTag}
+                    onValueChange={setSelectedTag}
+                  />
+                </div>
+
+                {/* Search button */}
+                <Button
+                  className="flex-shrink-0"
+                  onClick={() => handleSearch(false)}
+                  disabled={isSearching}
+                >
+                  {isSearching ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t('find-page:searching')}
+                    </>
+                  ) : (
+                    <>
+                      <Search className="mr-2 h-4 w-4" />
+                      {t('find-page:search-button')}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main content area */}
       <div className="flex-1 overflow-auto">
@@ -322,93 +407,6 @@ export function FindPage({
 
         {activeTab === 'search' && (
           <div className="flex flex-col gap-4 p-4">
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                {/* Search text input */}
-                <div className="grid gap-2">
-                  <Label htmlFor="search-query">
-                    {t('find-page:search-query')}
-                  </Label>
-                  <Input
-                    id="search-query"
-                    placeholder={t('find-page:search-placeholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-
-                {/* Sort options */}
-                <div className="grid gap-2">
-                  <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
-                  <Select value={selectedSort} onValueChange={setSelectedSort}>
-                    <SelectTrigger id="sort">
-                      <SelectValue
-                        placeholder={t('find-page:sort-popularity')}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="popularity">
-                        {t('find-page:sort-popularity')}
-                      </SelectItem>
-                      <SelectItem value="heat">
-                        {t('find-page:sort-heat')}
-                      </SelectItem>
-                      <SelectItem value="random">
-                        {t('find-page:sort-random')}
-                      </SelectItem>
-                      <SelectItem value="favorites">
-                        {t('find-page:sort-favorites')}
-                      </SelectItem>
-                      <SelectItem value="publicationDate">
-                        {t('find-page:sort-publication-date')}
-                      </SelectItem>
-                      <SelectItem value="created">
-                        {t('find-page:sort-created')}
-                      </SelectItem>
-                      <SelectItem value="updated">
-                        {t('find-page:sort-updated')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Tag combobox with improved autocomplete */}
-                <div className="grid gap-2">
-                  <Label htmlFor="tag">{t('find-page:tag')}</Label>
-                  <SingleFilterItemSelector
-                    placeholder={t('find-page:tag-placeholder')}
-                    candidates={availableTags.map((tag) => ({
-                      value: tag,
-                      label: tag,
-                    }))}
-                    value={selectedTag}
-                    onValueChange={(value) => {
-                      setSelectedTag(value);
-                    }}
-                  />
-                </div>
-
-                {/* Search button */}
-                <Button
-                  className="w-full"
-                  onClick={() => handleSearch(false)}
-                  disabled={isSearching}
-                >
-                  {isSearching ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('find-page:searching')}
-                    </>
-                  ) : (
-                    <>
-                      <Search className="mr-2 h-4 w-4" />
-                      {t('find-page:search-button')}
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
             {/* Search results */}
             {searchResults.length > 0 && (
               <div className="flex-1">

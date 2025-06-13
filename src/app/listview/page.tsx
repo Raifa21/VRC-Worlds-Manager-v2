@@ -1241,78 +1241,85 @@ export default function ListView() {
         onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
       />
       <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">
-        <div className="p-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold truncate">
-            {Object.values(SpecialFolders).includes(
-              currentFolder as SpecialFolders,
-            )
-              ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
-              : currentFolder}
-          </h1>
-          <div className="flex items-center">
-            {(currentFolder === SpecialFolders.All ||
-              currentFolder === SpecialFolders.Unclassified) && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddWorldOpen(true)}
-                  className="ml-2 flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">
-                    {t('listview-page:add-world')}
-                  </span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleReload}
-                  className="ml-2 flex items-center gap-2"
-                  disabled={isLoading}
-                >
-                  <RefreshCw
-                    className={`h-4 w-4${isLoading ? ' animate-spin' : ''}`}
-                  />
-                  <span className="hidden sm:inline">
-                    {t('listview-page:reload-worlds')}
-                  </span>
-                </Button>
-              </>
-            )}
-            {!Object.values(SpecialFolders).includes(
-              currentFolder as SpecialFolders,
-            ) && (
-              <div className="flex items-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 flex items-center gap-2 ml-2 mr-1"
-                    >
-                      <Menu className="h-10 w-10" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      className="flex items-center gap-2 cursor-pointer"
-                      onClick={() => setIsAddWorldOpen(true)}
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>{t('listview-page:add-world')}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="flex items-center gap-2 text-muted-foreground"
-                      disabled={true}
-                    >
-                      <Share className="h-4 w-4" />
-                      <span>{t('listview-page:share-folder')}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
+        {/* Render header when in all worlds, unclassified, or in a folder*/}
+        {currentFolder === SpecialFolders.All ||
+        currentFolder === SpecialFolders.Unclassified ||
+        !Object.values(SpecialFolders).includes(
+          currentFolder as SpecialFolders,
+        ) ? (
+          <div className="p-4 flex justify-between items-center">
+            <h1 className="text-xl font-bold truncate">
+              {Object.values(SpecialFolders).includes(
+                currentFolder as SpecialFolders,
+              )
+                ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
+                : currentFolder}
+            </h1>
+            <div className="flex items-center">
+              {(currentFolder === SpecialFolders.All ||
+                currentFolder === SpecialFolders.Unclassified) && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddWorldOpen(true)}
+                    className="ml-2 flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {t('listview-page:add-world')}
+                    </span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleReload}
+                    className="ml-2 flex items-center gap-2"
+                    disabled={isLoading}
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4${isLoading ? ' animate-spin' : ''}`}
+                    />
+                    <span className="hidden sm:inline">
+                      {t('listview-page:reload-worlds')}
+                    </span>
+                  </Button>
+                </>
+              )}
+              {!Object.values(SpecialFolders).includes(
+                currentFolder as SpecialFolders,
+              ) && (
+                <div className="flex items-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 flex items-center gap-2 ml-2 mr-1"
+                      >
+                        <Menu className="h-10 w-10" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => setIsAddWorldOpen(true)}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>{t('listview-page:add-world')}</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 text-muted-foreground"
+                        disabled={true}
+                      >
+                        <Share className="h-4 w-4" />
+                        <span>{t('listview-page:share-folder')}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div>{renderMainContent()}</div>
       </div>
