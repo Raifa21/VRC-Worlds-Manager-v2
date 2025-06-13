@@ -88,7 +88,7 @@ export function WorldGrid({
   const [containerWidth, setContainerWidth] = useState<number>(() => {
     // don’t read window on the server
     if (typeof window === 'undefined') return 0;
-    // if ref is ready use it, otherwise fallback to window.innerWidth minus sidebar
+    // if ref is ready use it, otherwise fallback to window.innerWidth minus sidebar width (250px)
     return containerRef.current?.clientWidth ?? window.innerWidth - 250;
   });
 
@@ -574,6 +574,7 @@ export function WorldGrid({
       {isFindPage && selectedWorlds.length > 0 && (
         <div
           className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-center pointer-events-none w-full"
+          // add half-width of sidebar (250px) to center the button
           style={{ left: 'calc(50% + 125px)' }}
         >
           <div className="pointer-events-auto relative inline-block">
