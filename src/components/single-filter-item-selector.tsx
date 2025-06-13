@@ -38,13 +38,13 @@ interface SingleFilterItemSelectorProps {
   allowCustomValues?: boolean;
 }
 
-const SingleFilterItemSelector = ({
+export default function SingleFilterItemSelector({
   placeholder,
   value = '',
   candidates,
   onValueChange,
   allowCustomValues = true,
-}: SingleFilterItemSelectorProps) => {
+}: SingleFilterItemSelectorProps) {
   const { t } = useLocalization();
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -89,15 +89,16 @@ const SingleFilterItemSelector = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between h-10"
+          className="w-full justify-between min-w-0"
         >
-          <div className="flex flex-grow items-center gap-1 truncate">
+          <div className="flex flex-grow items-center gap-1 truncate min-w-0">
             {selectedOption ? (
               <Badge
                 variant="secondary"
-                className="mr-1 truncate flex items-center"
+                className="mr-1 flex items-center max-w-full truncate"
               >
-                <span className="truncate">{selectedOption.label}</span>
+                {/* selected tag text */}
+                <span className="truncate block">{selectedOption.label}</span>
                 <span
                   className="ml-1 cursor-pointer rounded-full hover:bg-muted/50"
                   role="button"
@@ -113,7 +114,7 @@ const SingleFilterItemSelector = ({
                 </span>
               </Badge>
             ) : (
-              <span className="text-muted-foreground text-sm">
+              <span className="text-muted-foreground text-sm truncate block">
                 {formattedPlaceholder}
               </span>
             )}
@@ -128,7 +129,7 @@ const SingleFilterItemSelector = ({
         side="bottom"
         sideOffset={5}
         alignOffset={0}
-        avoidCollisions={true}
+        avoidCollisions
         collisionPadding={8}
       >
         <Command className="max-h-[300px]">
@@ -137,7 +138,6 @@ const SingleFilterItemSelector = ({
             value={inputValue}
             onValueChange={setInputValue}
             onKeyDown={(e) => {
-              // On Enter, use the current input value
               if (e.key === 'Enter' && allowCustomValues && inputValue.trim()) {
                 e.preventDefault();
                 onValueChange?.(inputValue.trim());
@@ -150,10 +150,12 @@ const SingleFilterItemSelector = ({
           <CommandEmpty>
             {allowCustomValues ? (
               <div className="px-2 py-1.5 text-sm">
-                Press Enter to use "{inputValue}"
+                <span className="truncate block">
+                  {`Press Enter to use "${inputValue}"`}
+                </span>
               </div>
             ) : (
-              <div className="px-2 py-1.5 text-sm">
+              <div className="px-2 py-1.5 text-sm truncate">
                 {t('find-page:no-matching-tags')}
               </div>
             )}
@@ -170,7 +172,7 @@ const SingleFilterItemSelector = ({
                   value === item.value ? 'font-medium bg-accent' : '',
                 )}
               >
-                {item.label}
+                <span className="truncate block">{item.label}</span>
               </CommandItem>
             ))}
           </CommandGroup>
@@ -178,6 +180,4 @@ const SingleFilterItemSelector = ({
       </PopoverContent>
     </Popover>
   );
-};
-
-export default SingleFilterItemSelector;
+}
