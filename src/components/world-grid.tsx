@@ -85,9 +85,12 @@ export function WorldGrid({
   const cardW = cardWidths[size];
 
   // 1) Keep a piece of state for the container’s width
-  const [containerWidth, setContainerWidth] = useState<number>(
-    () => containerRef?.current?.clientWidth ?? window.innerWidth - 250,
-  );
+  const [containerWidth, setContainerWidth] = useState<number>(() => {
+    // don’t read window on the server
+    if (typeof window === 'undefined') return 0;
+    // if ref is ready use it, otherwise fallback to window.innerWidth minus sidebar
+    return containerRef.current?.clientWidth ?? window.innerWidth - 250;
+  });
 
   // 2) Observe that div and update width on resize
   useEffect(() => {
