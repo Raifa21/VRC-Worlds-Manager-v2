@@ -45,7 +45,7 @@ interface WorldGridProps {
   worldsJustAdded?: string[];
   onWorldsJustAddedProcessed?: () => void;
   // Used for virtualized scrolling
-  containerRef?: React.RefObject<HTMLDivElement | null>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function WorldGrid({
@@ -104,10 +104,12 @@ export function WorldGrid({
 
   // 3) Recompute cols whenever size or containerWidth changes
   const cols = useMemo(() => {
-    return Math.max(1, Math.floor((containerWidth + gap) / (cardW + gap)));
+    // account for the same “-10px” you use in the container width
+    const effectiveWidth = containerWidth - 10;
+    return Math.max(1, Math.floor((effectiveWidth + gap) / (cardW + gap)));
   }, [size, containerWidth]);
 
-  // 2) chunk worlds into rows
+  // 4) chunk worlds into rows
   const rows = useMemo(() => {
     const out = [];
     for (let i = 0; i < worlds.length; i += cols) {
@@ -116,7 +118,7 @@ export function WorldGrid({
     return out;
   }, [worlds, cols]);
 
-  // 3) virtualize rows
+  // 5) virtualize rows
   const rowHeight = cardH + gap;
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
@@ -312,8 +314,19 @@ export function WorldGrid({
   }, [folderName]);
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-auto relative">
-      <div style={{ height: totalHeight, position: 'relative' }}>
+    <div
+      ref={containerRef}
+      className="pt-2 flex-1 overflow-auto relative"
+      // ↑ debug: the scrollable full-width parent
+    >
+      <div
+        className="mx-auto relative"
+        // ↑ debug: this fixed-width grid container
+        style={{
+          width: `${containerWidth - 10}px`,
+          height: `${totalHeight}px`,
+        }}
+      >
         {virtualRows.map((vr) => {
           const row = rows[vr.index];
           return (
@@ -327,17 +340,20 @@ export function WorldGrid({
                 height: cardH,
               }}
             >
-              <div className="flex justify-center" style={{ gap: `${gap}px` }}>
+              <div
+                className="justify-evenly"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${cols}, ${cardW}px)`,
+                  columnGap: `${gap}px`,
+                }}
+              >
                 {row.map((world) => (
                   <ContextMenu key={world.worldId}>
                     <ContextMenuTrigger asChild>
                       <div
                         id={world.worldId}
-                        className={`relative w-fit h-fit group rounded-lg ${
-                          selectedWorlds.includes(world.worldId)
-                            ? 'ring-2 ring-primary'
-                            : ''
-                        }`}
+                        className={'relative w-fit h-fit group rounded-lg'}
                         onClick={() => onOpenWorldDetails(world.worldId)}
                       >
                         <WorldCardPreview size={size} world={world} />

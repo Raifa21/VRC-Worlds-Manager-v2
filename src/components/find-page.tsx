@@ -2,19 +2,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { WorldGrid } from '@/components/world-grid';
-import {
-  Link,
-  Loader2,
-  RefreshCcw,
-  Search,
-  CheckSquare,
-  Square,
-} from 'lucide-react';
+import { Loader2, RefreshCcw, Search } from 'lucide-react';
 import { commands, WorldDisplayData } from '@/lib/bindings';
-import { Platform } from '@/types/worlds';
 import { CardSize } from '@/types/preferences';
 import { SpecialFolders } from '@/types/folders';
 import { info } from '@tauri-apps/plugin-log';
@@ -30,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import SingleFilterItemSelector from './single-filter-item-selector';
+import { WorldGrid } from './world-grid';
 
 interface FindPageProps {
   onWorldsChange: (worlds: WorldDisplayData[]) => void;
@@ -69,6 +61,7 @@ export function FindPage({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const findGridRef = useRef<HTMLDivElement>(null);
 
   // Add this state to track when to trigger select all
   const [triggerSelectAll, setTriggerSelectAll] = useState(false);
@@ -315,6 +308,7 @@ export function FindPage({
                 selectAll={triggerSelectAll}
                 worldsJustAdded={worldsJustAdded}
                 onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
+                containerRef={findGridRef}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-64">
@@ -432,6 +426,7 @@ export function FindPage({
                   onClearSelectionComplete={onClearSelectionComplete}
                   worldsJustAdded={worldsJustAdded}
                   onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
+                  containerRef={findGridRef}
                 />
 
                 {/* Load more indicator */}
