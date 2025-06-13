@@ -311,6 +311,7 @@ export function FindPage({
                 onSelectedWorldsChange={onSelectedWorldsChange}
                 shouldClearSelection={clearSelection}
                 onClearSelectionComplete={onClearSelectionComplete}
+                isSelectionMode={true}
                 selectAll={triggerSelectAll}
                 worldsJustAdded={worldsJustAdded}
                 onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
@@ -425,6 +426,7 @@ export function FindPage({
                   size={CardSize.Normal}
                   onOpenWorldDetails={onSelectWorld}
                   onSelectedWorldsChange={onSelectedWorldsChange}
+                  isSelectionMode={true}
                   selectAll={triggerSelectAll}
                   shouldClearSelection={clearSelection}
                   onClearSelectionComplete={onClearSelectionComplete}

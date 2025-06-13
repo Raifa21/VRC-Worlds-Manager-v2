@@ -1,8 +1,6 @@
 import { WorldCardPreview } from './world-card';
 import { CardSize } from '@/types/preferences';
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
-import { toRomaji } from 'wanakana';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { SpecialFolders } from '@/types/folders';
 import { WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
@@ -13,21 +11,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  SortAsc,
-  SortDesc,
-  CheckSquare,
-  Square,
-  Check,
-  Plus,
-} from 'lucide-react';
+import { Square, Check, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -54,31 +38,15 @@ interface WorldGridProps {
   onOpenWorldDetails: (worldId: string) => void;
   onShowFolderDialog?: (worlds: string[]) => void;
   onSelectedWorldsChange: (worldIds: string[]) => void;
+  isSelectionMode: boolean;
   selectAll?: boolean;
   shouldClearSelection: boolean;
   onClearSelectionComplete?: () => void;
   worldsJustAdded?: string[];
   onWorldsJustAddedProcessed?: () => void;
+  // Used for virtualized scrolling
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
-
-type SortOption =
-  | 'name-asc'
-  | 'name-desc'
-  | 'authorName-asc'
-  | 'authorName-desc'
-  | 'favorites-asc'
-  | 'favorites-desc'
-  | 'dateAdded-asc'
-  | 'dateAdded-desc'
-  | 'lastUpdated-asc'
-  | 'lastUpdated-desc';
-
-type SortField =
-  | 'name'
-  | 'authorName'
-  | 'favorites'
-  | 'dateAdded'
-  | 'lastUpdated';
 
 export function WorldGrid({
   size,
@@ -92,29 +60,74 @@ export function WorldGrid({
   onShowFolderDialog,
   onSelectedWorldsChange,
   selectAll,
+  isSelectionMode,
   shouldClearSelection,
   onClearSelectionComplete,
   worldsJustAdded,
   onWorldsJustAddedProcessed,
+  containerRef,
 }: WorldGridProps) {
   const { t } = useLocalization();
-  const cardWidths = {
-    [CardSize.Compact]: 192, // w-48 = 12rem = 192px
-    [CardSize.Normal]: 208, // w-52 = 13rem = 208px
-    [CardSize.Expanded]: 256, // w-64 = 16rem = 256px
-    [CardSize.Original]: 256, // w-64 = 16rem = 256px
-  };
+  const gap = 16;
   const cardHeights = {
     [CardSize.Compact]: 128, // h-32 = 8rem = 128px
     [CardSize.Normal]: 192, // h-48 = 12rem = 192px
     [CardSize.Expanded]: 256, // h-64 = 16rem = 256px
     [CardSize.Original]: 176, // h-44 = 11rem = 176px
   };
-  const [cols, setCols] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('dateAdded');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const containerRef = useRef<HTMLDivElement>(null);
+  const cardWidths = {
+    [CardSize.Compact]: 192, // w-48 = 12rem = 192px
+    [CardSize.Normal]: 208, // w-52 = 13rem = 208px
+    [CardSize.Expanded]: 256, // w-64 = 16rem = 256px
+    [CardSize.Original]: 256, // w-64 = 16rem = 256px
+  };
+  const cardH = cardHeights[size];
+  const cardW = cardWidths[size];
+
+  // 1) Keep a piece of state for the container’s width
+  const [containerWidth, setContainerWidth] = useState<number>(
+    () => containerRef?.current?.clientWidth ?? window.innerWidth - 250,
+  );
+
+  // 2) Observe that div and update width on resize
+  useEffect(() => {
+    const el = containerRef?.current;
+    if (!el) return;
+    // set initial
+    setContainerWidth(el.clientWidth);
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [containerRef]);
+
+  // 3) Recompute cols whenever size or containerWidth changes
+  const cols = useMemo(() => {
+    return Math.max(1, Math.floor((containerWidth + gap) / (cardW + gap)));
+  }, [size, containerWidth]);
+
+  // 2) chunk worlds into rows
+  const rows = useMemo(() => {
+    const out = [];
+    for (let i = 0; i < worlds.length; i += cols) {
+      out.push(worlds.slice(i, i + cols));
+    }
+    return out;
+  }, [worlds, cols]);
+
+  // 3) virtualize rows
+  const rowHeight = cardH + gap;
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => containerRef?.current ?? null,
+    estimateSize: () => rowHeight,
+    overscan: 5,
+  });
+
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const virtualRows = rowVirtualizer.getVirtualItems();
+
   const [dialogConfig, setDialogConfig] = useState<{
     type: 'remove' | 'hide';
     worldId: string;
@@ -124,22 +137,9 @@ export function WorldGrid({
   const [selectedWorlds, setSelectedWorlds] = useState<string[]>(
     initialSelectedWorlds,
   );
-  const [isSelectionMode, setIsSelectionMode] = useState(
-    folderName === SpecialFolders.Find?.valueOf(),
-  );
   const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
     new Set(),
   );
-
-  const calculateCols = () => {
-    const cardWidth = cardWidths[size];
-    const gap = 16;
-    const containerWidth =
-      containerRef.current?.clientWidth ?? window.innerWidth - 250;
-    const numCols = Math.max(1, Math.floor(containerWidth / (cardWidth + gap)));
-
-    return numCols;
-  };
 
   // Wrap clearSelection in useCallback to prevent stale closures
   const clearSelection = useCallback(() => {
@@ -154,18 +154,6 @@ export function WorldGrid({
       onClearSelectionComplete?.();
     }
   }, [shouldClearSelection, onClearSelectionComplete, clearSelection]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      requestAnimationFrame(() => {
-        setCols(calculateCols());
-      });
-    };
-
-    handleResize(); // Initial calculation
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [size]);
 
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
@@ -237,92 +225,6 @@ export function WorldGrid({
     checkWorldsExistence();
   }, [worlds, isFindPage]);
 
-  const filteredWorlds = worlds.filter(
-    (world) =>
-      world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      toRomaji(world.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      toRomaji(world.authorName)
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()),
-  );
-
-  const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
-    switch (field) {
-      case 'favorites':
-      case 'dateAdded':
-      case 'lastUpdated':
-        return 'desc';
-      default:
-        return 'asc';
-    }
-  };
-
-  const handleSort = (field: SortField) => {
-    if (field === sortField) {
-      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortDirection(getDefaultDirection(field));
-    }
-  };
-
-  const sortedAndFilteredWorlds = filteredWorlds.sort((a, b) => {
-    const multiplier = sortDirection === 'asc' ? 1 : -1;
-
-    switch (sortField) {
-      case 'name':
-        return multiplier * a.name.localeCompare(b.name);
-      case 'authorName':
-        return multiplier * a.authorName.localeCompare(b.authorName);
-      case 'favorites':
-        return multiplier * (a.favorites - b.favorites);
-      case 'dateAdded': {
-        const dateA = a.dateAdded || '';
-        const dateB = b.dateAdded || '';
-
-        return multiplier * dateA.localeCompare(dateB);
-      }
-      case 'lastUpdated': {
-        const getTimestamp = (dateStr: string | null) => {
-          if (!dateStr) return 0;
-
-          try {
-            const date = new Date(dateStr);
-            return date.getTime();
-          } catch (e) {
-            error(`Error parsing date: ${dateStr}, ${e}`);
-            return 0;
-          }
-        };
-        const dateA = getTimestamp(a.lastUpdated);
-        const dateB = getTimestamp(b.lastUpdated);
-
-        return multiplier * (dateA - dateB);
-      }
-      default:
-        return 0;
-    }
-  });
-
-  const rowVirtualizer = useVirtualizer({
-    count: filteredWorlds.length,
-    getScrollElement: () => containerRef.current,
-    estimateSize: () => cardHeights[size],
-    overscan: 5,
-    lanes: cols,
-  });
-
-  // Check if current folder is a special folder
-  const isSpecialFolder = useMemo(() => {
-    return Object.values(SpecialFolders).includes(folderName as SpecialFolders);
-  }, [folderName]);
-
-  // Check if current folder is Hidden folder
-  const isHiddenFolder = useMemo(() => {
-    return folderName === SpecialFolders.Hidden;
-  }, [folderName]);
-
   const handleDialogClose = () => {
     setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
     setTimeout(() => setDialogConfig(null), 150);
@@ -342,7 +244,7 @@ export function WorldGrid({
       const newSelection = new Set(prev);
       if (event.shiftKey && prev.length > 0) {
         // Keep existing shift+click range selection
-        const worldIds = sortedAndFilteredWorlds.map((w) => w.worldId);
+        const worldIds = worlds.map((w) => w.worldId);
         const lastSelected = prev[prev.length - 1];
         const lastIndex = worldIds.indexOf(lastSelected);
         const currentIndex = worldIds.indexOf(worldId);
@@ -377,14 +279,14 @@ export function WorldGrid({
     if (!selectAll) return;
 
     // Select all applicable worlds (filter out existing worlds in Find page)
-    const worldsToSelect = sortedAndFilteredWorlds
+    const worldsToSelect = worlds
       .filter((world) => !isFindPage || !existingWorldIds.has(world.worldId))
       .map((world) => world.worldId);
 
     setSelectedWorlds(worldsToSelect);
 
     onSelectedWorldsChange(worldsToSelect);
-  }, [selectAll, sortedAndFilteredWorlds, isFindPage, existingWorldIds]);
+  }, [selectAll, worlds, isFindPage, existingWorldIds]);
 
   useEffect(() => {
     if (worldsJustAdded && worldsJustAdded.length > 0) {
@@ -399,255 +301,198 @@ export function WorldGrid({
     }
   }, [worldsJustAdded, onWorldsJustAddedProcessed]);
 
-  return (
-    <div className="h-full flex flex-col">
-      <div className="sticky top-0 z-20 bg-background">
-        {!isFindPage && (
-          <div className="p-4 flex items-center gap-4">
-            <Input
-              type="search"
-              placeholder={t('world-grid:search-placeholder')}
-              className={isFindPage ? 'w-full' : 'w-[calc(80vw-340px)] z-1'}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <div className="flex">
-              <Select
-                value={sortField}
-                onValueChange={(value) => handleSort(value as SortField)}
-              >
-                <SelectTrigger className="w-[180px] mt-0.5">
-                  <SelectValue placeholder={t('world-grid:sort-placeholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">
-                    {t('world-grid:sort-name')}
-                  </SelectItem>
-                  <SelectItem value="authorName">
-                    {t('general:sort-author')}
-                  </SelectItem>
-                  <SelectItem value="favorites">
-                    {t('world-grid:sort-favorites')}
-                  </SelectItem>
-                  <SelectItem value="dateAdded">
-                    {t('general:date-added')}
-                  </SelectItem>
-                  <SelectItem value="lastUpdated">
-                    {t('world-grid:sort-last-updated')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-                }
-                className="h-10 w-10"
-              >
-                {sortDirection === 'asc' ? (
-                  <SortAsc className="h-4 w-4" />
-                ) : (
-                  <SortDesc className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                variant={isSelectionMode ? 'secondary' : 'ghost'}
-                size="icon"
-                onClick={() => {
-                  if (isSelectionMode) {
-                    clearSelection();
-                    setIsSelectionMode(false);
-                  } else {
-                    setIsSelectionMode(true);
-                  }
-                }}
-                className="h-10 w-10"
-              >
-                {isSelectionMode ? (
-                  <CheckSquare className="h-4 w-4" />
-                ) : (
-                  <Square className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+  // Check if current folder is a special folder
+  const isSpecialFolder = useMemo(() => {
+    return Object.values(SpecialFolders).includes(folderName as SpecialFolders);
+  }, [folderName]);
 
-      <div ref={containerRef} className="flex-1 overflow-auto">
-        <div className="p-4">
-          <div
-            className="grid gap-4 justify-items-center"
-            style={{
-              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-              height: `${rowVirtualizer.getTotalSize() / cols}px`,
-            }}
-          >
-            {rowVirtualizer.getVirtualItems().map((worldIndex) => {
-              const world = sortedAndFilteredWorlds[worldIndex.index];
-              return (
-                <ContextMenu key={world.worldId}>
-                  <ContextMenuTrigger asChild>
-                    <div
-                      id={world.worldId}
-                      className={`relative w-fit h-fit group rounded-lg ${
-                        selectedWorlds.includes(world.worldId)
-                          ? 'ring-2 ring-primary'
-                          : ''
-                      }`}
-                      onClick={() => onOpenWorldDetails(world.worldId)}
-                    >
-                      <WorldCardPreview size={size} world={world} />
-                      {isSelectionMode && (
-                        <>
-                          {!isFindPage ? (
-                            <div className="absolute top-2 left-2 z-1">
-                              {selectedWorlds.includes(world.worldId) ? (
-                                <div
-                                  className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSelect(world.worldId, e);
-                                  }}
-                                >
-                                  <Square className="w-5 h-5 z-10 text-primary" />
-                                  <div className="absolute inset-[8px] bg-background rounded" />
-                                  <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
-                                </div>
-                              ) : (
-                                <div
-                                  className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSelect(world.worldId, e);
-                                  }}
-                                >
-                                  <Square className="w-5 h-5 text-muted-foreground" />
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <>
-                              {!existingWorldIds.has(world.worldId) ? (
-                                <div className="absolute top-2 left-2 z-1">
-                                  {selectedWorlds.includes(world.worldId) ? (
-                                    <div
-                                      className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSelect(world.worldId, e);
-                                      }}
-                                    >
-                                      <Square className="w-5 h-5 z-10 text-primary" />
-                                      <div className="absolute inset-[8px] bg-background rounded" />
-                                      <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
-                                    </div>
-                                  ) : (
-                                    <div
-                                      className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSelect(world.worldId, e);
-                                      }}
-                                    >
-                                      <Square className="w-5 h-5 text-muted-foreground" />
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="absolute top-2 left-2 z-1">
-                                  <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
-                                    {t('world-grid:exists-in-collection')}
-                                  </Badge>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </ContextMenuTrigger>
-                  {!isFindPage && (
-                    <ContextMenuContent>
-                      {!isHiddenFolder ? (
-                        <>
-                          {onShowFolderDialog && (
+  // Check if current folder is Hidden folder
+  const isHiddenFolder = useMemo(() => {
+    return folderName === SpecialFolders.Hidden;
+  }, [folderName]);
+
+  return (
+    <div ref={containerRef} className="flex-1 overflow-auto relative">
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        {virtualRows.map((vr) => {
+          const row = rows[vr.index];
+          return (
+            <div
+              key={vr.index}
+              style={{
+                position: 'absolute',
+                top: vr.start,
+                left: 0,
+                width: '100%',
+                height: cardH,
+              }}
+            >
+              <div className="flex justify-center" style={{ gap: `${gap}px` }}>
+                {row.map((world) => (
+                  <ContextMenu key={world.worldId}>
+                    <ContextMenuTrigger asChild>
+                      <div
+                        id={world.worldId}
+                        className={`relative w-fit h-fit group rounded-lg ${
+                          selectedWorlds.includes(world.worldId)
+                            ? 'ring-2 ring-primary'
+                            : ''
+                        }`}
+                        onClick={() => onOpenWorldDetails(world.worldId)}
+                      >
+                        <WorldCardPreview size={size} world={world} />
+                        {isSelectionMode && (
+                          <>
+                            {!isFindPage ? (
+                              <div className="absolute top-2 left-2 z-1">
+                                {selectedWorlds.includes(world.worldId) ? (
+                                  <div
+                                    className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelect(world.worldId, e);
+                                    }}
+                                  >
+                                    <Square className="w-5 h-5 z-10 text-primary" />
+                                    <div className="absolute inset-[8px] bg-background rounded" />
+                                    <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
+                                  </div>
+                                ) : (
+                                  <div
+                                    className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSelect(world.worldId, e);
+                                    }}
+                                  >
+                                    <Square className="w-5 h-5 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                {!existingWorldIds.has(world.worldId) ? (
+                                  <div className="absolute top-2 left-2 z-1">
+                                    {selectedWorlds.includes(world.worldId) ? (
+                                      <div
+                                        className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleSelect(world.worldId, e);
+                                        }}
+                                      >
+                                        <Square className="w-5 h-5 z-10 text-primary" />
+                                        <div className="absolute inset-[8px] bg-background rounded" />
+                                        <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
+                                      </div>
+                                    ) : (
+                                      <div
+                                        className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleSelect(world.worldId, e);
+                                        }}
+                                      >
+                                        <Square className="w-5 h-5 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="absolute top-2 left-2 z-1">
+                                    <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
+                                      {t('world-grid:exists-in-collection')}
+                                    </Badge>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </ContextMenuTrigger>
+                    {!isFindPage && (
+                      <ContextMenuContent>
+                        {!isHiddenFolder ? (
+                          <>
+                            {onShowFolderDialog && (
+                              <ContextMenuItem
+                                onSelect={(e) => {
+                                  const worldsToMove =
+                                    selectedWorlds.length > 0 &&
+                                    selectedWorlds.includes(world.worldId)
+                                      ? Array.from(selectedWorlds).map(
+                                          (id) =>
+                                            worlds.find(
+                                              (w) => w.worldId === id,
+                                            )!,
+                                        )
+                                      : [world];
+                                  onShowFolderDialog(
+                                    worldsToMove.map((w) => w.worldId),
+                                  );
+                                }}
+                              >
+                                {t('world-grid:move-title')}
+                              </ContextMenuItem>
+                            )}
+                            {!isSpecialFolder && (
+                              <ContextMenuItem
+                                onSelect={(e) => {
+                                  const worldsToRemove =
+                                    selectedWorlds.length > 0 &&
+                                    selectedWorlds.includes(world.worldId)
+                                      ? Array.from(selectedWorlds)
+                                      : [world.worldId];
+                                  onRemoveFromFolder?.(worldsToRemove);
+                                }}
+                                className="text-destructive"
+                              >
+                                {t('world-grid:remove-title')}
+                              </ContextMenuItem>
+                            )}
                             <ContextMenuItem
                               onSelect={(e) => {
-                                const worldsToMove =
-                                  selectedWorlds.length > 0 &&
-                                  selectedWorlds.includes(world.worldId)
-                                    ? Array.from(selectedWorlds).map(
-                                        (id) =>
-                                          worlds.find((w) => w.worldId === id)!,
-                                      )
-                                    : [world];
-                                onShowFolderDialog(
-                                  worldsToMove.map((w) => w.worldId),
-                                );
-                              }}
-                            >
-                              {t('world-grid:move-title')}
-                            </ContextMenuItem>
-                          )}
-                          {!isSpecialFolder && (
-                            <ContextMenuItem
-                              onSelect={(e) => {
-                                const worldsToRemove =
+                                const worldsToHide =
                                   selectedWorlds.length > 0 &&
                                   selectedWorlds.includes(world.worldId)
                                     ? Array.from(selectedWorlds)
                                     : [world.worldId];
-                                onRemoveFromFolder?.(worldsToRemove);
+                                const worldNames = worldsToHide
+                                  .map(
+                                    (id) =>
+                                      worlds.find((w) => w.worldId === id)
+                                        ?.name || '',
+                                  )
+                                  .filter(Boolean);
+                                onHideWorld?.(worldsToHide, worldNames);
                               }}
                               className="text-destructive"
                             >
-                              {t('world-grid:remove-title')}
+                              {t('general:hide-title')}
                             </ContextMenuItem>
-                          )}
+                          </>
+                        ) : (
                           <ContextMenuItem
                             onSelect={(e) => {
-                              const worldsToHide =
+                              const worldsToRestore =
                                 selectedWorlds.length > 0 &&
                                 selectedWorlds.includes(world.worldId)
                                   ? Array.from(selectedWorlds)
                                   : [world.worldId];
-                              const worldNames = worldsToHide
-                                .map(
-                                  (id) =>
-                                    worlds.find((w) => w.worldId === id)
-                                      ?.name || '',
-                                )
-                                .filter(Boolean);
-                              onHideWorld?.(worldsToHide, worldNames);
+                              onUnhideWorld?.(worldsToRestore);
                             }}
-                            className="text-destructive"
                           >
-                            {t('general:hide-title')}
+                            {t('world-grid:restore-world')}
                           </ContextMenuItem>
-                        </>
-                      ) : (
-                        <ContextMenuItem
-                          onSelect={(e) => {
-                            const worldsToRestore =
-                              selectedWorlds.length > 0 &&
-                              selectedWorlds.includes(world.worldId)
-                                ? Array.from(selectedWorlds)
-                                : [world.worldId];
-                            onUnhideWorld?.(worldsToRestore);
-                          }}
-                        >
-                          {t('world-grid:restore-world')}
-                        </ContextMenuItem>
-                      )}
-                    </ContextMenuContent>
-                  )}
-                </ContextMenu>
-              );
-            })}
-          </div>
-        </div>
+                        )}
+                      </ContextMenuContent>
+                    )}
+                  </ContextMenu>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Portaled AlertDialogs */}

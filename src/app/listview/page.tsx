@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,16 @@ import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
-import { Menu, Plus, RefreshCw, Share } from 'lucide-react'; // For the reload icon
+import {
+  CheckSquare,
+  Menu,
+  Plus,
+  RefreshCw,
+  Share,
+  SortAsc,
+  SortDesc,
+  Square,
+} from 'lucide-react'; // For the reload icon
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
@@ -21,6 +30,7 @@ import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
 import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
 import { useMemo } from 'react';
+import { toRomaji } from 'wanakana';
 import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
@@ -30,15 +40,29 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+type SortField =
+  | 'name'
+  | 'authorName'
+  | 'favorites'
+  | 'dateAdded'
+  | 'lastUpdated';
 
 export default function ListView() {
   const { folders, loadFolders } = useFolders();
   const { toast } = useToast();
   const { t } = useLocalization();
+  const gridScrollRef = useRef<HTMLDivElement>(null);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showDeleteFolder, setShowDeleteFolder] = useState<string | null>(null);
   const [isAddWorldOpen, setIsAddWorldOpen] = useState(false);
@@ -64,7 +88,11 @@ export default function ListView() {
   >(new Map<string | SpecialFolders, string[]>());
   const [shouldClearMultiSelection, setShouldClearMultiSelection] =
     useState(false);
-  const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]); // New state for added worlds
+  const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<SortField>('dateAdded');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [deleteConfirmWorld, setDeleteConfirmWorld] = useState<string | null>(
     null,
   );
@@ -980,6 +1008,74 @@ export default function ListView() {
     }
   };
 
+  const filteredWorlds = worlds.filter(
+    (world) =>
+      world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      toRomaji(world.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      toRomaji(world.authorName)
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()),
+  );
+
+  const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
+    switch (field) {
+      case 'favorites':
+      case 'dateAdded':
+      case 'lastUpdated':
+        return 'desc';
+      default:
+        return 'asc';
+    }
+  };
+
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection(getDefaultDirection(field));
+    }
+  };
+
+  const sortedAndFilteredWorlds = filteredWorlds.sort((a, b) => {
+    const multiplier = sortDirection === 'asc' ? 1 : -1;
+
+    switch (sortField) {
+      case 'name':
+        return multiplier * a.name.localeCompare(b.name);
+      case 'authorName':
+        return multiplier * a.authorName.localeCompare(b.authorName);
+      case 'favorites':
+        return multiplier * (a.favorites - b.favorites);
+      case 'dateAdded': {
+        const dateA = a.dateAdded || '';
+        const dateB = b.dateAdded || '';
+
+        return multiplier * dateA.localeCompare(dateB);
+      }
+      case 'lastUpdated': {
+        const getTimestamp = (dateStr: string | null) => {
+          if (!dateStr) return 0;
+
+          try {
+            const date = new Date(dateStr);
+            return date.getTime();
+          } catch (e) {
+            error(`Error parsing date: ${dateStr}, ${e}`);
+            return 0;
+          }
+        };
+        const dateA = getTimestamp(a.lastUpdated);
+        const dateB = getTimestamp(b.lastUpdated);
+
+        return multiplier * (dateA - dateB);
+      }
+      default:
+        return 0;
+    }
+  });
+
   const renderMainContent = () => {
     if (showAbout) {
       return <AboutSection />;
@@ -1023,6 +1119,128 @@ export default function ListView() {
 
     return (
       <>
+        <div className="sticky top-0 z-20 bg-background">
+          <div className="p-4 flex items-center gap-4">
+            <Input
+              type="search"
+              placeholder={t('world-grid:search-placeholder')}
+              className={'w-[calc(80vw-340px)]'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="flex">
+              <Select
+                value={sortField}
+                onValueChange={(value) => handleSort(value as SortField)}
+              >
+                <SelectTrigger className="w-[180px] mt-0.5">
+                  <SelectValue placeholder={t('world-grid:sort-placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">
+                    {t('world-grid:sort-name')}
+                  </SelectItem>
+                  <SelectItem value="authorName">
+                    {t('general:sort-author')}
+                  </SelectItem>
+                  <SelectItem value="favorites">
+                    {t('world-grid:sort-favorites')}
+                  </SelectItem>
+                  <SelectItem value="dateAdded">
+                    {t('general:date-added')}
+                  </SelectItem>
+                  <SelectItem value="lastUpdated">
+                    {t('world-grid:sort-last-updated')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                }
+                className="h-10 w-10"
+              >
+                {sortDirection === 'asc' ? (
+                  <SortAsc className="h-4 w-4" />
+                ) : (
+                  <SortDesc className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant={isSelectionMode ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => {
+                  if (isSelectionMode) {
+                    setShouldClearMultiSelection(true);
+                    setIsSelectionMode(false);
+                  } else {
+                    setIsSelectionMode(true);
+                  }
+                }}
+                className="h-10 w-10"
+              >
+                {isSelectionMode ? (
+                  <CheckSquare className="h-4 w-4" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1">
+          <WorldGrid
+            size={cardSize}
+            worlds={sortedAndFilteredWorlds}
+            folderName={currentFolder}
+            initialSelectedWorlds={selectedWorldsForFolder}
+            onRemoveFromFolder={removeWorldsFromFolder}
+            onHideWorld={handleHideWorld}
+            onUnhideWorld={handleRestoreWorld}
+            onOpenWorldDetails={handleOpenWorldDetails}
+            onShowFolderDialog={(worlds) => {
+              setSelectedWorldsForFolder(worlds);
+              setShowFolderDialog(true);
+            }}
+            onSelectedWorldsChange={(selectedWorlds) => {
+              setSelectedWorldsForFolder(selectedWorlds);
+            }}
+            isSelectionMode={isSelectionMode}
+            shouldClearSelection={shouldClearMultiSelection}
+            onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
+            containerRef={gridScrollRef}
+          />
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <div className="flex h-screen">
+      <AppSidebar
+        folders={folders}
+        onFoldersChange={loadFolders}
+        onAddFolder={() => setShowCreateFolder(true)}
+        onSelectFolder={handleSelectFolder}
+        selectedFolder={currentFolder}
+        onSelectAbout={() => {
+          setShowAbout(true);
+          setShowSettings(false);
+          setShowFind(false);
+          setShowWorldDetails(false);
+        }}
+        onSelectSettings={() => {
+          setShowSettings(true);
+          setShowAbout(false);
+          setShowFind(false);
+          setShowWorldDetails(false);
+        }}
+        onRenameFolder={onRenameFolder}
+        onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
+      />
+      <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">
         <div className="p-4 flex justify-between items-center">
           <h1 className="text-xl font-bold truncate">
             {Object.values(SpecialFolders).includes(
@@ -1095,55 +1313,9 @@ export default function ListView() {
             )}
           </div>
         </div>
-        <div className="flex-1">
-          <WorldGrid
-            size={cardSize}
-            worlds={worlds}
-            folderName={currentFolder}
-            initialSelectedWorlds={selectedWorldsForFolder}
-            onRemoveFromFolder={removeWorldsFromFolder}
-            onHideWorld={handleHideWorld}
-            onUnhideWorld={handleRestoreWorld}
-            onOpenWorldDetails={handleOpenWorldDetails}
-            onShowFolderDialog={(worlds) => {
-              setSelectedWorldsForFolder(worlds);
-              setShowFolderDialog(true);
-            }}
-            onSelectedWorldsChange={(selectedWorlds) => {
-              setSelectedWorldsForFolder(selectedWorlds);
-            }}
-            shouldClearSelection={shouldClearMultiSelection}
-            onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
-          />
-        </div>
-      </>
-    );
-  };
 
-  return (
-    <div className="flex h-screen">
-      <AppSidebar
-        folders={folders}
-        onFoldersChange={loadFolders}
-        onAddFolder={() => setShowCreateFolder(true)}
-        onSelectFolder={handleSelectFolder}
-        selectedFolder={currentFolder}
-        onSelectAbout={() => {
-          setShowAbout(true);
-          setShowSettings(false);
-          setShowFind(false);
-          setShowWorldDetails(false);
-        }}
-        onSelectSettings={() => {
-          setShowSettings(true);
-          setShowAbout(false);
-          setShowFind(false);
-          setShowWorldDetails(false);
-        }}
-        onRenameFolder={onRenameFolder}
-        onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
-      />
-      <div className="flex-1 overflow-auto">{renderMainContent()}</div>
+        <div>{renderMainContent()}</div>
+      </div>
       <CreateFolderDialog
         open={showCreateFolder}
         onOpenChange={(open) => {
