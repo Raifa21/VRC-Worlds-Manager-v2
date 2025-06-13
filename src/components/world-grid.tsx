@@ -340,7 +340,7 @@ export function WorldGrid({
                 top: vr.start,
                 left: 0,
                 width: '100%',
-                height: cardH,
+                height: cardH + gap,
               }}
             >
               <div
