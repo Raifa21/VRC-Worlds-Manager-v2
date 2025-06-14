@@ -35,7 +35,7 @@ interface SingleFilterItemSelectorProps {
   value?: string;
   candidates: Option[];
   onValueChange?: (value: string) => void;
-  allowCustomValues?: boolean;
+  allowCustomValues: boolean;
 }
 
 export default function SingleFilterItemSelector({
@@ -43,7 +43,7 @@ export default function SingleFilterItemSelector({
   value = '',
   candidates,
   onValueChange,
-  allowCustomValues = true,
+  allowCustomValues,
 }: SingleFilterItemSelectorProps) {
   const { t } = useLocalization();
   const [open, setOpen] = useState(false);
