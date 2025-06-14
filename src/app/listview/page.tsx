@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,8 @@ import {
   SortAsc,
   SortDesc,
   Square,
+  Settings,
+  X,
 } from 'lucide-react'; // For the reload icon
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
@@ -29,7 +31,6 @@ import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
 import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
-import { useMemo } from 'react';
 import { toRomaji } from 'wanakana';
 import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
@@ -42,7 +43,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -50,6 +50,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
 
 type SortField =
   | 'name'
@@ -98,6 +100,7 @@ export default function ListView() {
   );
   const [deleteConfirmWorldName, setDeleteConfirmWorldName] =
     useState<string>('');
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
 
   useEffect(() => {
     loadAllWorlds();
@@ -1008,15 +1011,53 @@ export default function ListView() {
     }
   };
 
-  const filteredWorlds = worlds.filter(
-    (world) =>
-      world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      toRomaji(world.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      toRomaji(world.authorName)
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()),
-  );
+  const parseSearchQuery = (query: string) => {
+    const authorMatch = query.match(/author:(\S+)/i);
+    const tagMatch = query.match(/tag:(\S+)/i);
+    const cleanQuery = query
+      .replace(/author:\S+/gi, '')
+      .replace(/tag:\S+/gi, '')
+      .trim();
+
+    return {
+      text: cleanQuery,
+      author: authorMatch?.[1] || '',
+      tag: tagMatch?.[1] || '',
+    };
+  };
+
+  const filteredWorlds = useMemo(() => {
+    const parsed = parseSearchQuery(searchQuery);
+
+    return worlds.filter((world) => {
+      // Check text search
+      const textMatch =
+        !parsed.text ||
+        world.name.toLowerCase().includes(parsed.text.toLowerCase()) ||
+        world.authorName.toLowerCase().includes(parsed.text.toLowerCase()) ||
+        toRomaji(world.name)
+          .toLowerCase()
+          .includes(parsed.text.toLowerCase()) ||
+        toRomaji(world.authorName)
+          .toLowerCase()
+          .includes(parsed.text.toLowerCase());
+
+      // Check author filter
+      const authorMatch =
+        !parsed.author ||
+        world.authorName.toLowerCase().includes(parsed.author.toLowerCase());
+
+      // Check tag filter
+      const tagMatch =
+        !parsed.tag ||
+        (world.tags &&
+          world.tags.some((tag) =>
+            tag.toLowerCase().includes(parsed.tag.toLowerCase()),
+          ));
+
+      return textMatch && authorMatch && tagMatch;
+    });
+  }, [worlds, searchQuery]);
 
   const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
     switch (field) {
@@ -1121,13 +1162,127 @@ export default function ListView() {
       <>
         <div className="sticky top-0 z-20 bg-background">
           <div className="p-4 flex items-center gap-4">
-            <Input
-              type="search"
-              placeholder={t('world-grid:search-placeholder')}
-              className={'w-[calc(80vw-340px)]'}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="flex-1 flex items-center gap-2">
+              <div className="relative flex-1">
+                {/* Hidden input for actual value management */}
+                <input type="hidden" value={searchQuery} />
+
+                {/* Visual input container */}
+                <div className="relative">
+                  <div className="flex items-center min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    {/* Badges */}
+                    {(() => {
+                      const parsed = parseSearchQuery(searchQuery);
+                      const badges = [];
+
+                      if (parsed.author) {
+                        badges.push(
+                          <Badge
+                            key="author"
+                            variant="secondary"
+                            className="text-xs h-5 flex items-center gap-1 mr-1"
+                          >
+                            <span>Author: {parsed.author}</span>
+                            <X
+                              className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newQuery = searchQuery
+                                  .replace(/author:\S+/gi, '')
+                                  .trim();
+                                setSearchQuery(newQuery);
+                              }}
+                            />
+                          </Badge>,
+                        );
+                      }
+
+                      if (parsed.tag) {
+                        badges.push(
+                          <Badge
+                            key="tag"
+                            variant="secondary"
+                            className="text-xs h-5 flex items-center gap-1 mr-1"
+                          >
+                            <span>Tag: {parsed.tag}</span>
+                            <X
+                              className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newQuery = searchQuery
+                                  .replace(/tag:\S+/gi, '')
+                                  .trim();
+                                setSearchQuery(newQuery);
+                              }}
+                            />
+                          </Badge>,
+                        );
+                      }
+
+                      return badges;
+                    })()}
+
+                    {/* Actual text input */}
+                    <input
+                      type="text"
+                      placeholder={(() => {
+                        const parsed = parseSearchQuery(searchQuery);
+                        return parsed.author || parsed.tag
+                          ? ''
+                          : t('world-grid:search-placeholder');
+                      })()}
+                      value={(() => {
+                        const parsed = parseSearchQuery(searchQuery);
+                        return parsed.text;
+                      })()}
+                      onChange={(e) => {
+                        const parsed = parseSearchQuery(searchQuery);
+                        let newQuery = e.target.value;
+
+                        // Preserve existing filters
+                        if (parsed.author)
+                          newQuery += ` author:${parsed.author}`;
+                        if (parsed.tag) newQuery += ` tag:${parsed.tag}`;
+
+                        setSearchQuery(newQuery.trim());
+                      }}
+                      className="flex-1 bg-transparent outline-none min-w-0"
+                      onKeyDown={(e) => {
+                        // Handle adding new filters via typing
+                        const value = e.currentTarget.value;
+                        if (e.key === ' ' || e.key === 'Enter') {
+                          if (
+                            value.includes('author:') &&
+                            !value.match(/author:\S+/)
+                          ) {
+                            // User is trying to type author: prefix
+                            return;
+                          }
+                          if (
+                            value.includes('tag:') &&
+                            !value.match(/tag:\S+/)
+                          ) {
+                            // User is trying to type tag: prefix
+                            return;
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Settings button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                    onClick={() => setShowAdvancedSearch(true)}
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             <div className="flex">
               <Select
                 value={sortField}
@@ -1393,6 +1548,12 @@ export default function ListView() {
           if (!open) setDeleteConfirmWorld(null);
         }}
         onConfirm={confirmDeleteWorld}
+      />
+      <AdvancedSearchPanel
+        open={showAdvancedSearch}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onClose={() => setShowAdvancedSearch(false)}
       />
     </div>
   );
