@@ -1013,7 +1013,7 @@ export default function ListView() {
 
   const parseSearchQuery = (query: string) => {
     const authorMatch = query.match(/author:(\S+)/i);
-    const tagMatch = query.match(/tag:(\S+)/i);
+    const tagMatches = query.match(/tag:(\S+)/gi);
     const cleanQuery = query
       .replace(/author:\S+/gi, '')
       .replace(/tag:\S+/gi, '')
@@ -1022,7 +1022,9 @@ export default function ListView() {
     return {
       text: cleanQuery,
       author: authorMatch?.[1] || '',
-      tag: tagMatch?.[1] || '',
+      tags: tagMatches
+        ? tagMatches.map((match) => match.replace(/tag:/i, ''))
+        : [],
     };
   };
 
@@ -1047,12 +1049,14 @@ export default function ListView() {
         !parsed.author ||
         world.authorName.toLowerCase().includes(parsed.author.toLowerCase());
 
-      // Check tag filter
+      // Check tag filters (ALL tags must match - AND logic)
       const tagMatch =
-        !parsed.tag ||
+        parsed.tags.length === 0 ||
         (world.tags &&
-          world.tags.some((tag) =>
-            tag.toLowerCase().includes(parsed.tag.toLowerCase()),
+          parsed.tags.every((searchTag) =>
+            world.tags.some((worldTag) =>
+              worldTag.toLowerCase().includes(searchTag.toLowerCase()),
+            ),
           ));
 
       return textMatch && authorMatch && tagMatch;
@@ -1197,27 +1201,27 @@ export default function ListView() {
                         );
                       }
 
-                      if (parsed.tag) {
+                      parsed.tags.forEach((tag, index) => {
                         badges.push(
                           <Badge
-                            key="tag"
+                            key={`tag-${index}`}
                             variant="secondary"
                             className="text-xs h-5 flex items-center gap-1 mr-1"
                           >
-                            <span>Tag: {parsed.tag}</span>
+                            <span>Tag: {tag}</span>
                             <X
                               className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const newQuery = searchQuery
-                                  .replace(/tag:\S+/gi, '')
+                                  .replace(new RegExp(`tag:${tag}`, 'gi'), '')
                                   .trim();
                                 setSearchQuery(newQuery);
                               }}
                             />
                           </Badge>,
                         );
-                      }
+                      });
 
                       return badges;
                     })()}
@@ -1227,7 +1231,7 @@ export default function ListView() {
                       type="text"
                       placeholder={(() => {
                         const parsed = parseSearchQuery(searchQuery);
-                        return parsed.author || parsed.tag
+                        return parsed.author || parsed.tags.length > 0
                           ? ''
                           : t('world-grid:search-placeholder');
                       })()}
@@ -1242,7 +1246,11 @@ export default function ListView() {
                         // Preserve existing filters
                         if (parsed.author)
                           newQuery += ` author:${parsed.author}`;
-                        if (parsed.tag) newQuery += ` tag:${parsed.tag}`;
+                        if (parsed.tags.length > 0) {
+                          parsed.tags.forEach((tag) => {
+                            newQuery += ` tag:${tag}`;
+                          });
+                        }
 
                         setSearchQuery(newQuery.trim());
                       }}
