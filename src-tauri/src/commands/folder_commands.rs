@@ -147,6 +147,15 @@ pub async fn get_tags_by_count() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_authors_by_count() -> Result<Vec<String>, String> {
+    FolderManager::get_authors_by_count(WORLDS.get()).map_err(|e| {
+        log::error!("Error getting authors by count: {}", e);
+        e.to_string()
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn delete_world(world_id: String) -> Result<(), String> {
     FolderManager::delete_world(world_id, FOLDERS.get(), WORLDS.get()).map_err(|e| {
         log::error!("Error deleting world: {}", e);

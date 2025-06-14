@@ -537,6 +537,7 @@ const WelcomePage: React.FC = () => {
                         favorites: 59,
                         platform: Platform.CrossPlatform,
                         folders: [],
+                        tags: [],
                       }}
                     />
                   </div>
