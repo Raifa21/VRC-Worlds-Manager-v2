@@ -396,7 +396,7 @@ export function WorldGrid({
                                 </div>
                               ) : (
                                 <>
-                                  {!existingWorldIds.has(world.worldId) ? (
+                                  {!isSelected ? (
                                     <div className="absolute top-2 left-2 z-1">
                                       {selectedWorlds.includes(
                                         world.worldId,
