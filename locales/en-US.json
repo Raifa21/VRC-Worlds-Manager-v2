@@ -338,6 +338,8 @@
   "add-to-folder-dialog:description-multiple": "Select folders to add or remove {0} worlds from",
   "add-to-folder-dialog:no-folders": "No folders available. Add a new folder from the sidebar.",
   "add-to-folder-dialog:find-page-info": "If no folder is selected, the world will be added to the Unclassified folder.",
+  "add-to-folder-dialog:new-placeholder": "New Folder Name",
+  "add-to-folder-dialog:add-folder": "Add Folder",
 
   "create-folder-dialog:title": "Create New Folder",
   "create-folder-dialog:placeholder": "Enter folder name",

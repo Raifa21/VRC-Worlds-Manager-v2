@@ -268,8 +268,8 @@ export default function ListView() {
       const newName = await invoke<string>('create_folder', { name: name });
       await loadFolders();
 
-      // Only navigate to the new folder if not in Find page
-      if (currentFolder !== SpecialFolders.Find) {
+      // Only navigate to the new folder if not in Find page or if add-to-folder dialog is open
+      if (currentFolder !== SpecialFolders.Find && !showFolderDialog) {
         await Promise.all([
           setCurrentFolder(newName),
           setShowCreateFolder(false),
@@ -1696,6 +1696,7 @@ export default function ListView() {
           handleAddToFolders(foldersToAdd, foldersToRemove)
         }
         isFindPage={isFindPage}
+        onAddFolder={handleCreateFolder}
       />
       <DeleteFolderDialog
         folderName={showDeleteFolder}
