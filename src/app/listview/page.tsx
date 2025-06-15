@@ -1270,7 +1270,7 @@ export default function ListView() {
 
           {/* Filter Section */}
           {authorFilter || tagFilters.length > 0 || folderFilters.length > 0 ? (
-            <div className="px-4 pb-4 border-b bg-muted/50">
+            <div className="px-4 pb-2 border-b bg-muted/50">
               {/* Header: Filters title + Clear All */}
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-muted-foreground">
@@ -1676,6 +1676,12 @@ export default function ListView() {
         onGetGroupPermissions={getGroupPermissions}
         dontSaveToLocal={isFindPage}
         onDeleteWorld={onDelete}
+        onSelectAuthor={(author) => {
+          setAuthorFilter(author);
+        }}
+        onSelectTag={(tag) => {
+          setTagFilters((prev) => [...prev, tag]);
+        }}
       />
       <AddToFolderDialog
         open={showFolderDialog}
