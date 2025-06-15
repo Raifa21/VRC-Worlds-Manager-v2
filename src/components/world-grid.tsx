@@ -26,7 +26,6 @@ import * as Portal from '@radix-ui/react-portal';
 import { info, error } from '@tauri-apps/plugin-log';
 import { commands } from '@/lib/bindings';
 import { Badge } from './ui/badge';
-import { cn } from '@/lib/utils';
 
 interface WorldGridProps {
   size: CardSize;
