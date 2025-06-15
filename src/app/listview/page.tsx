@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useLayoutEffect, useRef, useState, useMemo, useEffect } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,9 @@ import {
   SortAsc,
   SortDesc,
   Square,
+  Settings,
+  X,
+  TextSearch,
 } from 'lucide-react'; // For the reload icon
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
@@ -29,7 +32,6 @@ import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
 import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
-import { useMemo } from 'react';
 import { toRomaji } from 'wanakana';
 import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
@@ -42,7 +44,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -50,6 +51,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
 
 type SortField =
   | 'name'
@@ -59,6 +62,14 @@ type SortField =
   | 'lastUpdated';
 
 export default function ListView() {
+  const filterRowRef = useRef<HTMLDivElement>(null);
+  const authorRef = useRef<HTMLDivElement>(null);
+  const tagsRef = useRef<HTMLDivElement>(null);
+  const foldersRef = useRef<HTMLDivElement>(null);
+  const foldersLabelRef = useRef<HTMLSpanElement>(null); // ← new
+  const clearRef = useRef<HTMLButtonElement>(null);
+  const [wrapFolders, setWrapFolders] = useState(false);
+
   const { folders, loadFolders } = useFolders();
   const { toast } = useToast();
   const { t } = useLocalization();
@@ -90,6 +101,9 @@ export default function ListView() {
     useState(false);
   const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [authorFilter, setAuthorFilter] = useState('');
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
+  const [folderFilters, setFolderFilters] = useState<string[]>([]);
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -98,6 +112,7 @@ export default function ListView() {
   );
   const [deleteConfirmWorldName, setDeleteConfirmWorldName] =
     useState<string>('');
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
 
   useEffect(() => {
     loadAllWorlds();
@@ -137,6 +152,7 @@ export default function ListView() {
     folderName?: string,
   ) => {
     try {
+      clearFilters();
       saveSelectedState(currentFolder);
 
       setShowAbout(false);
@@ -258,7 +274,7 @@ export default function ListView() {
           setCurrentFolder(newName),
           setShowCreateFolder(false),
         ]);
-        await loadFolderContents(newName);
+        handleSelectFolder('folder', newName);
       } else {
         setShowCreateFolder(false);
       }
@@ -513,7 +529,7 @@ export default function ListView() {
                 }
               }}
             >
-              Undo
+              {t('listview-page:undo-button')}
             </Button>
           </div>
         ),
@@ -572,7 +588,7 @@ export default function ListView() {
                 }
               }}
             >
-              Undo
+              {t('listview-page:undo-button')}
             </Button>
           </div>
         ),
@@ -742,7 +758,7 @@ export default function ListView() {
                   }
                 }}
               >
-                Undo
+                {t('listview-page:undo-button')}
               </Button>
             </div>
           ),
@@ -1008,15 +1024,56 @@ export default function ListView() {
     }
   };
 
-  const filteredWorlds = worlds.filter(
-    (world) =>
-      world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      toRomaji(world.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      toRomaji(world.authorName)
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()),
-  );
+  const filteredWorlds = useMemo(() => {
+    info(
+      `Filtering worlds with: searchQuery="${searchQuery}", authorFilter="${authorFilter}", tagFilters=${JSON.stringify(tagFilters)}, folderFilters=${JSON.stringify(folderFilters)}, totalWorlds=${worlds.length}`,
+    );
+
+    return worlds.filter((world) => {
+      // Check text search
+      const textMatch =
+        !searchQuery ||
+        world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        toRomaji(world.name)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        toRomaji(world.authorName)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+
+      // Check author filter (EXACT matching)
+      const authorMatch =
+        !authorFilter ||
+        world.authorName.toLowerCase() === authorFilter.toLowerCase();
+
+      // Check tag filters (ALL tags must match - AND logic with EXACT matching)
+      const tagMatch =
+        tagFilters.length === 0 ||
+        (world.tags &&
+          tagFilters.every((searchTag) => {
+            const prefixedTag = `author_tag_${searchTag}`;
+            return world.tags.some(
+              (worldTag) =>
+                worldTag.toLowerCase() === prefixedTag.toLowerCase(),
+            );
+          }));
+
+      // Check folder filters (world must be in ALL specified folders - AND logic with EXACT matching)
+      const folderMatch =
+        folderFilters.length === 0 ||
+        folderFilters.every((searchFolder) =>
+          world.folders.some(
+            (worldFolder) =>
+              worldFolder.toLowerCase() === searchFolder.toLowerCase(),
+          ),
+        );
+
+      const finalMatch = textMatch && authorMatch && tagMatch && folderMatch;
+
+      return finalMatch;
+    });
+  }, [worlds, searchQuery, authorFilter, tagFilters, folderFilters]);
 
   const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
     switch (field) {
@@ -1076,6 +1133,13 @@ export default function ListView() {
     }
   });
 
+  const clearFilters = () => {
+    setAuthorFilter('');
+    setTagFilters([]);
+    setFolderFilters([]);
+    setSearchQuery('');
+  };
+
   const renderMainContent = () => {
     if (showAbout) {
       return <AboutSection />;
@@ -1121,19 +1185,35 @@ export default function ListView() {
       <>
         <div className="sticky top-0 z-20 bg-background">
           <div className="p-4 flex items-center gap-4">
-            <Input
-              type="search"
-              placeholder={t('world-grid:search-placeholder')}
-              className={'w-[calc(80vw-340px)]'}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="flex-1 flex items-center gap-2">
+              <div className="relative flex-1">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={t('world-grid:search-placeholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
+                  />
+
+                  {/* Advanced Search button */}
+                  <Button
+                    variant="ghost"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 h-9 w-9 p-0 m-0"
+                    onClick={() => setShowAdvancedSearch(true)}
+                  >
+                    <TextSearch className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             <div className="flex">
               <Select
                 value={sortField}
                 onValueChange={(value) => handleSort(value as SortField)}
               >
-                <SelectTrigger className="w-[180px] mt-0.5">
+                <SelectTrigger className="w-[180px] h-9">
                   <SelectValue placeholder={t('world-grid:sort-placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -1141,7 +1221,7 @@ export default function ListView() {
                     {t('world-grid:sort-name')}
                   </SelectItem>
                   <SelectItem value="authorName">
-                    {t('general:sort-author')}
+                    {t('general:author')}
                   </SelectItem>
                   <SelectItem value="favorites">
                     {t('world-grid:sort-favorites')}
@@ -1156,11 +1236,10 @@ export default function ListView() {
               </Select>
               <Button
                 variant="ghost"
-                size="icon"
                 onClick={() =>
                   setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
                 }
-                className="h-10 w-10"
+                className="h-9 w-9"
               >
                 {sortDirection === 'asc' ? (
                   <SortAsc className="h-4 w-4" />
@@ -1170,7 +1249,6 @@ export default function ListView() {
               </Button>
               <Button
                 variant={isSelectionMode ? 'secondary' : 'ghost'}
-                size="icon"
                 onClick={() => {
                   if (isSelectionMode) {
                     setShouldClearMultiSelection(true);
@@ -1179,7 +1257,7 @@ export default function ListView() {
                     setIsSelectionMode(true);
                   }
                 }}
-                className="h-10 w-10"
+                className="h-9 w-9"
               >
                 {isSelectionMode ? (
                   <CheckSquare className="h-4 w-4" />
@@ -1189,6 +1267,240 @@ export default function ListView() {
               </Button>
             </div>
           </div>
+
+          {/* Filter Section */}
+          {authorFilter || tagFilters.length > 0 || folderFilters.length > 0 ? (
+            <div className="px-4 pb-4 border-b bg-muted/50">
+              {/* Header: Filters title + Clear All */}
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {t('listview-page:active-filters')}
+                </span>
+                <Button
+                  ref={clearRef}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    clearFilters();
+                  }}
+                  className="h-7 px-2 text-xs"
+                >
+                  {t('general:clear-all')}
+                </Button>
+              </div>
+              <div
+                ref={filterRowRef}
+                className="flex flex-wrap items-center gap-2 max-w-full"
+              >
+                {/* AUTHOR */}
+                {authorFilter && (
+                  <div
+                    ref={authorRef}
+                    className="flex items-center gap-2 shrink-0"
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {t('general:author')}:
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <span
+                        className="max-w-[120px] truncate"
+                        title={authorFilter}
+                      >
+                        {authorFilter}
+                      </span>
+                      <X
+                        className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                        onClick={() => setAuthorFilter('')}
+                      />
+                    </Badge>
+                  </div>
+                )}
+
+                {/* TAGS (always row 1) */}
+                {tagFilters.length > 0 && (
+                  <div
+                    ref={tagsRef}
+                    className="flex items-center gap-2 min-w-0"
+                  >
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {t('general:tags')}:
+                    </span>
+                    <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                      {(() => {
+                        const reserved = 80; // for “and X more”
+                        const perBadge = 100;
+                        const availW =
+                          (tagsRef.current?.parentElement?.clientWidth || 0) -
+                          reserved -
+                          (clearRef.current?.offsetWidth || 0) -
+                          (authorRef.current?.offsetWidth || 0);
+                        const maxTags = Math.max(
+                          1,
+                          Math.min(
+                            tagFilters.length,
+                            Math.floor(availW / perBadge),
+                          ),
+                        );
+                        const visible = tagFilters.slice(0, maxTags);
+                        const hidden = tagFilters.length - maxTags;
+
+                        return (
+                          <>
+                            {visible.map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="flex items-center gap-1 overflow-hidden"
+                              >
+                                <span
+                                  className="max-w-[80px] truncate whitespace-nowrap"
+                                  title={tag}
+                                >
+                                  {tag}
+                                </span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                                  onClick={() =>
+                                    setTagFilters((prev) =>
+                                      prev.filter((t) => t !== tag),
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            ))}
+                            {hidden > 0 && (
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {t('listview-page:items-hidden', hidden)}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+                {/* FOLDERS */}
+                {folderFilters.length > 0 && (
+                  <div className="flex flex-col self-center gap-2 -mt-2">
+                    {/* Row 1: only if ≥ 2 badges fit */}
+                    {(() => {
+                      const reserved = 80; // “and X more”
+                      const perBadge = 100; // badge+gap
+                      const parentW =
+                        foldersRef.current?.parentElement?.clientWidth || 0;
+                      const usedW =
+                        (clearRef.current?.offsetWidth || 0) +
+                        (authorRef.current?.offsetWidth || 0) +
+                        (tagsRef.current?.offsetWidth || 0);
+                      const availW = parentW - reserved - usedW;
+                      const fitCount = Math.floor(availW / perBadge);
+                      const showFirst = fitCount >= 2;
+                      if (!showFirst) return null;
+
+                      const visible = folderFilters.slice(0, fitCount);
+                      const hidden = folderFilters.length - fitCount;
+
+                      return (
+                        <div
+                          ref={foldersRef}
+                          className="flex items-center gap-2 min-w-0"
+                        >
+                          <span
+                            ref={foldersLabelRef} // ← label ref
+                            className="text-xs text-muted-foreground shrink-0"
+                          >
+                            {t('general:folders')}:
+                          </span>
+                          <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                            {visible.map((folder) => (
+                              <Badge
+                                key={folder}
+                                variant="secondary"
+                                className="flex items-center gap-1 overflow-hidden"
+                              >
+                                <span
+                                  className="max-w-[100px] truncate whitespace-nowrap"
+                                  title={folder}
+                                >
+                                  {folder}
+                                </span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                                  onClick={() =>
+                                    setFolderFilters((prev) =>
+                                      prev.filter((f) => f !== folder),
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            ))}
+                            {hidden > 0 && (
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {t('listview-page:items-hidden', hidden)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Row 2: show when fewer than 2 fit OR when wrapFolders is true */}
+                    {(() => {
+                      const reserved = 80; // px for “and X more”
+                      const perBadge = 100; // badge+gap
+                      const parentW =
+                        foldersRef.current?.parentElement?.clientWidth || 0;
+                      const usedW =
+                        (clearRef.current?.offsetWidth || 0) +
+                        (authorRef.current?.offsetWidth || 0) +
+                        (tagsRef.current?.offsetWidth || 0) +
+                        (foldersLabelRef.current?.offsetWidth || 0);
+                      const availW = parentW - reserved - usedW;
+                      const fitCount = Math.floor(availW / perBadge);
+                      const showFirst = fitCount >= 2;
+                      const overflow = folderFilters.slice(fitCount);
+
+                      if (!showFirst || wrapFolders) {
+                        return (
+                          <div className="mt-2 flex flex-wrap items-center gap-2 max-w-full">
+                            <span className="text-xs text-muted-foreground">
+                              {t('general:folders')}:
+                            </span>
+                            {overflow.map((folder) => (
+                              <Badge
+                                key={folder}
+                                variant="secondary"
+                                className="flex items-center gap-1 overflow-hidden"
+                              >
+                                <span
+                                  className="max-w-[100px] truncate whitespace-nowrap"
+                                  title={folder}
+                                >
+                                  {folder}
+                                </span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                                  onClick={() =>
+                                    setFolderFilters((prev) =>
+                                      prev.filter((f) => f !== folder),
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
         <div className="flex-1">
           <WorldGrid
@@ -1393,6 +1705,16 @@ export default function ListView() {
           if (!open) setDeleteConfirmWorld(null);
         }}
         onConfirm={confirmDeleteWorld}
+      />
+      <AdvancedSearchPanel
+        open={showAdvancedSearch}
+        authorFilter={authorFilter}
+        onAuthorFilterChange={setAuthorFilter}
+        tagFilters={tagFilters}
+        onTagFiltersChange={setTagFilters}
+        folderFilters={folderFilters}
+        onFolderFiltersChange={setFolderFilters}
+        onClose={() => setShowAdvancedSearch(false)}
       />
     </div>
   );

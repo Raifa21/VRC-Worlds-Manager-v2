@@ -530,13 +530,14 @@ const WelcomePage: React.FC = () => {
                         worldId: '1',
                         name: t('settings-page:preview-world'),
                         thumbnailUrl: 'icons/1.png',
-                        authorName: t('general:sort-author'),
+                        authorName: t('general:author'),
                         lastUpdated: '2017-03-09',
                         visits: 616,
                         dateAdded: '2025-01-01',
                         favorites: 59,
                         platform: Platform.CrossPlatform,
                         folders: [],
+                        tags: [],
                       }}
                     />
                   </div>

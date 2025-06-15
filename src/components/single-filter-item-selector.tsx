@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react';
-import { ChevronsUpDown, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -35,7 +35,7 @@ interface SingleFilterItemSelectorProps {
   value?: string;
   candidates: Option[];
   onValueChange?: (value: string) => void;
-  allowCustomValues?: boolean;
+  allowCustomValues: boolean;
 }
 
 export default function SingleFilterItemSelector({
@@ -43,7 +43,7 @@ export default function SingleFilterItemSelector({
   value = '',
   candidates,
   onValueChange,
-  allowCustomValues = true,
+  allowCustomValues,
 }: SingleFilterItemSelectorProps) {
   const { t } = useLocalization();
   const [open, setOpen] = useState(false);
@@ -95,7 +95,7 @@ export default function SingleFilterItemSelector({
             {selectedOption ? (
               <Badge
                 variant="secondary"
-                className="mr-1 flex items-center max-w-full truncate"
+                className="mr-1 flex items-center max-w-[100px] truncate whitespace-nowrap"
               >
                 {/* selected tag text */}
                 <span className="truncate block">{selectedOption.label}</span>
@@ -119,7 +119,6 @@ export default function SingleFilterItemSelector({
               </span>
             )}
           </div>
-          <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
         </Button>
       </PopoverTrigger>
 

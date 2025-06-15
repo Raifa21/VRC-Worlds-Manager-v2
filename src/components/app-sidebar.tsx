@@ -202,8 +202,15 @@ export function AppSidebar({
       <nav className={sidebarStyles.nav}>
         <SidebarGroup>
           <div
-            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => onSelectFolder(SpecialFolders.All)}
+            className={`
+              px-3 py-2 text-sm font-medium rounded-lg
+              overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
+              ${selectedFolder === SpecialFolders.All ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
+            `}
+            onClick={() => {
+              if (selectedFolder === SpecialFolders.All) return;
+              onSelectFolder(SpecialFolders.All);
+            }}
           >
             <SaturnIcon className="h-[18px] w-[18px]" />
             <span className="text-sm font-medium">
@@ -214,17 +221,36 @@ export function AppSidebar({
         <Separator className="my-2" />
         <SidebarGroup>
           <div
-            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => onSelectFolder(SpecialFolders.Find)}
+            className={`
+              px-3 py-2 text-sm font-medium rounded-lg
+              overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
+              ${selectedFolder === SpecialFolders.Find ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
+            `}
+            onClick={() => {
+              if (selectedFolder === SpecialFolders.Find) return;
+              onSelectFolder(SpecialFolders.Find);
+            }}
           >
             <History className="h-5 w-5" />
             <span className="text-sm font-medium">
               {t('general:find-worlds')}
             </span>
           </div>
+
           <div
-            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => onSelectFolder(SpecialFolders.Unclassified)}
+            className={`
+              px-3 py-2 text-sm font-medium rounded-lg
+              overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
+              ${
+                selectedFolder === SpecialFolders.Unclassified
+                  ? sidebarStyles.activeLink
+                  : 'hover:bg-accent/50 hover:text-accent-foreground'
+              }
+            `}
+            onClick={() => {
+              if (selectedFolder === SpecialFolders.Unclassified) return;
+              onSelectFolder(SpecialFolders.Unclassified);
+            }}
           >
             <FileQuestion className="h-5 w-5" />
             <span className="text-sm font-medium">
@@ -235,9 +261,7 @@ export function AppSidebar({
         <Separator className="my-2" />
         <SidebarGroup>
           <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
-            <span className="text-sm font-medium">
-              {t('app-sidebar:folders')}
-            </span>
+            <span className="text-sm font-medium">{t('general:folders')}</span>
           </div>
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="folders">
@@ -256,21 +280,17 @@ export function AppSidebar({
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className="w-[193px] px-3 py-2 text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap"
-                              onClick={(e) => {
-                                // Don't trigger folder selection when editing the current folder
-                                if (editingFolder === folder) {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  return;
+                              className={`
+                                w-[193px] px-3 py-2 text-sm font-medium rounded-lg
+                                overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
+                                ${
+                                  selectedFolder === folder
+                                    ? sidebarStyles.activeLink
+                                    : 'hover:bg-accent/50 hover:text-accent-foreground'
                                 }
-
-                                // Cancel editing if we're editing a different folder
-                                if (editingFolder) {
-                                  setEditingFolder(null);
-                                  setNewFolderName('');
-                                }
-
+                              `}
+                              onClick={() => {
+                                if (selectedFolder === folder) return;
                                 onSelectFolder('folder', folder);
                               }}
                             >

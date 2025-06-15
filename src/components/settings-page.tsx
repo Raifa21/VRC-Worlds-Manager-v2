@@ -474,13 +474,14 @@ export function SettingsPage({
                 worldId: '1',
                 name: t('settings-page:preview-world'),
                 thumbnailUrl: 'icons/1.png',
-                authorName: t('general:sort-author'),
+                authorName: t('general:author'),
                 lastUpdated: '2025-02-28',
                 visits: 1911,
                 dateAdded: '2025-01-01',
                 favorites: 616,
                 platform: Platform.CrossPlatform,
                 folders: [],
+                tags: [],
               }}
             />
           </Card>

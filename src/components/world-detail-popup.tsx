@@ -304,6 +304,7 @@ export function WorldDetailPopup({
                             platform:
                               cachedWorldData.platform as unknown as import('@/types/worlds').Platform,
                             folders: [],
+                            tags: cachedWorldData.tags,
                           }}
                         />
                       </div>
@@ -322,7 +323,7 @@ export function WorldDetailPopup({
                               </div>
 
                               <div className="text-gray-500">
-                                {t('general:sort-author')}:
+                                {t('general:author')}:
                               </div>
                               <div className="truncate">
                                 {cachedWorldData.authorName}
@@ -579,7 +580,7 @@ export function WorldDetailPopup({
                       <Separator className="my-2" />
                       <div>
                         <div className="text-sm font-semibold mb-2">
-                          {t('world-detail:tags')}
+                          {t('general:tags')}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {worldDetails.tags

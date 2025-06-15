@@ -660,6 +660,35 @@ impl FolderManager {
         Ok(tags)
     }
 
+    /// return a list of authors, sorted by the number of worlds in each author
+    ///
+    /// /// # Arguments
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// A vector of author names
+    ///
+    /// # Errors
+    /// Returns an error if the worlds lock is poisoned
+    #[must_use]
+    pub fn get_authors_by_count(worlds: &RwLock<Vec<WorldModel>>) -> Result<Vec<String>, AppError> {
+        let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        // create a map which contains the author name and the number of worlds by that author
+        let mut author_map: HashMap<String, usize> = HashMap::new();
+        for world in worlds_lock.iter() {
+            *author_map
+                .entry(world.api_data.author_name.clone())
+                .or_insert(0) += 1;
+        }
+        // sort the map by the number of worlds by each author
+        let mut authors: Vec<(String, usize)> = author_map.into_iter().collect();
+        authors.sort_by(|a, b| b.1.cmp(&a.1));
+
+        let authors: Vec<String> = authors.into_iter().map(|(author, _)| author).collect();
+
+        Ok(authors)
+    }
+
     /// Completely delete a world
     /// This is done by removing the world from all folders, and deleting the world
     ///

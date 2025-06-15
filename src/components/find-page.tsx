@@ -340,6 +340,7 @@ export function FindPage({
                     }))}
                     value={selectedTag}
                     onValueChange={setSelectedTag}
+                    allowCustomValues={true}
                   />
                 </div>
 

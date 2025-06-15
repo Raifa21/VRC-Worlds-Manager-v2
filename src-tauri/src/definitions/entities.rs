@@ -128,6 +128,7 @@ impl WorldModel {
                 Platform::PC
             },
             folders: self.user_data.folders.clone(),
+            tags: self.api_data.tags.clone(),
         }
     }
 }
@@ -159,6 +160,7 @@ pub struct WorldDisplayData {
     pub date_added: String,
     pub platform: Platform,
     pub folders: Vec<String>,
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
