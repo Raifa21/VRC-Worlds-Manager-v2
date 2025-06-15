@@ -370,7 +370,7 @@ export function WorldGrid({
                             <>
                               {!isFindPage ? (
                                 <div className="absolute top-2 left-2 z-1">
-                                  {selectedWorlds.includes(world.worldId) ? (
+                                  {isSelected ? (
                                     <div
                                       className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
                                       onClick={(e) => {
@@ -396,11 +396,9 @@ export function WorldGrid({
                                 </div>
                               ) : (
                                 <>
-                                  {!isSelected ? (
+                                  {!existingWorldIds.has(world.worldId) ? (
                                     <div className="absolute top-2 left-2 z-1">
-                                      {selectedWorlds.includes(
-                                        world.worldId,
-                                      ) ? (
+                                      {isSelected ? (
                                         <div
                                           className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
                                           onClick={(e) => {
