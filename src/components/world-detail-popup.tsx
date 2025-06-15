@@ -40,7 +40,7 @@ import {
 import { useLocalization } from '@/hooks/use-localization';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
-interface WorldDetailDialogProps {
+export interface WorldDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   worldId: string;
@@ -63,6 +63,8 @@ interface WorldDetailDialogProps {
   ) => Promise<GroupInstancePermissionInfo>;
   dontSaveToLocal?: boolean;
   onDeleteWorld: (worldId: string) => void;
+  onSelectAuthor?: (author: string) => void;
+  onSelectTag?: (tag: string) => void;
 }
 
 interface GroupInstance {
@@ -83,6 +85,8 @@ export function WorldDetailPopup({
   onGetGroupPermissions,
   dontSaveToLocal,
   onDeleteWorld,
+  onSelectAuthor,
+  onSelectTag,
 }: WorldDetailDialogProps) {
   const { t } = useLocalization();
   const [isLoading, setIsLoading] = useState(false);
@@ -225,22 +229,7 @@ export function WorldDetailPopup({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          setInstanceCreationType('normal');
-          setGroupInstanceState({
-            groups: [],
-            selectedGroupId: null,
-            permission: null,
-            roles: [],
-            isLoading: true, // Add this
-          });
-        }
-        onOpenChange(open);
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[800px] h-[70vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -443,14 +432,16 @@ export function WorldDetailPopup({
                       </div>
                       <div className="text-sm text-gray-500">
                         {t('world-detail:by')}{' '}
-                        <a
-                          className="text-blue"
-                          href={`https://vrchat.com/home/user/${worldDetails.authorId}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          className="text-blue underline"
+                          onClick={() => {
+                            onSelectAuthor?.(worldDetails.authorName);
+                            onOpenChange(false);
+                          }}
                         >
                           {worldDetails.authorName}
-                        </a>
+                        </button>
                       </div>
                     </div>
                     <div className="w-2/5">
@@ -585,15 +576,23 @@ export function WorldDetailPopup({
                         <div className="flex flex-wrap gap-2">
                           {worldDetails.tags
                             .filter((tag) => tag.startsWith('author_tag_'))
-                            .map((tag) => (
-                              <span
-                                key={tag}
-                                className="inline-block px-1.5 py-0.5 text-xs bg-gray-500 text-white rounded-full max-w-[250px] whitespace-nowrap overflow-hidden text-ellipsis cursor-default"
-                                title={tag.replace('author_tag_', '')}
-                              >
-                                {tag.replace('author_tag_', '')}
-                              </span>
-                            ))}
+                            .map((tag) => {
+                              const label = tag.replace('author_tag_', '');
+                              return (
+                                <button
+                                  key={tag}
+                                  type="button"
+                                  className="inline-block px-1.5 py-0.5 text-xs bg-gray-500 text-white rounded-full max-w-[250px] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-gray-600"
+                                  title={label}
+                                  onClick={() => {
+                                    onSelectTag?.(label);
+                                    onOpenChange(false);
+                                  }}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
                         </div>
                       </div>
                     </div>
