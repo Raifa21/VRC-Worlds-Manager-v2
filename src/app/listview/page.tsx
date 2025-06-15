@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useRef, useState, useMemo, useEffect } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,19 @@ import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
-import { Menu, Plus, RefreshCw, Share } from 'lucide-react'; // For the reload icon
+import {
+  CheckSquare,
+  Menu,
+  Plus,
+  RefreshCw,
+  Share,
+  SortAsc,
+  SortDesc,
+  Square,
+  Settings,
+  X,
+  TextSearch,
+} from 'lucide-react'; // For the reload icon
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
 import { SettingsPage } from '@/components/settings-page';
@@ -20,7 +32,7 @@ import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
 import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
-import { useMemo } from 'react';
+import { toRomaji } from 'wanakana';
 import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
@@ -30,15 +42,38 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
+
+type SortField =
+  | 'name'
+  | 'authorName'
+  | 'favorites'
+  | 'dateAdded'
+  | 'lastUpdated';
 
 export default function ListView() {
+  const filterRowRef = useRef<HTMLDivElement>(null);
+  const authorRef = useRef<HTMLDivElement>(null);
+  const tagsRef = useRef<HTMLDivElement>(null);
+  const foldersRef = useRef<HTMLDivElement>(null);
+  const foldersLabelRef = useRef<HTMLSpanElement>(null); // ← new
+  const clearRef = useRef<HTMLButtonElement>(null);
+  const [wrapFolders, setWrapFolders] = useState(false);
+
   const { folders, loadFolders } = useFolders();
   const { toast } = useToast();
   const { t } = useLocalization();
+  const gridScrollRef = useRef<HTMLDivElement>(null);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showDeleteFolder, setShowDeleteFolder] = useState<string | null>(null);
   const [isAddWorldOpen, setIsAddWorldOpen] = useState(false);
@@ -64,12 +99,20 @@ export default function ListView() {
   >(new Map<string | SpecialFolders, string[]>());
   const [shouldClearMultiSelection, setShouldClearMultiSelection] =
     useState(false);
-  const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]); // New state for added worlds
+  const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [authorFilter, setAuthorFilter] = useState('');
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
+  const [folderFilters, setFolderFilters] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<SortField>('dateAdded');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [deleteConfirmWorld, setDeleteConfirmWorld] = useState<string | null>(
     null,
   );
   const [deleteConfirmWorldName, setDeleteConfirmWorldName] =
     useState<string>('');
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
 
   useEffect(() => {
     loadAllWorlds();
@@ -109,6 +152,7 @@ export default function ListView() {
     folderName?: string,
   ) => {
     try {
+      clearFilters();
       saveSelectedState(currentFolder);
 
       setShowAbout(false);
@@ -224,14 +268,21 @@ export default function ListView() {
       const newName = await invoke<string>('create_folder', { name: name });
       await loadFolders();
 
-      // Batch state updates before navigation
-      await Promise.all([
-        setCurrentFolder(newName),
-        setShowCreateFolder(false),
-      ]);
-
-      // Navigate to the new folder
-      await loadFolderContents(newName);
+      // Only navigate to the new folder if not in Find page or if add-to-folder dialog is open
+      if (currentFolder !== SpecialFolders.Find && !showFolderDialog) {
+        await Promise.all([
+          setCurrentFolder(newName),
+          setShowCreateFolder(false),
+        ]);
+        handleSelectFolder('folder', newName);
+      } else {
+        setShowCreateFolder(false);
+      }
+      toast({
+        title: t('listview-page:folder-created-title'),
+        description: t('listview-page:folder-created-description', newName),
+        duration: 2000,
+      });
     } catch (e) {
       error(`Failed to create folder: ${e}`);
       toast({
@@ -449,10 +500,10 @@ export default function ListView() {
       await Promise.all(worldIds.map((id) => commands.unhideWorld(id)));
 
       toast({
-        title: 'Worlds restored',
+        title: t('listview-page:restored-title'),
         description: (
           <div className="flex w-full items-center justify-between gap-2">
-            <span>Restored from hidden</span>
+            <span>{t('listview-page:worlds-restored')}</span>
             <Button
               variant="outline"
               size="sm"
@@ -465,20 +516,20 @@ export default function ListView() {
 
                   await refreshCurrentView();
                   toast({
-                    title: 'Hidden',
-                    description: 'Worlds hidden again',
+                    title: t('listview-page:worlds-hidden-title'),
+                    description: t('listview-page:worlds-hidden-again'),
                   });
                 } catch (e) {
                   error(`Failed to restore worlds: ${e}`);
                   toast({
-                    title: 'Error',
-                    description: 'Failed to re-hide worlds',
+                    title: t('general:error-title'),
+                    description: t('listview-page:error-hide-world'),
                     variant: 'destructive',
                   });
                 }
               }}
             >
-              Undo
+              {t('listview-page:undo-button')}
             </Button>
           </div>
         ),
@@ -489,8 +540,8 @@ export default function ListView() {
     } catch (e) {
       error(`Failed to restore worlds: ${e}`);
       toast({
-        title: 'Error',
-        description: 'Failed to restore worlds from hidden',
+        title: t('general:error-title'),
+        description: t('listview-page:error-restore-worlds'),
         variant: 'destructive',
       });
     }
@@ -537,7 +588,7 @@ export default function ListView() {
                 }
               }}
             >
-              Undo
+              {t('listview-page:undo-button')}
             </Button>
           </div>
         ),
@@ -707,7 +758,7 @@ export default function ListView() {
                   }
                 }}
               >
-                Undo
+                {t('listview-page:undo-button')}
               </Button>
             </div>
           ),
@@ -973,6 +1024,124 @@ export default function ListView() {
     }
   };
 
+  const filteredWorlds = useMemo(() => {
+    info(
+      `Filtering worlds with: searchQuery="${searchQuery}", authorFilter="${authorFilter}", tagFilters=${JSON.stringify(tagFilters)}, folderFilters=${JSON.stringify(folderFilters)}, totalWorlds=${worlds.length}`,
+    );
+
+    return worlds.filter((world) => {
+      // Check text search
+      const textMatch =
+        !searchQuery ||
+        world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        toRomaji(world.name)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        toRomaji(world.authorName)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+
+      // Check author filter (EXACT matching)
+      const authorMatch =
+        !authorFilter ||
+        world.authorName.toLowerCase() === authorFilter.toLowerCase();
+
+      // Check tag filters (ALL tags must match - AND logic with EXACT matching)
+      const tagMatch =
+        tagFilters.length === 0 ||
+        (world.tags &&
+          tagFilters.every((searchTag) => {
+            const prefixedTag = `author_tag_${searchTag}`;
+            return world.tags.some(
+              (worldTag) =>
+                worldTag.toLowerCase() === prefixedTag.toLowerCase(),
+            );
+          }));
+
+      // Check folder filters (world must be in ALL specified folders - AND logic with EXACT matching)
+      const folderMatch =
+        folderFilters.length === 0 ||
+        folderFilters.every((searchFolder) =>
+          world.folders.some(
+            (worldFolder) =>
+              worldFolder.toLowerCase() === searchFolder.toLowerCase(),
+          ),
+        );
+
+      const finalMatch = textMatch && authorMatch && tagMatch && folderMatch;
+
+      return finalMatch;
+    });
+  }, [worlds, searchQuery, authorFilter, tagFilters, folderFilters]);
+
+  const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
+    switch (field) {
+      case 'favorites':
+      case 'dateAdded':
+      case 'lastUpdated':
+        return 'desc';
+      default:
+        return 'asc';
+    }
+  };
+
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection(getDefaultDirection(field));
+    }
+  };
+
+  const sortedAndFilteredWorlds = useMemo(() => {
+    return [...filteredWorlds].sort((a, b) => {
+      const multiplier = sortDirection === 'asc' ? 1 : -1;
+
+      switch (sortField) {
+        case 'name':
+          return multiplier * a.name.localeCompare(b.name);
+        case 'authorName':
+          return multiplier * a.authorName.localeCompare(b.authorName);
+        case 'favorites':
+          return multiplier * (a.favorites - b.favorites);
+        case 'dateAdded': {
+          const dateA = a.dateAdded || '';
+          const dateB = b.dateAdded || '';
+
+          return multiplier * dateA.localeCompare(dateB);
+        }
+        case 'lastUpdated': {
+          const getTimestamp = (dateStr: string | null) => {
+            if (!dateStr) return 0;
+
+            try {
+              const date = new Date(dateStr);
+              return date.getTime();
+            } catch (e) {
+              error(`Error parsing date: ${dateStr}, ${e}`);
+              return 0;
+            }
+          };
+          const dateA = getTimestamp(a.lastUpdated);
+          const dateB = getTimestamp(b.lastUpdated);
+
+          return multiplier * (dateA - dateB);
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [filteredWorlds, sortField, sortDirection]);
+
+  const clearFilters = () => {
+    setAuthorFilter('');
+    setTagFilters([]);
+    setFolderFilters([]);
+    setSearchQuery('');
+  };
+
   const renderMainContent = () => {
     if (showAbout) {
       return <AboutSection />;
@@ -1016,98 +1185,367 @@ export default function ListView() {
 
     return (
       <>
-        <div className="p-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold truncate">
-            {Object.values(SpecialFolders).includes(
-              currentFolder as SpecialFolders,
-            )
-              ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
-              : currentFolder}
-          </h1>
-          <div className="flex items-center">
-            {(currentFolder === SpecialFolders.All ||
-              currentFolder === SpecialFolders.Unclassified) && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddWorldOpen(true)}
-                  className="ml-2 flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">
-                    {t('listview-page:add-world')}
-                  </span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleReload}
-                  className="ml-2 flex items-center gap-2"
-                  disabled={isLoading}
-                >
-                  <RefreshCw
-                    className={`h-4 w-4${isLoading ? ' animate-spin' : ''}`}
+        <div className="sticky top-0 z-20 bg-background">
+          <div className="p-4 flex items-center gap-4">
+            <div className="flex-1 flex items-center gap-2">
+              <div className="relative flex-1">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={t('world-grid:search-placeholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
                   />
-                  <span className="hidden sm:inline">
-                    {t('listview-page:reload-worlds')}
-                  </span>
-                </Button>
-              </>
-            )}
-            {!Object.values(SpecialFolders).includes(
-              currentFolder as SpecialFolders,
-            ) && (
-              <div className="flex items-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 flex items-center gap-2 ml-2 mr-1"
-                    >
-                      <Menu className="h-10 w-10" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      className="flex items-center gap-2 cursor-pointer"
-                      onClick={() => setIsAddWorldOpen(true)}
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>{t('listview-page:add-world')}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="flex items-center gap-2 text-muted-foreground"
-                      disabled={true}
-                    >
-                      <Share className="h-4 w-4" />
-                      <span>{t('listview-page:share-folder')}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+
+                  {/* Advanced Search button */}
+                  <Button
+                    variant="ghost"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 h-9 w-9 p-0 m-0"
+                    onClick={() => setShowAdvancedSearch(true)}
+                  >
+                    <TextSearch className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            )}
+            </div>
+
+            <div className="flex">
+              <Select
+                value={sortField}
+                onValueChange={(value) => handleSort(value as SortField)}
+              >
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder={t('world-grid:sort-placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">
+                    {t('world-grid:sort-name')}
+                  </SelectItem>
+                  <SelectItem value="authorName">
+                    {t('general:author')}
+                  </SelectItem>
+                  <SelectItem value="favorites">
+                    {t('world-grid:sort-favorites')}
+                  </SelectItem>
+                  <SelectItem value="dateAdded">
+                    {t('general:date-added')}
+                  </SelectItem>
+                  <SelectItem value="lastUpdated">
+                    {t('world-grid:sort-last-updated')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                }
+                className="h-9 w-9"
+              >
+                {sortDirection === 'asc' ? (
+                  <SortAsc className="h-4 w-4" />
+                ) : (
+                  <SortDesc className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant={isSelectionMode ? 'secondary' : 'ghost'}
+                onClick={() => {
+                  if (isSelectionMode) {
+                    setShouldClearMultiSelection(true);
+                    setIsSelectionMode(false);
+                  } else {
+                    setIsSelectionMode(true);
+                  }
+                }}
+                className="h-9 w-9"
+              >
+                {isSelectionMode ? (
+                  <CheckSquare className="h-4 w-4" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
+
+          {/* Filter Section */}
+          {authorFilter || tagFilters.length > 0 || folderFilters.length > 0 ? (
+            <div className="px-4 pb-2 border-b bg-muted/50">
+              {/* Header: Filters title + Clear All */}
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {t('listview-page:active-filters')}
+                </span>
+                <Button
+                  ref={clearRef}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    clearFilters();
+                  }}
+                  className="h-7 px-2 text-xs"
+                >
+                  {t('general:clear-all')}
+                </Button>
+              </div>
+              <div
+                ref={filterRowRef}
+                className="flex flex-wrap items-center gap-2 max-w-full"
+              >
+                {/* AUTHOR */}
+                {authorFilter && (
+                  <div
+                    ref={authorRef}
+                    className="flex items-center gap-2 shrink-0"
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {t('general:author')}:
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <span
+                        className="max-w-[120px] truncate"
+                        title={authorFilter}
+                      >
+                        {authorFilter}
+                      </span>
+                      <X
+                        className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                        onClick={() => setAuthorFilter('')}
+                      />
+                    </Badge>
+                  </div>
+                )}
+
+                {/* TAGS (always row 1) */}
+                {tagFilters.length > 0 && (
+                  <div
+                    ref={tagsRef}
+                    className="flex items-center gap-2 min-w-0"
+                  >
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {t('general:tags')}:
+                    </span>
+                    <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                      {(() => {
+                        const reserved = 80; // for “and X more”
+                        const perBadge = 100;
+                        const availW =
+                          (tagsRef.current?.parentElement?.clientWidth || 0) -
+                          reserved -
+                          (clearRef.current?.offsetWidth || 0) -
+                          (authorRef.current?.offsetWidth || 0);
+                        const maxTags = Math.max(
+                          1,
+                          Math.min(
+                            tagFilters.length,
+                            Math.floor(availW / perBadge),
+                          ),
+                        );
+                        const visible = tagFilters.slice(0, maxTags);
+                        const hidden = tagFilters.length - maxTags;
+
+                        return (
+                          <>
+                            {visible.map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="flex items-center gap-1 overflow-hidden"
+                              >
+                                <span
+                                  className="max-w-[80px] truncate whitespace-nowrap"
+                                  title={tag}
+                                >
+                                  {tag}
+                                </span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                                  onClick={() =>
+                                    setTagFilters((prev) =>
+                                      prev.filter((t) => t !== tag),
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            ))}
+                            {hidden > 0 && (
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {t('listview-page:items-hidden', hidden)}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+                {/* FOLDERS */}
+                {folderFilters.length > 0 && (
+                  <div className="flex flex-col self-center gap-2 -mt-2">
+                    {/* Row 1: only if ≥ 2 badges fit */}
+                    {(() => {
+                      const reserved = 80; // “and X more”
+                      const perBadge = 100; // badge+gap
+                      const parentW =
+                        foldersRef.current?.parentElement?.clientWidth || 0;
+                      const usedW =
+                        (clearRef.current?.offsetWidth || 0) +
+                        (authorRef.current?.offsetWidth || 0) +
+                        (tagsRef.current?.offsetWidth || 0);
+                      const availW = parentW - reserved - usedW;
+                      const fitCount = Math.floor(availW / perBadge);
+                      const showFirst = fitCount >= 2;
+                      if (!showFirst) return null;
+
+                      const visible = folderFilters.slice(0, fitCount);
+                      const hidden = folderFilters.length - fitCount;
+
+                      return (
+                        <div
+                          ref={foldersRef}
+                          className="flex items-center gap-2 min-w-0"
+                        >
+                          <span
+                            ref={foldersLabelRef} // ← label ref
+                            className="text-xs text-muted-foreground shrink-0"
+                          >
+                            {t('general:folders')}:
+                          </span>
+                          <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                            {visible.map((folder) => (
+                              <Badge
+                                key={folder}
+                                variant="secondary"
+                                className="flex items-center gap-1 overflow-hidden"
+                              >
+                                <span
+                                  className="max-w-[100px] truncate whitespace-nowrap"
+                                  title={folder}
+                                >
+                                  {folder}
+                                </span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                                  onClick={() =>
+                                    setFolderFilters((prev) =>
+                                      prev.filter((f) => f !== folder),
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            ))}
+                            {hidden > 0 && (
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {t('listview-page:items-hidden', hidden)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Row 2: show when fewer than 2 fit OR when wrapFolders is true */}
+                    {(() => {
+                      const reserved = 80; // px for “and X more”
+                      const perBadge = 100; // badge+gap
+                      const parentW =
+                        foldersRef.current?.parentElement?.clientWidth || 0;
+                      const usedW =
+                        (clearRef.current?.offsetWidth || 0) +
+                        (authorRef.current?.offsetWidth || 0) +
+                        (tagsRef.current?.offsetWidth || 0) +
+                        (foldersLabelRef.current?.offsetWidth || 0);
+                      const availW = parentW - reserved - usedW;
+                      const fitCount = Math.floor(availW / perBadge);
+                      const showFirst = fitCount >= 2;
+                      const overflow = folderFilters.slice(fitCount);
+
+                      if (!showFirst || wrapFolders) {
+                        return (
+                          <div className="mt-2 flex flex-wrap items-center gap-2 max-w-full">
+                            <span className="text-xs text-muted-foreground">
+                              {t('general:folders')}:
+                            </span>
+                            {overflow.map((folder) => (
+                              <Badge
+                                key={folder}
+                                variant="secondary"
+                                className="flex items-center gap-1 overflow-hidden"
+                              >
+                                <span
+                                  className="max-w-[100px] truncate whitespace-nowrap"
+                                  title={folder}
+                                >
+                                  {folder}
+                                </span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                                  onClick={() =>
+                                    setFolderFilters((prev) =>
+                                      prev.filter((f) => f !== folder),
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
         <div className="flex-1">
-          <WorldGrid
-            size={cardSize}
-            worlds={worlds}
-            folderName={currentFolder}
-            initialSelectedWorlds={selectedWorldsForFolder}
-            onRemoveFromFolder={removeWorldsFromFolder}
-            onHideWorld={handleHideWorld}
-            onUnhideWorld={handleRestoreWorld}
-            onOpenWorldDetails={handleOpenWorldDetails}
-            onShowFolderDialog={(worlds) => {
-              setSelectedWorldsForFolder(worlds);
-              setShowFolderDialog(true);
-            }}
-            onSelectedWorldsChange={(selectedWorlds) => {
-              setSelectedWorldsForFolder(selectedWorlds);
-            }}
-            shouldClearSelection={shouldClearMultiSelection}
-            onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
-          />
+          {sortedAndFilteredWorlds.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              {worlds.length === 0
+                ? // no raw worlds in this folder / section
+                  currentFolder === SpecialFolders.All
+                  ? t('listview-page:no-worlds-all')
+                  : currentFolder === SpecialFolders.Unclassified
+                    ? t('listview-page:no-worlds-unclassified')
+                    : !Object.values(SpecialFolders).includes(
+                          currentFolder as SpecialFolders,
+                        )
+                      ? t('listview-page:no-worlds-in-folder', currentFolder)
+                      : t('listview-page:no-worlds') // fallback, e.g. hidden
+                : // there *are* worlds but filters/search cut them out
+                  t('listview-page:no-results-filtered')}
+            </div>
+          ) : (
+            <WorldGrid
+              size={cardSize}
+              worlds={sortedAndFilteredWorlds}
+              folderName={currentFolder}
+              initialSelectedWorlds={selectedWorldsForFolder}
+              onRemoveFromFolder={removeWorldsFromFolder}
+              onHideWorld={handleHideWorld}
+              onUnhideWorld={handleRestoreWorld}
+              onOpenWorldDetails={handleOpenWorldDetails}
+              onShowFolderDialog={(worlds) => {
+                setSelectedWorldsForFolder(worlds);
+                setShowFolderDialog(true);
+              }}
+              onSelectedWorldsChange={(selectedWorlds) => {
+                setSelectedWorldsForFolder(selectedWorlds);
+              }}
+              isSelectionMode={isSelectionMode}
+              shouldClearSelection={shouldClearMultiSelection}
+              onClearSelectionComplete={() =>
+                setShouldClearMultiSelection(false)
+              }
+              containerRef={gridScrollRef}
+            />
+          )}
         </div>
       </>
     );
@@ -1126,17 +1564,101 @@ export default function ListView() {
           setShowSettings(false);
           setShowFind(false);
           setShowWorldDetails(false);
+          setCurrentFolder(SpecialFolders.NotFolder);
         }}
         onSelectSettings={() => {
           setShowSettings(true);
           setShowAbout(false);
           setShowFind(false);
           setShowWorldDetails(false);
+          setCurrentFolder(SpecialFolders.NotFolder);
         }}
         onRenameFolder={onRenameFolder}
         onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
       />
-      <div className="flex-1 overflow-auto">{renderMainContent()}</div>
+      <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">
+        {/* Render header when in all worlds, unclassified, or in a folder*/}
+        {currentFolder === SpecialFolders.All ||
+        currentFolder === SpecialFolders.Unclassified ||
+        !Object.values(SpecialFolders).includes(
+          currentFolder as SpecialFolders,
+        ) ? (
+          <div className="p-4 flex justify-between items-center">
+            <h1 className="text-xl font-bold truncate">
+              {Object.values(SpecialFolders).includes(
+                currentFolder as SpecialFolders,
+              )
+                ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
+                : currentFolder}
+            </h1>
+            <div className="flex items-center">
+              {(currentFolder === SpecialFolders.All ||
+                currentFolder === SpecialFolders.Unclassified) && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddWorldOpen(true)}
+                    className="ml-2 flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {t('listview-page:add-world')}
+                    </span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleReload}
+                    className="ml-2 flex items-center gap-2"
+                    disabled={isLoading}
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4${isLoading ? ' animate-spin' : ''}`}
+                    />
+                    <span className="hidden sm:inline">
+                      {t('listview-page:reload-worlds')}
+                    </span>
+                  </Button>
+                </>
+              )}
+              {!Object.values(SpecialFolders).includes(
+                currentFolder as SpecialFolders,
+              ) && (
+                <div className="flex items-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 flex items-center gap-2 ml-2 mr-1"
+                      >
+                        <Menu className="h-10 w-10" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => setIsAddWorldOpen(true)}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>{t('listview-page:add-world')}</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 text-muted-foreground"
+                        disabled={true}
+                      >
+                        <Share className="h-4 w-4" />
+                        <span>{t('listview-page:share-folder')}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        <div>{renderMainContent()}</div>
+      </div>
       <CreateFolderDialog
         open={showCreateFolder}
         onOpenChange={(open) => {
@@ -1178,6 +1700,12 @@ export default function ListView() {
         onGetGroupPermissions={getGroupPermissions}
         dontSaveToLocal={isFindPage}
         onDeleteWorld={onDelete}
+        onSelectAuthor={(author) => {
+          setAuthorFilter(author);
+        }}
+        onSelectTag={(tag) => {
+          setTagFilters((prev) => [...prev, tag]);
+        }}
       />
       <AddToFolderDialog
         open={showFolderDialog}
@@ -1190,6 +1718,7 @@ export default function ListView() {
           handleAddToFolders(foldersToAdd, foldersToRemove)
         }
         isFindPage={isFindPage}
+        onAddFolder={handleCreateFolder}
       />
       <DeleteFolderDialog
         folderName={showDeleteFolder}
@@ -1207,6 +1736,16 @@ export default function ListView() {
           if (!open) setDeleteConfirmWorld(null);
         }}
         onConfirm={confirmDeleteWorld}
+      />
+      <AdvancedSearchPanel
+        open={showAdvancedSearch}
+        authorFilter={authorFilter}
+        onAuthorFilterChange={setAuthorFilter}
+        tagFilters={tagFilters}
+        onTagFiltersChange={setTagFilters}
+        folderFilters={folderFilters}
+        onFolderFiltersChange={setFolderFilters}
+        onClose={() => setShowAdvancedSearch(false)}
       />
     </div>
   );

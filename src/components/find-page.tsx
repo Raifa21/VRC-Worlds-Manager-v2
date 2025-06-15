@@ -2,19 +2,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { WorldGrid } from '@/components/world-grid';
-import {
-  Link,
-  Loader2,
-  RefreshCcw,
-  Search,
-  CheckSquare,
-  Square,
-} from 'lucide-react';
+import { Loader2, RefreshCcw, Search } from 'lucide-react';
 import { commands, WorldDisplayData } from '@/lib/bindings';
-import { Platform } from '@/types/worlds';
 import { CardSize } from '@/types/preferences';
 import { SpecialFolders } from '@/types/folders';
 import { info } from '@tauri-apps/plugin-log';
@@ -30,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import SingleFilterItemSelector from './single-filter-item-selector';
+import { WorldGrid } from './world-grid';
 
 interface FindPageProps {
   onWorldsChange: (worlds: WorldDisplayData[]) => void;
@@ -69,7 +61,7 @@ export function FindPage({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const findGridRef = useRef<HTMLDivElement>(null);
 
   // Add this state to track when to trigger select all
   const [triggerSelectAll, setTriggerSelectAll] = useState(false);
@@ -238,63 +230,34 @@ export function FindPage({
       <div className="flex items-center justify-between p-4 bg-background">
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
-        <div className="flex items-center gap-2">
-          {/* Select All button - only visible when selection mode is on */}
-          {isSelectionMode && activeTab == 'recently-visited' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Trigger the select all action in WorldGrid
-                setTriggerSelectAll(true);
-              }}
-              className="ml-2 flex items-center gap-2"
-            >
-              {t('general:select-all')}
-            </Button>
-          )}
-
-          {/* Selection mode toggle button */}
+        <div className="flex items-center">
           <Button
-            variant={isSelectionMode ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={() => {
-              setIsSelectionMode((prev) => !prev);
-            }}
-            className="ml-2 flex items-center gap-2"
+            variant="outline"
+            onClick={() => setTriggerSelectAll(true)}
+            disabled={activeTab !== 'recently-visited'}
+            className={`ml-2 flex items-center gap-2 ${
+              activeTab !== 'recently-visited' ? 'invisible' : ''
+            }`}
           >
-            {isSelectionMode ? (
-              <>
-                <CheckSquare className="h-4 w-4" />
-                <span>{t('general:cancel')}</span>
-              </>
-            ) : (
-              <>
-                <Square className="h-4 w-4" />
-                <span>{t('general:select-button')}</span>
-              </>
-            )}
+            {t('general:select-all')}
           </Button>
-
-          {/* Refresh button - moved to rightmost position */}
-          {activeTab === 'recently-visited' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchRecentlyVisitedWorlds}
-              disabled={isLoading}
-              className="ml-2 flex items-center gap-2"
-            >
-              <RefreshCcw
-                className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-              />
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            onClick={fetchRecentlyVisitedWorlds}
+            disabled={activeTab !== 'recently-visited' || isLoading}
+            className={`ml-2 flex items-center gap-2 ${
+              activeTab !== 'recently-visited' ? 'invisible' : ''
+            }`}
+          >
+            <RefreshCcw
+              className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+            />
+          </Button>
         </div>
       </div>
 
       {/* Tab bar with full-width tabs */}
-      <div className="sticky top-0 z-20 bg-background px-4 pb-2">
+      <div className="bg-background px-4 pb-2">
         <Tabs
           defaultValue="recently-visited"
           value={activeTab}
@@ -312,49 +275,14 @@ export function FindPage({
         </Tabs>
       </div>
 
-      {/* Main content area */}
-      <div className="flex-1 overflow-auto">
-        {activeTab === 'recently-visited' && (
-          <div className="flex flex-col gap-2">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <p>{t('general:loading')}</p>
-                </div>
-              </div>
-            ) : recentlyVisitedWorlds.length > 0 ? (
-              <WorldGrid
-                worlds={recentlyVisitedWorlds}
-                folderName={SpecialFolders.Find}
-                initialSelectedWorlds={[]}
-                onShowFolderDialog={onShowFolderDialog}
-                size={CardSize.Normal}
-                onOpenWorldDetails={onSelectWorld}
-                onSelectedWorldsChange={onSelectedWorldsChange}
-                shouldClearSelection={clearSelection}
-                onClearSelectionComplete={onClearSelectionComplete}
-                selectionModeControl={isSelectionMode}
-                selectAll={triggerSelectAll}
-                worldsJustAdded={worldsJustAdded}
-                onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64">
-                <p className="text-muted-foreground">
-                  {t('find-page:no-recently-visited-worlds')}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'search' && (
-          <div className="flex flex-col gap-4 p-4">
-            <Card>
-              <CardContent className="pt-6 space-y-4">
+      {/* Search and filter controls */}
+      {activeTab === 'search' && (
+        <div className="sticky top-0 z-30 bg-background border-b">
+          <Card className=" mx-4 border-0">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex gap-4 items-end">
                 {/* Search text input */}
-                <div className="grid gap-2">
+                <div className="flex-1 min-w-0 flex flex-col gap-2">
                   <Label htmlFor="search-query">
                     {t('find-page:search-query')}
                   </Label>
@@ -367,7 +295,7 @@ export function FindPage({
                 </div>
 
                 {/* Sort options */}
-                <div className="grid gap-2">
+                <div className="flex-1 min-w-0 flex flex-col gap-2">
                   <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
                   <Select value={selectedSort} onValueChange={setSelectedSort}>
                     <SelectTrigger id="sort">
@@ -401,8 +329,8 @@ export function FindPage({
                   </Select>
                 </div>
 
-                {/* Tag combobox with improved autocomplete */}
-                <div className="grid gap-2">
+                {/* Tag combobox */}
+                <div className="flex-1 min-w-0 flex flex-col gap-2">
                   <Label htmlFor="tag">{t('find-page:tag')}</Label>
                   <SingleFilterItemSelector
                     placeholder={t('find-page:tag-placeholder')}
@@ -411,15 +339,14 @@ export function FindPage({
                       label: tag,
                     }))}
                     value={selectedTag}
-                    onValueChange={(value) => {
-                      setSelectedTag(value);
-                    }}
+                    onValueChange={setSelectedTag}
+                    allowCustomValues={true}
                   />
                 </div>
 
                 {/* Search button */}
                 <Button
-                  className="w-full"
+                  className="flex-shrink-0"
                   onClick={() => handleSearch(false)}
                   disabled={isSearching}
                 >
@@ -435,9 +362,52 @@ export function FindPage({
                     </>
                   )}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
+      {/* Main content area */}
+      <div>
+        {activeTab === 'recently-visited' && (
+          <div className="flex flex-col gap-2">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <p>{t('general:loading')}</p>
+                </div>
+              </div>
+            ) : recentlyVisitedWorlds.length > 0 ? (
+              <WorldGrid
+                worlds={recentlyVisitedWorlds}
+                folderName={SpecialFolders.Find}
+                initialSelectedWorlds={[]}
+                onShowFolderDialog={onShowFolderDialog}
+                size={CardSize.Normal}
+                onOpenWorldDetails={onSelectWorld}
+                onSelectedWorldsChange={onSelectedWorldsChange}
+                shouldClearSelection={clearSelection}
+                onClearSelectionComplete={onClearSelectionComplete}
+                isSelectionMode={true}
+                selectAll={triggerSelectAll}
+                worldsJustAdded={worldsJustAdded}
+                onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
+                containerRef={findGridRef}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64">
+                <p className="text-muted-foreground">
+                  {t('find-page:no-recently-visited-worlds')}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'search' && (
+          <div className="flex flex-col gap-4 p-4">
             {/* Search results */}
             {searchResults.length > 0 && (
               <div className="flex-1">
@@ -449,12 +419,13 @@ export function FindPage({
                   size={CardSize.Normal}
                   onOpenWorldDetails={onSelectWorld}
                   onSelectedWorldsChange={onSelectedWorldsChange}
-                  selectionModeControl={isSelectionMode}
+                  isSelectionMode={true}
                   selectAll={triggerSelectAll}
                   shouldClearSelection={clearSelection}
                   onClearSelectionComplete={onClearSelectionComplete}
                   worldsJustAdded={worldsJustAdded}
                   onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
+                  containerRef={findGridRef}
                 />
 
                 {/* Load more indicator */}

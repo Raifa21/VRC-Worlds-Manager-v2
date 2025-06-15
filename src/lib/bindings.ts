@@ -167,6 +167,14 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getAuthorsByCount(): Promise<Result<string[], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_authors_by_count') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async deleteWorld(worldId: string): Promise<Result<null, string>> {
     try {
       return {
@@ -674,6 +682,7 @@ export type WorldDisplayData = {
   dateAdded: string;
   platform: Platform;
   folders: string[];
+  tags: string[];
 };
 
 /** tauri-specta globals **/

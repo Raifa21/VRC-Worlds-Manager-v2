@@ -207,6 +207,7 @@ export function AddWorldPopup({
                       platform:
                         previewWorld.platform as unknown as import('@/types/worlds').Platform,
                       folders: [],
+                      tags: previewWorld.tags || [],
                     }}
                   />
                   <div className="flex flex-col gap-4">
