@@ -268,8 +268,8 @@ export default function ListView() {
       const newName = await invoke<string>('create_folder', { name: name });
       await loadFolders();
 
-      // Only navigate to the new folder if not in Find page
-      if (currentFolder !== SpecialFolders.Find) {
+      // Only navigate to the new folder if not in Find page or if add-to-folder dialog is open
+      if (currentFolder !== SpecialFolders.Find && !showFolderDialog) {
         await Promise.all([
           setCurrentFolder(newName),
           setShowCreateFolder(false),
@@ -1505,27 +1505,47 @@ export default function ListView() {
           ) : null}
         </div>
         <div className="flex-1">
-          <WorldGrid
-            size={cardSize}
-            worlds={sortedAndFilteredWorlds}
-            folderName={currentFolder}
-            initialSelectedWorlds={selectedWorldsForFolder}
-            onRemoveFromFolder={removeWorldsFromFolder}
-            onHideWorld={handleHideWorld}
-            onUnhideWorld={handleRestoreWorld}
-            onOpenWorldDetails={handleOpenWorldDetails}
-            onShowFolderDialog={(worlds) => {
-              setSelectedWorldsForFolder(worlds);
-              setShowFolderDialog(true);
-            }}
-            onSelectedWorldsChange={(selectedWorlds) => {
-              setSelectedWorldsForFolder(selectedWorlds);
-            }}
-            isSelectionMode={isSelectionMode}
-            shouldClearSelection={shouldClearMultiSelection}
-            onClearSelectionComplete={() => setShouldClearMultiSelection(false)}
-            containerRef={gridScrollRef}
-          />
+          {sortedAndFilteredWorlds.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              {worlds.length === 0
+                ? // no raw worlds in this folder / section
+                  currentFolder === SpecialFolders.All
+                  ? t('listview-page:no-worlds-all')
+                  : currentFolder === SpecialFolders.Unclassified
+                    ? t('listview-page:no-worlds-unclassified')
+                    : !Object.values(SpecialFolders).includes(
+                          currentFolder as SpecialFolders,
+                        )
+                      ? t('listview-page:no-worlds-in-folder', currentFolder)
+                      : t('listview-page:no-worlds') // fallback, e.g. hidden
+                : // there *are* worlds but filters/search cut them out
+                  t('listview-page:no-results-filtered')}
+            </div>
+          ) : (
+            <WorldGrid
+              size={cardSize}
+              worlds={sortedAndFilteredWorlds}
+              folderName={currentFolder}
+              initialSelectedWorlds={selectedWorldsForFolder}
+              onRemoveFromFolder={removeWorldsFromFolder}
+              onHideWorld={handleHideWorld}
+              onUnhideWorld={handleRestoreWorld}
+              onOpenWorldDetails={handleOpenWorldDetails}
+              onShowFolderDialog={(worlds) => {
+                setSelectedWorldsForFolder(worlds);
+                setShowFolderDialog(true);
+              }}
+              onSelectedWorldsChange={(selectedWorlds) => {
+                setSelectedWorldsForFolder(selectedWorlds);
+              }}
+              isSelectionMode={isSelectionMode}
+              shouldClearSelection={shouldClearMultiSelection}
+              onClearSelectionComplete={() =>
+                setShouldClearMultiSelection(false)
+              }
+              containerRef={gridScrollRef}
+            />
+          )}
         </div>
       </>
     );
@@ -1544,12 +1564,14 @@ export default function ListView() {
           setShowSettings(false);
           setShowFind(false);
           setShowWorldDetails(false);
+          setCurrentFolder(SpecialFolders.NotFolder);
         }}
         onSelectSettings={() => {
           setShowSettings(true);
           setShowAbout(false);
           setShowFind(false);
           setShowWorldDetails(false);
+          setCurrentFolder(SpecialFolders.NotFolder);
         }}
         onRenameFolder={onRenameFolder}
         onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
@@ -1696,6 +1718,7 @@ export default function ListView() {
           handleAddToFolders(foldersToAdd, foldersToRemove)
         }
         isFindPage={isFindPage}
+        onAddFolder={handleCreateFolder}
       />
       <DeleteFolderDialog
         folderName={showDeleteFolder}

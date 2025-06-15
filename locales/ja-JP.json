@@ -135,6 +135,11 @@
   "listview-page:error-delete-world": "ワールドの削除に失敗しました",
   "listview-page:active-filters": "適用中のフィルタ",
   "listview-page:items-hidden": "他 {0} 件",
+  "listview-page:no-worlds-all": "まだワールドがありません。「お気に入りを取得」ボタンをクリックして、お気に入りのワールドを取得しましょう！",
+  "listview-page:no-worlds-unclassified": "すべてのワールドがフォルダに入っているか、まだワールドがありません。",
+  "listview-page:no-worlds-in-folder": "ワールドを右クリックするか「ワールドを追加」ボタンで新しいワールドを追加できます。",
+  "listview-page:no-worlds": "ワールドが見つかりません。",
+  "listview-page:no-results-filtered": "フィルタに一致するワールドがありません。フィルタや検索条件を変更してみてください。",
 
   "world-card:cross-platform": "クロスプラットフォーム",
   "world-card:pc": "PC",
@@ -338,6 +343,8 @@
   "add-to-folder-dialog:description-multiple": "{0} ワールドの追加または削除するフォルダを選択してください",
   "add-to-folder-dialog:no-folders": "フォルダがありません。サイドバーから新しいフォルダを追加しましょう！",
   "add-to-folder-dialog:find-page-info": "フォルダが選択されていない場合、ワールドは未分類フォルダに追加されます。",
+  "add-to-folder-dialog:new-placeholder": "新しいフォルダ名を入力",
+  "add-to-folder-dialog:add-folder": "新しいフォルダを追加",
 
   "create-folder-dialog:title": "新規フォルダの作成",
   "create-folder-dialog:placeholder": "フォルダ名を入力してください",
