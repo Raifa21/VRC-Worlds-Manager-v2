@@ -37,7 +37,7 @@ export function AdvancedSearchPanel({
   const { t } = useLocalization();
   const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [folders, setFolders] = useState<string[]>([]);
+  const [availableFolders, setAvailableFolders] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -77,7 +77,7 @@ export function AdvancedSearchPanel({
         try {
           const result = await commands.getFolders();
           if (result.status === 'ok') {
-            setFolders(result.data);
+            setAvailableFolders(result.data);
           }
         } catch (error) {
           console.error('Failed to load folders:', error);
@@ -126,7 +126,7 @@ export function AdvancedSearchPanel({
             <MultiFilterItemSelector
               placeholder={t('advanced-search:search-folders')}
               values={folderFilters}
-              candidates={folders.map((f) => ({ label: f, value: f }))}
+              candidates={availableFolders.map((f) => ({ label: f, value: f }))}
               onValuesChange={onFolderFiltersChange}
               allowCustomValues={false}
             />
