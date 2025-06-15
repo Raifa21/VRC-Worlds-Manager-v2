@@ -373,13 +373,13 @@ export function AppSidebar({
                                 });
                               }}
                             >
-                              Rename
+                              {t('app-sidebar:rename')}
                             </ContextMenuItem>
                             <ContextMenuItem
                               className="text-destructive"
                               onClick={() => onDeleteFolder(folder)}
                             >
-                              Delete
+                              {t('general:delete')}
                             </ContextMenuItem>
                           </ContextMenuContent>
                         </ContextMenu>
