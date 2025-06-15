@@ -152,6 +152,7 @@ export default function ListView() {
     folderName?: string,
   ) => {
     try {
+      clearFilters();
       saveSelectedState(currentFolder);
 
       setShowAbout(false);
@@ -273,7 +274,7 @@ export default function ListView() {
           setCurrentFolder(newName),
           setShowCreateFolder(false),
         ]);
-        await loadFolderContents(newName);
+        handleSelectFolder('folder', newName);
       } else {
         setShowCreateFolder(false);
       }
@@ -1132,6 +1133,13 @@ export default function ListView() {
     }
   });
 
+  const clearFilters = () => {
+    setAuthorFilter('');
+    setTagFilters([]);
+    setFolderFilters([]);
+    setSearchQuery('');
+  };
+
   const renderMainContent = () => {
     if (showAbout) {
       return <AboutSection />;
@@ -1273,9 +1281,7 @@ export default function ListView() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setAuthorFilter('');
-                    setTagFilters([]);
-                    setFolderFilters([]);
+                    clearFilters();
                   }}
                   className="h-7 px-2 text-xs"
                 >
