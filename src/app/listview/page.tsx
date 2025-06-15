@@ -500,10 +500,10 @@ export default function ListView() {
       await Promise.all(worldIds.map((id) => commands.unhideWorld(id)));
 
       toast({
-        title: 'Worlds restored',
+        title: t('listview-page:restored-title'),
         description: (
           <div className="flex w-full items-center justify-between gap-2">
-            <span>Restored from hidden</span>
+            <span>{t('listview-page:worlds-restored')}</span>
             <Button
               variant="outline"
               size="sm"
@@ -516,14 +516,14 @@ export default function ListView() {
 
                   await refreshCurrentView();
                   toast({
-                    title: 'Hidden',
-                    description: 'Worlds hidden again',
+                    title: t('listview-page:worlds-hidden-title'),
+                    description: t('listview-page:worlds-hidden-again'),
                   });
                 } catch (e) {
                   error(`Failed to restore worlds: ${e}`);
                   toast({
-                    title: 'Error',
-                    description: 'Failed to re-hide worlds',
+                    title: t('general:error-title'),
+                    description: t('listview-page:error-hide-world'),
                     variant: 'destructive',
                   });
                 }
@@ -540,8 +540,8 @@ export default function ListView() {
     } catch (e) {
       error(`Failed to restore worlds: ${e}`);
       toast({
-        title: 'Error',
-        description: 'Failed to restore worlds from hidden',
+        title: t('general:error-title'),
+        description: t('listview-page:error-restore-worlds'),
         variant: 'destructive',
       });
     }

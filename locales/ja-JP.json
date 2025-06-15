@@ -102,11 +102,12 @@
   "listview-page:world-added-description": "ワールドがフォルダに正常に追加されました",
   "listview-page:error-refresh-worlds": "ワールドの更新に失敗しました",
   "listview-page:worlds-hidden-title": "ワールドが非表示にされました",
+  "listview-page:worlds-hidden-again": "ワールドが再度非表示になりました",
   "listview-page:worlds-hidden-multiple": "\"{0}\" 他 {1} 件のワールドを非表示にしました",
   "listview-page:worlds-hidden-single": "\"{0}\" を非表示にしました",
   "listview-page:undo-button": "元に戻す",
   "listview-page:restored-title": "復元済み",
-  "listview-page:worlds-restored": "非表示からワールドを復元しました",
+  "listview-page:worlds-restored": "ワールドを復元しました",
   "listview-page:error-restore-worlds": "ワールドの復元に失敗しました",
   "listview-page:error-hide-world": "ワールドの非表示に失敗しました",
   "listview-page:worlds-removed-title": "ワールドが削除されました",
@@ -194,6 +195,7 @@
 
   "app-sidebar:add-folder": "フォルダを追加",
   "app-sidebar:about": "このアプリについて",
+  "app-sidebar:rename": "名前を変更",
 
   "advanced-search:title": "詳細検索",
   "advanced-search:search-author": "作者名で検索...",
