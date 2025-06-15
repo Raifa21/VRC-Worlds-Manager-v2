@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Dialog,
@@ -11,48 +10,37 @@ import {
 } from '@/components/ui/dialog';
 import SingleFilterItemSelector from '@/components/single-filter-item-selector';
 import { commands } from '@/lib/bindings';
-import { info } from '@tauri-apps/plugin-log';
 import MultiFilterItemSelector from './multi-filter-item-selector';
+import { info } from '@tauri-apps/plugin-log';
 
 interface AdvancedSearchPanelProps {
   open: boolean;
-  searchQuery: string;
-  onSearchQueryChange: (query: string) => void;
+  authorFilter: string;
+  onAuthorFilterChange: (author: string) => void;
+  tagFilters: string[];
+  onTagFiltersChange: (tags: string[]) => void;
+  folderFilters: string[];
+  onFolderFiltersChange: (folders: string[]) => void;
   onClose: () => void;
 }
 
-// Helper function to parse search query
-const parseSearchQuery = (query: string) => {
-  const authorMatch = query.match(/author:(\S+)/i);
-  const tagMatches = query.match(/tag:(\S+)/gi);
-  const cleanQuery = query
-    .replace(/author:\S+/gi, '')
-    .replace(/tag:\S+/gi, '')
-    .trim();
-
-  return {
-    text: cleanQuery,
-    author: authorMatch?.[1] || '',
-    tags: tagMatches
-      ? tagMatches.map((match) => match.replace(/tag:/i, ''))
-      : [],
-  };
-};
-
 export function AdvancedSearchPanel({
   open,
-  searchQuery,
-  onSearchQueryChange,
+  authorFilter,
+  onAuthorFilterChange,
+  tagFilters,
+  onTagFiltersChange,
+  folderFilters,
+  onFolderFiltersChange,
   onClose,
 }: AdvancedSearchPanelProps) {
-  const [authorFilter, setAuthorFilter] = useState('');
   const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
-  const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [folders, setFolders] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
-      const loadTags = async () => {
+      const loadAuthors = async () => {
         try {
           const result = await commands.getAuthorsByCount();
           if (result.status === 'ok') {
@@ -62,7 +50,7 @@ export function AdvancedSearchPanel({
           console.error('Failed to load authors:', error);
         }
       };
-      loadTags();
+      loadAuthors();
     }
   }, [open]);
 
@@ -82,38 +70,26 @@ export function AdvancedSearchPanel({
     }
   }, [open]);
 
-  // Sync with existing search query when dialog opens
   useEffect(() => {
     if (open) {
-      const parsed = parseSearchQuery(searchQuery);
-      setAuthorFilter(parsed.author);
-      setTagFilters(parsed.tags);
+      const loadFolders = async () => {
+        try {
+          const result = await commands.getFolders();
+          if (result.status === 'ok') {
+            setFolders(result.data);
+          }
+        } catch (error) {
+          console.error('Failed to load folders:', error);
+        }
+      };
+      loadFolders();
     }
-  }, [open, searchQuery]);
+  }, [open]);
 
   const handleClearAll = () => {
-    onSearchQueryChange('');
-    setAuthorFilter('');
-    setTagFilters([]);
-  };
-
-  const handleApplyFilters = () => {
-    let query = searchQuery
-      .replace(/author:\S+/gi, '')
-      .replace(/tag:\S+/gi, '')
-      .trim();
-
-    if (authorFilter.trim()) query += ` author:${authorFilter.trim()}`;
-    if (tagFilters.length > 0) {
-      tagFilters.forEach((tag) => {
-        query += ` tag:${tag.trim()}`;
-      });
-    }
-
-    onSearchQueryChange(query.trim());
-    setAuthorFilter('');
-    setTagFilters([]);
-    onClose();
+    onAuthorFilterChange('');
+    onTagFiltersChange([]);
+    onFolderFiltersChange([]);
   };
 
   return (
@@ -130,7 +106,7 @@ export function AdvancedSearchPanel({
               placeholder="Search by author name..."
               value={authorFilter}
               candidates={availableAuthors.map((a) => ({ label: a, value: a }))}
-              onValueChange={(value: string) => setAuthorFilter(value)}
+              onValueChange={onAuthorFilterChange}
               allowCustomValues={false}
             />
           </div>
@@ -140,9 +116,18 @@ export function AdvancedSearchPanel({
               placeholder="Search by tags..."
               values={tagFilters}
               candidates={availableTags.map((t) => ({ label: t, value: t }))}
-              onValuesChange={(values: string[]) => setTagFilters(values)}
+              onValuesChange={onTagFiltersChange}
               allowCustomValues={false}
-              maxItems={5}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="folder-filter">Folders</Label>
+            <MultiFilterItemSelector
+              placeholder="Search by folders..."
+              values={folderFilters}
+              candidates={folders.map((f) => ({ label: f, value: f }))}
+              onValuesChange={onFolderFiltersChange}
+              allowCustomValues={false}
             />
           </div>
         </div>
@@ -151,7 +136,7 @@ export function AdvancedSearchPanel({
           <Button variant="outline" onClick={handleClearAll}>
             Clear All
           </Button>
-          <Button onClick={handleApplyFilters}>Apply Filters</Button>
+          <Button onClick={onClose}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -118,34 +118,31 @@ export default function MultiFilterItemSelector({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      {/* ... PopoverTrigger setup ... */}
-      {/* The PopoverTrigger part from the previous response should be correct for X button functionality */}
       <div className="relative">
         <div
           className="flex items-center justify-between min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
           onClick={() => setOpen(!open)}
         >
-          <div className="flex flex-wrap gap-1 flex-grow min-w-0">
+          <div className="flex flex-wrap gap-1 flex-grow min-w-0 max-h-[5rem] overflow-auto">
             {selectedOptions.length > 0 ? (
-              <>
-                {selectedOptions.map((option) => (
-                  <Badge
-                    key={option.value}
-                    variant="secondary"
-                    className="flex items-center gap-1 text-xs pointer-events-auto"
-                    onClick={(e) => e.stopPropagation()} // Prevent popover from closing when clicking badge
-                  >
-                    <span className="truncate">{option.label}</span>
-                    <X
-                      className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
-                      onClick={(e) => {
-                        e.stopPropagation(); // Stop propagation to badge and then to main div
-                        handleClear(option.value, e);
-                      }}
-                    />
-                  </Badge>
-                ))}
-              </>
+              selectedOptions.map((option) => (
+                <Badge
+                  key={option.value}
+                  variant="secondary"
+                  className="flex items-center gap-1 text-xs pointer-events-auto overflow-hidden"
+                >
+                  <span className="block max-w-[80px] truncate whitespace-nowrap flex-shrink">
+                    {option.label}
+                  </span>
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClear(option.value, e);
+                    }}
+                  />
+                </Badge>
+              ))
             ) : (
               <span className="text-muted-foreground text-sm">
                 {formattedPlaceholder}
@@ -156,7 +153,7 @@ export default function MultiFilterItemSelector({
             <X
               className="h-4 w-4 opacity-50 shrink-0 cursor-pointer hover:opacity-100 pointer-events-auto"
               onClick={(e) => {
-                e.stopPropagation(); // Stop propagation to main div
+                e.stopPropagation();
                 handleClearAll(e);
               }}
             />

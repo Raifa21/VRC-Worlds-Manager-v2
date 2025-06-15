@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useLayoutEffect, useRef, useState, useMemo, useEffect } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,7 @@ import {
   Square,
   Settings,
   X,
+  TextSearch,
 } from 'lucide-react'; // For the reload icon
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { AboutSection } from '@/components/about-section';
@@ -61,6 +62,14 @@ type SortField =
   | 'lastUpdated';
 
 export default function ListView() {
+  // new state + refs for wrapping logic
+  const filterRowRef = useRef<HTMLDivElement>(null);
+  const authorRef = useRef<HTMLDivElement>(null);
+  const tagsRef = useRef<HTMLDivElement>(null);
+  const foldersRef = useRef<HTMLDivElement>(null);
+  const clearRef = useRef<HTMLButtonElement>(null);
+  const [wrapFolders, setWrapFolders] = useState(false);
+
   const { folders, loadFolders } = useFolders();
   const { toast } = useToast();
   const { t } = useLocalization();
@@ -92,6 +101,9 @@ export default function ListView() {
     useState(false);
   const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [authorFilter, setAuthorFilter] = useState('');
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
+  const [folderFilters, setFolderFilters] = useState<string[]>([]);
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -1011,57 +1023,56 @@ export default function ListView() {
     }
   };
 
-  const parseSearchQuery = (query: string) => {
-    const authorMatch = query.match(/author:(\S+)/i);
-    const tagMatches = query.match(/tag:(\S+)/gi);
-    const cleanQuery = query
-      .replace(/author:\S+/gi, '')
-      .replace(/tag:\S+/gi, '')
-      .trim();
-
-    return {
-      text: cleanQuery,
-      author: authorMatch?.[1] || '',
-      tags: tagMatches
-        ? tagMatches.map((match) => match.replace(/tag:/i, ''))
-        : [],
-    };
-  };
-
   const filteredWorlds = useMemo(() => {
-    const parsed = parseSearchQuery(searchQuery);
+    info(
+      `Filtering worlds with: searchQuery="${searchQuery}", authorFilter="${authorFilter}", tagFilters=${JSON.stringify(tagFilters)}, folderFilters=${JSON.stringify(folderFilters)}, totalWorlds=${worlds.length}`,
+    );
 
     return worlds.filter((world) => {
       // Check text search
       const textMatch =
-        !parsed.text ||
-        world.name.toLowerCase().includes(parsed.text.toLowerCase()) ||
-        world.authorName.toLowerCase().includes(parsed.text.toLowerCase()) ||
+        !searchQuery ||
+        world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         toRomaji(world.name)
           .toLowerCase()
-          .includes(parsed.text.toLowerCase()) ||
+          .includes(searchQuery.toLowerCase()) ||
         toRomaji(world.authorName)
           .toLowerCase()
-          .includes(parsed.text.toLowerCase());
+          .includes(searchQuery.toLowerCase());
 
-      // Check author filter
+      // Check author filter (EXACT matching)
       const authorMatch =
-        !parsed.author ||
-        world.authorName.toLowerCase().includes(parsed.author.toLowerCase());
+        !authorFilter ||
+        world.authorName.toLowerCase() === authorFilter.toLowerCase();
 
-      // Check tag filters (ALL tags must match - AND logic)
+      // Check tag filters (ALL tags must match - AND logic with EXACT matching)
       const tagMatch =
-        parsed.tags.length === 0 ||
+        tagFilters.length === 0 ||
         (world.tags &&
-          parsed.tags.every((searchTag) =>
-            world.tags.some((worldTag) =>
-              worldTag.toLowerCase().includes(searchTag.toLowerCase()),
-            ),
-          ));
+          tagFilters.every((searchTag) => {
+            const prefixedTag = `author_tag_${searchTag}`;
+            return world.tags.some(
+              (worldTag) =>
+                worldTag.toLowerCase() === prefixedTag.toLowerCase(),
+            );
+          }));
 
-      return textMatch && authorMatch && tagMatch;
+      // Check folder filters (world must be in ALL specified folders - AND logic with EXACT matching)
+      const folderMatch =
+        folderFilters.length === 0 ||
+        folderFilters.every((searchFolder) =>
+          world.folders.some(
+            (worldFolder) =>
+              worldFolder.toLowerCase() === searchFolder.toLowerCase(),
+          ),
+        );
+
+      const finalMatch = textMatch && authorMatch && tagMatch && folderMatch;
+
+      return finalMatch;
     });
-  }, [worlds, searchQuery]);
+  }, [worlds, searchQuery, authorFilter, tagFilters, folderFilters]);
 
   const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
     switch (field) {
@@ -1168,124 +1179,22 @@ export default function ListView() {
           <div className="p-4 flex items-center gap-4">
             <div className="flex-1 flex items-center gap-2">
               <div className="relative flex-1">
-                {/* Hidden input for actual value management */}
-                <input type="hidden" value={searchQuery} />
-
-                {/* Visual input container */}
                 <div className="relative">
-                  <div className="flex items-center min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                    {/* Badges */}
-                    {(() => {
-                      const parsed = parseSearchQuery(searchQuery);
-                      const badges = [];
+                  <input
+                    type="text"
+                    placeholder={t('world-grid:search-placeholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
+                  />
 
-                      if (parsed.author) {
-                        badges.push(
-                          <Badge
-                            key="author"
-                            variant="secondary"
-                            className="text-xs h-5 flex items-center gap-1 mr-1"
-                          >
-                            <span>Author: {parsed.author}</span>
-                            <X
-                              className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const newQuery = searchQuery
-                                  .replace(/author:\S+/gi, '')
-                                  .trim();
-                                setSearchQuery(newQuery);
-                              }}
-                            />
-                          </Badge>,
-                        );
-                      }
-
-                      parsed.tags.forEach((tag, index) => {
-                        badges.push(
-                          <Badge
-                            key={`tag-${index}`}
-                            variant="secondary"
-                            className="text-xs h-5 flex items-center gap-1 mr-1"
-                          >
-                            <span>Tag: {tag}</span>
-                            <X
-                              className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const newQuery = searchQuery
-                                  .replace(new RegExp(`tag:${tag}`, 'gi'), '')
-                                  .trim();
-                                setSearchQuery(newQuery);
-                              }}
-                            />
-                          </Badge>,
-                        );
-                      });
-
-                      return badges;
-                    })()}
-
-                    {/* Actual text input */}
-                    <input
-                      type="text"
-                      placeholder={(() => {
-                        const parsed = parseSearchQuery(searchQuery);
-                        return parsed.author || parsed.tags.length > 0
-                          ? ''
-                          : t('world-grid:search-placeholder');
-                      })()}
-                      value={(() => {
-                        const parsed = parseSearchQuery(searchQuery);
-                        return parsed.text;
-                      })()}
-                      onChange={(e) => {
-                        const parsed = parseSearchQuery(searchQuery);
-                        let newQuery = e.target.value;
-
-                        // Preserve existing filters
-                        if (parsed.author)
-                          newQuery += ` author:${parsed.author}`;
-                        if (parsed.tags.length > 0) {
-                          parsed.tags.forEach((tag) => {
-                            newQuery += ` tag:${tag}`;
-                          });
-                        }
-
-                        setSearchQuery(newQuery.trim());
-                      }}
-                      className="flex-1 bg-transparent outline-none min-w-0"
-                      onKeyDown={(e) => {
-                        // Handle adding new filters via typing
-                        const value = e.currentTarget.value;
-                        if (e.key === ' ' || e.key === 'Enter') {
-                          if (
-                            value.includes('author:') &&
-                            !value.match(/author:\S+/)
-                          ) {
-                            // User is trying to type author: prefix
-                            return;
-                          }
-                          if (
-                            value.includes('tag:') &&
-                            !value.match(/tag:\S+/)
-                          ) {
-                            // User is trying to type tag: prefix
-                            return;
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {/* Settings button */}
+                  {/* Advanced Search button */}
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 h-9 w-9 p-0 m-0"
                     onClick={() => setShowAdvancedSearch(true)}
                   >
-                    <Settings className="h-4 w-4" />
+                    <TextSearch className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -1296,7 +1205,7 @@ export default function ListView() {
                 value={sortField}
                 onValueChange={(value) => handleSort(value as SortField)}
               >
-                <SelectTrigger className="w-[180px] mt-0.5">
+                <SelectTrigger className="w-[180px] h-9">
                   <SelectValue placeholder={t('world-grid:sort-placeholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -1319,11 +1228,10 @@ export default function ListView() {
               </Select>
               <Button
                 variant="ghost"
-                size="icon"
                 onClick={() =>
                   setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
                 }
-                className="h-10 w-10"
+                className="h-9 w-9"
               >
                 {sortDirection === 'asc' ? (
                   <SortAsc className="h-4 w-4" />
@@ -1333,7 +1241,6 @@ export default function ListView() {
               </Button>
               <Button
                 variant={isSelectionMode ? 'secondary' : 'ghost'}
-                size="icon"
                 onClick={() => {
                   if (isSelectionMode) {
                     setShouldClearMultiSelection(true);
@@ -1342,7 +1249,7 @@ export default function ListView() {
                     setIsSelectionMode(true);
                   }
                 }}
-                className="h-10 w-10"
+                className="h-9 w-9"
               >
                 {isSelectionMode ? (
                   <CheckSquare className="h-4 w-4" />
@@ -1352,6 +1259,189 @@ export default function ListView() {
               </Button>
             </div>
           </div>
+
+          {/* Filter Section */}
+          {authorFilter || tagFilters.length > 0 || folderFilters.length > 0 ? (
+            <div className="px-4 pb-4 border-b bg-muted/50">
+              {/* Header: Filters title + Clear All */}
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Active Filters
+                </span>
+                <Button
+                  ref={clearRef}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAuthorFilter('');
+                    setTagFilters([]);
+                    setFolderFilters([]);
+                  }}
+                  className="h-7 px-2 text-xs"
+                >
+                  Clear All
+                </Button>
+              </div>
+              <div
+                ref={filterRowRef}
+                className="flex flex-wrap items-center gap-2 max-w-full"
+              >
+                {/* AUTHOR */}
+                {authorFilter && (
+                  <div
+                    ref={authorRef}
+                    className="flex items-center gap-2 shrink-0"
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      Author:
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <span
+                        className="max-w-[120px] truncate"
+                        title={authorFilter}
+                      >
+                        {authorFilter}
+                      </span>
+                      <X
+                        className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                        onClick={() => setAuthorFilter('')}
+                      />
+                    </Badge>
+                  </div>
+                )}
+
+                {/* TAGS (always row 1) */}
+                {tagFilters.length > 0 && (
+                  <div
+                    ref={tagsRef}
+                    className="flex items-center gap-2 min-w-0"
+                  >
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      Tags:
+                    </span>
+                    <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                      {(() => {
+                        const reserved = 80; // for “and X more”
+                        const perBadge = 100;
+                        const availW =
+                          (tagsRef.current?.parentElement?.clientWidth || 0) -
+                          reserved -
+                          (clearRef.current?.offsetWidth || 0) -
+                          (authorRef.current?.offsetWidth || 0);
+                        const maxTags = Math.max(
+                          1,
+                          Math.min(
+                            tagFilters.length,
+                            Math.floor(availW / perBadge),
+                          ),
+                        );
+                        const visible = tagFilters.slice(0, maxTags);
+                        const hidden = tagFilters.length - maxTags;
+
+                        return (
+                          <>
+                            {visible.map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="flex items-center gap-1 overflow-hidden"
+                              >
+                                <span
+                                  className="max-w-[80px] truncate whitespace-nowrap"
+                                  title={tag}
+                                >
+                                  {tag}
+                                </span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                                  onClick={() =>
+                                    setTagFilters((prev) =>
+                                      prev.filter((t) => t !== tag),
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            ))}
+                            {hidden > 0 && (
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                and {hidden} more
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+                {/* FOLDERS: may wrap down to row 2 */}
+                {folderFilters.length > 0 && !wrapFolders && (
+                  <div
+                    ref={foldersRef}
+                    className="flex items-center gap-2 min-w-0"
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      Folders:
+                    </span>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {folderFilters.map((folder) => (
+                        <Badge
+                          key={folder}
+                          variant="secondary"
+                          className="flex items-center gap-1 overflow-hidden"
+                        >
+                          <span
+                            className="max-w-[100px] truncate whitespace-nowrap"
+                            title={folder}
+                          >
+                            {folder}
+                          </span>
+                          <X
+                            className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                            onClick={() =>
+                              setFolderFilters((prev) =>
+                                prev.filter((f) => f !== folder),
+                              )
+                            }
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* second row: folders if we overflowed */}
+              {wrapFolders && folderFilters.length > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 max-w-full">
+                  {folderFilters.map((folder) => (
+                    <Badge
+                      key={folder}
+                      variant="secondary"
+                      className="flex items-center gap-1 overflow-hidden"
+                    >
+                      <span
+                        className="max-w-[100px] truncate whitespace-nowrap"
+                        title={folder}
+                      >
+                        {folder}
+                      </span>
+                      <X
+                        className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                        onClick={() =>
+                          setFolderFilters((prev) =>
+                            prev.filter((f) => f !== folder),
+                          )
+                        }
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
         <div className="flex-1">
           <WorldGrid
@@ -1559,8 +1649,12 @@ export default function ListView() {
       />
       <AdvancedSearchPanel
         open={showAdvancedSearch}
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
+        authorFilter={authorFilter}
+        onAuthorFilterChange={setAuthorFilter}
+        tagFilters={tagFilters}
+        onTagFiltersChange={setTagFilters}
+        folderFilters={folderFilters}
+        onFolderFiltersChange={setFolderFilters}
         onClose={() => setShowAdvancedSearch(false)}
       />
     </div>
