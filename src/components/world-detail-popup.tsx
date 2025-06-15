@@ -229,7 +229,22 @@ export function WorldDetailPopup({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          setInstanceCreationType('normal');
+          setGroupInstanceState({
+            groups: [],
+            selectedGroupId: null,
+            permission: null,
+            roles: [],
+            isLoading: true, // Add this
+          });
+        }
+        onOpenChange(open);
+      }}
+    >
       <DialogContent className="max-w-[800px] h-[70vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -432,16 +447,15 @@ export function WorldDetailPopup({
                       </div>
                       <div className="text-sm text-gray-500">
                         {t('world-detail:by')}{' '}
-                        <button
-                          type="button"
-                          className="text-blue underline"
+                        <span
+                          className="text-sm text-gray-500 cursor-pointer hover:underline"
                           onClick={() => {
                             onSelectAuthor?.(worldDetails.authorName);
                             onOpenChange(false);
                           }}
                         >
                           {worldDetails.authorName}
-                        </button>
+                        </span>
                       </div>
                     </div>
                     <div className="w-2/5">
