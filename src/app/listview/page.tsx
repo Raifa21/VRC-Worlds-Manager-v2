@@ -62,11 +62,11 @@ type SortField =
   | 'lastUpdated';
 
 export default function ListView() {
-  // new state + refs for wrapping logic
   const filterRowRef = useRef<HTMLDivElement>(null);
   const authorRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
   const foldersRef = useRef<HTMLDivElement>(null);
+  const foldersLabelRef = useRef<HTMLSpanElement>(null); // ← new
   const clearRef = useRef<HTMLButtonElement>(null);
   const [wrapFolders, setWrapFolders] = useState(false);
 
@@ -529,7 +529,7 @@ export default function ListView() {
                 }
               }}
             >
-              Undo
+              {t('listview-page:undo-button')}
             </Button>
           </div>
         ),
@@ -588,7 +588,7 @@ export default function ListView() {
                 }
               }}
             >
-              Undo
+              {t('listview-page:undo-button')}
             </Button>
           </div>
         ),
@@ -758,7 +758,7 @@ export default function ListView() {
                   }
                 }}
               >
-                Undo
+                {t('listview-page:undo-button')}
               </Button>
             </div>
           ),
@@ -1221,7 +1221,7 @@ export default function ListView() {
                     {t('world-grid:sort-name')}
                   </SelectItem>
                   <SelectItem value="authorName">
-                    {t('general:sort-author')}
+                    {t('general:author')}
                   </SelectItem>
                   <SelectItem value="favorites">
                     {t('world-grid:sort-favorites')}
@@ -1274,7 +1274,7 @@ export default function ListView() {
               {/* Header: Filters title + Clear All */}
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-muted-foreground">
-                  Active Filters
+                  {t('listview-page:active-filters')}
                 </span>
                 <Button
                   ref={clearRef}
@@ -1285,7 +1285,7 @@ export default function ListView() {
                   }}
                   className="h-7 px-2 text-xs"
                 >
-                  Clear All
+                  {t('general:clear-all')}
                 </Button>
               </div>
               <div
@@ -1299,7 +1299,7 @@ export default function ListView() {
                     className="flex items-center gap-2 shrink-0"
                   >
                     <span className="text-xs text-muted-foreground">
-                      Author:
+                      {t('general:author')}:
                     </span>
                     <Badge
                       variant="secondary"
@@ -1326,7 +1326,7 @@ export default function ListView() {
                     className="flex items-center gap-2 min-w-0"
                   >
                     <span className="text-xs text-muted-foreground shrink-0">
-                      Tags:
+                      {t('general:tags')}:
                     </span>
                     <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
                       {(() => {
@@ -1373,7 +1373,7 @@ export default function ListView() {
                             ))}
                             {hidden > 0 && (
                               <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                and {hidden} more
+                                {t('listview-page:items-hidden', hidden)}
                               </span>
                             )}
                           </>
@@ -1382,70 +1382,123 @@ export default function ListView() {
                     </div>
                   </div>
                 )}
-                {/* FOLDERS: may wrap down to row 2 */}
-                {folderFilters.length > 0 && !wrapFolders && (
-                  <div
-                    ref={foldersRef}
-                    className="flex items-center gap-2 min-w-0"
-                  >
-                    <span className="text-xs text-muted-foreground">
-                      Folders:
-                    </span>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {folderFilters.map((folder) => (
-                        <Badge
-                          key={folder}
-                          variant="secondary"
-                          className="flex items-center gap-1 overflow-hidden"
+                {/* FOLDERS */}
+                {folderFilters.length > 0 && (
+                  <div className="flex flex-col self-center gap-2 -mt-2">
+                    {/* Row 1: only if ≥ 2 badges fit */}
+                    {(() => {
+                      const reserved = 80; // “and X more”
+                      const perBadge = 100; // badge+gap
+                      const parentW =
+                        foldersRef.current?.parentElement?.clientWidth || 0;
+                      const usedW =
+                        (clearRef.current?.offsetWidth || 0) +
+                        (authorRef.current?.offsetWidth || 0) +
+                        (tagsRef.current?.offsetWidth || 0);
+                      const availW = parentW - reserved - usedW;
+                      const fitCount = Math.floor(availW / perBadge);
+                      const showFirst = fitCount >= 2;
+                      if (!showFirst) return null;
+
+                      const visible = folderFilters.slice(0, fitCount);
+                      const hidden = folderFilters.length - fitCount;
+
+                      return (
+                        <div
+                          ref={foldersRef}
+                          className="flex items-center gap-2 min-w-0"
                         >
                           <span
-                            className="max-w-[100px] truncate whitespace-nowrap"
-                            title={folder}
+                            ref={foldersLabelRef} // ← label ref
+                            className="text-xs text-muted-foreground shrink-0"
                           >
-                            {folder}
+                            {t('general:folders')}:
                           </span>
-                          <X
-                            className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
-                            onClick={() =>
-                              setFolderFilters((prev) =>
-                                prev.filter((f) => f !== folder),
-                              )
-                            }
-                          />
-                        </Badge>
-                      ))}
-                    </div>
+                          <div className="flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                            {visible.map((folder) => (
+                              <Badge
+                                key={folder}
+                                variant="secondary"
+                                className="flex items-center gap-1 overflow-hidden"
+                              >
+                                <span
+                                  className="max-w-[100px] truncate whitespace-nowrap"
+                                  title={folder}
+                                >
+                                  {folder}
+                                </span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                                  onClick={() =>
+                                    setFolderFilters((prev) =>
+                                      prev.filter((f) => f !== folder),
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            ))}
+                            {hidden > 0 && (
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {t('listview-page:items-hidden', hidden)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Row 2: show when fewer than 2 fit OR when wrapFolders is true */}
+                    {(() => {
+                      const reserved = 80; // px for “and X more”
+                      const perBadge = 100; // badge+gap
+                      const parentW =
+                        foldersRef.current?.parentElement?.clientWidth || 0;
+                      const usedW =
+                        (clearRef.current?.offsetWidth || 0) +
+                        (authorRef.current?.offsetWidth || 0) +
+                        (tagsRef.current?.offsetWidth || 0) +
+                        (foldersLabelRef.current?.offsetWidth || 0);
+                      const availW = parentW - reserved - usedW;
+                      const fitCount = Math.floor(availW / perBadge);
+                      const showFirst = fitCount >= 2;
+                      const overflow = folderFilters.slice(fitCount);
+
+                      if (!showFirst || wrapFolders) {
+                        return (
+                          <div className="mt-2 flex flex-wrap items-center gap-2 max-w-full">
+                            <span className="text-xs text-muted-foreground">
+                              {t('general:folders')}:
+                            </span>
+                            {overflow.map((folder) => (
+                              <Badge
+                                key={folder}
+                                variant="secondary"
+                                className="flex items-center gap-1 overflow-hidden"
+                              >
+                                <span
+                                  className="max-w-[100px] truncate whitespace-nowrap"
+                                  title={folder}
+                                >
+                                  {folder}
+                                </span>
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                                  onClick={() =>
+                                    setFolderFilters((prev) =>
+                                      prev.filter((f) => f !== folder),
+                                    )
+                                  }
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 )}
               </div>
-
-              {/* second row: folders if we overflowed */}
-              {wrapFolders && folderFilters.length > 0 && (
-                <div className="mt-2 flex flex-wrap items-center gap-2 max-w-full">
-                  {folderFilters.map((folder) => (
-                    <Badge
-                      key={folder}
-                      variant="secondary"
-                      className="flex items-center gap-1 overflow-hidden"
-                    >
-                      <span
-                        className="max-w-[100px] truncate whitespace-nowrap"
-                        title={folder}
-                      >
-                        {folder}
-                      </span>
-                      <X
-                        className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
-                        onClick={() =>
-                          setFolderFilters((prev) =>
-                            prev.filter((f) => f !== folder),
-                          )
-                        }
-                      />
-                    </Badge>
-                  ))}
-                </div>
-              )}
             </div>
           ) : null}
         </div>
