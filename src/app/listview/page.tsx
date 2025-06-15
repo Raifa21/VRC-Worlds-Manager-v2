@@ -1095,43 +1095,45 @@ export default function ListView() {
     }
   };
 
-  const sortedAndFilteredWorlds = filteredWorlds.sort((a, b) => {
-    const multiplier = sortDirection === 'asc' ? 1 : -1;
+  const sortedAndFilteredWorlds = useMemo(() => {
+    return [...filteredWorlds].sort((a, b) => {
+      const multiplier = sortDirection === 'asc' ? 1 : -1;
 
-    switch (sortField) {
-      case 'name':
-        return multiplier * a.name.localeCompare(b.name);
-      case 'authorName':
-        return multiplier * a.authorName.localeCompare(b.authorName);
-      case 'favorites':
-        return multiplier * (a.favorites - b.favorites);
-      case 'dateAdded': {
-        const dateA = a.dateAdded || '';
-        const dateB = b.dateAdded || '';
+      switch (sortField) {
+        case 'name':
+          return multiplier * a.name.localeCompare(b.name);
+        case 'authorName':
+          return multiplier * a.authorName.localeCompare(b.authorName);
+        case 'favorites':
+          return multiplier * (a.favorites - b.favorites);
+        case 'dateAdded': {
+          const dateA = a.dateAdded || '';
+          const dateB = b.dateAdded || '';
 
-        return multiplier * dateA.localeCompare(dateB);
+          return multiplier * dateA.localeCompare(dateB);
+        }
+        case 'lastUpdated': {
+          const getTimestamp = (dateStr: string | null) => {
+            if (!dateStr) return 0;
+
+            try {
+              const date = new Date(dateStr);
+              return date.getTime();
+            } catch (e) {
+              error(`Error parsing date: ${dateStr}, ${e}`);
+              return 0;
+            }
+          };
+          const dateA = getTimestamp(a.lastUpdated);
+          const dateB = getTimestamp(b.lastUpdated);
+
+          return multiplier * (dateA - dateB);
+        }
+        default:
+          return 0;
       }
-      case 'lastUpdated': {
-        const getTimestamp = (dateStr: string | null) => {
-          if (!dateStr) return 0;
-
-          try {
-            const date = new Date(dateStr);
-            return date.getTime();
-          } catch (e) {
-            error(`Error parsing date: ${dateStr}, ${e}`);
-            return 0;
-          }
-        };
-        const dateA = getTimestamp(a.lastUpdated);
-        const dateB = getTimestamp(b.lastUpdated);
-
-        return multiplier * (dateA - dateB);
-      }
-      default:
-        return 0;
-    }
-  });
+    });
+  }, [filteredWorlds, sortField, sortDirection]);
 
   const clearFilters = () => {
     setAuthorFilter('');
