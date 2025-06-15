@@ -11,7 +11,7 @@ import {
 import SingleFilterItemSelector from '@/components/single-filter-item-selector';
 import { commands } from '@/lib/bindings';
 import MultiFilterItemSelector from './multi-filter-item-selector';
-import { info } from '@tauri-apps/plugin-log';
+import { useLocalization } from '@/hooks/use-localization';
 
 interface AdvancedSearchPanelProps {
   open: boolean;
@@ -34,6 +34,7 @@ export function AdvancedSearchPanel({
   onFolderFiltersChange,
   onClose,
 }: AdvancedSearchPanelProps) {
+  const { t } = useLocalization();
   const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
@@ -96,14 +97,14 @@ export function AdvancedSearchPanel({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Advanced Search</DialogTitle>
+          <DialogTitle>{t('advanced-search:title')}</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="author-filter">Author</Label>
+            <Label htmlFor="author-filter">{t('general:author')}</Label>
             <SingleFilterItemSelector
-              placeholder="Search by author name..."
+              placeholder={t('advanced-search:search-author')}
               value={authorFilter}
               candidates={availableAuthors.map((a) => ({ label: a, value: a }))}
               onValueChange={onAuthorFilterChange}
@@ -111,9 +112,9 @@ export function AdvancedSearchPanel({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tag-filter">Tags</Label>
+            <Label htmlFor="tag-filter">{t('general:tags')}</Label>
             <MultiFilterItemSelector
-              placeholder="Search by tags..."
+              placeholder={t('advanced-search:search-tags')}
               values={tagFilters}
               candidates={availableTags.map((t) => ({ label: t, value: t }))}
               onValuesChange={onTagFiltersChange}
@@ -121,9 +122,9 @@ export function AdvancedSearchPanel({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="folder-filter">Folders</Label>
+            <Label htmlFor="folder-filter">{t('general:folders')}</Label>
             <MultiFilterItemSelector
-              placeholder="Search by folders..."
+              placeholder={t('advanced-search:search-folders')}
               values={folderFilters}
               candidates={folders.map((f) => ({ label: f, value: f }))}
               onValuesChange={onFolderFiltersChange}
@@ -134,9 +135,11 @@ export function AdvancedSearchPanel({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClearAll}>
-            Clear All
+            {t('general:clear-all')}
           </Button>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose}>
+            {t('advanced-search:apply-filters')}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

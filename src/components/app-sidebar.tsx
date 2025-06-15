@@ -261,9 +261,7 @@ export function AppSidebar({
         <Separator className="my-2" />
         <SidebarGroup>
           <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
-            <span className="text-sm font-medium">
-              {t('app-sidebar:folders')}
-            </span>
+            <span className="text-sm font-medium">{t('general:folders')}</span>
           </div>
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="folders">

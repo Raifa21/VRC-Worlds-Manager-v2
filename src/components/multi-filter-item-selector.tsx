@@ -198,7 +198,7 @@ export default function MultiFilterItemSelector({
             <CommandEmpty>
               {allowCustomValues && inputValue.trim() ? (
                 <div className="p-2 text-sm">
-                  Press Enter to add "{inputValue.trim()}"
+                  {t('filter-item-selector:custom-value', inputValue.trim())}
                 </div>
               ) : (
                 t('general:no-results-found')
@@ -221,7 +221,11 @@ export default function MultiFilterItemSelector({
           {/* Show selection count/limit if applicable */}
           {maxItems && (
             <div className="px-2 py-1 text-xs text-muted-foreground border-t">
-              {values.length}/{maxItems} selected
+              {t(
+                'filter-item-selector:selection-limit',
+                values.length,
+                maxItems,
+              )}
             </div>
           )}
         </Command>

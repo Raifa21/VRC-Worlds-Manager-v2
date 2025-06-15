@@ -22,7 +22,9 @@
   "general:select-group": "Select Group",
   "general:select-roles": "Select Roles",
   "general:settings": "Settings",
-  "general:sort-author": "Author",
+  "general:tags": "Tags",
+  "general:author": "Author",
+  "general:folders": "Folders",
   "general:region": "Region",
   "general:cancel": "Cancel",
   "general:confirm": "Confirm",
@@ -36,6 +38,7 @@
   "general:select-all": "Select All",
   "general:date-added": "Date Added",
   "general:delete": "Delete",
+  "general:clear-all": "Clear All",
 
   "error-page:title": "Error Loading Application",
   "error-page:retry": "Retry",
@@ -129,6 +132,8 @@
   "listview-page:delete-world-description": "This will remove the world completely. This action cannot be undone.",
   "listview-page:world-deleted-success": "World deleted successfully",
   "listview-page:error-delete-world": "Failed to delete world",
+  "listview-page:active-filters": "Active Filters",
+  "listview-page:items-hidden": "and {0} more",
 
   "world-card:cross-platform": "Cross-platform",
   "world-card:pc": "PC",
@@ -167,7 +172,6 @@
   "world-detail:invite-plus": "Invite+",
   "world-detail:invite": "Invite",
   "world-detail:description": "Description",
-  "world-detail:tags": "Tags",
   "world-detail:details": "Details",
   "world-detail:visits": "Visits:",
   "world-detail:favorites": "Favorites:",
@@ -180,7 +184,6 @@
   "world-detail:show-on-website": "Show on Website",
   "world-detail:world-not-public": "This world is private or has been deleted. Instances cannot be created.",
 
-
   "add-world-dialog:add": "Add World",
   "add-world-dialog:description": "Enter a world URL or world ID to add to the folder",
   "add-world-dialog:placeholder": "Enter world URL or ID",
@@ -189,9 +192,17 @@
   "add-world-dialog:author": "Author: ",
   "add-world-dialog:duplicate-warning": "This world already exists!",
 
-  "app-sidebar:folders": "Folders",
   "app-sidebar:add-folder": "Add Folder",
   "app-sidebar:about": "About",
+
+  "advanced-search:title": "Advanced Search",
+  "advanced-search:search-author": "Search by author name...",
+  "advanced-search:search-tags": "Search by tags...",
+  "advanced-search:search-folders": "Search by folders...",
+  "advanced-search:apply-filters": "Apply Filters",
+
+  "filter-item-selector:custom-value": "Press Enter to add {0}",
+  "filter-item-selector:selection-limit": "{0}/{1} selected",
 
   "about-section:development-team": "Development Team",
   "about-section:developers": "Developers",
