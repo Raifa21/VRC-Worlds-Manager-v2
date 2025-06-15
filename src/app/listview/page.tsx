@@ -1096,9 +1096,6 @@ export default function ListView() {
   };
 
   const sortedAndFilteredWorlds = useMemo(() => {
-    info(
-      `Sorting and filtering worlds: sortField=${sortField}, sortDirection=${sortDirection}, totalWorlds=${filteredWorlds.length}`,
-    );
     return [...filteredWorlds].sort((a, b) => {
       const multiplier = sortDirection === 'asc' ? 1 : -1;
 
