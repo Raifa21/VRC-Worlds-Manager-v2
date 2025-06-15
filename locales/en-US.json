@@ -135,6 +135,11 @@
   "listview-page:error-delete-world": "Failed to delete world",
   "listview-page:active-filters": "Active Filters",
   "listview-page:items-hidden": "and {0} more",
+  "listview-page:no-worlds-all": "You don't have any worlds yet. Click the \"Get Favorite Worlds\" button to get your favorite worlds.",
+  "listview-page:no-worlds-unclassified": "All of your worlds are in a folder, or you don't have any worlds yet.",
+  "listview-page:no-worlds-in-folder": "Add new worlds to this folder by right-clicking on a world or using the \"Add World\" button.",
+  "listview-page:no-worlds": "No worlds found.",
+  "listview-page:no-results-filtered": "No worlds match your filters. Try changing your filters or search criteria.",
 
   "world-card:cross-platform": "Cross-platform",
   "world-card:pc": "PC",

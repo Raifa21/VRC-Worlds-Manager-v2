@@ -3,4 +3,5 @@ export enum SpecialFolders {
   Unclassified = 'Unclassified Worlds',
   Find = 'Find Worlds',
   Hidden = 'Hidden Worlds',
+  NotFolder = '',
 }
