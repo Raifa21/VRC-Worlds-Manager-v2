@@ -14,13 +14,15 @@
 	"d1_databases": [
 		{
 			"binding": "FOLDERS_DB",
-			"database_name": "vrc_worlds_manager_folders"
+			"database_name": "vrc_worlds_manager_folders",
+			"database_id": "6a5c03d2-54cf-495b-b98b-a3307cbc5b39"
+
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "FOLDER_DATA",
-			"bucket_name": "vrc_worlds_manager_folder_data"
+			"bucket_name": "raifaworks-data"
 		}
 	]
 }

@@ -118,7 +118,7 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
       .run();
 
     // Store the JSON blob in R2
-    await env.FOLDER_DATA.put(`${id}.json`, data, {
+    await env.FOLDER_DATA.put(`folders/${id}.json`, data, {
       httpMetadata: { contentType: 'application/json' }
     });
 
@@ -155,7 +155,7 @@ async function handleDownload(id: string, env: Env): Promise<Response> {
     }
 
     // Fetch JSON blob
-    const obj = await env.FOLDER_DATA.get(`${id}.json`);
+    const obj = await env.FOLDER_DATA.get(`folders/${id}.json`);
     if (!obj) {
       return new Response(
         JSON.stringify({ error: 'Data missing' }),

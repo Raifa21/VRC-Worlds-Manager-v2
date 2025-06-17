@@ -1,4 +1,4 @@
--- migrations/v1.sql
+-- Migration number: 1 	 2025-06-17T12:29:58.807Z
 
 CREATE TABLE IF NOT EXISTS folders (
   id           TEXT PRIMARY KEY,
