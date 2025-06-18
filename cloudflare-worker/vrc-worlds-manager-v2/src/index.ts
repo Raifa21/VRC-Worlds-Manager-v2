@@ -52,6 +52,15 @@ export default {
       headers: corsHeaders(),
     });
   },
+
+  async scheduled(
+    event: ScheduledEvent,
+    env: Env,
+    ctx: ExecutionContext
+  ): Promise<void> {
+    console.log("🔄 Running cleanup of expired shares:", event.cron);
+    ctx.waitUntil(cleanupExpired(env));
+  },
 };
 
 async function recordAndCheckLimit(ip: string, env: Env): Promise<boolean> {
@@ -194,6 +203,35 @@ async function handleDownload(id: string, env: Env): Promise<Response> {
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: corsHeaders() }
     );
+  }
+}
+
+async function cleanupExpired(env: Env) {
+  try {
+    // 1) Find all expired IDs
+    const { results } = await env.FOLDERS_DB.prepare(
+      `SELECT id FROM folders
+       WHERE expiration < CURRENT_TIMESTAMP`
+    ).all<{ id: string }>();
+
+    if (results.length === 0) {
+      console.log("No expired shares found.");
+      return;
+    }
+
+    console.log(`Found ${results.length} expired share(s).`);
+    // 2) Delete each from R2 and D1
+    for (const { id } of results) {
+      // delete blob
+      await env.FOLDER_DATA.delete(`folders/${id}.json`);
+      // delete metadata
+      await env.FOLDERS_DB.prepare(
+        `DELETE FROM folders WHERE id = ?`
+      ).bind(id).run();
+      console.log(`→ Cleaned up share ${id}`);
+    }
+  } catch (err) {
+    console.error("Error during cleanup:", err);
   }
 }
 
