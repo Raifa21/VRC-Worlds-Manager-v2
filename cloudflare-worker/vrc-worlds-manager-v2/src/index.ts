@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { WorldDataSchema } from "./schemas/world";
 import type { D1Database, R2Bucket, KVNamespace } from "@cloudflare/workers-types";
+import { WorldDataSchema } from "./schemas/world";
 
 /** All bindings injected at runtime */
 export interface Env {
@@ -10,8 +10,8 @@ export interface Env {
   FOLDER_DATA: R2Bucket;
   /** KV namespace for rate limiting */
   RATE_LIMIT_KV: KVNamespace;
-  /** HMAC secret (set via Wrangler vars) */
-  HMAC_SECRET: string;
+  /** Comma-separated list of HMAC secrets, newest first */
+  HMAC_SECRETS: string;
 }
 
 /** Minimal shape of client payload */
@@ -19,12 +19,14 @@ const ShareRequestSchema = z
   .object({
     name: z.string().min(1).max(255),
     worlds: z.array(WorldDataSchema).max(1000),
-    hmac: z.string(),
+    ts: z
+      .string()
+      .refine((s) => !isNaN(Date.parse(s)), { message: "Invalid ISO timestamp" }),
+    hmac: z.string().length(64), // SHA-256 hex
   })
   .strict();
 
 type ShareRequest = z.infer<typeof ShareRequestSchema>;
-type FolderData = Omit<ShareRequest, "hmac">;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -74,14 +76,6 @@ async function recordAndCheckLimit(ip: string, env: Env): Promise<boolean> {
   return true;
 }
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  };
-}
-
 async function handleUpload(request: Request, env: Env): Promise<Response> {
   try {
     if (!request.headers.get("Content-Type")?.includes("application/json")) {
@@ -102,15 +96,34 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
       );
     }
 
-    const { name, worlds, hmac } = payload;
-    const data = JSON.stringify({ name, worlds });
-    const expected = await computeHMAC(env.HMAC_SECRET, data);
-    if (expected !== hmac) {
-      return new Response(
-        JSON.stringify({ error: "HMAC mismatch" }),
-        { status: 400, headers: corsHeaders() }
-      );
+  const { name, worlds, ts, hmac } = payload;
+  const clientTs = new Date(ts).getTime();
+  const now = Date.now();
+
+  // 2) replay protection: ±5 minutes
+  if (Math.abs(now - clientTs) > 5 * 60 * 1000) {
+    return new Response(
+      JSON.stringify({ error: "Timestamp out of allowable window" }),
+      { status: 400, headers: corsHeaders() }
+    );
+  }
+
+  // 3) verify HMAC against all configured secrets
+  const dataToSign = JSON.stringify({ name, worlds, ts });
+  const secrets = env.HMAC_SECRETS.split(",").map((s) => s.trim());
+  let match = false;
+  for (const secret of secrets) {
+    if (await computeHMAC(secret, dataToSign) === hmac) {
+      match = true;
+      break;
     }
+  }
+  if (!match) {
+    return new Response(
+      JSON.stringify({ error: "HMAC mismatch or invalid secret version" }),
+      { status: 400, headers: corsHeaders() }
+    );
+  }
 
     // Check for an existing non‐expired share
     const existing = await env.FOLDERS_DB.prepare(
@@ -144,7 +157,7 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
       .run();
 
     // Store the JSON blob in R2
-    await env.FOLDER_DATA.put(`folders/${id}.json`, data, {
+    await env.FOLDER_DATA.put(`folders/${id}.json`, JSON.stringify(payload), {
       httpMetadata: { contentType: 'application/json' }
     });
 
@@ -252,3 +265,13 @@ async function computeHMAC(secret: string, data: string): Promise<string> {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
+
+function corsHeaders(): HeadersInit {
+	return {
+		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization",
+		"Access-Control-Max-Age": "86400"
+	};
+}
+
