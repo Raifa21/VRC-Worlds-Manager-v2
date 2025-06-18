@@ -1,5 +1,6 @@
 use crate::definitions::WorldDisplayData;
 use crate::services::folder_manager::FolderManager;
+use crate::services::share_service;
 use crate::{FOLDERS, WORLDS};
 
 #[tauri::command]
@@ -161,4 +162,17 @@ pub async fn delete_world(world_id: String) -> Result<(), String> {
         log::error!("Error deleting world: {}", e);
         e.to_string()
     })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn share_folder(folder_name: String) -> Result<String, String> {
+    let result: Result<String, String> =
+        share_service::share_folder(&folder_name, FOLDERS.get(), WORLDS.get())
+            .await
+            .map_err(|e| {
+                log::error!("Error sharing folder: {}", e);
+                e.to_string()
+            });
+    result
 }
