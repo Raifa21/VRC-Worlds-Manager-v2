@@ -4,6 +4,9 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2025-03-07",
 	"compatibility_flags": ["nodejs_compat"],
+	"routes": [
+		"data.raifaworks.com/api/share/folder*"
+	],
 	"observability": {
 		"enabled": true,
 		"head_sampling_rate": 1
@@ -23,6 +26,12 @@
 		{
 			"binding": "FOLDER_DATA",
 			"bucket_name": "raifaworks-data"
+		}
+	],
+	"kv_namespaces": [
+		{
+		"binding": "RATE_LIMIT_KV",
+		"id": "b185db9c384c40ba88f926503c50c544"
 		}
 	]
 }

@@ -1,87 +1,104 @@
-interface Env {
-  /** D1 DB binding for folder metadata */
+import { z } from "zod";
+import { WorldDataSchema } from "./schemas/world";
+import type { D1Database, R2Bucket, KVNamespace } from "@cloudflare/workers-types";
+
+/** All bindings injected at runtime */
+export interface Env {
+  /** D1 binding for folder metadata */
   FOLDERS_DB: D1Database;
-  /** R2 bucket binding for folder JSON blobs */
+  /** R2 binding for folder JSON blobs */
   FOLDER_DATA: R2Bucket;
-  /** HMAC secret, set via wrangler.toml or wrangler.jsonc vars */
+  /** KV namespace for rate limiting */
+  RATE_LIMIT_KV: KVNamespace;
+  /** HMAC secret (set via Wrangler vars) */
   HMAC_SECRET: string;
 }
 
 /** Minimal shape of client payload */
-type ShareRequest = {
-  name: string;
-  worlds: unknown[];
-  hmac: string;
-};
+const ShareRequestSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    worlds: z.array(WorldDataSchema).max(1000),
+    hmac: z.string(),
+  })
+  .strict();
 
-/** Shared folder data (what we store in R2) */
-type FolderData = Omit<ShareRequest, 'hmac'>;
+type ShareRequest = z.infer<typeof ShareRequestSchema>;
+type FolderData = Omit<ShareRequest, "hmac">;
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
-    const path = url.pathname;
-
-    // CORS preflight
-    if (request.method === 'OPTIONS') {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
-
-    // Upload endpoint
-    if (path === '/api/share/folder' && request.method === 'POST') {
+    const url = new URL(request.url);
+    if (url.pathname === "/api/share/folder" && request.method === "POST") {
+      // Rate limit check
+      const ip = request.headers.get("CF-Connecting-IP") || "anon";
+      if (!(await recordAndCheckLimit(ip, env))) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded" }),
+          { status: 429, headers: corsHeaders() }
+        );
+      }
       return handleUpload(request, env);
     }
-
-    // Download endpoint
-    const m = path.match(/^\/api\/share\/folder\/([^/]+)$/);
-    if (m && request.method === 'GET') {
+    const m = url.pathname.match(/^\/api\/share\/folder\/([^/]+)$/);
+    if (m && request.method === "GET") {
       return handleDownload(m[1], env);
     }
-
-    return new Response(
-      JSON.stringify({ error: 'Not found' }),
-      { status: 404, headers: corsHeaders() }
-    );
-  }
+    return new Response(JSON.stringify({ error: "Not found" }), {
+      status: 404,
+      headers: corsHeaders(),
+    });
+  },
 };
+
+async function recordAndCheckLimit(ip: string, env: Env): Promise<boolean> {
+  // key per IP per hour
+  const hour = Math.floor(Date.now() / 3_600_000);
+  const key = `rl:${ip}:${hour}`;
+  const prev = await env.RATE_LIMIT_KV.get(key);
+  const count = prev ? parseInt(prev) : 0;
+  if (count >= 10) return false;
+  await env.RATE_LIMIT_KV.put(key, String(count + 1), { expirationTtl: 3_600 });
+  return true;
+}
 
 function corsHeaders() {
   return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
 async function handleUpload(request: Request, env: Env): Promise<Response> {
   try {
-    if (!request.headers.get('Content-Type')?.includes('application/json')) {
+    if (!request.headers.get("Content-Type")?.includes("application/json")) {
       return new Response(
-        JSON.stringify({ error: 'Invalid content type' }),
+        JSON.stringify({ error: "Invalid content type" }),
         { status: 415, headers: corsHeaders() }
       );
     }
 
-    const { name, worlds, hmac } = await request.json() as ShareRequest;
-
-    // Basic payload validation
-    if (
-      typeof name !== 'string' ||
-      !Array.isArray(worlds) ||
-      typeof hmac !== 'string'
-    ) {
+    let payload: ShareRequest;
+    try {
+      payload = ShareRequestSchema.parse(await request.json());
+    } catch (err) {
+      console.error("Validation error:", err);
       return new Response(
-        JSON.stringify({ error: 'Invalid payload' }),
+        JSON.stringify({ error: "Invalid payload structure" }),
         { status: 400, headers: corsHeaders() }
       );
     }
 
-    // Verify HMAC integrity
+    const { name, worlds, hmac } = payload;
     const data = JSON.stringify({ name, worlds });
     const expected = await computeHMAC(env.HMAC_SECRET, data);
     if (expected !== hmac) {
       return new Response(
-        JSON.stringify({ error: 'HMAC mismatch' }),
+        JSON.stringify({ error: "HMAC mismatch" }),
         { status: 400, headers: corsHeaders() }
       );
     }
@@ -129,7 +146,7 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
   } catch (e) {
     console.error(e);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: corsHeaders() }
     );
   }
@@ -182,18 +199,18 @@ async function handleDownload(id: string, env: Env): Promise<Response> {
 
 async function computeHMAC(secret: string, data: string): Promise<string> {
   const key = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
+    { name: "HMAC", hash: "SHA-256" },
     false,
-    ['sign']
+    ["sign"]
   );
   const sig = await crypto.subtle.sign(
-    'HMAC',
+    "HMAC",
     key,
     new TextEncoder().encode(data)
   );
   return Array.from(new Uint8Array(sig))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
