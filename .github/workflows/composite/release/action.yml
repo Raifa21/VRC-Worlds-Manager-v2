@@ -9,6 +9,9 @@ inputs:
   args:
     required: false
     description: "Additional arguments to pass to Tauri"
+  CF_API_TOKEN:
+    required: false
+    description: "The Cloudflare API token for HMAC secret rotation."
   GITHUB_TOKEN:
     required: true
     description: "The GitHub token to use for the release"
@@ -39,6 +42,9 @@ inputs:
 
 runs:
   using: "composite"
+  # expose the CF API token as CLOUDFLARE_API_TOKEN to all steps
+  env:
+    CLOUDFLARE_API_TOKEN: ${{ inputs.CF_API_TOKEN }}
   steps:
     - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
       with:
