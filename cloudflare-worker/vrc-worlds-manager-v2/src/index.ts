@@ -1,20 +1,19 @@
 import { z } from "zod";
-import type { D1Database, R2Bucket, KVNamespace } from "@cloudflare/workers-types";
+import type {
+  D1Database,
+  R2Bucket,
+  KVNamespace,
+  ScheduledEvent,
+} from "@cloudflare/workers-types";
 import { WorldDataSchema } from "./schemas/world";
 
-/** All bindings injected at runtime */
 export interface Env {
-  /** D1 binding for folder metadata */
   FOLDERS_DB: D1Database;
-  /** R2 binding for folder JSON blobs */
   FOLDER_DATA: R2Bucket;
-  /** KV namespace for rate limiting */
   RATE_LIMIT_KV: KVNamespace;
-  /** Comma-separated list of HMAC secrets, newest first */
   HMAC_SECRETS: string;
 }
 
-/** Minimal shape of client payload */
 const ShareRequestSchema = z
   .object({
     name: z.string().min(1).max(255),
@@ -22,15 +21,20 @@ const ShareRequestSchema = z
     ts: z
       .string()
       .refine((s) => !isNaN(Date.parse(s)), { message: "Invalid ISO timestamp" }),
-    hmac: z.string().length(64), // SHA-256 hex
+    hmac: z.string().length(64),
   })
   .strict();
 
 type ShareRequest = z.infer<typeof ShareRequestSchema>;
 
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    // DEBUG: log every incoming request
+    console.log("⏳ fetch() start:", request.method, new URL(request.url).pathname);
+
     if (request.method === "OPTIONS") {
+      console.log("↔️ Preflight");
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
     const url = new URL(request.url);
@@ -47,8 +51,10 @@ export default {
     }
     const m = url.pathname.match(/^\/api\/share\/folder\/([^/]+)$/);
     if (m && request.method === "GET") {
+      console.log("📥 Handling download for ID:", m[1]);
       return handleDownload(m[1], env);
     }
+    console.log("❓ No route matched");
     return new Response(JSON.stringify({ error: "Not found" }), {
       status: 404,
       headers: corsHeaders(),
@@ -60,25 +66,39 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<void> {
-    console.log("🔄 Running cleanup of expired shares:", event.cron);
+    console.log("🔄 Running cleanup cron:", event.cron);
     ctx.waitUntil(cleanupExpired(env));
   },
 };
 
-async function recordAndCheckLimit(ip: string, env: Env): Promise<boolean> {
-  // key per IP per hour
+function corsHeaders(): HeadersInit {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+  };
+}
+
+async function recordAndCheckLimit(
+  ip: string,
+  env: Env
+): Promise<boolean> {
   const hour = Math.floor(Date.now() / 3_600_000);
   const key = `rl:${ip}:${hour}`;
   const prev = await env.RATE_LIMIT_KV.get(key);
-  const count = prev ? parseInt(prev) : 0;
+  const count = prev ? parseInt(prev, 10) : 0;
   if (count >= 10) return false;
-  await env.RATE_LIMIT_KV.put(key, String(count + 1), { expirationTtl: 3_600 });
+  await env.RATE_LIMIT_KV.put(key, String(count + 1), {
+    expirationTtl: 3_600,
+  });
   return true;
 }
 
 async function handleUpload(request: Request, env: Env): Promise<Response> {
   try {
     if (!request.headers.get("Content-Type")?.includes("application/json")) {
+      console.log("Invalid content type:", request.headers.get("Content-Type"));
       return new Response(
         JSON.stringify({ error: "Invalid content type" }),
         { status: 415, headers: corsHeaders() }
@@ -96,34 +116,49 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
       );
     }
 
-  const { name, worlds, ts, hmac } = payload;
-  const clientTs = new Date(ts).getTime();
-  const now = Date.now();
-
-  // 2) replay protection: ±5 minutes
-  if (Math.abs(now - clientTs) > 5 * 60 * 1000) {
-    return new Response(
-      JSON.stringify({ error: "Timestamp out of allowable window" }),
-      { status: 400, headers: corsHeaders() }
-    );
-  }
-
-  // 3) verify HMAC against all configured secrets
-  const dataToSign = JSON.stringify({ name, worlds, ts });
-  const secrets = env.HMAC_SECRETS.split(",").map((s) => s.trim());
-  let match = false;
-  for (const secret of secrets) {
-    if (await computeHMAC(secret, dataToSign) === hmac) {
-      match = true;
-      break;
+    const { name, worlds, ts, hmac } = payload;
+    const clientTs = Date.parse(ts);
+    const now = Date.now();
+    if (Math.abs(now - clientTs) > 5 * 60 * 1000) {
+      console.log("Timestamp out of window:", ts, "vs now", new Date(now).toISOString());
+      return new Response(
+        JSON.stringify({ error: "Timestamp out of allowable window" }),
+        { status: 400, headers: corsHeaders() }
+      );
     }
-  }
-  if (!match) {
-    return new Response(
-      JSON.stringify({ error: "HMAC mismatch or invalid secret version" }),
-      { status: 400, headers: corsHeaders() }
-    );
-  }
+
+    // --- LOGGING ADDED HERE ---
+    console.log("Raw HMAC_SECRETS env:", env.HMAC_SECRETS);
+    const secrets = env.HMAC_SECRETS
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    console.log("Parsed HMAC secrets array length:", secrets.length);
+    secrets.forEach((s, i) => console.log(`  secret[${i}]:`, s));
+
+    if (secrets.length === 0) {
+      console.error("No HMAC_SECRETS configured – aborting");
+      return new Response(
+        JSON.stringify({ error: "Server misconfiguration" }),
+        { status: 500, headers: corsHeaders() }
+      );
+    }
+
+    const dataToSign = JSON.stringify({ name, worlds, ts });
+    let match = false;
+    for (const secret of secrets) {
+      if ((await computeHMAC(secret, dataToSign)) === hmac) {
+        match = true;
+        break;
+      }
+    }
+    if (!match) {
+      console.log("HMAC mismatch for payload:", dataToSign);
+      return new Response(
+        JSON.stringify({ error: "HMAC mismatch or invalid secret version" }),
+        { status: 400, headers: corsHeaders() }
+      );
+    }
 
     // Check for an existing non‐expired share
     const existing = await env.FOLDERS_DB.prepare(
@@ -144,29 +179,24 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
 
     // Create new share
     const id = crypto.randomUUID();
-    const expiration = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000
-    ).toISOString();
-
+    const expiration = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString();
     await env.FOLDERS_DB.prepare(
-      `INSERT INTO folders
-         (id, hmac, name, expiration, created_at)
+      `INSERT INTO folders (id, hmac, name, expiration, created_at)
        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
     )
       .bind(id, hmac, name, expiration)
       .run();
-
-    // Store the JSON blob in R2
     await env.FOLDER_DATA.put(`folders/${id}.json`, JSON.stringify(payload), {
-      httpMetadata: { contentType: 'application/json' }
+      httpMetadata: { contentType: "application/json" },
     });
+    console.log("Created share ID:", id);
 
-    return new Response(
-      JSON.stringify({ id }),
-      { status: 200, headers: corsHeaders() }
-    );
+    return new Response(JSON.stringify({ id }), {
+      status: 200,
+      headers: corsHeaders(),
+    });
   } catch (e) {
-    console.error(e);
+    console.error("Unhandled error in handleUpload:", e);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: corsHeaders() }
@@ -176,44 +206,35 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
 
 async function handleDownload(id: string, env: Env): Promise<Response> {
   try {
-    // Lookup metadata & expiry
     const rec = await env.FOLDERS_DB.prepare(
-      `SELECT expiration
-       FROM folders
-       WHERE id = ?
-       LIMIT 1`
+      `SELECT expiration FROM folders WHERE id = ? LIMIT 1`
     )
       .bind(id)
       .first<{ expiration: string }>();
-
     if (!rec || new Date(rec.expiration) < new Date()) {
+      console.log("Download not found/expired for ID:", id);
       return new Response(
-        JSON.stringify({ error: 'Not found or expired' }),
+        JSON.stringify({ error: "Not found or expired" }),
         { status: 404, headers: corsHeaders() }
       );
     }
-
-    // Fetch JSON blob
     const obj = await env.FOLDER_DATA.get(`folders/${id}.json`);
     if (!obj) {
+      console.error("R2 object missing for ID:", id);
       return new Response(
-        JSON.stringify({ error: 'Data missing' }),
+        JSON.stringify({ error: "Data missing" }),
         { status: 500, headers: corsHeaders() }
       );
     }
-
     const body = await obj.text();
     return new Response(body, {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders()
-      }
+      headers: { "Content-Type": "application/json", ...corsHeaders() },
     });
   } catch (e) {
-    console.error(e);
+    console.error("Unhandled error in handleDownload:", e);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: corsHeaders() }
     );
   }
@@ -221,27 +242,17 @@ async function handleDownload(id: string, env: Env): Promise<Response> {
 
 async function cleanupExpired(env: Env) {
   try {
-    // 1) Find all expired IDs
     const { results } = await env.FOLDERS_DB.prepare(
-      `SELECT id FROM folders
-       WHERE expiration < CURRENT_TIMESTAMP`
+      `SELECT id FROM folders WHERE expiration < CURRENT_TIMESTAMP`
     ).all<{ id: string }>();
-
-    if (results.length === 0) {
-      console.log("No expired shares found.");
-      return;
-    }
-
-    console.log(`Found ${results.length} expired share(s).`);
-    // 2) Delete each from R2 and D1
     for (const { id } of results) {
-      // delete blob
       await env.FOLDER_DATA.delete(`folders/${id}.json`);
-      // delete metadata
       await env.FOLDERS_DB.prepare(
         `DELETE FROM folders WHERE id = ?`
-      ).bind(id).run();
-      console.log(`→ Cleaned up share ${id}`);
+      )
+        .bind(id)
+        .run();
+      console.log("Cleaned up share:", id);
     }
   } catch (err) {
     console.error("Error during cleanup:", err);
@@ -264,14 +275,5 @@ async function computeHMAC(secret: string, data: string): Promise<string> {
   return Array.from(new Uint8Array(sig))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-}
-
-function corsHeaders(): HeadersInit {
-	return {
-		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type, Authorization",
-		"Access-Control-Max-Age": "86400"
-	};
 }
 
