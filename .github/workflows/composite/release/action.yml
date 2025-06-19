@@ -9,9 +9,9 @@ inputs:
   args:
     required: false
     description: "Additional arguments to pass to Tauri"
-  CF_API_TOKEN:
-    required: false
-    description: "The Cloudflare API token for HMAC secret rotation."
+  HMAC_KEY:
+    required: true
+    description: "The HMAC key to use for signing folders for upload"
   GITHUB_TOKEN:
     required: true
     description: "The GitHub token to use for the release"
@@ -42,9 +42,6 @@ inputs:
 
 runs:
   using: "composite"
-  # expose the CF API token as CLOUDFLARE_API_TOKEN to all steps
-  env:
-    CLOUDFLARE_API_TOKEN: ${{ inputs.CF_API_TOKEN }}
   steps:
     - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
       with:
@@ -73,6 +70,7 @@ runs:
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.TAURI_PRIVATE_KEY_PASSWORD }}
         ENCRYPTION_KEY: ${{ inputs.ENCRYPTION_KEY }}
         ENCRYPTION_IV: ${{ inputs.ENCRYPTION_IV }}
+        HMAC_KEY: ${{ inputs.HMAC_KEY }}
       with:
         tagName: "vrc-world-manager-v__VERSION__"
         releaseName: "vrc-world-manager v__VERSION__"

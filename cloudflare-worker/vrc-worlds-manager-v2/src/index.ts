@@ -11,7 +11,7 @@ export interface Env {
   FOLDERS_DB: D1Database;
   FOLDER_DATA: R2Bucket;
   RATE_LIMIT_KV: KVNamespace;
-  HMAC_SECRETS: string;
+  HMAC_SECRET: string;
 }
 
 const ShareRequestSchema = z
@@ -40,13 +40,13 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/share/folder" && request.method === "POST") {
       // Rate limit check
-      const ip = request.headers.get("CF-Connecting-IP") || "anon";
-      if (!(await recordAndCheckLimit(ip, env))) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded" }),
-          { status: 429, headers: corsHeaders() }
-        );
-      }
+      // const ip = request.headers.get("CF-Connecting-IP") || "anon";
+      // if (!(await recordAndCheckLimit(ip, env))) {
+      //   return new Response(
+      //     JSON.stringify({ error: "Rate limit exceeded" }),
+      //     { status: 429, headers: corsHeaders() }
+      //   );
+      // }
       return handleUpload(request, env);
     }
     const m = url.pathname.match(/^\/api\/share\/folder\/([^/]+)$/);
@@ -127,35 +127,20 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
       );
     }
 
-    // --- LOGGING ADDED HERE ---
-    console.log("Raw HMAC_SECRETS env:", env.HMAC_SECRETS);
-    const secrets = env.HMAC_SECRETS
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-    console.log("Parsed HMAC secrets array length:", secrets.length);
-    secrets.forEach((s, i) => console.log(`  secret[${i}]:`, s));
-
-    if (secrets.length === 0) {
-      console.error("No HMAC_SECRETS configured – aborting");
+    const dataToSign = JSON.stringify({ name, worlds, ts });
+    const secret = env.HMAC_SECRET.trim();
+    if (!secret) {
+      console.error("No HMAC_SECRET configured – aborting");
       return new Response(
         JSON.stringify({ error: "Server misconfiguration" }),
         { status: 500, headers: corsHeaders() }
       );
     }
-
-    const dataToSign = JSON.stringify({ name, worlds, ts });
-    let match = false;
-    for (const secret of secrets) {
-      if ((await computeHMAC(secret, dataToSign)) === hmac) {
-        match = true;
-        break;
-      }
-    }
-    if (!match) {
+    const sig = await computeHMAC(secret, dataToSign);
+    if (sig !== hmac) {
       console.log("HMAC mismatch for payload:", dataToSign);
       return new Response(
-        JSON.stringify({ error: "HMAC mismatch or invalid secret version" }),
+        JSON.stringify({ error: "HMAC mismatch" }),
         { status: 400, headers: corsHeaders() }
       );
     }
@@ -260,6 +245,8 @@ async function cleanupExpired(env: Env) {
 }
 
 async function computeHMAC(secret: string, data: string): Promise<string> {
+  console.log("Computing HMAC for data:", data);
+  console.log("Using secret:", secret.slice(0, 4) + "…"); // Log only part of the secret for security
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -272,6 +259,7 @@ async function computeHMAC(secret: string, data: string): Promise<string> {
     key,
     new TextEncoder().encode(data)
   );
+  
   return Array.from(new Uint8Array(sig))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");

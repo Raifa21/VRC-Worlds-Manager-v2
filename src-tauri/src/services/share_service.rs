@@ -23,12 +23,26 @@ struct ShareRequest<'a> {
     hmac: String,
 }
 
+/// The shape of the signing payload
+#[derive(Serialize)]
+struct SigningPayload<'a> {
+    name: &'a str,
+    worlds: &'a [WorldApiData],
+    ts: &'a str,
+}
+
 /// Compute a hex‐encoded HMAC SHA-256
-fn compute_hmac(secret: &str, data: &str) -> String {
-    let mut mac: Hmac<Sha256> =
-        Hmac::new_from_slice(secret.as_bytes()).expect("HMAC key length valid");
+fn compute_hmac(data: &str) -> Result<String, String> {
+    let key =
+        env::var("HMAC_KEY").map_err(|_| "HMAC_KEY environment variable not set".to_string())?;
+
+    let mut mac = Hmac::<Sha256>::new_from_slice(key.as_bytes())
+        .map_err(|e| format!("Failed to create HMAC: {}", e))?;
     mac.update(data.as_bytes());
-    hex::encode(mac.finalize().into_bytes())
+    let result = mac.finalize();
+    let code_bytes = result.into_bytes();
+    let sig = hex::encode(code_bytes);
+    Ok(sig)
 }
 
 fn get_worlds(
@@ -56,6 +70,45 @@ fn get_worlds(
     Ok(world_data)
 }
 
+async fn post_folder(name: &str, worlds: &[WorldApiData]) -> Result<String, String> {
+    let api_url = "folder-sharing-worker.raifaworks.workers.dev";
+
+    let ts: String = Utc::now().to_rfc3339();
+    let signing = SigningPayload {
+        name,
+        worlds,
+        ts: &ts,
+    };
+    let data_str = serde_json::to_string(&signing).map_err(|e| e.to_string())?;
+
+    let hmac = compute_hmac(&data_str).map_err(|e| format!("Failed to compute HMAC: {}", e))?;
+
+    let client = Client::new();
+    let full_url = format!("{}/api/share/folder", api_url);
+
+    let req = ShareRequest {
+        name,
+        worlds,
+        ts,
+        hmac,
+    };
+    let res = client
+        .post(&full_url)
+        .json(&req)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let status = res.status();
+    if !status.is_success() {
+        let txt = res.text().await.unwrap_or_default();
+        return Err(format!("Share failed: {} – {}", status, txt));
+    }
+
+    let body: ShareResponse = res.json().await.map_err(|e| e.to_string())?;
+    Ok(body.id)
+}
+
 /// Share the folder with the remote Worker
 pub async fn share_folder(
     name: &str,
@@ -66,43 +119,73 @@ pub async fn share_folder(
     let worlds = get_worlds(name, folders_lock, worlds_lock)
         .map_err(|e| format!("Failed to get worlds: {}", e))?;
 
-    // 1) Load secret & endpoint from .env
-    let secret = env::var("HMAC_SECRET").map_err(|_| "Missing HMAC_SECRET in .env".to_string())?;
-    let api_url = "folder-sharing-worker.raifaworks.workers.dev";
-
-    // 2) Build payload and timestamp
-    let ts = Utc::now().to_rfc3339();
-    let mut data = serde_json::to_value((&name, &worlds, &ts)).map_err(|e| e.to_string())?;
-    // data must be `{ name, worlds, ts }`
-    let data = serde_json::json!({
-        "name": name,
-        "worlds": worlds,
-        "ts": ts
-    });
-    let data_str = serde_json::to_string(&data).map_err(|e| e.to_string())?;
-
-    // 3) Compute HMAC
-    let hmac = compute_hmac(&secret, &data_str);
-
-    // 4) Send POST
-    let client = Client::new();
-    let req = ShareRequest {
-        name,
-        worlds: &worlds,
-        ts: ts.clone(),
-        hmac,
-    };
-    let res = client
-        .post(format!("{}/api/share/folder", api_url))
-        .json(&req)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    let status = res.status();
-    if !status.is_success() {
-        let txt = res.text().await.unwrap_or_default();
-        return Err(format!("Share failed: {} – {}", status, txt));
+    if worlds.is_empty() {
+        return Err("No worlds found in the specified folder".to_string());
     }
-    let body: ShareResponse = res.json().await.map_err(|e| e.to_string())?;
-    Ok(body.id)
+
+    // 2) Post the folder
+    post_folder(name, &worlds)
+        .await
+        .map_err(|e| format!("Failed to post folder: {}", e))
+}
+
+// === TESTS ===
+#[cfg(test)]
+mod integration_tests {
+    use super::post_folder;
+    use crate::definitions::WorldApiData;
+    use serde_json::Value;
+    use std::env;
+
+    /// Build a minimal WorldApiData for testing
+    fn dummy_world() -> WorldApiData {
+        WorldApiData {
+            image_url: "https://api.vrchat.cloud/api/1/file/file_4e4683f3-2717-4a31-9aab-37f78ec68426/3/file".into(),
+            world_name: "Starfarer".into(),
+            world_id: "wrld_e9ca960a-7b7b-4b2d-8133-5fe3d074512e".into(),
+            author_name: "Waai!".into(),
+            author_id: "usr_f7d7b225-fbb5-4752-a8cb-364f0b6fcd53".into(),
+            capacity: 80,
+            recommended_capacity: Some(30),
+            tags: vec![
+                "author_tag_udon".into(),
+                "author_tag_train".into(),
+                "author_tag_cute".into(),
+                "author_tag_chill".into(),
+                "system_approved".into(),
+            ],
+            publication_date: None,
+            last_update: "2024-03-02T07:10:51.693Z".parse().unwrap(),
+            description: "A train headed for the center of the cosmos‚ where wishes are granted․ All music in world is stream-safe․".into(),
+            visits: Some(590502),
+            favorites: 31292,
+            platform: vec!["standalonewindows".into(), "standalonewindows".into()],
+        }
+    }
+
+    #[tokio::test]
+    #[ignore = "requires HMAC_KEY + running Worker at SHARE_API_URL"]
+    async fn integration_post_and_get_folder() {
+        // ensure HMAC secret is set
+        let _ = env::var("HMAC_KEY").expect("export HMAC_KEY for integration test");
+
+        // 1) POST the folder
+        let worlds = vec![dummy_world()];
+        let folder_name = "IntegrationTestFolder";
+        let id = post_folder(folder_name, &worlds)
+            .await
+            .expect("post_folder failed");
+        assert!(!id.is_empty(), "received empty share ID");
+    }
+
+    #[tokio::test]
+    #[ignore = "requires HMAC_KEY + running Worker at SHARE_API_URL"]
+    async fn integration_no_worlds_error() {
+        let _ = env::var("HMAC_KEY").expect("export HMAC_KEY for integration test");
+        // posting with empty worlds should error early
+        let err = post_folder("EmptyFolder", &[])
+            .await
+            .expect_err("expected error for no worlds");
+        assert!(err.contains("Failed to post folder"), "got: {}", err);
+    }
 }

@@ -8,11 +8,6 @@
 		"enabled": true,
 		"head_sampling_rate": 1
 	},
-	"vars": {
-		// secrets list: newest first, comma separated
-		// injected via wrangler secret put
-		"HMAC_SECRETS": ""
-	},
 	"d1_databases": [
 		{
 			"binding": "FOLDERS_DB",
