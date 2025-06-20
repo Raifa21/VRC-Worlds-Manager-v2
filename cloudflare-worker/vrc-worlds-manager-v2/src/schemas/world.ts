@@ -39,7 +39,7 @@ export const WorldDataSchema = z
     description: z.string().max(50),    // client‐truncated to 50 chars
     visits: z.number().int().nonnegative().nullable(),
     favorites: z.number().int().nonnegative(),
-    platform: z.enum(["ios", "android", "standalonewindows"]),
+    platform: z.array(z.enum(["ios", "android", "standalonewindows"])),
   })
   .strict();
 
