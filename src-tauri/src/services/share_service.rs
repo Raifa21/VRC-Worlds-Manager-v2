@@ -67,11 +67,29 @@ fn get_worlds(
             }
         }
     }
-    Ok(world_data)
+
+    // Truncate bulky fields before returning
+    fn trunc(s: &str) -> String {
+        s.chars().take(50).collect()
+    }
+    let truncated: Vec<WorldApiData> = world_data
+        .into_iter()
+        .map(|mut w| {
+            // name & author_name ≤ 50 chars
+            w.world_name = trunc(&w.world_name);
+            w.author_name = trunc(&w.author_name);
+            // description ≤ 50 chars
+            w.description = trunc(&w.description);
+            // each tag ≤ 50 chars
+            w.tags = w.tags.into_iter().map(|t| trunc(&t)).collect();
+            w
+        })
+        .collect();
+    Ok(truncated)
 }
 
 async fn post_folder(name: &str, worlds: &[WorldApiData]) -> Result<String, String> {
-    let api_url = "folder-sharing-worker.raifaworks.workers.dev";
+    let api_url = "https://folder-sharing-worker.raifaworks.workers.dev";
 
     let ts: String = Utc::now().to_rfc3339();
     let signing = SigningPayload {
@@ -136,6 +154,7 @@ mod integration_tests {
     use crate::definitions::WorldApiData;
     use serde_json::Value;
     use std::env;
+    use std::fs;
 
     /// Build a minimal WorldApiData for testing
     fn dummy_world() -> WorldApiData {

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::definitions::{Platform, WorldApiData, WorldDisplayData};
+use std::collections::HashSet;
 
 #[derive(Debug, Eq, PartialEq, Hash, Deserialize, Serialize, Clone, Type)]
 #[serde(rename_all = "camelCase")]
@@ -87,11 +88,14 @@ impl TryInto<WorldApiData> for FavoriteWorld {
         let last_update =
             DateTime::parse_from_rfc3339(&self.updated_at)?.with_timezone(&chrono::Utc);
 
-        let platform: Vec<String> = self
-            .unity_packages
-            .iter()
-            .map(|package| package.platform.clone())
-            .collect();
+        let platform: Vec<String> = {
+            let mut seen = HashSet::new();
+            self.unity_packages
+                .iter()
+                .map(|package| package.platform.clone())
+                .filter(|p| seen.insert(p.clone()))
+                .collect()
+        };
 
         let recommended_capacity = match self.recommended_capacity {
             Some(capacity) if capacity > 0 => Some(capacity),
@@ -204,11 +208,14 @@ impl TryInto<WorldApiData> for WorldDetails {
         let last_update =
             DateTime::parse_from_rfc3339(&self.updated_at)?.with_timezone(&chrono::Utc);
 
-        let platform: Vec<String> = self
-            .unity_packages
-            .iter()
-            .map(|package| package.platform.clone())
-            .collect();
+        let platform: Vec<String> = {
+            let mut seen = HashSet::new();
+            self.unity_packages
+                .iter()
+                .map(|package| package.platform.clone())
+                .filter(|p| seen.insert(p.clone()))
+                .collect()
+        };
 
         Ok(WorldApiData {
             image_url: self.image_url,
@@ -273,11 +280,14 @@ impl TryInto<WorldDisplayData> for VRChatWorld {
     type Error = chrono::ParseError;
 
     fn try_into(self) -> Result<WorldDisplayData, Self::Error> {
-        let platform: Vec<String> = self
-            .unity_packages
-            .iter()
-            .map(|package| package.platform.clone())
-            .collect();
+        let platform: Vec<String> = {
+            let mut seen = HashSet::new();
+            self.unity_packages
+                .iter()
+                .map(|package| package.platform.clone())
+                .filter(|p| seen.insert(p.clone()))
+                .collect()
+        };
 
         Ok(WorldDisplayData {
             world_id: self.id.clone(),
