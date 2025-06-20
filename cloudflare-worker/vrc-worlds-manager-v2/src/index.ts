@@ -126,7 +126,7 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
       );
     }
 
-    const dataToSign = JSON.stringify({ name, worlds, ts });
+    const dataToSign = JSON.stringify({ name, worlds });
     const secret = env.HMAC_SECRET.trim();
     if (!secret) {
       console.error("No HMAC_SECRET configured – aborting");

@@ -37,7 +37,6 @@ pub struct ShareRequest {
 struct SigningPayload<'a> {
     name: &'a str,
     worlds: &'a [WorldApiData],
-    ts: &'a str,
 }
 
 /// Compute a hex‐encoded HMAC SHA-256
@@ -101,11 +100,7 @@ async fn post_folder(name: &str, worlds: &[WorldApiData]) -> Result<String, Stri
     let api_url = "https://folder-sharing-worker.raifaworks.workers.dev";
 
     let ts: String = Utc::now().to_rfc3339();
-    let signing = SigningPayload {
-        name,
-        worlds,
-        ts: &ts,
-    };
+    let signing = SigningPayload { name, worlds };
     let data_str = serde_json::to_string(&signing).map_err(|e| e.to_string())?;
 
     let hmac = compute_hmac(&data_str).map_err(|e| format!("Failed to compute HMAC: {}", e))?;
@@ -178,7 +173,6 @@ pub async fn download_folder(share_id: &str) -> Result<(String, Vec<WorldApiData
     let signing = SigningPayload {
         name: &folder.name,
         worlds: &folder.worlds,
-        ts: &folder.ts,
     };
     let data_str = serde_json::to_string(&signing).map_err(|e| e.to_string())?;
     let expected_hmac =
