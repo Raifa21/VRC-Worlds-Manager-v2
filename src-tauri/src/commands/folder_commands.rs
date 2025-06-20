@@ -1,4 +1,4 @@
-use crate::definitions::WorldDisplayData;
+use crate::definitions::{WorldApiData, WorldDisplayData};
 use crate::services::folder_manager::FolderManager;
 use crate::services::share_service;
 use crate::{FOLDERS, WORLDS};
@@ -195,4 +195,17 @@ pub async fn update_folder_share(folder_name: String) -> Result<Option<String>, 
             e.to_string()
         });
     result
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn download_folder(share_id: String) -> Result<(), String> {
+    let worlds: Result<Vec<WorldApiData>, String> = share_service::download_folder(&share_id)
+        .await
+        .map_err(|e| {
+            log::error!("Error downloading folder: {}", e);
+            e.to_string()
+        });
+    // TODO: Handle the downloaded worlds
+    Ok(())
 }

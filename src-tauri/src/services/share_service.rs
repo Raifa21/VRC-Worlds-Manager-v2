@@ -147,6 +147,27 @@ pub async fn share_folder(
         .map_err(|e| format!("Failed to post folder: {}", e))
 }
 
+pub async fn download_folder(share_id: &str) -> Result<Vec<WorldApiData>, String> {
+    let api_url = "https://folder-sharing-worker.raifaworks.workers.dev";
+    let full_url = format!("{}/api/share/folder/{}", api_url, share_id);
+
+    let client = Client::new();
+    let res = client
+        .get(&full_url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to download folder: {}", e))?;
+
+    let status = res.status();
+    if !status.is_success() {
+        let txt = res.text().await.unwrap_or_default();
+        return Err(format!("Download failed: {} – {}", status, txt));
+    }
+
+    let worlds: Vec<WorldApiData> = res.json().await.map_err(|e| e.to_string())?;
+    Ok(worlds)
+}
+
 // === TESTS ===
 #[cfg(test)]
 mod integration_tests {
