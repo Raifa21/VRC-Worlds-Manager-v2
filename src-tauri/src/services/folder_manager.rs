@@ -589,6 +589,7 @@ impl FolderManager {
 
     /// Adds worlds to data
     /// This is called when the api returns a list of worlds
+    /// or when we add via the folder sharing feature
     /// We check if the world is already in the list
     /// If it is, we update the world data and set the last checked time
     /// If it is not, we add the world to the list

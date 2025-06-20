@@ -2,6 +2,7 @@ use crate::definitions::{WorldApiData, WorldDisplayData};
 use crate::services::folder_manager::FolderManager;
 use crate::services::share_service;
 use crate::{FOLDERS, WORLDS};
+use std::collections::HashSet;
 
 #[tauri::command]
 #[specta::specta]
@@ -199,13 +200,74 @@ pub async fn update_folder_share(folder_name: String) -> Result<Option<String>, 
 
 #[tauri::command]
 #[specta::specta]
-pub async fn download_folder(share_id: String) -> Result<(), String> {
-    let worlds: Result<Vec<WorldApiData>, String> = share_service::download_folder(&share_id)
-        .await
-        .map_err(|e| {
-            log::error!("Error downloading folder: {}", e);
+/// Downloads a shared folder and adds its worlds to the local database.
+///
+/// This function attempts to download a folder using the provided `share_id`, creates the folder locally,
+/// adds the worlds from the shared folder to the local world list, and then adds all non-hidden worlds to the new folder.
+/// Worlds that are already hidden are not added to the folder and are returned for further handling.
+///
+/// # Arguments
+///
+/// * `share_id` - The identifier of the shared folder to download.
+///
+/// # Returns
+///
+/// `Ok((String, Vec<String>))`: A tuple containing the new folder name and a vector of world IDs that were hidden and not added to the folder.
+///
+/// # Errors
+/// Returns an error string if any operation fails, such as downloading the folder, creating the folder, adding worlds, or retrieving hidden worlds.
+pub async fn download_folder(share_id: String) -> Result<(String, Vec<String>), String> {
+    let result: Result<(String, Vec<WorldApiData>), String> =
+        share_service::download_folder(&share_id)
+            .await
+            .map_err(|e| {
+                log::error!("Error downloading folder: {}", e);
+                e.to_string()
+            });
+    let (folder_name, worlds) = match result {
+        Ok(data) => data,
+        Err(e) => return Err(e),
+    };
+    let new_folder_name =
+        FolderManager::create_folder(folder_name, FOLDERS.get()).map_err(|e| {
+            log::error!("Error creating folder: {}", e);
             e.to_string()
-        });
-    // TODO: Handle the downloaded worlds
-    Ok(())
+        })?;
+    FolderManager::add_worlds(WORLDS.get(), worlds.clone()).map_err(|e| {
+        log::error!("Error adding worlds: {}", e);
+        e.to_string()
+    })?;
+
+    let already_hidden = FolderManager::get_hidden_worlds(WORLDS.get()).map_err(|e| {
+        log::error!("Error getting hidden worlds: {}", e);
+        e.to_string()
+    })?;
+
+    // Build a HashSet of hidden world IDs for fast lookup
+    let hidden_ids: HashSet<_> = already_hidden.iter().map(|w| &w.world_id).collect();
+
+    // Partition worlds into hidden and non-hidden in a single pass using the HashSet
+    let (non_hidden_worlds, hidden_worlds): (Vec<WorldApiData>, Vec<WorldApiData>) = worlds
+        .into_iter()
+        .partition(|world| !hidden_ids.contains(&world.world_id));
+
+    // non_hidden_worlds: Worlds not hidden, to be added to the folder directly
+    // hidden_worlds: Worlds that are hidden, may require user confirmation before adding
+    for world in non_hidden_worlds {
+        FolderManager::add_world_to_folder(
+            new_folder_name.clone(),
+            world.world_id,
+            FOLDERS.get(),
+            WORLDS.get(),
+        )
+        .map_err(|e| {
+            log::error!("Error adding world to folder: {}", e);
+            e.to_string()
+        })?;
+    }
+
+    Ok((
+        new_folder_name,
+        hidden_worlds.into_iter().map(|w| w.world_id).collect(),
+    ))
 }

@@ -16,11 +16,20 @@ pub struct ShareResponse {
 
 /// The shape of our POST payload (concrete WorldApiData)
 #[derive(Serialize)]
-struct ShareRequest<'a> {
+struct ShareRequestPayload<'a> {
     name: &'a str,
     worlds: &'a [WorldApiData],
     ts: String,
     hmac: String,
+}
+
+/// Shape of return data from the GET request
+#[derive(Deserialize, Serialize, Debug)]
+pub struct ShareRequest {
+    pub name: String,
+    pub worlds: Vec<WorldApiData>,
+    pub ts: String,
+    pub hmac: String,
 }
 
 /// The shape of the signing payload
@@ -104,7 +113,7 @@ async fn post_folder(name: &str, worlds: &[WorldApiData]) -> Result<String, Stri
     let client = Client::new();
     let full_url = format!("{}/api/share/folder", api_url);
 
-    let req = ShareRequest {
+    let req = ShareRequestPayload {
         name,
         worlds,
         ts,
@@ -147,7 +156,7 @@ pub async fn share_folder(
         .map_err(|e| format!("Failed to post folder: {}", e))
 }
 
-pub async fn download_folder(share_id: &str) -> Result<Vec<WorldApiData>, String> {
+pub async fn download_folder(share_id: &str) -> Result<(String, Vec<WorldApiData>), String> {
     let api_url = "https://folder-sharing-worker.raifaworks.workers.dev";
     let full_url = format!("{}/api/share/folder/{}", api_url, share_id);
 
@@ -164,8 +173,25 @@ pub async fn download_folder(share_id: &str) -> Result<Vec<WorldApiData>, String
         return Err(format!("Download failed: {} – {}", status, txt));
     }
 
-    let worlds: Vec<WorldApiData> = res.json().await.map_err(|e| e.to_string())?;
-    Ok(worlds)
+    let folder: ShareRequest = res.json().await.map_err(|e| e.to_string())?;
+    // Validate the HMAC
+    let signing = SigningPayload {
+        name: &folder.name,
+        worlds: &folder.worlds,
+        ts: &folder.ts,
+    };
+    let data_str = serde_json::to_string(&signing).map_err(|e| e.to_string())?;
+    let expected_hmac =
+        compute_hmac(&data_str).map_err(|e| format!("Failed to compute HMAC: {}", e))?;
+    if expected_hmac != folder.hmac {
+        return Err(format!(
+            "HMAC mismatch: expected {}, got {}",
+            expected_hmac, folder.hmac
+        ));
+    }
+
+    // Return the folder name and worlds
+    Ok((folder.name, folder.worlds))
 }
 
 // === TESTS ===
