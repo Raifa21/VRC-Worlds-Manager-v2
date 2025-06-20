@@ -53,6 +53,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
+import { ShareFolderPopup } from '@/components/share-folder-popup';
 
 type SortField =
   | 'name'
@@ -113,6 +114,7 @@ export default function ListView() {
   const [deleteConfirmWorldName, setDeleteConfirmWorldName] =
     useState<string>('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [showShareFolder, setShowShareFolder] = useState(false);
 
   useEffect(() => {
     loadAllWorlds();
@@ -1643,8 +1645,8 @@ export default function ListView() {
                         <span>{t('listview-page:add-world')}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="flex items-center gap-2 text-muted-foreground"
-                        disabled={true}
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => setShowShareFolder(true)}
                       >
                         <Share className="h-4 w-4" />
                         <span>{t('listview-page:share-folder')}</span>
@@ -1719,6 +1721,15 @@ export default function ListView() {
         }
         isFindPage={isFindPage}
         onAddFolder={handleCreateFolder}
+      />
+      <ShareFolderPopup
+        open={showShareFolder}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowShareFolder(false);
+          }
+        }}
+        folderName={currentFolder}
       />
       <DeleteFolderDialog
         folderName={showDeleteFolder}
