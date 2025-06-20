@@ -194,6 +194,17 @@ pub struct FolderModel {
     pub folder_name: String,
     #[serde(rename = "worlds")]
     pub world_ids: Vec<String>,
+    /// Optional share metadata
+    #[serde(rename = "share", skip_serializing_if = "Option::is_none")]
+    pub share: Option<ShareInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShareInfo {
+    #[serde(rename = "id")]
+    pub id: String,
+    #[serde(rename = "expiryTime")]
+    pub expiry_time: DateTime<Utc>,
 }
 
 impl FolderModel {
@@ -201,6 +212,7 @@ impl FolderModel {
         Self {
             folder_name,
             world_ids: vec![],
+            share: None,
         }
     }
 }

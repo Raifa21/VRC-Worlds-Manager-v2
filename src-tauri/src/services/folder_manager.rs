@@ -751,6 +751,95 @@ impl FolderManager {
         }
         Ok(())
     }
+
+    /// Set the share field of a folder
+    /// Set the given ID and expiry time for the share
+    /// If the folder does not exist, return an error
+    /// # Arguments
+    /// * `folder_name` - The name of the folder to set the share
+    /// * `folders` - The list of folders, as a RwLock
+    /// * `share_id` - The ID of the share to set
+    ///
+    /// # Returns
+    /// Ok if the share was set successfully
+    ///
+    /// # Errors
+    /// Returns an error if the folder is not found
+    /// Returns an error if the folders lock is poisoned
+    pub fn set_folder_share(
+        folder_name: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        share_id: String,
+    ) -> Result<(), AppError> {
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+
+        let folder = match folders_lock
+            .iter_mut()
+            .find(|f| f.folder_name == folder_name)
+        {
+            Some(f) => f,
+            None => return Err(EntityError::FolderNotFound(folder_name).into()),
+        };
+
+        folder.share = Some(crate::definitions::ShareInfo {
+            id: share_id,
+            expiry_time: chrono::Utc::now() + chrono::Duration::days(30), // Set expiry time to 30 days from now
+        });
+
+        FileService::write_folders(&*folders_lock)?;
+        Ok(())
+    }
+
+    /// Get the share field of a folder.
+    /// If share is None, do nothing.
+    /// If share is Some, check if the id has already expired using the expiry_time field.
+    /// If it has expired, set share to None and persist the change.
+    /// If it has not , return the ID of the share.
+    ///
+    /// # Arguments
+    /// * `folder_name` - The name of the folder to update share
+    /// * `folders` - The list of folders, as a RwLock
+    ///
+    /// # Returns
+    /// Ok with the share ID if it is still valid, or None if it has expired
+    ///
+    /// # Errors
+    /// Returns an error if the folder is not found
+    /// Returns an error if the folders lock is poisoned
+    pub fn update_folder_share(
+        folder_name: String,
+        folders: &RwLock<Vec<FolderModel>>,
+    ) -> Result<Option<String>, AppError> {
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+
+        let folder = match folders_lock
+            .iter_mut()
+            .find(|f| f.folder_name == folder_name)
+        {
+            Some(f) => f,
+            None => return Err(EntityError::FolderNotFound(folder_name).into()),
+        };
+
+        if let Some(ref share_info) = folder.share {
+            if share_info.expiry_time <= chrono::Utc::now() {
+                folder.share = None;
+                log::info!(
+                    "Share ID for folder '{}' has expired, setting share to None",
+                    folder_name
+                );
+                FileService::write_folders(&*folders_lock)?;
+                Ok(None)
+            } else {
+                Ok(Some(share_info.id.clone()))
+            }
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[cfg(test)]

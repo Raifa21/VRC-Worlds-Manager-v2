@@ -25,6 +25,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         folder_commands::get_authors_by_count,
         folder_commands::delete_world,
         folder_commands::share_folder,
+        folder_commands::update_folder_share,
         preferences_commands::get_theme,
         preferences_commands::get_language,
         preferences_commands::get_card_size,

@@ -174,5 +174,25 @@ pub async fn share_folder(folder_name: String) -> Result<String, String> {
                 log::error!("Error sharing folder: {}", e);
                 e.to_string()
             });
+    let share_string = match &result {
+        Ok(s) => s,
+        Err(e) => return Err(e.clone()),
+    };
+    FolderManager::set_folder_share(folder_name.clone(), FOLDERS.get(), share_string.clone())
+        .map_err(|e| {
+            log::error!("Error setting folder share: {}", e);
+            e.to_string()
+        })?;
+    result
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn update_folder_share(folder_name: String) -> Result<Option<String>, String> {
+    let result: Result<Option<String>, String> =
+        FolderManager::update_folder_share(folder_name, FOLDERS.get()).map_err(|e| {
+            log::error!("Error updating folder share: {}", e);
+            e.to_string()
+        });
     result
 }
