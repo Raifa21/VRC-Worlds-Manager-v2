@@ -39,14 +39,13 @@ export default {
     }
     const url = new URL(request.url);
     if (url.pathname === "/api/share/folder" && request.method === "POST") {
-      // Rate limit check
-      // const ip = request.headers.get("CF-Connecting-IP") || "anon";
-      // if (!(await recordAndCheckLimit(ip, env))) {
-      //   return new Response(
-      //     JSON.stringify({ error: "Rate limit exceeded" }),
-      //     { status: 429, headers: corsHeaders() }
-      //   );
-      // }
+      const ip = request.headers.get("CF-Connecting-IP") || "anon";
+      if (!(await recordAndCheckLimit(ip, env))) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded" }),
+          { status: 429, headers: corsHeaders() }
+        );
+      }
       return handleUpload(request, env);
     }
     const m = url.pathname.match(/^\/api\/share\/folder\/([^/]+)$/);
