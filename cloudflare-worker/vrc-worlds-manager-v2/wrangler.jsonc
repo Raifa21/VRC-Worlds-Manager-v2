@@ -15,8 +15,8 @@
 		{
 			"binding": "FOLDERS_DB",
 			"database_name": "vrc_worlds_manager_folders",
-			"database_id": "6a5c03d2-54cf-495b-b98b-a3307cbc5b39"
-
+			"database_id": "6a5c03d2-54cf-495b-b98b-a3307cbc5b39",
+			"migrations_dir": "./migrations"
 		}
 	],
 	"r2_buckets": [
