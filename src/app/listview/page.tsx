@@ -1,6 +1,13 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, useMemo, useEffect } from 'react';
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  useMemo,
+  useEffect,
+  use,
+} from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -54,6 +61,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
 import { ShareFolderPopup } from '@/components/share-folder-popup';
+import { ImportedFolderContainsHidden } from '@/components/imported-folder-contains-hidden';
 
 type SortField =
   | 'name'
@@ -87,6 +95,13 @@ export default function ListView() {
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
     SpecialFolders.All,
   );
+  const [
+    showImportedFolderContainsHidden,
+    setShowImportedFolderContainsHidden,
+  ] = useState(false);
+  const [containedHiddenWorlds, setContainedHiddenWorlds] = useState<
+    WorldDisplayData[]
+  >([]);
   const [showWorldDetails, setShowWorldDetails] = useState(false);
   const [selectedWorldForDetails, setSelectedWorldForDetails] = useState<
     string | null
@@ -184,6 +199,7 @@ export default function ListView() {
         case 'folder':
           if (folderName) {
             await loadFolderContents(folderName);
+            setCurrentFolder(folderName);
             loadSelectedState(folderName);
           }
           break;
@@ -272,11 +288,7 @@ export default function ListView() {
 
       // Only navigate to the new folder if not in Find page or if add-to-folder dialog is open
       if (currentFolder !== SpecialFolders.Find && !showFolderDialog) {
-        await Promise.all([
-          setCurrentFolder(newName),
-          setShowCreateFolder(false),
-        ]);
-        handleSelectFolder('folder', newName);
+        setShowCreateFolder(false), handleSelectFolder('folder', newName);
       } else {
         setShowCreateFolder(false);
       }
@@ -1027,10 +1039,6 @@ export default function ListView() {
   };
 
   const filteredWorlds = useMemo(() => {
-    info(
-      `Filtering worlds with: searchQuery="${searchQuery}", authorFilter="${authorFilter}", tagFilters=${JSON.stringify(tagFilters)}, folderFilters=${JSON.stringify(folderFilters)}, totalWorlds=${worlds.length}`,
-    );
-
     return worlds.filter((world) => {
       // Check text search
       const textMatch =
@@ -1553,6 +1561,64 @@ export default function ListView() {
     );
   };
 
+  const handleImportFolder = async (UUID: string) => {
+    try {
+      const result = await commands.downloadFolder(UUID);
+      if (result.status === 'ok') {
+        let folderName = result.data[0];
+        let hiddenWorlds = result.data[1];
+        setShowCreateFolder(false), handleSelectFolder('folder', folderName);
+        if (hiddenWorlds.length > 0) {
+          setShowImportedFolderContainsHidden(true);
+          setContainedHiddenWorlds(hiddenWorlds);
+        }
+      }
+      toast({
+        title: t('listview-page:folder-imported-title'),
+        description: t('listview-page:folder-imported-description', result),
+        duration: 2000,
+      });
+    } catch (e) {
+      error(`Failed to import folder: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-import-folder'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRestoreInImport = async () => {
+    try {
+      if (!containedHiddenWorlds || containedHiddenWorlds.length === 0) {
+        toast({
+          title: t('general:error-title'),
+          description: t('listview-page:error-no-hidden-worlds'),
+          variant: 'destructive',
+        });
+        return;
+      }
+      for (const world of containedHiddenWorlds) {
+        await commands.unhideWorld(world.worldId);
+        await commands.addWorldToFolder(currentFolder, world.worldId);
+      }
+      setContainedHiddenWorlds([]);
+      setShowImportedFolderContainsHidden(false);
+      toast({
+        title: t('listview-page:restored-hidden-worlds-title'),
+        description: t('listview-page:restored-hidden-worlds-description'),
+        duration: 2000,
+      });
+    } catch (e) {
+      error(`Failed to restore hidden worlds: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-restore-hidden-worlds'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="flex h-screen">
       <AppSidebar
@@ -1669,6 +1735,7 @@ export default function ListView() {
           }
         }}
         onConfirm={handleCreateFolder}
+        onImportFolder={handleImportFolder}
       />
       <AddWorldPopup
         open={isAddWorldOpen}
@@ -1757,6 +1824,16 @@ export default function ListView() {
         folderFilters={folderFilters}
         onFolderFiltersChange={setFolderFilters}
         onClose={() => setShowAdvancedSearch(false)}
+      />
+      <ImportedFolderContainsHidden
+        open={showImportedFolderContainsHidden}
+        worlds={containedHiddenWorlds}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowImportedFolderContainsHidden(false);
+          }
+        }}
+        onConfirm={handleRestoreInImport}
       />
     </div>
   );
