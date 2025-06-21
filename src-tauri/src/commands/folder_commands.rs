@@ -1,4 +1,4 @@
-use crate::definitions::{WorldApiData, WorldDisplayData};
+use crate::definitions::{WorldApiData, WorldDisplayData, WorldModel};
 use crate::services::folder_manager::FolderManager;
 use crate::services::share_service;
 use crate::{FOLDERS, WORLDS};
@@ -216,7 +216,8 @@ pub async fn update_folder_share(folder_name: String) -> Result<Option<String>, 
 ///
 /// # Errors
 /// Returns an error string if any operation fails, such as downloading the folder, creating the folder, adding worlds, or retrieving hidden worlds.
-pub async fn download_folder(share_id: String) -> Result<(String, Vec<String>), String> {
+pub async fn download_folder(share_id: String) -> Result<(String, Vec<WorldDisplayData>), String> {
+    // Download the folder and its worlds
     let result: Result<(String, Vec<WorldApiData>), String> =
         share_service::download_folder(&share_id)
             .await
@@ -224,39 +225,41 @@ pub async fn download_folder(share_id: String) -> Result<(String, Vec<String>), 
                 log::error!("Error downloading folder: {}", e);
                 e.to_string()
             });
-    let (folder_name, worlds) = match result {
+    let (folder_name, mut worlds) = match result {
         Ok(data) => data,
         Err(e) => return Err(e),
     };
+
+    // Get hidden world IDs before adding new worlds
+    let already_hidden = FolderManager::get_hidden_worlds(WORLDS.get()).map_err(|e| {
+        log::error!("Error getting hidden worlds: {}", e);
+        e.to_string()
+    })?;
+    let hidden_ids: HashSet<_> = already_hidden.iter().map(|w| &w.world_id).collect();
+
+    // Partition incoming worlds into hidden and non-hidden
+    let (non_hidden_worlds, hidden_worlds): (Vec<WorldApiData>, Vec<WorldApiData>) = worlds
+        .drain(..)
+        .partition(|world| !hidden_ids.contains(&world.world_id));
+
+    // Add all worlds to the database in one go
+    FolderManager::add_worlds(WORLDS.get(), non_hidden_worlds.clone()).map_err(|e| {
+        log::error!("Error adding worlds: {}", e);
+        e.to_string()
+    })?;
+
+    // Create the folder
     let new_folder_name =
         FolderManager::create_folder(folder_name, FOLDERS.get()).map_err(|e| {
             log::error!("Error creating folder: {}", e);
             e.to_string()
         })?;
-    FolderManager::add_worlds(WORLDS.get(), worlds.clone()).map_err(|e| {
-        log::error!("Error adding worlds: {}", e);
-        e.to_string()
-    })?;
 
-    let already_hidden = FolderManager::get_hidden_worlds(WORLDS.get()).map_err(|e| {
-        log::error!("Error getting hidden worlds: {}", e);
-        e.to_string()
-    })?;
-
-    // Build a HashSet of hidden world IDs for fast lookup
-    let hidden_ids: HashSet<_> = already_hidden.iter().map(|w| &w.world_id).collect();
-
-    // Partition worlds into hidden and non-hidden in a single pass using the HashSet
-    let (non_hidden_worlds, hidden_worlds): (Vec<WorldApiData>, Vec<WorldApiData>) = worlds
-        .into_iter()
-        .partition(|world| !hidden_ids.contains(&world.world_id));
-
-    // non_hidden_worlds: Worlds not hidden, to be added to the folder directly
-    // hidden_worlds: Worlds that are hidden, may require user confirmation before adding
-    for world in non_hidden_worlds {
+    // Add only non-hidden worlds to the folder
+    for world in non_hidden_worlds.iter() {
         FolderManager::add_world_to_folder(
             new_folder_name.clone(),
-            world.world_id,
+            world.world_id.clone(),
             FOLDERS.get(),
             WORLDS.get(),
         )
@@ -266,8 +269,11 @@ pub async fn download_folder(share_id: String) -> Result<(String, Vec<String>), 
         })?;
     }
 
-    Ok((
-        new_folder_name,
-        hidden_worlds.into_iter().map(|w| w.world_id).collect(),
-    ))
+    // Convert hidden worlds to display data
+    let hidden_worlds: Vec<WorldDisplayData> = hidden_worlds
+        .into_iter()
+        .map(WorldModel::new)
+        .map(|w| w.to_display_data())
+        .collect();
+    Ok((new_folder_name, hidden_worlds))
 }

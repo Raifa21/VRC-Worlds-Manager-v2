@@ -346,8 +346,14 @@
   "add-to-folder-dialog:new-placeholder": "新しいフォルダ名を入力",
   "add-to-folder-dialog:add-folder": "新しいフォルダを追加",
 
-  "create-folder-dialog:title": "新規フォルダの作成",
-  "create-folder-dialog:placeholder": "フォルダ名を入力してください",
+  "create-folder-dialog:title": "フォルダを追加",
+  "create-folder-dialog:import-title": "フォルダをインポート",
+  "create-folder-dialog:import-description": "他のユーザーから共有されたフォルダをインポートします。フォルダ内の未追加ワールドもすべて追加されます。",
+  "create-folder-dialog:import-placeholder": "フォルダのUUIDを入力",
+  "create-folder-dialog:importing": "インポート中...",
+  "create-folder-dialog:import": "インポート",
+  "create-folder-dialog:create-title": "新しいフォルダを作成",
+  "create-folder-dialog:placeholder": "フォルダ名を入力",
   "create-folder-dialog:creating": "作成中...",
   "create-folder-dialog:create": "作成",
 
