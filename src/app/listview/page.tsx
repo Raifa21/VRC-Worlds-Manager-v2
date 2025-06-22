@@ -1578,12 +1578,21 @@ export default function ListView() {
           setShowImportedFolderContainsHidden(true);
           setContainedHiddenWorlds(hiddenWorlds);
         }
+        toast({
+          title: t('listview-page:folder-imported-title'),
+          description: t(
+            'listview-page:folder-imported-description',
+            result.data[0],
+          ),
+          duration: 2000,
+        });
+      } else {
+        toast({
+          title: t('general:error-title'),
+          description: t('listview-page:error-import-folder'),
+          variant: 'destructive',
+        });
       }
-      toast({
-        title: t('listview-page:folder-imported-title'),
-        description: t('listview-page:folder-imported-description', result),
-        duration: 2000,
-      });
     } catch (e) {
       error(`Failed to import folder: ${e}`);
       toast({
@@ -1594,9 +1603,9 @@ export default function ListView() {
     }
   };
 
-  const handleRestoreInImport = async () => {
+  const handleRestoreInImport = async (worlds: string[]) => {
     try {
-      if (!containedHiddenWorlds || containedHiddenWorlds.length === 0) {
+      if (!containedHiddenWorlds || worlds.length === 0) {
         toast({
           title: t('general:error-title'),
           description: t('listview-page:error-no-hidden-worlds'),
@@ -1604,15 +1613,18 @@ export default function ListView() {
         });
         return;
       }
-      for (const world of containedHiddenWorlds) {
-        await commands.unhideWorld(world.worldId);
-        await commands.addWorldToFolder(currentFolder, world.worldId);
+      for (const world of worlds) {
+        await commands.unhideWorld(world);
+        await commands.addWorldToFolder(currentFolder, world);
       }
       setContainedHiddenWorlds([]);
       setShowImportedFolderContainsHidden(false);
       toast({
         title: t('listview-page:restored-hidden-worlds-title'),
-        description: t('listview-page:restored-hidden-worlds-description'),
+        description: t(
+          'listview-page:restored-hidden-worlds-description',
+          containedHiddenWorlds.length,
+        ),
         duration: 2000,
       });
     } catch (e) {
@@ -1716,13 +1728,15 @@ export default function ListView() {
                         <Plus className="h-4 w-4" />
                         <span>{t('listview-page:add-world')}</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="flex items-center gap-2 cursor-pointer"
-                        onClick={() => setShowShareFolder(true)}
-                      >
-                        <Share className="h-4 w-4" />
-                        <span>{t('listview-page:share-folder')}</span>
-                      </DropdownMenuItem>
+                      {worlds.length > 0 && (
+                        <DropdownMenuItem
+                          className="flex items-center gap-2 cursor-pointer"
+                          onClick={() => setShowShareFolder(true)}
+                        >
+                          <Share className="h-4 w-4" />
+                          <span>{t('listview-page:share-folder')}</span>
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

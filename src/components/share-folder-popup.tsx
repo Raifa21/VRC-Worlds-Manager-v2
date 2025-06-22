@@ -2,20 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { commands } from '@/lib/bindings';
 import { info, error } from '@tauri-apps/plugin-log';
-import { FolderOpen, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import {
+  FolderOpen,
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-} from './ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from './ui/dialog';
 
 interface ShareFolderPopupProps {
   open: boolean;
@@ -53,7 +57,7 @@ export function ShareFolderPopup({
       if (result.status === 'ok') {
         setFolderInfo(result.data.length);
       } else {
-        setErrorMessage(t(`share-folder:error-message ${result.error}`));
+        setErrorMessage(t('share-folder:error-message', result.error));
       }
       setInfoLoading(false);
     };
@@ -67,7 +71,7 @@ export function ShareFolderPopup({
         if (res.status === 'ok') {
           setShareId(res.data);
         } else {
-          setErrorMessage(t(`share-folder:error-message ${res.error}`));
+          setErrorMessage(t('share-folder:error-message', res.error));
         }
       })
       .finally(() => setShareLoading(false));
@@ -81,22 +85,43 @@ export function ShareFolderPopup({
       info(`Shared folder "${folderName}" as ${id}`);
       setShareId(id.data);
     } else {
-      setErrorMessage(t(`share-folder:error-message ${id.error}`));
+      setErrorMessage(t('share-folder:error-message', id.error));
     }
     setShareLoading(false);
   };
 
+  // Handler to copy the share ID to clipboard
+  const handleCopy = async () => {
+    if (shareId) {
+      try {
+        await navigator.clipboard.writeText(shareId);
+        info('Copied share ID to clipboard');
+      } catch (e) {
+        error(`Clipboard copy failed: ${e}`);
+      }
+    }
+  };
+  const shareLink = shareId
+    ? `https://www.raifaworks.com/vrc-worlds-manager/folder/${shareId}`
+    : '';
+  const tweetText = shareId
+    ? t('share-folder:twitter-text', folderName, shareLink)
+    : '';
+  const tweetIntentUrl = shareId
+    ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`
+    : '';
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-lg">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
         {!shareId ? (
           <>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t('share-folder:title')}</AlertDialogTitle>
-              <AlertDialogDescription>
+            <DialogHeader>
+              <DialogTitle>{t('share-folder:title')}</DialogTitle>
+              <DialogDescription>
                 {t('share-folder:description')}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+              </DialogDescription>
+            </DialogHeader>
 
             <div className="space-y-4 py-4">
               {/* Folder Info */}
@@ -118,14 +143,14 @@ export function ShareFolderPopup({
                 <div className="flex flex-col gap-2 bg-muted rounded p-3">
                   <div className="flex flex-row items-center gap-2">
                     <Label className="text-sm font-medium">
-                      {t('share-folder:folder-name')}:
+                      {t('share-folder:folder-name')}
                     </Label>
                     <Label className="text-sm">{folderName}</Label>
                   </div>
                   <div className="flex flex-row items-center gap-2">
                     <FolderOpen className="h-5 w-5" />
                     <Label className="text-sm font-medium">
-                      {t('share-folder:worlds-count')}:
+                      {t('share-folder:worlds-count')}
                     </Label>
                     <Label className="text-sm">{folderInfo}</Label>
                   </div>
@@ -133,10 +158,14 @@ export function ShareFolderPopup({
               )}
             </div>
 
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={shareLoading || infoLoading}>
+            <DialogFooter>
+              <Button
+                variant="secondary"
+                onClick={() => onOpenChange(false)}
+                disabled={shareLoading || infoLoading}
+              >
                 {t('general:cancel')}
-              </AlertDialogCancel>
+              </Button>
               <Button
                 className="bg-primary gap-2"
                 onClick={handleShare}
@@ -145,23 +174,43 @@ export function ShareFolderPopup({
                 }
               >
                 {shareLoading
-                  ? t('general:sharing') + '...'
+                  ? t('share-folder:sharing')
                   : t('share-folder:share-button')}
               </Button>
-            </AlertDialogFooter>
+            </DialogFooter>
           </>
         ) : (
-          /** success screen: no inputs or buttons **/
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('share-folder:success-title')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('share-folder:success-message', { id: shareId })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+          <>
+            <DialogHeader className="relative">
+              <DialogTitle>{t('share-folder:success-title')}</DialogTitle>
+              <DialogDescription>
+                {t('share-folder:success-message')}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">
+                  {t('share-folder:UUID')}
+                </Label>
+                <Input className="flex-1" value={shareId} readOnly />
+                <Button onClick={handleCopy}>
+                  {t('share-folder:copy-button')}
+                </Button>
+              </div>
+              <Button variant="outline" className="w-full" asChild>
+                <a
+                  href={tweetIntentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t('share-folder:share-twitter')}
+                </a>
+              </Button>
+            </div>
+          </>
         )}
-      </AlertDialogContent>
-    </AlertDialog>
+      </DialogContent>
+    </Dialog>
   );
 }
