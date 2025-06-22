@@ -1024,6 +1024,11 @@ export default function ListView() {
       await commands.deleteFolder(folderName);
       await loadFolders();
       setShowDeleteFolder(null);
+      // if we are deleting the current folder, reset to All
+      if (currentFolder === folderName) {
+        handleSelectFolder(SpecialFolders.All);
+        await loadAllWorlds();
+      }
       toast({
         title: 'Success',
         description: 'Folder deleted successfully',
@@ -1567,6 +1572,7 @@ export default function ListView() {
       if (result.status === 'ok') {
         let folderName = result.data[0];
         let hiddenWorlds = result.data[1];
+        await loadFolders();
         setShowCreateFolder(false), handleSelectFolder('folder', folderName);
         if (hiddenWorlds.length > 0) {
           setShowImportedFolderContainsHidden(true);
