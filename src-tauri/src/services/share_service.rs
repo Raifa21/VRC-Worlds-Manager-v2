@@ -96,7 +96,8 @@ fn get_worlds(
     Ok(truncated)
 }
 
-async fn post_folder(name: &str, worlds: &[WorldApiData]) -> Result<String, String> {
+// returns id and the ts for setting the expires_at field
+async fn post_folder(name: &str, worlds: &[WorldApiData]) -> Result<(String, String), String> {
     let api_url = "https://folder-sharing-worker.raifaworks.workers.dev";
 
     let ts: String = Utc::now().to_rfc3339();
@@ -111,7 +112,7 @@ async fn post_folder(name: &str, worlds: &[WorldApiData]) -> Result<String, Stri
     let req = ShareRequestPayload {
         name,
         worlds,
-        ts,
+        ts: ts.clone(),
         hmac,
     };
     let res = client
@@ -128,7 +129,7 @@ async fn post_folder(name: &str, worlds: &[WorldApiData]) -> Result<String, Stri
     }
 
     let body: ShareResponse = res.json().await.map_err(|e| e.to_string())?;
-    Ok(body.id)
+    Ok((body.id, ts))
 }
 
 /// Share the folder with the remote Worker
@@ -136,7 +137,7 @@ pub async fn share_folder(
     name: &str,
     folders_lock: &RwLock<Vec<FolderModel>>,
     worlds_lock: &RwLock<Vec<WorldModel>>,
-) -> Result<String, String> {
+) -> Result<(String, String), String> {
     // 1) Load worlds from the specified folder
     let worlds = get_worlds(name, folders_lock, worlds_lock)
         .map_err(|e| format!("Failed to get worlds: {}", e))?;
@@ -232,7 +233,7 @@ mod integration_tests {
         // 1) POST the folder
         let worlds = vec![dummy_world()];
         let folder_name = "IntegrationTestFolder";
-        let id = post_folder(folder_name, &worlds)
+        let (id, _ts) = post_folder(folder_name, &worlds)
             .await
             .expect("post_folder failed");
         assert!(!id.is_empty(), "received empty share ID");

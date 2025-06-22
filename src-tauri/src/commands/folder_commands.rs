@@ -168,23 +168,28 @@ pub async fn delete_world(world_id: String) -> Result<(), String> {
 #[tauri::command]
 #[specta::specta]
 pub async fn share_folder(folder_name: String) -> Result<String, String> {
-    let result: Result<String, String> =
+    let result: Result<(String, String), String> =
         share_service::share_folder(&folder_name, FOLDERS.get(), WORLDS.get())
             .await
             .map_err(|e| {
                 log::error!("Error sharing folder: {}", e);
                 e.to_string()
             });
-    let share_string = match &result {
+    let (share_id, ts) = match &result {
         Ok(s) => s,
         Err(e) => return Err(e.clone()),
     };
-    FolderManager::set_folder_share(folder_name.clone(), FOLDERS.get(), share_string.clone())
-        .map_err(|e| {
-            log::error!("Error setting folder share: {}", e);
-            e.to_string()
-        })?;
-    result
+    FolderManager::set_folder_share(
+        folder_name.clone(),
+        FOLDERS.get(),
+        share_id.clone(),
+        ts.clone(),
+    )
+    .map_err(|e| {
+        log::error!("Error setting folder share: {}", e);
+        e.to_string()
+    })?;
+    Ok(share_id.to_string())
 }
 
 #[tauri::command]

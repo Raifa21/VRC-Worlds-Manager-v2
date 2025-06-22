@@ -163,7 +163,7 @@ async function handleUpload(request: Request, env: Env): Promise<Response> {
 
     // Create new share
     const id = crypto.randomUUID();
-    const expiration = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const expiration = new Date(Date.parse(ts) + 30 * 24 * 60 * 60 * 1000).toISOString();
     await env.FOLDERS_DB.prepare(
       `INSERT INTO folders (id, hmac, name, expiration, created_at)
        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`

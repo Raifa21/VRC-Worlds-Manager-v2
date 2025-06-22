@@ -771,6 +771,7 @@ impl FolderManager {
         folder_name: String,
         folders: &RwLock<Vec<FolderModel>>,
         share_id: String,
+        ts: String,
     ) -> Result<(), AppError> {
         let mut folders_lock = folders
             .write()
@@ -784,9 +785,13 @@ impl FolderManager {
             None => return Err(EntityError::FolderNotFound(folder_name).into()),
         };
 
+        let time = ts
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .map_err(|_| EntityError::InvalidTimestamp(ts))?;
+
         folder.share = Some(crate::definitions::ShareInfo {
             id: share_id,
-            expiry_time: chrono::Utc::now() + chrono::Duration::days(30), // Set expiry time to 30 days from now
+            expiry_time: time + chrono::Duration::days(30), // Set expiry time to 30 days from now
         });
 
         FileService::write_folders(&*folders_lock)?;
