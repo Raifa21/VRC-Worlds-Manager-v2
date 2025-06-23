@@ -13,6 +13,7 @@
     "dialog:default",
     "opener:default",
     "log:allow-log",
-    "updater:default"
+    "updater:default",
+    "deep-link:default"
   ]
 }

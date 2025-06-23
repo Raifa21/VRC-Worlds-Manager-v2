@@ -18,6 +18,7 @@ import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
 import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import {
   CheckSquare,
   Menu,
@@ -1565,6 +1566,31 @@ export default function ListView() {
       </>
     );
   };
+
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    (async () => {
+      unsubscribe = await onOpenUrl((urls) => {
+        console.log('deep link:', urls);
+        //vrc-worlds-manager://vrcwm.raifaworks.com/folder/import/${uuid}
+        //call handleImportFolder with the uuid
+        const importRegex =
+          /vrc-worlds-manager:\/\/vrcwm\.raifaworks\.com\/folder\/import\/([a-zA-Z0-9-]+)/;
+        const match = urls[0].match(importRegex);
+        if (match && match[1]) {
+          const uuid = match[1];
+          handleImportFolder(uuid);
+        }
+      });
+    })();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   const handleImportFolder = async (UUID: string) => {
     try {

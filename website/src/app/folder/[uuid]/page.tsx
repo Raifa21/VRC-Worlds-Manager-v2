@@ -51,11 +51,11 @@ export default function FolderPage() {
   }, [uuid]);
 
   const handleInstallApp = () => {
-    window.open('https://github.com/raifaworks/vrc-world-manager/releases', '_blank');
+    window.open('https://github.com/raifa21/vrc-world-manager-tauri/releases', '_blank');
   };
 
   const handleImportInApp = () => {
-    const deepLink = `vrc-world-manager://import-folder/${uuid}`;
+    const deepLink = `vrc-worlds-manager://vrcwm.raifaworks.com/folder/import/${uuid}`;
     window.location.href = deepLink;
   };
 
