@@ -120,6 +120,13 @@
   "listview-page:folders-updated-multiple": "\"{0}\" 他 {1} 件のワールドのフォルダが更新されました",
   "listview-page:folders-updated-single": "\"{0}\" のフォルダが更新されました",
   "listview-page:folder-changes-undone": "フォルダの変更が元に戻されました",
+  "listview-page:folder-imported-title": "フォルダをインポートしました",
+  "listview-page:folder-imported-description": "フォルダ「{0}」が正常にインポートされました",
+  "listview-page:error-import-folder": "フォルダのインポートに失敗しました",
+  "listview-page:error-no-hidden-worlds": "インポートしたフォルダに非表示ワールドはありません。",
+  "listview-page:restored-hidden-worlds-title": "非表示ワールドを復元しました",
+  "listview-page:restored-hidden-worlds-description": "インポートしたフォルダから {0} 件の非表示ワールドを復元しました",
+  "listview-page:error-restore-hidden-worlds": "非表示ワールドの復元に失敗しました",
   "listview-page:error-undo-folder-changes": "フォルダの変更の取り消しに失敗しました",
   "listview-page:error-update-folders": "フォルダの更新に失敗しました",
   "listview-page:created-instance": "{0} インスタンスを作成しました",
@@ -346,8 +353,14 @@
   "add-to-folder-dialog:new-placeholder": "新しいフォルダ名を入力",
   "add-to-folder-dialog:add-folder": "新しいフォルダを追加",
 
-  "create-folder-dialog:title": "新規フォルダの作成",
-  "create-folder-dialog:placeholder": "フォルダ名を入力してください",
+  "create-folder-dialog:title": "フォルダを追加",
+  "create-folder-dialog:import-title": "フォルダをインポート",
+  "create-folder-dialog:import-description": "他のユーザーから共有されたフォルダをインポートします。フォルダ内の未追加ワールドもすべて追加されます。",
+  "create-folder-dialog:import-placeholder": "フォルダのUUIDを入力",
+  "create-folder-dialog:importing": "インポート中...",
+  "create-folder-dialog:import": "インポート",
+  "create-folder-dialog:create-title": "新しいフォルダを作成",
+  "create-folder-dialog:placeholder": "フォルダ名を入力",
   "create-folder-dialog:creating": "作成中...",
   "create-folder-dialog:create": "作成",
 
@@ -381,5 +394,29 @@
 
   "setup-layout:start": "始める",
   "setup-layout:finish": "完了",
-  "setup-layout:skip": "スキップ"
+  "setup-layout:skip": "スキップ",
+
+  "imported-folder:hidden-title": "インポートしたフォルダに非表示ワールドが含まれています",
+  "imported-folder:hidden-description": "これらのワールドはライブラリ内で非表示に設定されています。復元するワールドを選択してください：",
+  "imported-folder:restore": "選択したワールドを復元",
+  "imported-folder:do-not-restore": "復元しない",
+
+  "share-folder:error-message": "フォルダの共有に失敗しました: {0}", 
+  "share-folder:title": "フォルダを共有",
+  "share-folder:description": "このフォルダを他のユーザーと共有します。フォルダのUUIDを持つユーザーはアクセスできます。",
+  "share-folder:loading-info": "フォルダ情報を読み込み中...",
+  "share-folder:folder-name": "フォルダ名: ",
+  "share-folder:worlds-count": "ワールド数: ",
+  "share-folder:share-button": "共有",
+  "share-folder:sharing": "共有中...",
+
+  "share-folder:success-title": "フォルダを共有しました",
+  "share-folder:success-message": "UUIDを他のユーザーと共有すると、そのユーザーがこのフォルダにアクセスできます。あなたが行った変更は共有先のフォルダには影響しません。",
+  "share-folder:UUID": "フォルダUUID: ",
+  "share-folder:copy-button": "コピー",
+  "share-folder:share-link": "フォルダをプレビュー: ",
+  "share-folder:share-options": "共有オプション",
+  "share-folder:copy-link": "共有テキストをコピー",
+  "share-folder:share-twitter": "Twitterで共有",
+  "share-folder:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}\n\n#VRCWMワールド共有"
 }

@@ -41,9 +41,11 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
+          HMAC_KEY: ${{ secrets.HMAC_KEY }}
     env:
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
+      HMAC_KEY: ${{ secrets.HMAC_KEY }}
 
   build-and-release-for-pre-release:
     if: github.ref == 'refs/heads/pre-release'
@@ -80,6 +82,8 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
+          HMAC_KEY: ${{ secrets.HMAC_KEY }}
     env:
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       ENCRYPTION_IV: ${{ secrets.ENCRYPTION_IV }}
+      HMAC_KEY: ${{ secrets.HMAC_KEY }}

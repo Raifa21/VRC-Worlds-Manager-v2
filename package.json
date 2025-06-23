@@ -40,6 +40,7 @@
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tanstack/react-virtual": "^3.13.10",
+    "@tauri-apps/plugin-deep-link": "^2.3.0",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-log": "^2.3.0",
     "@tauri-apps/plugin-opener": "^2.2.6",
@@ -71,7 +72,8 @@
     "postcss": "^8",
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.1",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "wrangler": "^4.20.0"
   },
   "optionalDependencies": {
     "@tauri-apps/cli-darwin-arm64": "2.5.0",

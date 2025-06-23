@@ -589,6 +589,7 @@ impl FolderManager {
 
     /// Adds worlds to data
     /// This is called when the api returns a list of worlds
+    /// or when we add via the folder sharing feature
     /// We check if the world is already in the list
     /// If it is, we update the world data and set the last checked time
     /// If it is not, we add the world to the list
@@ -616,7 +617,17 @@ impl FolderManager {
             match existing_world {
                 Some(world) => {
                     log::info!("World already exists, updating world data: {}", world_id);
-                    world.api_data = new_world;
+                    // Only update if new_world has a more recent last_update
+                    if new_world.last_update > world.api_data.last_update {
+                        world.api_data = new_world;
+                    } else if new_world.last_update == world.api_data.last_update {
+                        // If updatedAt is equal, use the one with greater visits
+                        let existing_visits = world.api_data.visits.unwrap_or(0);
+                        let new_visits = new_world.visits.unwrap_or(0);
+                        if new_visits > existing_visits {
+                            world.api_data = new_world;
+                        }
+                    }
                     world.user_data.last_checked = chrono::Utc::now();
                 }
                 None => {
@@ -750,6 +761,100 @@ impl FolderManager {
             FileService::write_folders(&*folders_lock)?;
         }
         Ok(())
+    }
+
+    /// Set the share field of a folder
+    /// Set the given ID and expiry time for the share
+    /// If the folder does not exist, return an error
+    /// # Arguments
+    /// * `folder_name` - The name of the folder to set the share
+    /// * `folders` - The list of folders, as a RwLock
+    /// * `share_id` - The ID of the share to set
+    ///
+    /// # Returns
+    /// Ok if the share was set successfully
+    ///
+    /// # Errors
+    /// Returns an error if the folder is not found
+    /// Returns an error if the folders lock is poisoned
+    pub fn set_folder_share(
+        folder_name: String,
+        folders: &RwLock<Vec<FolderModel>>,
+        share_id: String,
+        ts: String,
+    ) -> Result<(), AppError> {
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+
+        let folder = match folders_lock
+            .iter_mut()
+            .find(|f| f.folder_name == folder_name)
+        {
+            Some(f) => f,
+            None => return Err(EntityError::FolderNotFound(folder_name).into()),
+        };
+
+        let time = ts
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .map_err(|_| EntityError::InvalidTimestamp(ts))?;
+
+        folder.share = Some(crate::definitions::ShareInfo {
+            id: share_id,
+            expiry_time: time + chrono::Duration::days(30), // Set expiry time to 30 days from now
+        });
+
+        FileService::write_folders(&*folders_lock)?;
+        Ok(())
+    }
+
+    /// Get the share field of a folder.
+    /// If share is None, do nothing.
+    /// If share is Some, check if the id has already expired using the expiry_time field.
+    /// If it has expired, set share to None and persist the change.
+    /// If it has not , return the ID of the share.
+    ///
+    /// # Arguments
+    /// * `folder_name` - The name of the folder to update share
+    /// * `folders` - The list of folders, as a RwLock
+    ///
+    /// # Returns
+    /// Ok with the share ID if it is still valid, or None if it has expired
+    ///
+    /// # Errors
+    /// Returns an error if the folder is not found
+    /// Returns an error if the folders lock is poisoned
+    pub fn update_folder_share(
+        folder_name: String,
+        folders: &RwLock<Vec<FolderModel>>,
+    ) -> Result<Option<String>, AppError> {
+        let mut folders_lock = folders
+            .write()
+            .map_err(|_| ConcurrencyError::PoisonedLock)?;
+
+        let folder = match folders_lock
+            .iter_mut()
+            .find(|f| f.folder_name == folder_name)
+        {
+            Some(f) => f,
+            None => return Err(EntityError::FolderNotFound(folder_name).into()),
+        };
+
+        if let Some(ref share_info) = folder.share {
+            if share_info.expiry_time <= chrono::Utc::now() {
+                folder.share = None;
+                log::info!(
+                    "Share ID for folder '{}' has expired, setting share to None",
+                    folder_name
+                );
+                FileService::write_folders(&*folders_lock)?;
+                Ok(None)
+            } else {
+                Ok(Some(share_info.id.clone()))
+            }
+        } else {
+            Ok(None)
+        }
     }
 }
 

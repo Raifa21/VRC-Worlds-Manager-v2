@@ -162,12 +162,29 @@ impl FileService {
         let mut worlds: Vec<WorldModel> = Self::read_file(&worlds_path)?;
         let cookies = Self::read_auth_file(&cookies_path)?;
 
+        // populate per-world folder list
         for world in worlds.iter_mut() {
             world.user_data.folders = folders
                 .iter()
                 .filter(|folder| folder.world_ids.contains(&world.api_data.world_id))
                 .map(|folder| folder.folder_name.clone())
                 .collect();
+        }
+
+        // Backwards‐compat: dedupe any duplicate platform entries in worlds.json
+        {
+            use std::collections::HashSet;
+            for world in worlds.iter_mut() {
+                let mut seen = HashSet::new();
+                world
+                    .api_data
+                    .platform
+                    .retain(|plat| seen.insert(plat.clone()));
+            }
+            // write back deduplicated worlds
+            if let Err(e) = Self::write_worlds(&worlds) {
+                log::error!("Failed to persist deduplicated worlds.json: {}", e);
+            }
         }
 
         Ok((preferences, folders, worlds, cookies))
