@@ -289,7 +289,8 @@ export default function ListView() {
 
       // Only navigate to the new folder if not in Find page or if add-to-folder dialog is open
       if (currentFolder !== SpecialFolders.Find && !showFolderDialog) {
-        setShowCreateFolder(false), handleSelectFolder('folder', newName);
+        setShowCreateFolder(false);
+        handleSelectFolder('folder', newName);
       } else {
         setShowCreateFolder(false);
       }
@@ -1596,10 +1597,11 @@ export default function ListView() {
     try {
       const result = await commands.downloadFolder(UUID);
       if (result.status === 'ok') {
-        let folderName = result.data[0];
-        let hiddenWorlds = result.data[1];
+        const folderName = result.data[0];
+        const hiddenWorlds = result.data[1];
         await loadFolders();
-        setShowCreateFolder(false), handleSelectFolder('folder', folderName);
+        setShowCreateFolder(false);
+        handleSelectFolder('folder', folderName);
         if (hiddenWorlds.length > 0) {
           setShowImportedFolderContainsHidden(true);
           setContainedHiddenWorlds(hiddenWorlds);
