@@ -617,7 +617,17 @@ impl FolderManager {
             match existing_world {
                 Some(world) => {
                     log::info!("World already exists, updating world data: {}", world_id);
-                    world.api_data = new_world;
+                    // Only update if new_world has a more recent last_update
+                    if new_world.last_update > world.api_data.last_update {
+                        world.api_data = new_world;
+                    } else if new_world.last_update == world.api_data.last_update {
+                        // If updatedAt is equal, use the one with greater visits
+                        let existing_visits = world.api_data.visits.unwrap_or(0);
+                        let new_visits = new_world.visits.unwrap_or(0);
+                        if new_visits > existing_visits {
+                            world.api_data = new_world;
+                        }
+                    }
                     world.user_data.last_checked = chrono::Utc::now();
                 }
                 None => {
