@@ -9,6 +9,9 @@ inputs:
   args:
     required: false
     description: "Additional arguments to pass to Tauri"
+  HMAC_KEY:
+    required: true
+    description: "The HMAC key to use for signing folders for upload"
   GITHUB_TOKEN:
     required: true
     description: "The GitHub token to use for the release"
@@ -67,6 +70,7 @@ runs:
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.TAURI_PRIVATE_KEY_PASSWORD }}
         ENCRYPTION_KEY: ${{ inputs.ENCRYPTION_KEY }}
         ENCRYPTION_IV: ${{ inputs.ENCRYPTION_IV }}
+        HMAC_KEY: ${{ inputs.HMAC_KEY }}
       with:
         tagName: "vrc-world-manager-v__VERSION__"
         releaseName: "vrc-world-manager v__VERSION__"

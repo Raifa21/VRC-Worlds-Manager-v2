@@ -314,6 +314,7 @@ impl MigrationService {
                 new_folders.push(FolderModel {
                     folder_name: folder.name,
                     world_ids,
+                    share: None,
                 });
             }
         }

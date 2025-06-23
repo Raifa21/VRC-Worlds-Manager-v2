@@ -186,6 +186,61 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async shareFolder(folderName: string): Promise<Result<string, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('share_folder', { folderName }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async updateFolderShare(
+    folderName: string,
+  ): Promise<Result<string | null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('update_folder_share', { folderName }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  /**
+   * Downloads a shared folder and adds its worlds to the local database.
+   *
+   * This function attempts to download a folder using the provided `share_id`, creates the folder locally,
+   * adds the worlds from the shared folder to the local world list, and then adds all non-hidden worlds to the new folder.
+   * Worlds that are already hidden are not added to the folder and are returned for further handling.
+   *
+   * # Arguments
+   *
+   * * `share_id` - The identifier of the shared folder to download.
+   *
+   * # Returns
+   *
+   * `Ok((String, Vec<String>))`: A tuple containing the new folder name and a vector of world IDs that were hidden and not added to the folder.
+   *
+   * # Errors
+   * Returns an error string if any operation fails, such as downloading the folder, creating the folder, adding worlds, or retrieving hidden worlds.
+   */
+  async downloadFolder(
+    shareId: string,
+  ): Promise<Result<[string, WorldDisplayData[]], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('download_folder', { shareId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getTheme(): Promise<Result<string, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_theme') };

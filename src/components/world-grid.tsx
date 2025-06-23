@@ -371,19 +371,19 @@ export function WorldGrid({
                                 <div className="absolute top-2 left-2 z-1">
                                   {isSelected ? (
                                     <div
-                                      className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                      className="absolute -top-2 -left-2 z-10 w-10 h-10 flex items-center justify-center cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleSelect(world.worldId, e);
                                       }}
                                     >
                                       <Square className="w-5 h-5 z-10 text-primary" />
-                                      <div className="absolute inset-[8px] bg-background rounded" />
+                                      <div className="absolute inset-[12px] bg-background rounded" />
                                       <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
                                     </div>
                                   ) : (
                                     <div
-                                      className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                      className="absolute -top-2 -left-2 z-10 w-10 h-10 flex items-center justify-center cursor-pointer"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleSelect(world.worldId, e);
@@ -399,19 +399,19 @@ export function WorldGrid({
                                     <div className="absolute top-2 left-2 z-1">
                                       {isSelected ? (
                                         <div
-                                          className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                          className="absolute -top-2 -left-2 z-10 w-10 h-10 flex items-center justify-center cursor-pointer"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleSelect(world.worldId, e);
                                           }}
                                         >
                                           <Square className="w-5 h-5 z-10 text-primary" />
-                                          <div className="absolute inset-[8px] bg-background rounded" />
+                                          <div className="absolute inset-[12px] bg-background rounded" />
                                           <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
                                         </div>
                                       ) : (
                                         <div
-                                          className="absolute top-0 left-0 z-10 w-8 h-8 flex items-center justify-center cursor-pointer"
+                                          className="absolute -top-2 -left-2 z-10 w-10 h-10 flex items-center justify-center cursor-pointer"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleSelect(world.worldId, e);

@@ -80,6 +80,8 @@ pub enum EntityError {
     DuplicateWorld(String),
     /// Invalid operation
     InvalidOperation(String),
+    /// Invalid date format
+    InvalidTimestamp(String),
 }
 
 pub enum ServiceErrors {
@@ -160,6 +162,7 @@ impl fmt::Display for EntityError {
             EntityError::DuplicateFolder(name) => write!(f, "duplicate folder: {}", name),
             EntityError::DuplicateWorld(id) => write!(f, "duplicate world: {}", id),
             EntityError::InvalidOperation(msg) => write!(f, "invalid operation: {}", msg),
+            EntityError::InvalidTimestamp(ts) => write!(f, "invalid timestamp format: {}", ts),
         }
     }
 }

@@ -39,7 +39,26 @@ pub fn run() {
         )
         .expect("Failed to export typescript bindings");
 
-    tauri::Builder::default()
+    let mut tauri_builder = tauri::Builder::default();
+
+    #[cfg(desktop)]
+    {
+        tauri_builder = tauri_builder.plugin(tauri_plugin_single_instance::init(|_app, argv, _cwd| {
+            println!("a new app instance was opened with {argv:?} and the deep link event was already triggered");
+            // when defining deep link schemes at runtime, you must also check `argv` here
+        }));
+        tauri_builder =
+            tauri_builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+                let _ = app
+                    .get_webview_window("main")
+                    .expect("no main window")
+                    .set_focus();
+            }));
+    }
+
+    tauri_builder = tauri_builder.plugin(tauri_plugin_deep_link::init());
+
+    tauri_builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
