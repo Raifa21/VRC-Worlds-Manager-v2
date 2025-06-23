@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLocalization } from '@/hooks/use-localization';
-import { Label } from '@radix-ui/react-context-menu';
+import { Label } from './ui/label';
 
 interface CreateFolderDialogProps {
   open: boolean;
