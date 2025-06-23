@@ -414,6 +414,9 @@
   "share-folder:success-message": "Share the UUID with others to allow them to access it. Changes you make to this folder will not affect the shared folder.",
   "share-folder:UUID": "Folder UUID: ",
   "share-folder:copy-button": "Copy",
+  "share-folder:share-link": "Folder Preview Link: ",
+  "share-folder:share-options": "Share Options",
+  "share-folder:copy-link": "Copy Share Text",
   "share-folder:share-twitter": "Share on Twitter",
   "share-folder:twitter-text": "I just shared “{0}” with VRC Worlds Manager!\nView the worlds here 👇\n{1}\n\n#VRCWMWorldShare"
 }

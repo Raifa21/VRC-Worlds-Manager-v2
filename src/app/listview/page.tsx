@@ -1619,6 +1619,7 @@ export default function ListView() {
       }
       setContainedHiddenWorlds([]);
       setShowImportedFolderContainsHidden(false);
+      await refreshCurrentView();
       toast({
         title: t('listview-page:restored-hidden-worlds-title'),
         description: t(

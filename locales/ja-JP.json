@@ -414,6 +414,9 @@
   "share-folder:success-message": "UUIDを他のユーザーと共有すると、そのユーザーがこのフォルダにアクセスできます。あなたが行った変更は共有先のフォルダには影響しません。",
   "share-folder:UUID": "フォルダUUID: ",
   "share-folder:copy-button": "コピー",
+  "share-folder:share-link": "フォルダをプレビュー: ",
+  "share-folder:share-options": "共有オプション",
+  "share-folder:copy-link": "共有テキストをコピー",
   "share-folder:share-twitter": "Twitterで共有",
-  "share-folder:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールドはこちら👇\n{1}\n\n#VRCWMワールド共有"
+  "share-folder:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}\n\n#VRCWMワールド共有"
 }
