@@ -76,17 +76,19 @@ export function ShareFolderPopup({
             }
           } catch (e) {
             setErrorMessage('Failed to create share');
+          } finally {
+            setShareLoading(false);
           }
-          setShareLoading(false);
         } else {
           error(`getWorlds error: ${result.error}`);
           setErrorMessage(t('share-folder:error-message', result.error));
         }
       } catch (e) {
         error(`Failed to fetch folder info: ${e}`);
-        setErrorMessage('Failed to fetch folder info');
+        setErrorMessage(t('share-folder:error-message', e));
+      } finally {
+        setInfoLoading(false);
       }
-      setInfoLoading(false);
     };
 
     fetchFolderInfo();
