@@ -47,37 +47,52 @@ export function ShareFolderPopup({
       setShareId(null);
       setErrorMessage(null);
       setShareLoading(false);
+      setInfoLoading(false); // Add this
       return;
     }
 
-    // 1) Fetch folder info
+    // 1) Fetch folder info FIRST
     setErrorMessage(null);
     setFolderInfo(null);
     setInfoLoading(true);
-    const fetchFolderInfo = async () => {
-      const result = await commands.getWorlds(folderName);
-      if (result.status === 'ok') {
-        setFolderInfo(result.data.length);
-      } else {
-        setErrorMessage(t('share-folder:error-message', result.error));
-      }
-      setInfoLoading(false);
-    };
-    fetchFolderInfo();
 
-    // 2) Fetch or create share ID immediately on open
-    setShareLoading(true);
-    commands
-      .updateFolderShare(folderName)
-      .then((res) => {
-        if (res.status === 'ok') {
-          setShareId(res.data);
+    const fetchFolderInfo = async () => {
+      info(`Fetching folder info for: ${folderName}`);
+      try {
+        const result = await commands.getWorlds(folderName);
+        info(`getWorlds result: ${JSON.stringify(result)}`);
+
+        if (result.status === 'ok') {
+          setFolderInfo(result.data.length);
+
+          // 2) ONLY THEN fetch/create share ID
+          setShareLoading(true);
+          try {
+            const shareRes = await commands.updateFolderShare(folderName);
+            if (shareRes.status === 'ok') {
+              setShareId(shareRes.data);
+            } else {
+              setErrorMessage(t('share-folder:error-message', shareRes.error));
+            }
+          } catch (e) {
+            setErrorMessage('Failed to create share');
+          } finally {
+            setShareLoading(false);
+          }
         } else {
-          setErrorMessage(t('share-folder:error-message', res.error));
+          error(`getWorlds error: ${result.error}`);
+          setErrorMessage(t('share-folder:error-message', result.error));
         }
-      })
-      .finally(() => setShareLoading(false));
-  }, [open, folderName, t]);
+      } catch (e) {
+        error(`Failed to fetch folder info: ${e}`);
+        setErrorMessage(t('share-folder:error-message', e));
+      } finally {
+        setInfoLoading(false);
+      }
+    };
+
+    fetchFolderInfo();
+  }, [open, folderName]);
 
   const handleShare = async () => {
     setErrorMessage(null);
