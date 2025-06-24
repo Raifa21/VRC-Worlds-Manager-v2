@@ -39,10 +39,12 @@ struct SigningPayload<'a> {
     worlds: &'a [WorldApiData],
 }
 
+const HMAC_KEY: Option<&str> = option_env!("HMAC_KEY");
+
 /// Compute a hex‐encoded HMAC SHA-256
 fn compute_hmac(data: &str) -> Result<String, String> {
-    let key =
-        env::var("HMAC_KEY").map_err(|_| "HMAC_KEY environment variable not set".to_string())?;
+    let key = HMAC_KEY
+        .ok_or_else(|| "HMAC_KEY environment variable not set at compile time".to_string())?;
 
     let mut mac = Hmac::<Sha256>::new_from_slice(key.as_bytes())
         .map_err(|e| format!("Failed to create HMAC: {}", e))?;
