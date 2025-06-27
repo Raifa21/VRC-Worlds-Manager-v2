@@ -119,12 +119,39 @@ export function ShareFolderPopup({
     }
   };
 
+  const shareLink = shareId
+    ? `https://vrcwm.raifaworks.com/folder/${shareId}`
+    : '';
+
+  const shareText = shareId
+    ? t('share-folder:share-text', folderName, shareLink)
+    : '';
+
+  const tweetText = shareId
+    ? t('share-folder:twitter-text', folderName, shareLink)
+    : '';
+
+  const tweetIntentUrl = shareId
+    ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`
+    : '';
+
   // Handler to copy the share link to clipboard
   const handleCopyLink = async () => {
     if (shareLink) {
       try {
         await navigator.clipboard.writeText(shareLink);
         info('Copied share link to clipboard');
+      } catch (e) {
+        error(`Clipboard copy failed: ${e}`);
+      }
+    }
+  };
+
+  const handleCopyText = async () => {
+    if (shareText) {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        info('Copied share text to clipboard');
       } catch (e) {
         error(`Clipboard copy failed: ${e}`);
       }
@@ -143,22 +170,6 @@ export function ShareFolderPopup({
     }
   };
 
-  const shareLink = shareId
-    ? `https://vrcwm.raifaworks.com/folder/${shareId}`
-    : '';
-
-  const shareText = shareId
-    ? t('share-folder:share-text', folderName, shareLink)
-    : '';
-
-  const tweetText = shareId
-    ? t('share-folder:twitter-text', folderName, shareLink)
-    : '';
-
-  const tweetIntentUrl = shareId
-    ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`
-    : '';
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -172,7 +183,15 @@ export function ShareFolderPopup({
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              {/* Folder Info */}
+              {/* Error Message - Show whenever there's an error */}
+              {errorMessage && (
+                <div className="flex items-start bg-destructive/10 text-destructive rounded p-3">
+                  <AlertTriangle className="h-5 w-5 mr-2 mt-0.5" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Loading Info */}
               {infoLoading && (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -180,13 +199,15 @@ export function ShareFolderPopup({
                 </div>
               )}
 
-              {errorMessage && !folderInfo && (
-                <div className="flex items-start bg-destructive/10 text-destructive rounded p-3">
-                  <AlertTriangle className="h-5 w-5 mr-2 mt-0.5" />
-                  <span>{errorMessage}</span>
+              {/* Share Loading */}
+              {shareLoading && (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>{t('share-folder:sharing')}</span>
                 </div>
               )}
 
+              {/* Folder Info - Only show if no error and folder info exists */}
               {folderInfo && (
                 <div className="flex flex-col gap-2 bg-muted rounded p-3">
                   <div className="flex flex-row items-center gap-2">
@@ -279,7 +300,7 @@ export function ShareFolderPopup({
                   <Button
                     variant="outline"
                     className="flex-1 gap-2"
-                    onClick={handleCopyLink}
+                    onClick={handleCopyText}
                   >
                     <Copy className="h-4 w-4" />
                     {t('share-folder:copy-link')}

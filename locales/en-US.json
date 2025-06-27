@@ -418,5 +418,6 @@
   "share-folder:share-options": "Share Options",
   "share-folder:copy-link": "Copy Share Text",
   "share-folder:share-twitter": "Share on Twitter",
-  "share-folder:twitter-text": "I just shared “{0}” with VRC Worlds Manager!\nView the worlds here 👇\n{1}\n\n#VRCWMWorldShare"
+  "share-folder:twitter-text": "I just shared “{0}” with VRC Worlds Manager!\nView the worlds here 👇\n{1}\n\n#VRCWMWorldShare",
+  "share-folder:share-text": "I just shared “{0}” with VRC Worlds Manager!\nView the worlds here 👇\n{1}"
 }

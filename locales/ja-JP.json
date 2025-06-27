@@ -418,5 +418,6 @@
   "share-folder:share-options": "共有オプション",
   "share-folder:copy-link": "共有テキストをコピー",
   "share-folder:share-twitter": "Twitterで共有",
-  "share-folder:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}\n\n#VRCWMワールド共有"
+  "share-folder:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}\n\n#VRCWMワールド共有",
+  "share-folder:share-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}"
 }
