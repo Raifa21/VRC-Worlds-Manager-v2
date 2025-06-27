@@ -419,5 +419,9 @@
   "share-folder:copy-link": "Copy Share Text",
   "share-folder:share-twitter": "Share on Twitter",
   "share-folder:twitter-text": "I just shared “{0}” with VRC Worlds Manager!\nView the worlds here 👇\n{1}\n\n#VRCWMWorldShare",
-  "share-folder:share-text": "I just shared “{0}” with VRC Worlds Manager!\nView the worlds here 👇\n{1}"
+  "share-folder:share-text": "I just shared “{0}” with VRC Worlds Manager!\nView the worlds here 👇\n{1}",
+
+  "delete-folder:title": "Delete Folder",
+  "delete-folder:description": "Are you sure you want to delete \"{0}\"? This will remove the folder but not delete the worlds inside."
+
 }
