@@ -6,7 +6,7 @@ use directories::BaseDirs;
 use log::debug;
 use serde_json;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Service for reading and writing files to disk
 pub struct FileService;
@@ -343,6 +343,24 @@ impl FileService {
         fs::write(worlds_path, "[]").map_err(|_| FileError::FileWriteError)?;
 
         Ok(())
+    }
+
+    /// Opens the specified directory in the file explorer
+    ///
+    /// # Arguments
+    /// * `path` - The path to the directory to open
+    ///
+    /// # Returns
+    /// Ok(()) if the directory was opened successfully
+    ///
+    /// # Errors
+    /// Returns a FileError if the directory could not be opened
+    pub fn open_file<P: AsRef<Path>>(path: P) -> Result<(), String> {
+        let path = path.as_ref();
+        if !path.exists() {
+            return Err(format!("Path does not exist: {}", path.display()));
+        }
+        opener::open(path).map_err(|e| format!("Failed to open path: {}", e))
     }
 }
 
