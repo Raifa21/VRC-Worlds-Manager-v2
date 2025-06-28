@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useLocalization } from '@/hooks/use-localization';
 
 interface DeleteFolderDialogProps {
   folderName: string | null;
@@ -20,25 +21,25 @@ export function DeleteFolderDialog({
   onOpenChange,
   onConfirm,
 }: DeleteFolderDialogProps) {
+  const { t } = useLocalization();
   return (
     <AlertDialog open={!!folderName} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Folder</AlertDialogTitle>
+          <AlertDialogTitle>{t('delete-folder:title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{folderName}"? This will remove the
-            folder but not delete the worlds inside.
+            {folderName && t('delete-folder:description', folderName)}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('general:cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => folderName && onConfirm(folderName)}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            Delete
+            {t('general:delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
