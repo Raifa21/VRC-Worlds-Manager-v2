@@ -78,6 +78,8 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            app.manage(app.handle().clone());
+
             let handle = app.handle().clone();
             let logs_dir = handle.path().app_log_dir().unwrap();
             logging::purge_outdated_logs(&logs_dir).expect("Failed to purge outdated logs");

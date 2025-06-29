@@ -359,8 +359,13 @@ export function SettingsPage({
 
   const handleOpenLogs = async () => {
     try {
-      await commands.openLogsDirectory();
-      info('Opened logs directory');
+      const result = await commands.openLogsDirectory();
+
+      if (result.status === 'ok') {
+        info('Opened logs directory');
+      } else {
+        error(`Failed to open logs directory: ${result.error}`);
+      }
     } catch (e) {
       error(`Failed to open logs directory: ${e}`);
       toast({
