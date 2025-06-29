@@ -6,7 +6,7 @@ use services::ApiService;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use state::InitCell;
 use std::sync::RwLock;
-use tauri::{AppHandle, Manager};
+use tauri::Manager;
 use tauri_plugin_updater::UpdaterExt;
 
 use crate::services::memo_manager::MemoManager;
