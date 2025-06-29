@@ -99,7 +99,7 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 update(handle).await.unwrap();
             });
-            if let Err(e) = initialize_app(app.handle()) {
+            if let Err(e) = initialize_app() {
                 log::error!("Failed to initialize app: {}", e);
             }
             Ok(())
@@ -137,7 +137,7 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     Ok(())
 }
 
-fn initialize_app(app: &AppHandle) -> Result<(), String> {
+fn initialize_app() -> Result<(), String> {
     match services::initialize_service::initialize_app() {
         Ok((preferences, folders, worlds, cookies, init_state)) => {
             let memo_path = BaseDirs::new()
