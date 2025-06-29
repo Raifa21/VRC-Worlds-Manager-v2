@@ -1,6 +1,6 @@
 {
   "general:loading": "Loading...",
-  "general:worlds-data": "Worlds Data",  
+  "general:worlds-data": "Worlds Data",
   "general:folders-data": "Folders Data",
   "general:migrating": "Migrating...",
   "general:compact": "Compact",
@@ -39,10 +39,11 @@
   "general:date-added": "Date Added",
   "general:delete": "Delete",
   "general:clear-all": "Clear All",
+  "general:memo": "Notes",
+  "general:save": "Save",
 
   "error-page:title": "Error Loading Application",
   "error-page:retry": "Retry",
-  
 
   "login-page:title": "Login to VRChat",
   "login-page:username-placeholder": "Email / Username",
@@ -257,10 +258,10 @@
   "settings-page:delete-all-data": "Delete Data",
   "settings-page:section-others": "Others",
   "settings-page:logout-title": "Logout from VRChat",
-  "settings-page:logout-description" : "Logout from your VRChat account",
-  "settings-page:logout" : "Logout",
-  "settings-page:update-channel-title" : "Update Channel",
-  "settings-page:update-channel-description" : "Select the update channel for VRC Worlds Manager",
+  "settings-page:logout-description": "Logout from your VRChat account",
+  "settings-page:logout": "Logout",
+  "settings-page:update-channel-title": "Update Channel",
+  "settings-page:update-channel-description": "Select the update channel for VRC Worlds Manager",
   "settings-page:update-channel-stable": "Stable",
   "settings-page:update-channel-prerelease": "Pre-Release",
   "settings-page:error-load-preferences": "Failed to load preferences",
@@ -401,7 +402,7 @@
   "imported-folder:restore": "Restore selected worlds",
   "imported-folder:do-not-restore": "Do not restore",
 
-  "share-folder:error-message": "Failed to share folder: {0}", 
+  "share-folder:error-message": "Failed to share folder: {0}",
   "share-folder:title": "Share Folder",
   "share-folder:description": "Share this folder with other users. Any user with the folder UUID can access it.",
   "share-folder:loading-info": "Loading folder information...",
@@ -423,5 +424,4 @@
 
   "delete-folder:title": "Delete Folder",
   "delete-folder:description": "Are you sure you want to delete \"{0}\"? This will remove the folder but not delete the worlds inside."
-
 }
