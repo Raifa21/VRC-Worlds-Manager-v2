@@ -355,7 +355,7 @@ impl FileService {
     ///
     /// # Errors
     /// Returns a FileError if the directory could not be opened
-    pub fn open_file<P: AsRef<Path>>(path: P) -> Result<(), String> {
+    pub fn open_path<P: AsRef<Path>>(path: P) -> Result<(), String> {
         let path = path.as_ref();
         if !path.exists() {
             return Err(format!("Path does not exist: {}", path.display()));
