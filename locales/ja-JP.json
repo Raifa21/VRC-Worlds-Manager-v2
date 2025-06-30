@@ -248,6 +248,7 @@
   "settings-page:open-folder": "フォルダを開く",
   "settings-page:logs-title": "ログフォルダ",
   "settings-page:logs-description": "デバッグ用にアプリケーションのログフォルダを開きます",
+  "settings-page:error-open-logs": "ログフォルダの展開に失敗しました",
   "settings-page:backup-title": "バックアップ",
   "settings-page:backup-description": "ワールドとフォルダのデータをバックアップします",
   "settings-page:create-backup": "バックアップを作成",

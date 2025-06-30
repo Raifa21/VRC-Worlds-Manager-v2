@@ -248,6 +248,7 @@
   "settings-page:open-folder": "Open Folder",
   "settings-page:logs-title": "Logs Folder",
   "settings-page:logs-description": "Open folder with application logs for debugging",
+  "settings-page:error-open-logs": "Failed to open logs folder",
   "settings-page:backup-title": "Backup",
   "settings-page:backup-description": "Backup your worlds and folders data",
   "settings-page:create-backup": "Create Backup",
