@@ -360,6 +360,9 @@ impl FileService {
         if !path.exists() {
             return Err(format!("Path does not exist: {}", path.display()));
         }
+        if !path.is_dir() {
+            return Err(format!("Path is not a directory: {}", path.display()));
+        }
         opener::open(path).map_err(|e| format!("Failed to open path: {}", e))
     }
 }
