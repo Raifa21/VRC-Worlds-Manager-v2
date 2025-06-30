@@ -2,6 +2,7 @@ pub mod api_commands;
 pub mod data;
 pub mod folder_commands;
 pub mod open_folder_commands;
+pub mod memo_commands;
 pub mod patreons;
 pub mod preferences_commands;
 
@@ -62,5 +63,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         data::write_data_commands::restore_from_backup,
         data::write_data_commands::migrate_old_data,
         data::write_data_commands::delete_data,
+        memo_commands::get_memo,
+        memo_commands::set_memo_and_save,
     ])
 }

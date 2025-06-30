@@ -4,6 +4,7 @@ pub mod encryption_service;
 pub mod file_service;
 pub mod folder_manager;
 pub mod initialize_service;
+pub mod memo_manager;
 pub mod share_service;
 
 pub use api_service::ApiService;

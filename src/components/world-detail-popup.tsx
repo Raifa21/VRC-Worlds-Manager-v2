@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { info, error } from '@tauri-apps/plugin-log';
 import Image from 'next/image';
 import {
@@ -6,14 +6,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ExternalLink } from 'lucide-react';
+import { AlertCircle, ExternalLink, Pencil } from 'lucide-react';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
@@ -34,7 +33,9 @@ import { Platform } from '@/types/worlds';
 import { GroupInstanceType, InstanceType } from '@/types/instances';
 import { InstanceRegion } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Textarea } from './ui/textarea';
+import MemoRenderer from './memo-renderer';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -126,6 +127,9 @@ export function WorldDetailPopup({
   const [instanceCreationType, setInstanceCreationType] = useState<
     'normal' | 'group'
   >('normal');
+  const [memo, setMemo] = useState<string | null>(null);
+  const [isEditingMemo, setIsEditingMemo] = useState<boolean>(false);
+  const [memoInput, setMemoInput] = useState<string>('');
 
   const [isWorldNotPublic, setIsWorldNotPublic] = useState<boolean>(false);
   const [cachedWorldData, setCachedWorldData] =
@@ -183,10 +187,21 @@ export function WorldDetailPopup({
       }
     };
 
+    const fetchMemo = async () => {
+      const result = await commands.getMemo(worldId);
+
+      if (result.status === 'ok') {
+        setMemo(result.data);
+        setMemoInput(result.data);
+      } else {
+        console.error(result.error);
+      }
+    };
+
     fetchWorldDetails();
+    fetchMemo();
   }, [open, worldId]);
 
-  // Add this useEffect near your other useEffects
   useEffect(() => {
     const loadRegionPreference = async () => {
       try {
@@ -228,6 +243,21 @@ export function WorldDetailPopup({
       setErrorState(`Failed to create instance: ${e}`);
     }
   };
+  
+  const handleSaveMemo = useCallback(async () => {
+    if (memoInput === memo) {
+      setIsEditingMemo(false);
+      return;
+    }
+
+    const result = await commands.setMemoAndSave(worldId, memoInput);
+    if (result.status === 'ok') {
+      setMemo(memoInput);
+      setIsEditingMemo(false);
+    } else {
+      console.error(result.error);
+    }
+  }, [worldId, memoInput]);
 
   const handleGroupInstanceClick = async () => {
     try {
@@ -722,6 +752,53 @@ export function WorldDetailPopup({
                         </div>
                       </div>
                     </div>
+                  </div>
+                  <Separator className="my-2" />
+                  <div>
+                    <div className="text-sm font-semibold mb-2 flex flex-row items-center gap-2">
+                      {t('general:memo')}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="p-0 size-8 [&_svg]:size-4"
+                        onClick={() => setIsEditingMemo(true)}
+                      >
+                        <Pencil />
+                      </Button>
+                    </div>
+                    {!isEditingMemo && (
+                      <div className="pr-4">
+                        <MemoRenderer value={memo ?? ''} />
+                      </div>
+                    )}
+                    {isEditingMemo && (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={memoInput}
+                          onChange={(e) => setMemoInput(e.target.value)}
+                          className="h-64"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="secondary"
+                            className="w-full"
+                            onClick={() => {
+                              setIsEditingMemo(false);
+                              setMemoInput(memo ?? '');
+                            }}
+                          >
+                            {t('general:cancel')}
+                          </Button>
+                          <Button
+                            variant="default"
+                            className="w-full"
+                            onClick={handleSaveMemo}
+                          >
+                            {t('general:save')}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
