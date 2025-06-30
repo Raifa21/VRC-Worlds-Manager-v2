@@ -10,8 +10,6 @@ export type InstanceType =
   | 'invite+'
   | 'invite';
 
-export type Region = 'USW' | 'USE' | 'EU' | 'JP';
-
 export interface WorldDetails {
   worldId: string;
   name: string;

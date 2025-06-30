@@ -2,6 +2,8 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use reqwest::cookie::Jar;
 use serde::{Deserialize, Serialize};
 
+use crate::api::instance::InstanceRegion;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldApiData {
     #[serde(rename = "imageUrl")]
@@ -233,6 +235,13 @@ pub struct PreferenceModel {
     pub language: String,
     #[serde(rename = "cardSize")]
     pub card_size: CardSize,
+    #[serde(default = "default_region")] // Add this - provides default for missing field
+    pub region: InstanceRegion,
+}
+
+// Add this function to provide the default JP region
+fn default_region() -> InstanceRegion {
+    InstanceRegion::JP
 }
 
 impl PreferenceModel {
@@ -242,6 +251,7 @@ impl PreferenceModel {
             theme: "light".to_string(),
             language: "en".to_string(),
             card_size: CardSize::Normal,
+            region: InstanceRegion::JP,
         }
     }
 }

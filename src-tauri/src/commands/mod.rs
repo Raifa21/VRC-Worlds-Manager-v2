@@ -31,6 +31,8 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         preferences_commands::get_theme,
         preferences_commands::get_language,
         preferences_commands::get_card_size,
+        preferences_commands::get_region,
+        preferences_commands::set_region,
         api_commands::try_login,
         api_commands::login_with_credentials,
         api_commands::login_with_2fa,

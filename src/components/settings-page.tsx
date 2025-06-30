@@ -529,27 +529,6 @@ export function SettingsPage({
           <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
             <div className="flex flex-col space-y-1.5">
               <Label className="text-base font-medium">
-                {t('settings-page:logs-title')}
-              </Label>
-              <div className="text-sm text-muted-foreground">
-                {t('settings-page:logs-description')}
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              onClick={handleOpenLogs}
-              className="gap-2"
-            >
-              <FolderOpen className="h-4 w-4" />
-              <span className="text-sm">
-                {t('settings-page:open-logs-button')}
-              </span>
-            </Button>
-          </Card>
-
-          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
-            <div className="flex flex-col space-y-1.5">
-              <Label className="text-base font-medium">
                 {t('settings-page:backup-title')}
               </Label>
               <div className="text-sm text-muted-foreground">
@@ -633,6 +612,25 @@ export function SettingsPage({
             <Button variant="outline" onClick={handleLogout} className="gap-2">
               <LogOut className="h-4 w-4" />
               <span className="text-sm">{t('settings-page:logout')}</span>
+            </Button>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:logs-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:logs-description')}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleOpenLogs}
+              className="gap-2"
+            >
+              <FolderOpen className="h-4 w-4" />
+              <span className="text-sm">{t('settings-page:open-folder')}</span>
             </Button>
           </Card>
 

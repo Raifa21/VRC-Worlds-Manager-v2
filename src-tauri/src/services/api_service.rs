@@ -485,12 +485,12 @@ impl ApiService {
             instance_type_str,
             region_str
         );
-        // Convert region string to InstanceRegion enum
+        // region_str is already in the correct format ("us", "use", "eu", "jp"), just map directly
         let region = match region_str.as_str() {
-            "USW" => instance::InstanceRegion::UsWest,
-            "USE" => instance::InstanceRegion::UsEast,
-            "EU" => instance::InstanceRegion::EU,
-            "JP" => instance::InstanceRegion::JP,
+            "us" => instance::InstanceRegion::UsWest,
+            "use" => instance::InstanceRegion::UsEast,
+            "eu" => instance::InstanceRegion::EU,
+            "jp" => instance::InstanceRegion::JP,
             _ => return Err("Invalid region".to_string()),
         };
         // Create instance type based on string and user_id
@@ -601,10 +601,10 @@ impl ApiService {
         );
         // Convert region string to InstanceRegion enum
         let region = match region_str.as_str() {
-            "USW" => instance::InstanceRegion::UsWest,
-            "USE" => instance::InstanceRegion::UsEast,
-            "EU" => instance::InstanceRegion::EU,
-            "JP" => instance::InstanceRegion::JP,
+            "us" => instance::InstanceRegion::UsWest,
+            "use" => instance::InstanceRegion::UsEast,
+            "eu" => instance::InstanceRegion::EU,
+            "jp" => instance::InstanceRegion::JP,
             _ => return Err("Invalid region".to_string()),
         };
 
