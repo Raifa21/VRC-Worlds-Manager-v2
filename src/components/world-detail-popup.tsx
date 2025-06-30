@@ -30,7 +30,8 @@ import { WorldCardPreview } from './world-card';
 import { CardSize } from '@/types/preferences';
 import { GroupInstanceCreator } from './group-instance-creator';
 import { Platform } from '@/types/worlds';
-import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
+import { GroupInstanceType, InstanceType } from '@/types/instances';
+import { InstanceRegion } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Textarea } from './ui/textarea';
@@ -43,11 +44,11 @@ export interface WorldDetailDialogProps {
   onCreateInstance: (
     worldId: string,
     instanceType: Exclude<InstanceType, 'group'>,
-    region: Region,
+    region: InstanceRegion,
   ) => void;
   onCreateGroupInstance: (
     worldId: string,
-    region: Region,
+    region: InstanceRegion,
     groupId: string,
     instanceType: GroupInstanceType,
     queueEnabled: boolean,
@@ -71,6 +72,31 @@ interface GroupInstance {
   isLoading: boolean;
 }
 
+// Add this function at the top of your file or in a separate utils file
+const mapRegion = {
+  // UI to backend mapping
+  toBackend: (uiRegion: string): InstanceRegion => {
+    const mapping: Record<string, InstanceRegion> = {
+      USW: 'us' as InstanceRegion,
+      USE: 'use' as InstanceRegion,
+      EU: 'eu' as InstanceRegion,
+      JP: 'jp' as InstanceRegion,
+    };
+    return mapping[uiRegion] || ('jp' as InstanceRegion);
+  },
+
+  // Backend to UI mapping
+  toUI: (backendRegion: InstanceRegion): string => {
+    const mapping: Record<InstanceRegion, string> = {
+      us: 'USW',
+      use: 'USE',
+      eu: 'EU',
+      jp: 'JP',
+    };
+    return mapping[backendRegion] || 'JP';
+  },
+};
+
 export function WorldDetailPopup({
   open,
   onOpenChange,
@@ -90,13 +116,13 @@ export function WorldDetailPopup({
   const [errorState, setErrorState] = useState<string | null>(null);
   const [selectedInstanceType, setSelectedInstanceType] =
     useState<InstanceType>('public');
-  const [selectedRegion, setSelectedRegion] = useState<Region>('JP');
+  const [selectedRegion, setSelectedRegion] = useState<InstanceRegion>('jp');
   const [groupInstanceState, setGroupInstanceState] = useState<GroupInstance>({
     groups: [],
     selectedGroupId: null,
     permission: null,
     roles: [],
-    isLoading: true, // Add this
+    isLoading: true,
   });
   const [instanceCreationType, setInstanceCreationType] = useState<
     'normal' | 'group'
@@ -176,6 +202,48 @@ export function WorldDetailPopup({
     fetchMemo();
   }, [open, worldId]);
 
+  useEffect(() => {
+    const loadRegionPreference = async () => {
+      try {
+        const regionResult = await commands.getRegion();
+        if (regionResult.status === 'ok') {
+          setSelectedRegion(regionResult.data);
+          info(`Loaded region preference: ${regionResult.data}`);
+        }
+      } catch (e) {
+        error(`Failed to load region preference: ${e}`);
+        // Fall back to JP if we can't load the preference
+        setSelectedRegion('jp' as InstanceRegion);
+      }
+    };
+
+    loadRegionPreference();
+  }, []); // Empty dependency array means this runs once on mount
+
+  const setRegionPreference = async (region: InstanceRegion) => {
+    try {
+      await commands.setRegion(region);
+      info(`Region preference set to ${region}`);
+    } catch (e) {
+      error(`Failed to set region preference: ${e}`);
+    }
+  };
+
+  const handleInstanceClick = () => {
+    try {
+      setInstanceCreationType('normal');
+      onCreateInstance(
+        worldId,
+        selectedInstanceType as Exclude<InstanceType, 'group'>,
+        selectedRegion,
+      );
+      setRegionPreference(selectedRegion);
+    } catch (e) {
+      error(`Failed to create instance: ${e}`);
+      setErrorState(`Failed to create instance: ${e}`);
+    }
+  };
+  
   const handleSaveMemo = useCallback(async () => {
     if (memoInput === memo) {
       setIsEditingMemo(false);
@@ -196,11 +264,11 @@ export function WorldDetailPopup({
       setInstanceCreationType('group');
       setGroupInstanceState((prev) => ({
         ...prev,
-        groups: [], // Clear groups
+        groups: [],
         selectedGroupId: null,
         permission: null,
         roles: [],
-        isLoading: true, // Add isLoading to GroupInstance interface
+        isLoading: true,
       }));
       const groups = await onGetGroups();
       info(`Loaded ${groups.length} groups`);
@@ -209,6 +277,7 @@ export function WorldDetailPopup({
         groups,
         isLoading: false,
       }));
+      setRegionPreference(selectedRegion);
     } catch (e) {
       error(`Failed to load groups: ${e}`);
       setGroupInstanceState((prev) => ({
@@ -232,7 +301,7 @@ export function WorldDetailPopup({
   const handleCreateGroupInstance = (
     groupId: string,
     instanceType: GroupInstanceType,
-    region: Region,
+    region: InstanceRegion,
     queueEnabled: boolean,
     selectedRoles?: string[],
   ) => {
@@ -552,9 +621,10 @@ export function WorldDetailPopup({
                           </Label>
                           <ToggleGroup
                             type="single"
-                            value={selectedRegion}
+                            value={mapRegion.toUI(selectedRegion)}
                             onValueChange={(value) => {
-                              if (value) setSelectedRegion(value as Region);
+                              if (value)
+                                setSelectedRegion(mapRegion.toBackend(value));
                             }}
                             className="flex gap-2"
                           >
@@ -578,14 +648,7 @@ export function WorldDetailPopup({
                               if (selectedInstanceType === 'group') {
                                 handleGroupInstanceClick();
                               } else {
-                                onCreateInstance(
-                                  worldId,
-                                  selectedInstanceType as Exclude<
-                                    InstanceType,
-                                    'group'
-                                  >,
-                                  selectedRegion,
-                                );
+                                handleInstanceClick();
                               }
                             }}
                           >

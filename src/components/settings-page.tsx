@@ -357,6 +357,25 @@ export function SettingsPage({
     }
   };
 
+  const handleOpenLogs = async () => {
+    try {
+      const result = await commands.openLogsDirectory();
+
+      if (result.status === 'ok') {
+        info('Opened logs directory');
+      } else {
+        error(`Failed to open logs directory: ${result.error}`);
+      }
+    } catch (e) {
+      error(`Failed to open logs directory: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-open-logs'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (!preferences) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -593,6 +612,25 @@ export function SettingsPage({
             <Button variant="outline" onClick={handleLogout} className="gap-2">
               <LogOut className="h-4 w-4" />
               <span className="text-sm">{t('settings-page:logout')}</span>
+            </Button>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:logs-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:logs-description')}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleOpenLogs}
+              className="gap-2"
+            >
+              <FolderOpen className="h-4 w-4" />
+              <span className="text-sm">{t('settings-page:open-folder')}</span>
             </Button>
           </Card>
 

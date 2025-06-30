@@ -39,7 +39,8 @@ import { WorldDetailPopup } from '@/components/world-detail-popup';
 import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
 import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
 import { AddWorldPopup } from '@/components/add-world-popup';
-import { GroupInstanceType, InstanceType, Region } from '@/types/instances';
+import { GroupInstanceType, InstanceType } from '@/types/instances';
+import { InstanceRegion } from '@/lib/bindings';
 import { toRomaji } from 'wanakana';
 import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
@@ -807,7 +808,7 @@ export default function ListView() {
   const createInstance = async (
     worldId: string,
     instanceType: Exclude<InstanceType, 'group'>,
-    region: Region,
+    region: InstanceRegion,
   ) => {
     try {
       const result = await commands.createWorldInstance(
@@ -843,7 +844,7 @@ export default function ListView() {
 
   const createGroupInstance = async (
     worldId: string,
-    region: Region,
+    region: InstanceRegion,
     id: string,
     instanceType: GroupInstanceType,
     queueEnabled: boolean,

@@ -265,6 +265,25 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getRegion(): Promise<Result<InstanceRegion, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_region') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setRegion(region: InstanceRegion): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_region', { region }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async tryLogin(): Promise<Result<null, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('try_login') };
@@ -436,6 +455,14 @@ export const commands = {
           queueEnabled,
         }),
       };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async openLogsDirectory(): Promise<Result<null, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('open_logs_directory') };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: 'error', error: e as any };
@@ -708,6 +735,7 @@ export type GroupRole = {
   permissions: GroupPermission[];
   isManagementRole: boolean;
 };
+export type InstanceRegion = 'us' | 'use' | 'eu' | 'jp';
 export type PatreonData = {
   platinumSupporter: string[];
   goldSupporter: string[];
