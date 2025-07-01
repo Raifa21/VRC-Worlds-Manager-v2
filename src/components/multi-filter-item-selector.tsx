@@ -120,18 +120,28 @@ export default function MultiFilterItemSelector({
     <Popover open={open} onOpenChange={setOpen}>
       <div className="relative">
         <div
-          className="flex items-center justify-between min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+          className={cn(
+            'flex items-center justify-between w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer',
+            selectedOptions.length <= 3 ? 'h-9' : 'min-h-9', // Fixed height for few items
+          )}
           onClick={() => setOpen(!open)}
         >
-          <div className="flex flex-wrap gap-1 flex-grow min-w-0 max-h-[5rem] overflow-auto">
+          <div
+            className={cn(
+              'flex flex-wrap gap-1 flex-grow min-w-0',
+              selectedOptions.length <= 3
+                ? 'py-1.5'
+                : 'py-1.5 max-h-[4.5rem] overflow-y-auto',
+            )}
+          >
             {selectedOptions.length > 0 ? (
               selectedOptions.map((option) => (
                 <Badge
                   key={option.value}
                   variant="secondary"
-                  className="flex items-center gap-1 text-xs pointer-events-auto overflow-hidden"
+                  className="flex items-center gap-1 bg-muted-foreground/30 hover:bg-muted-foreground/50 text-xs pointer-events-auto h-5"
                 >
-                  <span className="block max-w-[80px] truncate whitespace-nowrap flex-shrink">
+                  <span className="block max-w-[80px] truncate">
                     {option.label}
                   </span>
                   <X
@@ -177,7 +187,7 @@ export default function MultiFilterItemSelector({
       >
         <Command>
           <CommandInput
-            placeholder={`Search ${placeholder?.toLowerCase()}...`}
+            placeholder={`${placeholder}...`}
             value={inputValue}
             onValueChange={setInputValue}
             onKeyDown={(e) => {

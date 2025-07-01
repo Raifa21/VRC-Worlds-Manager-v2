@@ -20,8 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import SingleFilterItemSelector from './single-filter-item-selector';
 import { WorldGrid } from './world-grid';
+import MultiFilterItemSelector from './multi-filter-item-selector';
 
 interface FindPageProps {
   onWorldsChange: (worlds: WorldDisplayData[]) => void;
@@ -54,7 +54,10 @@ export function FindPage({
   const [searchResults, setSearchResults] = useState<WorldDisplayData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSort, setSelectedSort] = useState('popularity');
-  const [selectedTag, setSelectedTag] = useState('');
+  const [selectedTags, setselectedTags] = useState<string[]>([]);
+  const [selectedExcludedTags, setSelectedExcludedTags] = useState<string[]>(
+    [],
+  );
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -141,7 +144,8 @@ export function FindPage({
 
       const result = await commands.searchWorlds(
         selectedSort,
-        selectedTag,
+        selectedTags,
+        selectedExcludedTags,
         searchQuery,
         page,
       );
@@ -278,11 +282,12 @@ export function FindPage({
       {/* Search and filter controls */}
       {activeTab === 'search' && (
         <div className="sticky top-0 z-30 bg-background border-b">
-          <Card className=" mx-4 border-0">
+          <Card className=" mx-4 border-0 shadow-none">
             <CardContent className="pt-6 space-y-4">
+              {/* First row: Search input, Sort dropdown, and Search button */}
               <div className="flex gap-4 items-end">
                 {/* Search text input */}
-                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                <div className="flex flex-col gap-2 w-3/5">
                   <Label htmlFor="search-query">
                     {t('find-page:search-query')}
                   </Label>
@@ -295,7 +300,7 @@ export function FindPage({
                 </div>
 
                 {/* Sort options */}
-                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                <div className="flex flex-col gap-2 w-2/5">
                   <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
                   <Select value={selectedSort} onValueChange={setSelectedSort}>
                     <SelectTrigger id="sort">
@@ -328,40 +333,66 @@ export function FindPage({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
+              {/* Second row: Tag filters */}
+              <div className="flex gap-4 items-begin">
                 {/* Tag combobox */}
                 <div className="flex-1 min-w-0 flex flex-col gap-2">
                   <Label htmlFor="tag">{t('find-page:tag')}</Label>
-                  <SingleFilterItemSelector
+                  <MultiFilterItemSelector
                     placeholder={t('find-page:tag-placeholder')}
                     candidates={availableTags.map((tag) => ({
                       value: tag,
                       label: tag,
                     }))}
-                    value={selectedTag}
-                    onValueChange={setSelectedTag}
+                    values={selectedTags}
+                    onValuesChange={setselectedTags}
                     allowCustomValues={true}
+                    maxItems={5}
                   />
                 </div>
 
+                {/* Exclude Tag combobox */}
+                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                  <Label htmlFor="exclude-tag">
+                    {t('find-page:exclude-tag')}
+                  </Label>
+                  <MultiFilterItemSelector
+                    placeholder={t('find-page:exclude-tag-placeholder')}
+                    candidates={[...availableTags].reverse().map((tag) => ({
+                      value: tag,
+                      label: tag,
+                    }))}
+                    values={selectedExcludedTags}
+                    onValuesChange={setSelectedExcludedTags}
+                    allowCustomValues={true}
+                    maxItems={5}
+                  />
+                </div>
                 {/* Search button */}
-                <Button
-                  className="flex-shrink-0"
-                  onClick={() => handleSearch(false)}
-                  disabled={isSearching}
-                >
-                  {isSearching ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('find-page:searching')}
-                    </>
-                  ) : (
-                    <>
-                      <Search className="mr-2 h-4 w-4" />
-                      {t('find-page:search-button')}
-                    </>
-                  )}
-                </Button>
+                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                  <Label className="invisible">
+                    Invisible Label to align the button
+                  </Label>
+                  <Button
+                    className="flex-shrink-0"
+                    onClick={() => handleSearch(false)}
+                    disabled={isSearching}
+                  >
+                    {isSearching ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t('find-page:searching')}
+                      </>
+                    ) : (
+                      <>
+                        <Search className="mr-2 h-4 w-4" />
+                        {t('find-page:search-button')}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
