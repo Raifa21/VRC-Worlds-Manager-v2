@@ -227,6 +227,14 @@ pub enum CardSize {
     Original, // Just like the original VRC Worlds Manager
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+pub struct FilterItemSelectorStarred {
+    pub author: Vec<String>,
+    pub tag: Vec<String>,
+    pub exclude_tag: Vec<String>,
+    pub folder: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreferenceModel {
     #[serde(rename = "firstTime")]
@@ -235,8 +243,13 @@ pub struct PreferenceModel {
     pub language: String,
     #[serde(rename = "cardSize")]
     pub card_size: CardSize,
-    #[serde(default = "default_region")] // Add this - provides default for missing field
+    #[serde(default = "default_region")]
     pub region: InstanceRegion,
+    #[serde(
+        rename = "filterItemSelectorStarred",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub filter_item_selector_starred: Option<FilterItemSelectorStarred>,
 }
 
 // Add this function to provide the default JP region
@@ -252,6 +265,7 @@ impl PreferenceModel {
             language: "en".to_string(),
             card_size: CardSize::Normal,
             region: InstanceRegion::JP,
+            filter_item_selector_starred: None,
         }
     }
 }

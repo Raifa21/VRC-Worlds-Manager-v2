@@ -1,8 +1,8 @@
 pub mod api_commands;
 pub mod data;
 pub mod folder_commands;
-pub mod open_folder_commands;
 pub mod memo_commands;
+pub mod open_folder_commands;
 pub mod patreons;
 pub mod preferences_commands;
 
@@ -34,6 +34,8 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         preferences_commands::get_card_size,
         preferences_commands::get_region,
         preferences_commands::set_region,
+        preferences_commands::get_starred_filter_items,
+        preferences_commands::set_starred_filter_items,
         api_commands::try_login,
         api_commands::login_with_credentials,
         api_commands::login_with_2fa,
