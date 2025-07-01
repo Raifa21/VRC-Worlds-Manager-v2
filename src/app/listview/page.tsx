@@ -1186,7 +1186,7 @@ export default function ListView() {
             handleOpenWorldDetails(worldId);
           }}
           onShowFolderDialog={(worlds) => {
-            setSelectedWorldsForFolder(worlds);
+            setSelectedWorldsForFolder(worlds.reverse());
             setShowFolderDialog(true);
           }}
           onSelectedWorldsChange={(selectedWorlds) => {
