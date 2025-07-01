@@ -6,7 +6,7 @@
  * Further modifications by @raifa21
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronsUpDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,6 +51,8 @@ export default function MultiFilterItemSelector({
   const { t } = useLocalization();
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [isMultiRow, setIsMultiRow] = useState(false);
+  const badgesContainerRef = useRef<HTMLDivElement>(null);
 
   const formattedPlaceholder = placeholder;
 
@@ -116,22 +118,47 @@ export default function MultiFilterItemSelector({
       item.label.toLowerCase().includes(inputValue.toLowerCase()),
   );
 
+  // Check if the badges are taking up multiple rows
+  useEffect(() => {
+    const checkHeight = () => {
+      if (badgesContainerRef.current) {
+        const containerHeight = badgesContainerRef.current.offsetHeight;
+        // If the container is taller than a typical single row (~24px), it's multi-row
+        setIsMultiRow(containerHeight > 28);
+      }
+    };
+
+    // Check after rendering and after any window resize
+    checkHeight();
+    window.addEventListener('resize', checkHeight);
+    return () => window.removeEventListener('resize', checkHeight);
+  }, [selectedOptions]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <div className="relative">
         <div
-          className="flex items-center justify-between min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+          className={cn(
+            'flex items-center justify-between w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer',
+            isMultiRow ? 'min-h-9' : 'h-9', // Use measured height instead of count
+          )}
           onClick={() => setOpen(!open)}
         >
-          <div className="flex flex-wrap gap-1 flex-grow min-w-0 max-h-[5rem] overflow-auto">
+          <div
+            ref={badgesContainerRef}
+            className={cn(
+              'flex flex-wrap gap-1 flex-grow min-w-0',
+              isMultiRow ? 'py-1.5 max-h-[4.5rem] overflow-y-auto' : 'py-1.5',
+            )}
+          >
             {selectedOptions.length > 0 ? (
               selectedOptions.map((option) => (
                 <Badge
                   key={option.value}
                   variant="secondary"
-                  className="flex items-center gap-1 text-xs pointer-events-auto overflow-hidden"
+                  className="flex items-center gap-1 bg-muted-foreground/30 hover:bg-muted-foreground/50 text-xs pointer-events-auto h-5"
                 >
-                  <span className="block max-w-[80px] truncate whitespace-nowrap flex-shrink">
+                  <span className="block max-w-[80px] truncate">
                     {option.label}
                   </span>
                   <X
@@ -177,7 +204,7 @@ export default function MultiFilterItemSelector({
       >
         <Command>
           <CommandInput
-            placeholder={`Search ${placeholder?.toLowerCase()}...`}
+            placeholder={`${placeholder}...`}
             value={inputValue}
             onValueChange={setInputValue}
             onKeyDown={(e) => {

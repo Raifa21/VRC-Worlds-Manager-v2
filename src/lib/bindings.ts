@@ -379,14 +379,21 @@ export const commands = {
   },
   async searchWorlds(
     sort: string,
-    tag: string,
+    tags: string[],
+    excludeTags: string[],
     search: string,
     page: number,
   ): Promise<Result<WorldDisplayData[], string>> {
     try {
       return {
         status: 'ok',
-        data: await TAURI_INVOKE('search_worlds', { sort, tag, search, page }),
+        data: await TAURI_INVOKE('search_worlds', {
+          sort,
+          tags,
+          excludeTags,
+          search,
+          page,
+        }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
