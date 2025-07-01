@@ -336,6 +336,7 @@
   "find-page:no-matching-tags": "一致するタグが見つかりません",
   "find-page:exclude-tag": "タグを除外",
   "find-page:exclude-tag-placeholder": "除外するタグを検索",
+  "find-page:exclude-tag-tooltip": "このタグを持つワールドを検索結果から除外します",
   "find-page:searching": "検索中...",
   "find-page:search-button": "検索",
   "find-page:loading-more": "さらに読み込み中...",

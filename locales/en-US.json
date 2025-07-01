@@ -336,6 +336,7 @@
   "find-page:no-matching-tags": "No matching tags found",
   "find-page:exclude-tag": "Exclude Tag",
   "find-page:exclude-tag-placeholder": "Search tags to exclude",
+  "find-page:exclude-tag-tooltip": "Exclude worlds with this tag from search results",
   "find-page:searching": "Searching...",
   "find-page:search-button": "Search",
   "find-page:loading-more": "Loading more...",

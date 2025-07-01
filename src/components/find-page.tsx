@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCcw, Search } from 'lucide-react';
+import { CircleHelpIcon, Loader2, RefreshCcw, Search } from 'lucide-react';
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { CardSize } from '@/types/preferences';
 import { SpecialFolders } from '@/types/folders';
@@ -22,6 +22,12 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { WorldGrid } from './world-grid';
 import MultiFilterItemSelector from './multi-filter-item-selector';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
 
 interface FindPageProps {
   onWorldsChange: (worlds: WorldDisplayData[]) => void;
@@ -283,7 +289,7 @@ export function FindPage({
       {activeTab === 'search' && (
         <div className="sticky top-0 z-30 bg-background border-b">
           <Card className=" mx-4 border-0 shadow-none">
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="pt-4 space-y-4">
               {/* First row: Search input, Sort dropdown, and Search button */}
               <div className="flex gap-4 items-end">
                 {/* Search text input */}
@@ -355,9 +361,21 @@ export function FindPage({
 
                 {/* Exclude Tag combobox */}
                 <div className="flex-1 min-w-0 flex flex-col gap-2">
-                  <Label htmlFor="exclude-tag">
-                    {t('find-page:exclude-tag')}
-                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="exclude-tag">
+                      {t('find-page:exclude-tag')}
+                    </Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <CircleHelpIcon className="w-3 h-3 m-0" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t('find-page:exclude-tag-tooltip')}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <MultiFilterItemSelector
                     placeholder={t('find-page:exclude-tag-placeholder')}
                     candidates={[...availableTags].reverse().map((tag) => ({
@@ -373,7 +391,8 @@ export function FindPage({
                 {/* Search button */}
                 <div className="flex-1 min-w-0 flex flex-col gap-2">
                   <Label className="invisible">
-                    Invisible Label to align the button
+                    Invisible Label to align the button!
+                    {/* <3 ciel-chan */}
                   </Label>
                   <Button
                     className="flex-shrink-0"
