@@ -75,6 +75,9 @@ export function FindPage({
   // Add this state to track when to trigger select all
   const [triggerSelectAll, setTriggerSelectAll] = useState(false);
 
+  // Add this state variable to track if a search has been performed
+  const [hasSearched, setHasSearched] = useState(false);
+
   const fetchRecentlyVisitedWorlds = async () => {
     try {
       setIsLoading(true);
@@ -136,6 +139,11 @@ export function FindPage({
   }, [activeTab]);
 
   const handleSearch = async (loadMore = false) => {
+    if (!loadMore) {
+      // Only set this flag when performing a new search, not when loading more
+      setHasSearched(true);
+    }
+
     if (loadMore) {
       setIsLoadingMore(true);
     } else {
@@ -500,8 +508,8 @@ export function FindPage({
               </div>
             )}
 
-            {/* No results state */}
-            {!isSearching && searchResults.length === 0 && searchQuery && (
+            {/* No results state - only show when a search has been performed */}
+            {!isSearching && searchResults.length === 0 && hasSearched && (
               <div className="flex flex-col items-center justify-center h-64 text-center">
                 <Search className="h-12 w-12 text-muted-foreground mb-2" />
                 <p className="text-muted-foreground">
@@ -510,8 +518,8 @@ export function FindPage({
               </div>
             )}
 
-            {/* Initial state */}
-            {!isSearching && searchResults.length === 0 && !searchQuery && (
+            {/* Initial state - show either when no search has been performed or when search query is empty */}
+            {!isSearching && searchResults.length === 0 && !hasSearched && (
               <div className="flex flex-col items-center justify-center h-64 text-center">
                 <Search className="h-12 w-12 text-muted-foreground mb-2" />
                 <p className="text-muted-foreground">
