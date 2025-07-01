@@ -6,7 +6,7 @@
  * Further modifications by @raifa21
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronsUpDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,6 +51,8 @@ export default function MultiFilterItemSelector({
   const { t } = useLocalization();
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [isMultiRow, setIsMultiRow] = useState(false);
+  const badgesContainerRef = useRef<HTMLDivElement>(null);
 
   const formattedPlaceholder = placeholder;
 
@@ -116,22 +118,37 @@ export default function MultiFilterItemSelector({
       item.label.toLowerCase().includes(inputValue.toLowerCase()),
   );
 
+  // Check if the badges are taking up multiple rows
+  useEffect(() => {
+    const checkHeight = () => {
+      if (badgesContainerRef.current) {
+        const containerHeight = badgesContainerRef.current.offsetHeight;
+        // If the container is taller than a typical single row (~24px), it's multi-row
+        setIsMultiRow(containerHeight > 28);
+      }
+    };
+
+    // Check after rendering and after any window resize
+    checkHeight();
+    window.addEventListener('resize', checkHeight);
+    return () => window.removeEventListener('resize', checkHeight);
+  }, [selectedOptions]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <div className="relative">
         <div
           className={cn(
             'flex items-center justify-between w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer',
-            selectedOptions.length <= 3 ? 'h-9' : 'min-h-9', // Fixed height for few items
+            isMultiRow ? 'min-h-9' : 'h-9', // Use measured height instead of count
           )}
           onClick={() => setOpen(!open)}
         >
           <div
+            ref={badgesContainerRef}
             className={cn(
               'flex flex-wrap gap-1 flex-grow min-w-0',
-              selectedOptions.length <= 3
-                ? 'py-1.5'
-                : 'py-1.5 max-h-[4.5rem] overflow-y-auto',
+              isMultiRow ? 'py-1.5 max-h-[4.5rem] overflow-y-auto' : 'py-1.5',
             )}
           >
             {selectedOptions.length > 0 ? (
