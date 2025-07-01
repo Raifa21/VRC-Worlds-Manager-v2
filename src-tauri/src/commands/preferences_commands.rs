@@ -1,6 +1,7 @@
 use crate::api::instance::InstanceRegion;
 use crate::definitions::CardSize;
 use crate::definitions::FilterItemSelectorStarred;
+use crate::definitions::FilterItemSelectorStarredType;
 use crate::services::FileService;
 use crate::PreferenceModel;
 use crate::PREFERENCES;
@@ -52,16 +53,21 @@ pub fn set_region(region: InstanceRegion) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_starred_filter_items(id: String) -> Result<Vec<String>, String> {
+pub fn get_starred_filter_items(id: FilterItemSelectorStarredType) -> Result<Vec<String>, String> {
     let preferences_lock = PREFERENCES.get().read();
     let preferences = preferences_lock.as_ref().unwrap();
     if let Some(filter_item_selector_starred) = &preferences.filter_item_selector_starred {
-        match id.as_str() {
-            "author" => Ok(filter_item_selector_starred.author.clone()),
-            "tag" => Ok(filter_item_selector_starred.tag.clone()),
-            "exclude_tag" => Ok(filter_item_selector_starred.exclude_tag.clone()),
-            "folder" => Ok(filter_item_selector_starred.folder.clone()),
-            _ => Err("Invalid ID".to_string()),
+        match id {
+            FilterItemSelectorStarredType::Author => {
+                Ok(filter_item_selector_starred.author.clone())
+            }
+            FilterItemSelectorStarredType::Tag => Ok(filter_item_selector_starred.tag.clone()),
+            FilterItemSelectorStarredType::ExcludeTag => {
+                Ok(filter_item_selector_starred.exclude_tag.clone())
+            }
+            FilterItemSelectorStarredType::Folder => {
+                Ok(filter_item_selector_starred.folder.clone())
+            }
         }
     } else {
         Ok(vec![])
@@ -70,17 +76,19 @@ pub fn get_starred_filter_items(id: String) -> Result<Vec<String>, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn set_starred_filter_items(id: String, values: Vec<String>) -> Result<(), String> {
+pub fn set_starred_filter_items(
+    id: FilterItemSelectorStarredType,
+    values: Vec<String>,
+) -> Result<(), String> {
     let mut preferences_lock = PREFERENCES.get().write();
     let preferences = preferences_lock.as_mut().unwrap();
 
     if preferences.filter_item_selector_starred.is_none() {
-        let (author, tag, exclude_tag, folder) = match id.as_str() {
-            "author" => (values, vec![], vec![], vec![]),
-            "tag" => (vec![], values, vec![], vec![]),
-            "exclude_tag" => (vec![], vec![], values, vec![]),
-            "folder" => (vec![], vec![], vec![], values),
-            _ => return Err("Invalid ID".to_string()),
+        let (author, tag, exclude_tag, folder) = match id {
+            FilterItemSelectorStarredType::Author => (values, vec![], vec![], vec![]),
+            FilterItemSelectorStarredType::Tag => (vec![], values, vec![], vec![]),
+            FilterItemSelectorStarredType::ExcludeTag => (vec![], vec![], values, vec![]),
+            FilterItemSelectorStarredType::Folder => (vec![], vec![], vec![], values),
         };
         preferences.filter_item_selector_starred = Some(FilterItemSelectorStarred {
             author,
@@ -91,12 +99,19 @@ pub fn set_starred_filter_items(id: String, values: Vec<String>) -> Result<(), S
     } else {
         let filter_item_selector_starred =
             preferences.filter_item_selector_starred.as_mut().unwrap();
-        match id.as_str() {
-            "author" => filter_item_selector_starred.author = values,
-            "tag" => filter_item_selector_starred.tag = values,
-            "exclude_tag" => filter_item_selector_starred.exclude_tag = values,
-            "folder" => filter_item_selector_starred.folder = values,
-            _ => return Err("Invalid ID".to_string()),
+        match id {
+            FilterItemSelectorStarredType::Author => {
+                filter_item_selector_starred.author = values;
+            }
+            FilterItemSelectorStarredType::Tag => {
+                filter_item_selector_starred.tag = values;
+            }
+            FilterItemSelectorStarredType::ExcludeTag => {
+                filter_item_selector_starred.exclude_tag = values;
+            }
+            FilterItemSelectorStarredType::Folder => {
+                filter_item_selector_starred.folder = values;
+            }
         }
     }
     FileService::write_preferences(preferences).map_err(|e| {

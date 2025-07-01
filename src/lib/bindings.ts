@@ -284,7 +284,9 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async getStarredFilterItems(id: string): Promise<Result<string[], string>> {
+  async getStarredFilterItems(
+    id: FilterItemSelectorStarredType,
+  ): Promise<Result<string[], string>> {
     try {
       return {
         status: 'ok',
@@ -296,7 +298,7 @@ export const commands = {
     }
   },
   async setStarredFilterItems(
-    id: string,
+    id: FilterItemSelectorStarredType,
     values: string[],
   ): Promise<Result<null, string>> {
     try {
@@ -721,6 +723,11 @@ export type BackupMetaData = {
   app_version: string;
 };
 export type CardSize = 'Compact' | 'Normal' | 'Expanded' | 'Original';
+export type FilterItemSelectorStarredType =
+  | 'Author'
+  | 'Tag'
+  | 'ExcludeTag'
+  | 'Folder';
 export type GroupInstanceCreateAllowedType = {
   normal: boolean;
   plus: boolean;

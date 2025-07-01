@@ -235,6 +235,14 @@ pub struct FilterItemSelectorStarred {
     pub folder: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+pub enum FilterItemSelectorStarredType {
+    Author,
+    Tag,
+    ExcludeTag,
+    Folder,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreferenceModel {
     #[serde(rename = "firstTime")]
