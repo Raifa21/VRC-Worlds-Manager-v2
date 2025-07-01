@@ -119,6 +119,7 @@ export function AdvancedSearchPanel({
               candidates={availableTags.map((t) => ({ label: t, value: t }))}
               onValuesChange={onTagFiltersChange}
               allowCustomValues={false}
+              id="Tag"
             />
           </div>
           <div className="space-y-2">
@@ -129,6 +130,7 @@ export function AdvancedSearchPanel({
               candidates={availableFolders.map((f) => ({ label: f, value: f }))}
               onValuesChange={onFolderFiltersChange}
               allowCustomValues={false}
+              id="Folder"
             />
           </div>
         </div>
