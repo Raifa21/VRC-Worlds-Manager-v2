@@ -243,7 +243,7 @@ export function WorldDetailPopup({
       setErrorState(`Failed to create instance: ${e}`);
     }
   };
-
+  
   const handleSaveMemo = useCallback(async () => {
     if (memoInput === memo) {
       setIsEditingMemo(false);

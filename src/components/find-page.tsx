@@ -364,7 +364,6 @@ export function FindPage({
                     onValuesChange={setSelectedTags}
                     allowCustomValues={true}
                     maxItems={5}
-                    id="Tag"
                   />
                 </div>
 
@@ -395,7 +394,6 @@ export function FindPage({
                     onValuesChange={setSelectedExcludedTags}
                     allowCustomValues={true}
                     maxItems={5}
-                    id="ExcludeTag"
                   />
                 </div>
                 {/* Search button */}
