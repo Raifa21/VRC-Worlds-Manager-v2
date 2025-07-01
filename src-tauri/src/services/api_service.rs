@@ -435,7 +435,7 @@ impl ApiService {
             None
         };
 
-        // exclude_tags should be in the form author_tag_{tag}, and made into a single string seperated by commas
+        // exclude_tags should be in the form author_tag_{tag}, and made into a single string separated by commas
         let exclude_tags = if let Some(exclude_tags) = exclude_tags {
             // For each tag, prepend "author_tag_" and collect into a single string
             Some(
