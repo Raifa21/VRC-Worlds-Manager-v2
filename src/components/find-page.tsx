@@ -60,7 +60,7 @@ export function FindPage({
   const [searchResults, setSearchResults] = useState<WorldDisplayData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSort, setSelectedSort] = useState('popularity');
-  const [selectedTags, setselectedTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedExcludedTags, setSelectedExcludedTags] = useState<string[]>(
     [],
   );
@@ -350,7 +350,7 @@ export function FindPage({
               </div>
 
               {/* Second row: Tag filters */}
-              <div className="flex gap-4 items-begin">
+              <div className="flex gap-4 items-start">
                 {/* Tag combobox */}
                 <div className="flex-1 min-w-0 flex flex-col gap-2">
                   <Label htmlFor="tag">{t('find-page:tag')}</Label>
@@ -361,7 +361,7 @@ export function FindPage({
                       label: tag,
                     }))}
                     values={selectedTags}
-                    onValuesChange={setselectedTags}
+                    onValuesChange={setSelectedTags}
                     allowCustomValues={true}
                     maxItems={5}
                   />
