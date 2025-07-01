@@ -1186,6 +1186,7 @@ export default function ListView() {
             handleOpenWorldDetails(worldId);
           }}
           onShowFolderDialog={(worlds) => {
+            // Reverse the worlds array to ensure the most recently added worlds appear first in the folder dialog.
             setSelectedWorldsForFolder(worlds.slice().reverse());
             setShowFolderDialog(true);
           }}
