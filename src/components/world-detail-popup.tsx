@@ -144,9 +144,13 @@ export function WorldDetailPopup({
     const fetchWorldDetails = async () => {
       if (!open) return;
 
+      // Reset all state when opening the dialog with a new world
       setIsLoading(true);
       setErrorState(null);
       setIsWorldNotPublic(false);
+      setIsWorldBlacklisted(false); // Reset blacklisted status
+      setCountdownSeconds(5); // Reset to initial countdown value
+      setIsCountdownActive(false); // Reset countdown activation
 
       try {
         info(`Is dontSaveToLocal: ${dontSaveToLocal}`);
