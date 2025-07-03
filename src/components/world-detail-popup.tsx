@@ -445,9 +445,7 @@ export function WorldDetailPopup({
                           : t('world-detail:world-not-public')}
                         {isWorldBlacklisted && (
                           <div className="font-bold mt-1">
-                            {t('world-detail:closing-in', {
-                              seconds: countdownSeconds,
-                            })}
+                            {t('world-detail:closing-in', countdownSeconds)}
                           </div>
                         )}
                       </AlertDescription>
