@@ -368,7 +368,6 @@ impl InitState {
 #[derive(Debug, Type, Serialize, Deserialize)]
 pub struct WorldBlacklist {
     pub worlds: Vec<String>,
-    pub users: Vec<String>,
 }
 
 #[derive(Debug, Type, Serialize, Deserialize)]
