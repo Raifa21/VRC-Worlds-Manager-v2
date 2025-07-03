@@ -8,7 +8,7 @@ type Props = {
 
 export const MemoRenderer: FC<Props> = ({ value }) => {
   return (
-    <pre className="whitespace-pre-wrap text-base break-words font-sans h-full max-w-[700px]">
+    <pre className="whitespace-pre-wrap text-base break-words font-sans h-full max-w-[700px] text-sm">
       {value.split('\n').map((line, index) => {
         let buffer: string[] = [];
 
