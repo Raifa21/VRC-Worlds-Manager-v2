@@ -137,8 +137,6 @@
   "listview-page:error-get-group-permissions": "Failed to get group permissions",
   "listview-page:error-load-card-size": "Failed to load card size preference",
   "listview-page:error-add-world": "Failed to add world",
-  "listview-page:delete-world-title": "Delete World",
-  "listview-page:delete-world-description": "This will remove the world completely. This action cannot be undone.",
   "listview-page:world-deleted-success": "World deleted successfully",
   "listview-page:error-delete-world": "Failed to delete world",
   "listview-page:active-filters": "Active Filters",

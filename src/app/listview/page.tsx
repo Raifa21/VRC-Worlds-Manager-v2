@@ -46,7 +46,6 @@ import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
 import { info, error } from '@tauri-apps/plugin-log';
-import { DeleteWorldDialog } from '@/components/delete-world-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -125,11 +124,6 @@ export default function ListView() {
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [deleteConfirmWorld, setDeleteConfirmWorld] = useState<string | null>(
-    null,
-  );
-  const [deleteConfirmWorldName, setDeleteConfirmWorldName] =
-    useState<string>('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showShareFolder, setShowShareFolder] = useState(false);
 
@@ -917,56 +911,20 @@ export default function ListView() {
     }
   };
 
-  // Add the onDelete function to handle world deletion
-  const onDelete = async (worldId: string) => {
+  // Create a proper handleDeleteWorld function like your other handlers
+  const handleDeleteWorld = async (worldId: string) => {
     try {
-      // Find the world name for the confirmation dialog
-      let worldName = 'this world';
-      const worldToDelete = worlds.find((w) => w.worldId === worldId);
-      if (worldToDelete) {
-        worldName = worldToDelete.name;
-      } else {
-        const allWorldsResult = await commands.getAllWorlds();
-        const hiddenWorldsResult = await commands.getHiddenWorlds();
-
-        let worldsList: WorldDisplayData[] = [];
-        if (allWorldsResult.status === 'ok') {
-          worldsList = allWorldsResult.data;
-        }
-        if (hiddenWorldsResult.status === 'ok') {
-          worldsList = [...worldsList, ...hiddenWorldsResult.data];
-        }
-
-        const foundWorld = worldsList.find((w) => w.worldId === worldId);
-        if (foundWorld) {
-          worldName = foundWorld.name;
-        }
-      }
-
-      setDeleteConfirmWorldName(worldName);
-      setDeleteConfirmWorld(worldId);
-    } catch (e) {
-      error(`Failed to prepare world deletion: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-delete-world'),
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const confirmDeleteWorld = async () => {
-    if (!deleteConfirmWorld) return;
-
-    try {
-      const worldId = deleteConfirmWorld;
       const result = await commands.deleteWorld(worldId);
 
       if (result.status === 'error') {
-        throw new Error(result.error);
+        toast({
+          title: t('general:error-title'),
+          description: t('listview-page:error-delete-world'),
+          variant: 'destructive',
+        });
+        return;
       }
 
-      setDeleteConfirmWorld(null);
       await refreshCurrentView();
       toast({
         title: t('general:success-title'),
@@ -1819,7 +1777,7 @@ export default function ListView() {
         onGetGroups={getGroups}
         onGetGroupPermissions={getGroupPermissions}
         dontSaveToLocal={isFindPage}
-        onDeleteWorld={onDelete}
+        onDeleteWorld={handleDeleteWorld}
         onSelectAuthor={(author) => {
           setAuthorFilter(author);
         }}
@@ -1857,14 +1815,6 @@ export default function ListView() {
           }
         }}
         onConfirm={handleDeleteFolder}
-      />
-      <DeleteWorldDialog
-        worldName={deleteConfirmWorldName}
-        isOpen={deleteConfirmWorld !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteConfirmWorld(null);
-        }}
-        onConfirm={confirmDeleteWorld}
       />
       <AdvancedSearchPanel
         open={showAdvancedSearch}
