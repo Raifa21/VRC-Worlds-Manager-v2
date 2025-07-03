@@ -5,6 +5,22 @@
 /** user-defined commands **/
 
 export const commands = {
+  async fetchPatreonData(): Promise<Result<PatreonData, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('fetch_patreon_data') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async fetchBlacklist(): Promise<Result<WorldBlacklist, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('fetch_blacklist') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async addWorldToFolder(
     folderName: string,
     worldId: string,
@@ -502,14 +518,6 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async fetchPatreonData(): Promise<Result<PatreonData, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('fetch_patreon_data') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
   /**
    * Checks if the app is being run for the first time
    * As this is called every time / is loaded from the frontend, cache result in the state
@@ -802,6 +810,7 @@ export type UserGroup = {
   isRepresenting: boolean;
   mutualGroup: boolean;
 };
+export type WorldBlacklist = { worlds: string[] };
 export type WorldDetails = {
   worldId: string;
   name: string;

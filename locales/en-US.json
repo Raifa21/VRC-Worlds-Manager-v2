@@ -197,6 +197,11 @@
   "world-detail:world-name": "World Name",
   "world-detail:show-on-website": "Show on Website",
   "world-detail:world-not-public": "This world is private or has been deleted. Instances cannot be created.",
+  "world-detail:world-blacklisted": "The world was requested for deletion by the world author.",
+  "world-detail:closing-in": "This popup will close and the world will be deleted in {0} seconds",
+  "world-detail:author-removal-title": "Are you the author of this world?",
+  "world-detail:author-removal-description": "If you are the world creator and wish to request removal of your world's data from our service, please use the form below.",
+  "world-detail:request-removal": "Request Data Removal",
 
   "add-world-dialog:add": "Add World",
   "add-world-dialog:description": "Enter a world URL or world ID to add to the folder",
