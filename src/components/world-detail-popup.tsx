@@ -160,6 +160,7 @@ export function WorldDetailPopup({
         } else {
           if (result.error.includes('World is not public')) {
             setIsWorldNotPublic(true);
+
             // Get cached world data
             try {
               const allWorldsResult = await commands.getAllWorlds();
@@ -181,17 +182,17 @@ export function WorldDetailPopup({
             } catch (cacheError) {
               error(`Failed to fetch cached world data: ${cacheError}`);
             }
-            // check if the world is not blacklisted
+
+            // Check blacklist status separately
             try {
               const blacklistResult = await commands.fetchBlacklist();
               if (blacklistResult.status === 'ok') {
-                // check if the world has been blacklisted by the author
                 const blacklistedWorlds = blacklistResult.data.worlds;
                 const isBlacklisted = blacklistedWorlds.includes(worldId);
+                setIsWorldBlacklisted(isBlacklisted);
+
                 if (isBlacklisted) {
-                  setIsWorldBlacklisted(true);
-                  setIsCountdownActive(true); // Start the countdown
-                  return; // Exit early but continue showing the cached data
+                  setIsCountdownActive(true); // Start the countdown only if blacklisted
                 }
               } else {
                 error(`Failed to fetch blacklist: ${blacklistResult.error}`);
@@ -529,56 +530,22 @@ export function WorldDetailPopup({
                           <div className="mt-1 flex gap-2 flex-wrap">
                             {/* Only show the website link for non-blacklisted worlds */}
                             {!isWorldBlacklisted && (
-                              <div>
-                                `
-                                <Button
-                                  variant="outline"
-                                  className="flex items-center gap-1"
-                                  asChild
+                              <Button
+                                variant="outline"
+                                className="flex items-center gap-1"
+                                asChild
+                              >
+                                <a
+                                  href={`https://vrchat.com/home/world/${cachedWorldData.worldId}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={t('world-detail:show-on-website')}
                                 >
-                                  <a
-                                    href={`https://vrchat.com/home/world/${cachedWorldData.worldId}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    title={t('world-detail:show-on-website')}
-                                  >
-                                    {t('world-detail:show-on-website')}
-                                    <ExternalLink className="h-4 w-4" />
-                                  </a>
-                                </Button>
-                                <div className="mt-4 pt-4 border-t border-border">
-                                  <div className="text-sm text-muted-foreground">
-                                    <p className="font-medium mb-2">
-                                      {t('world-detail:author-removal-title')}
-                                    </p>
-                                    <p className="mb-3">
-                                      {t(
-                                        'world-detail:author-removal-description',
-                                      )}
-                                    </p>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="flex items-center gap-1"
-                                      asChild
-                                    >
-                                      <a
-                                        href="https://docs.google.com/forms/d/e/1FAIpQLSctTr69Arr9VazZ2zj_5cUlmlafBxM3LDrx12jpyPN1lj5baQ/viewform"
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        title={t(
-                                          'world-detail:request-removal',
-                                        )}
-                                      >
-                                        {t('world-detail:request-removal')}
-                                        <ExternalLink className="h-3 w-3" />
-                                      </a>
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
+                                  {t('world-detail:show-on-website')}
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              </Button>
                             )}
-
                             <Button
                               variant="destructive"
                               className="flex items-center gap-1 ml-auto"
@@ -592,6 +559,34 @@ export function WorldDetailPopup({
                         </div>
                       </div>
                     </div>
+                    {!isWorldBlacklisted && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="text-sm text-muted-foreground">
+                          <p className="font-medium mb-2">
+                            {t('world-detail:author-removal-title')}
+                          </p>
+                          <p className="mb-3">
+                            {t('world-detail:author-removal-description')}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            asChild
+                          >
+                            <a
+                              href="https://docs.google.com/forms/d/e/1FAIpQLSctTr69Arr9VazZ2zj_5cUlmlafBxM3LDrx12jpyPN1lj5baQ/viewform"
+                              target="_blank"
+                              rel="noreferrer"
+                              title={t('world-detail:request-removal')}
+                            >
+                              {t('world-detail:request-removal')}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
