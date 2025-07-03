@@ -132,16 +132,25 @@ export function WorldDetailPopup({
   const [memoInput, setMemoInput] = useState<string>('');
 
   const [isWorldNotPublic, setIsWorldNotPublic] = useState<boolean>(false);
+  const [isWorldBlacklisted, setIsWorldBlacklisted] = useState<boolean>(false);
   const [cachedWorldData, setCachedWorldData] =
     useState<WorldDisplayData | null>(null);
+
+  // Add these new state variables
+  const [countdownSeconds, setCountdownSeconds] = useState<number>(5);
+  const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchWorldDetails = async () => {
       if (!open) return;
 
+      // Reset all state when opening the dialog with a new world
       setIsLoading(true);
       setErrorState(null);
       setIsWorldNotPublic(false);
+      setIsWorldBlacklisted(false); // Reset blacklisted status
+      setCountdownSeconds(5); // Reset to initial countdown value
+      setIsCountdownActive(false); // Reset countdown activation
 
       try {
         info(`Is dontSaveToLocal: ${dontSaveToLocal}`);
@@ -155,6 +164,7 @@ export function WorldDetailPopup({
         } else {
           if (result.error.includes('World is not public')) {
             setIsWorldNotPublic(true);
+
             // Get cached world data
             try {
               const allWorldsResult = await commands.getAllWorlds();
@@ -175,6 +185,24 @@ export function WorldDetailPopup({
               }
             } catch (cacheError) {
               error(`Failed to fetch cached world data: ${cacheError}`);
+            }
+
+            // Check blacklist status separately
+            try {
+              const blacklistResult = await commands.fetchBlacklist();
+              if (blacklistResult.status === 'ok') {
+                const blacklistedWorlds = blacklistResult.data.worlds;
+                const isBlacklisted = blacklistedWorlds.includes(worldId);
+                setIsWorldBlacklisted(isBlacklisted);
+
+                if (isBlacklisted) {
+                  setIsCountdownActive(true); // Start the countdown only if blacklisted
+                }
+              } else {
+                error(`Failed to fetch blacklist: ${blacklistResult.error}`);
+              }
+            } catch (blacklistError) {
+              error(`Failed to fetch blacklist: ${blacklistError}`);
             }
           }
           setErrorState(result.error);
@@ -323,10 +351,41 @@ export function WorldDetailPopup({
     onOpenChange(false); // Close dialog after deletion is initiated
   };
 
+  // Add this effect to handle the countdown and auto-close
+  useEffect(() => {
+    if (isWorldBlacklisted && isCountdownActive && countdownSeconds > 0) {
+      const timer = setTimeout(() => {
+        setCountdownSeconds((prev) => prev - 1);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    } else if (
+      isWorldBlacklisted &&
+      isCountdownActive &&
+      countdownSeconds === 0
+    ) {
+      // Delete the world when countdown ends, then close the dialog
+      handleDeleteWorld(worldId);
+      onOpenChange(false);
+    }
+  }, [
+    isWorldBlacklisted,
+    countdownSeconds,
+    isCountdownActive,
+    onOpenChange,
+    worldId,
+  ]);
+
   return (
     <Dialog
       open={open}
       onOpenChange={(open) => {
+        // If closing the dialog and it's a blacklisted world, delete it
+        if (!open && isWorldBlacklisted && countdownSeconds > 0) {
+          handleDeleteWorld(worldId);
+        }
+
+        // Existing code
         if (!open) {
           setInstanceCreationType('normal');
           setGroupInstanceState({
@@ -334,7 +393,7 @@ export function WorldDetailPopup({
             selectedGroupId: null,
             permission: null,
             roles: [],
-            isLoading: true, // Add this
+            isLoading: true,
           });
         }
         onOpenChange(open);
@@ -373,16 +432,26 @@ export function WorldDetailPopup({
                 <span>{t('world-detail:loading-details')}</span>
               </div>
             ) : isWorldNotPublic && cachedWorldData ? (
-              // Show the 'world not public' display with cached data
+              // Combined display for both blacklisted and not public worlds
               <div className="flex flex-col gap-4">
                 <Card className="w-full">
                   <CardHeader>
-                    <Alert className="flex">
+                    <Alert
+                      variant={isWorldBlacklisted ? 'destructive' : undefined}
+                      className="flex"
+                    >
                       <span className="flex items-center h-full mr-2">
                         <AlertCircle className="h-5 w-5" />
                       </span>
                       <AlertDescription>
-                        {t('world-detail:world-not-public')}
+                        {isWorldBlacklisted
+                          ? t('world-detail:world-blacklisted')
+                          : t('world-detail:world-not-public')}
+                        {isWorldBlacklisted && (
+                          <div className="font-bold mt-1">
+                            {t('world-detail:closing-in', countdownSeconds)}
+                          </div>
+                        )}
                       </AlertDescription>
                     </Alert>
                   </CardHeader>
@@ -461,22 +530,24 @@ export function WorldDetailPopup({
                             </div>
                           </div>
                           <div className="mt-1 flex gap-2 flex-wrap">
-                            <Button
-                              variant="outline"
-                              className="flex items-center gap-1"
-                              asChild
-                            >
-                              <a
-                                href={`https://vrchat.com/home/world/${cachedWorldData.worldId}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                title={t('world-detail:show-on-website')}
+                            {/* Only show the website link for non-blacklisted worlds */}
+                            {!isWorldBlacklisted && (
+                              <Button
+                                variant="outline"
+                                className="flex items-center gap-1"
+                                asChild
                               >
-                                {t('world-detail:show-on-website')}
-                                <ExternalLink className="h-4 w-4" />
-                              </a>
-                            </Button>
-
+                                <a
+                                  href={`https://vrchat.com/home/world/${cachedWorldData.worldId}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={t('world-detail:show-on-website')}
+                                >
+                                  {t('world-detail:show-on-website')}
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            )}
                             <Button
                               variant="destructive"
                               className="flex items-center gap-1 ml-auto"
@@ -490,6 +561,34 @@ export function WorldDetailPopup({
                         </div>
                       </div>
                     </div>
+                    {!isWorldBlacklisted && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="text-sm text-muted-foreground">
+                          <p className="font-medium mb-2">
+                            {t('world-detail:author-removal-title')}
+                          </p>
+                          <p className="mb-3">
+                            {t('world-detail:author-removal-description')}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            asChild
+                          >
+                            <a
+                              href="https://docs.google.com/forms/d/e/1FAIpQLSctTr69Arr9VazZ2zj_5cUlmlafBxM3LDrx12jpyPN1lj5baQ/viewform"
+                              target="_blank"
+                              rel="noreferrer"
+                              title={t('world-detail:request-removal')}
+                            >
+                              {t('world-detail:request-removal')}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
