@@ -1,6 +1,7 @@
 use chrono::{DateTime, SecondsFormat, Utc};
 use reqwest::cookie::Jar;
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 use crate::api::instance::InstanceRegion;
 
@@ -362,4 +363,24 @@ impl InitState {
             user_id: "".to_string(),
         }
     }
+}
+
+#[derive(Debug, Type, Serialize, Deserialize)]
+pub struct WorldBlacklist {
+    pub worlds: Vec<String>,
+    pub users: Vec<String>,
+}
+
+#[derive(Debug, Type, Serialize, Deserialize)]
+pub struct PatreonData {
+    #[serde(rename = "platinumSupporter")]
+    pub platinum_supporter: Vec<String>,
+    #[serde(rename = "goldSupporter")]
+    pub gold_supporter: Vec<String>,
+    #[serde(rename = "silverSupporter")]
+    pub silver_supporter: Vec<String>,
+    #[serde(rename = "bronzeSupporter")]
+    pub bronze_supporter: Vec<String>,
+    #[serde(rename = "basicSupporter")]
+    pub basic_supporter: Vec<String>,
 }

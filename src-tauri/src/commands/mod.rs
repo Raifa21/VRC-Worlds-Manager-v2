@@ -1,15 +1,17 @@
 pub mod api_commands;
 pub mod data;
+pub mod data_commands;
 pub mod folder_commands;
 pub mod memo_commands;
 pub mod open_folder_commands;
-pub mod patreons;
 pub mod preferences_commands;
 
 use tauri_specta::{collect_commands, Builder};
 
 pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
+        data_commands::fetch_patreon_data,
+        data_commands::fetch_blacklist,
         folder_commands::add_world_to_folder,
         folder_commands::remove_world_from_folder,
         folder_commands::hide_world,
@@ -50,7 +52,6 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         api_commands::get_permission_for_create_group_instance,
         api_commands::create_group_instance,
         open_folder_commands::open_logs_directory,
-        patreons::fetch_patreon_data,
         data::read_data_commands::require_initial_setup,
         data::read_data_commands::check_files_loaded,
         data::read_data_commands::detect_old_installation,
