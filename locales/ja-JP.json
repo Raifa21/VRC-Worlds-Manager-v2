@@ -221,6 +221,7 @@
 
   "filter-item-selector:custom-value": "Enterキーで {0} を追加",
   "filter-item-selector:selection-limit": "{0}/{1} 選択中",
+  "filter-item-selector:no-results-found": "結果が見つかりません",
 
   "about-section:development-team": "開発チーム",
   "about-section:developers": "開発者",

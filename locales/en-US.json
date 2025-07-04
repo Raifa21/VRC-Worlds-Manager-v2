@@ -221,6 +221,7 @@
 
   "filter-item-selector:custom-value": "Press Enter to add {0}",
   "filter-item-selector:selection-limit": "{0}/{1} selected",
+  "filter-item-selector:no-results-found": "No results found",
 
   "about-section:development-team": "Development Team",
   "about-section:developers": "Developers",
