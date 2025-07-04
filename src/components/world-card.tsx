@@ -39,7 +39,13 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
               loading="lazy"
             />
           ) : world.platform == Platform.PC ? (
-            <Image src={QPc} alt={t('world-card:pc')} width={24} height={24} />
+            <Image
+              src={QPc}
+              alt={t('world-card:pc')}
+              width={24}
+              height={24}
+              loading="lazy"
+            />
           ) : (
             <Image
               src={QQ}
