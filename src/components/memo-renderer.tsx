@@ -1,6 +1,6 @@
 import { FC, Fragment } from 'react';
 
-const URL_REGEX = /https?:\/\/[^\s]+/g;
+const URL_REGEX = /https?:\/\/[^\s]+/;
 
 type Props = {
   value: string;
