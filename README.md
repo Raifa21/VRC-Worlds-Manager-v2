@@ -27,7 +27,7 @@ VRC Worlds Manager is a Windows application designed to help VRChat users organi
 
 ## Installation
 
-Download the latest release from the [Releases page](https://github.com/yourusername/VRC-Worlds-Manager-v2/releases) and run the `.exe` file.  
+Download the latest release from the [Releases page](https://github.com/Raifa21/VRC-Worlds-Manager-v2/releases) and run the `.exe` file.  
 No additional setup is required.
 
 ---
