@@ -320,6 +320,8 @@ pub struct WorldSearchParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub notag: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub platform: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub search: Option<String>,
@@ -328,6 +330,7 @@ pub struct WorldSearchParameters {
 pub struct WorldSearchParametersBuilder {
     pub sort: Option<SearchWorldSort>,
     pub tag: Option<String>,
+    pub notag: Option<String>,
     pub platform: Option<String>,
     pub search: Option<String>,
 }
@@ -337,6 +340,7 @@ impl WorldSearchParametersBuilder {
         Self {
             sort: None,
             tag: None,
+            notag: None,
             platform: None,
             search: None,
         }
@@ -349,6 +353,11 @@ impl WorldSearchParametersBuilder {
 
     pub fn tag<S: AsRef<str>>(mut self, tag: S) -> Self {
         self.tag = Some(tag.as_ref().to_string());
+        self
+    }
+
+    pub fn notag<S: AsRef<str>>(mut self, tag: S) -> Self {
+        self.notag = Some(tag.as_ref().to_string());
         self
     }
 
@@ -366,6 +375,7 @@ impl WorldSearchParametersBuilder {
         WorldSearchParameters {
             sort: self.sort,
             tag: self.tag,
+            notag: self.notag,
             platform: self.platform,
             search: self.search,
         }

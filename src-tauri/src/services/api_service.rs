@@ -415,14 +415,36 @@ impl ApiService {
     pub async fn search_worlds(
         cookie_store: Arc<Jar>,
         sort: Option<String>,
-        tag: Option<String>,
+        tags: Option<Vec<String>>,
+        exclude_tags: Option<Vec<String>>,
         search: Option<String>,
         page: usize,
     ) -> Result<Vec<WorldDisplayData>, String> {
         let sort = SearchWorldSort::from_str(sort.unwrap_or_default().as_str());
-        // tag should be in the form author_tag_{tag}
-        let tag = if let Some(tag) = tag {
-            Some(format!("author_tag_{}", tag))
+
+        // tag should be in the form author_tag_{tag}, and made into a single string seperated by commas
+        let tags = if let Some(tags) = tags {
+            // For each tag, prepend "author_tag_" and collect into a single string
+            Some(
+                tags.into_iter()
+                    .map(|tag| format!("author_tag_{}", tag))
+                    .collect::<Vec<String>>()
+                    .join(","),
+            )
+        } else {
+            None
+        };
+
+        // exclude_tags should be in the form author_tag_{tag}, and made into a single string separated by commas
+        let exclude_tags = if let Some(exclude_tags) = exclude_tags {
+            // For each tag, prepend "author_tag_" and collect into a single string
+            Some(
+                exclude_tags
+                    .into_iter()
+                    .map(|tag| format!("author_tag_{}", tag))
+                    .collect::<Vec<String>>()
+                    .join(","),
+            )
         } else {
             None
         };
@@ -431,8 +453,11 @@ impl ApiService {
         if let Some(sort) = sort {
             parameter_builder.sort = Some(sort);
         }
-        if let Some(tag) = tag {
-            parameter_builder.tag = Some(tag);
+        if let Some(tags) = tags {
+            parameter_builder.tag = Some(tags);
+        }
+        if let Some(exclude_tags) = exclude_tags {
+            parameter_builder.notag = Some(exclude_tags);
         }
         if let Some(search) = search {
             parameter_builder.search = Some(search);
@@ -485,12 +510,12 @@ impl ApiService {
             instance_type_str,
             region_str
         );
-        // Convert region string to InstanceRegion enum
+        // region_str is already in the correct format ("us", "use", "eu", "jp"), just map directly
         let region = match region_str.as_str() {
-            "USW" => instance::InstanceRegion::UsWest,
-            "USE" => instance::InstanceRegion::UsEast,
-            "EU" => instance::InstanceRegion::EU,
-            "JP" => instance::InstanceRegion::JP,
+            "us" => instance::InstanceRegion::UsWest,
+            "use" => instance::InstanceRegion::UsEast,
+            "eu" => instance::InstanceRegion::EU,
+            "jp" => instance::InstanceRegion::JP,
             _ => return Err("Invalid region".to_string()),
         };
         // Create instance type based on string and user_id
@@ -601,10 +626,10 @@ impl ApiService {
         );
         // Convert region string to InstanceRegion enum
         let region = match region_str.as_str() {
-            "USW" => instance::InstanceRegion::UsWest,
-            "USE" => instance::InstanceRegion::UsEast,
-            "EU" => instance::InstanceRegion::EU,
-            "JP" => instance::InstanceRegion::JP,
+            "us" => instance::InstanceRegion::UsWest,
+            "use" => instance::InstanceRegion::UsEast,
+            "eu" => instance::InstanceRegion::EU,
+            "jp" => instance::InstanceRegion::JP,
             _ => return Err("Invalid region".to_string()),
         };
 

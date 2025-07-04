@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { info, error } from '@tauri-apps/plugin-log';
 import Image from 'next/image';
 import {
@@ -6,14 +6,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ExternalLink } from 'lucide-react';
+import { AlertCircle, ExternalLink, Pencil } from 'lucide-react';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
@@ -31,14 +30,12 @@ import { WorldCardPreview } from './world-card';
 import { CardSize } from '@/types/preferences';
 import { GroupInstanceCreator } from './group-instance-creator';
 import { Platform } from '@/types/worlds';
-import {
-  GroupInstanceType,
-  InstanceType,
-  Region,
-  GROUP_INSTANCE_TYPES,
-} from '@/types/instances';
+import { GroupInstanceType, InstanceType } from '@/types/instances';
+import { InstanceRegion } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Textarea } from './ui/textarea';
+import MemoRenderer from './memo-renderer';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -47,11 +44,11 @@ export interface WorldDetailDialogProps {
   onCreateInstance: (
     worldId: string,
     instanceType: Exclude<InstanceType, 'group'>,
-    region: Region,
+    region: InstanceRegion,
   ) => void;
   onCreateGroupInstance: (
     worldId: string,
-    region: Region,
+    region: InstanceRegion,
     groupId: string,
     instanceType: GroupInstanceType,
     queueEnabled: boolean,
@@ -75,6 +72,31 @@ interface GroupInstance {
   isLoading: boolean;
 }
 
+// Add this function at the top of your file or in a separate utils file
+const mapRegion = {
+  // UI to backend mapping
+  toBackend: (uiRegion: string): InstanceRegion => {
+    const mapping: Record<string, InstanceRegion> = {
+      USW: 'us' as InstanceRegion,
+      USE: 'use' as InstanceRegion,
+      EU: 'eu' as InstanceRegion,
+      JP: 'jp' as InstanceRegion,
+    };
+    return mapping[uiRegion] || ('jp' as InstanceRegion);
+  },
+
+  // Backend to UI mapping
+  toUI: (backendRegion: InstanceRegion): string => {
+    const mapping: Record<InstanceRegion, string> = {
+      us: 'USW',
+      use: 'USE',
+      eu: 'EU',
+      jp: 'JP',
+    };
+    return mapping[backendRegion] || 'JP';
+  },
+};
+
 export function WorldDetailPopup({
   open,
   onOpenChange,
@@ -94,29 +116,41 @@ export function WorldDetailPopup({
   const [errorState, setErrorState] = useState<string | null>(null);
   const [selectedInstanceType, setSelectedInstanceType] =
     useState<InstanceType>('public');
-  const [selectedRegion, setSelectedRegion] = useState<Region>('JP');
+  const [selectedRegion, setSelectedRegion] = useState<InstanceRegion>('jp');
   const [groupInstanceState, setGroupInstanceState] = useState<GroupInstance>({
     groups: [],
     selectedGroupId: null,
     permission: null,
     roles: [],
-    isLoading: true, // Add this
+    isLoading: true,
   });
   const [instanceCreationType, setInstanceCreationType] = useState<
     'normal' | 'group'
   >('normal');
+  const [memo, setMemo] = useState<string | null>(null);
+  const [isEditingMemo, setIsEditingMemo] = useState<boolean>(false);
+  const [memoInput, setMemoInput] = useState<string>('');
 
   const [isWorldNotPublic, setIsWorldNotPublic] = useState<boolean>(false);
+  const [isWorldBlacklisted, setIsWorldBlacklisted] = useState<boolean>(false);
   const [cachedWorldData, setCachedWorldData] =
     useState<WorldDisplayData | null>(null);
+
+  // Add these new state variables
+  const [countdownSeconds, setCountdownSeconds] = useState<number>(5);
+  const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchWorldDetails = async () => {
       if (!open) return;
 
+      // Reset all state when opening the dialog with a new world
       setIsLoading(true);
       setErrorState(null);
       setIsWorldNotPublic(false);
+      setIsWorldBlacklisted(false); // Reset blacklisted status
+      setCountdownSeconds(5); // Reset to initial countdown value
+      setIsCountdownActive(false); // Reset countdown activation
 
       try {
         info(`Is dontSaveToLocal: ${dontSaveToLocal}`);
@@ -130,6 +164,7 @@ export function WorldDetailPopup({
         } else {
           if (result.error.includes('World is not public')) {
             setIsWorldNotPublic(true);
+
             // Get cached world data
             try {
               const allWorldsResult = await commands.getAllWorlds();
@@ -151,6 +186,24 @@ export function WorldDetailPopup({
             } catch (cacheError) {
               error(`Failed to fetch cached world data: ${cacheError}`);
             }
+
+            // Check blacklist status separately
+            try {
+              const blacklistResult = await commands.fetchBlacklist();
+              if (blacklistResult.status === 'ok') {
+                const blacklistedWorlds = blacklistResult.data.worlds;
+                const isBlacklisted = blacklistedWorlds.includes(worldId);
+                setIsWorldBlacklisted(isBlacklisted);
+
+                if (isBlacklisted) {
+                  setIsCountdownActive(true); // Start the countdown only if blacklisted
+                }
+              } else {
+                error(`Failed to fetch blacklist: ${blacklistResult.error}`);
+              }
+            } catch (blacklistError) {
+              error(`Failed to fetch blacklist: ${blacklistError}`);
+            }
           }
           setErrorState(result.error);
         }
@@ -162,19 +215,88 @@ export function WorldDetailPopup({
       }
     };
 
+    const fetchMemo = async () => {
+      const result = await commands.getMemo(worldId);
+
+      if (result.status === 'ok') {
+        setMemo(result.data);
+        setMemoInput(result.data);
+      } else {
+        console.error(result.error);
+      }
+    };
+
     fetchWorldDetails();
+    fetchMemo();
   }, [open, worldId]);
+
+  useEffect(() => {
+    const loadRegionPreference = async () => {
+      try {
+        const regionResult = await commands.getRegion();
+        if (regionResult.status === 'ok') {
+          setSelectedRegion(regionResult.data);
+          info(`Loaded region preference: ${regionResult.data}`);
+        }
+      } catch (e) {
+        error(`Failed to load region preference: ${e}`);
+        // Fall back to JP if we can't load the preference
+        setSelectedRegion('jp' as InstanceRegion);
+      }
+    };
+
+    loadRegionPreference();
+  }, []); // Empty dependency array means this runs once on mount
+
+  const setRegionPreference = async (region: InstanceRegion) => {
+    try {
+      await commands.setRegion(region);
+      info(`Region preference set to ${region}`);
+    } catch (e) {
+      error(`Failed to set region preference: ${e}`);
+    }
+  };
+
+  const handleInstanceClick = () => {
+    try {
+      setInstanceCreationType('normal');
+      onCreateInstance(
+        worldId,
+        selectedInstanceType as Exclude<InstanceType, 'group'>,
+        selectedRegion,
+      );
+      setRegionPreference(selectedRegion);
+    } catch (e) {
+      error(`Failed to create instance: ${e}`);
+      setErrorState(`Failed to create instance: ${e}`);
+    }
+  };
+
+  const handleSaveMemo = useCallback(async () => {
+    if (memoInput === memo) {
+      setIsEditingMemo(false);
+      return;
+    }
+
+    const result = await commands.setMemoAndSave(worldId, memoInput);
+    if (result.status === 'ok') {
+      setMemo(memoInput);
+      setIsEditingMemo(false);
+    } else {
+      console.error(result.error);
+    }
+  }, [worldId, memoInput]);
 
   const handleGroupInstanceClick = async () => {
     try {
       setInstanceCreationType('group');
       setGroupInstanceState((prev) => ({
         ...prev,
-        groups: [], // Clear groups
+        groups: [],
         selectedGroupId: null,
         permission: null,
         roles: [],
-        isLoading: true, // Add isLoading to GroupInstance interface
+        isLoading: true,
       }));
       const groups = await onGetGroups();
       info(`Loaded ${groups.length} groups`);
@@ -183,6 +305,7 @@ export function WorldDetailPopup({
         groups,
         isLoading: false,
       }));
+      setRegionPreference(selectedRegion);
     } catch (e) {
       error(`Failed to load groups: ${e}`);
       setGroupInstanceState((prev) => ({
@@ -206,7 +329,7 @@ export function WorldDetailPopup({
   const handleCreateGroupInstance = (
     groupId: string,
     instanceType: GroupInstanceType,
-    region: Region,
+    region: InstanceRegion,
     queueEnabled: boolean,
     selectedRoles?: string[],
   ) => {
@@ -228,10 +351,41 @@ export function WorldDetailPopup({
     onOpenChange(false); // Close dialog after deletion is initiated
   };
 
+  // Add this effect to handle the countdown and auto-close
+  useEffect(() => {
+    if (isWorldBlacklisted && isCountdownActive && countdownSeconds > 0) {
+      const timer = setTimeout(() => {
+        setCountdownSeconds((prev) => prev - 1);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    } else if (
+      isWorldBlacklisted &&
+      isCountdownActive &&
+      countdownSeconds === 0
+    ) {
+      // Delete the world when countdown ends, then close the dialog
+      handleDeleteWorld(worldId);
+      onOpenChange(false);
+    }
+  }, [
+    isWorldBlacklisted,
+    countdownSeconds,
+    isCountdownActive,
+    onOpenChange,
+    worldId,
+  ]);
+
   return (
     <Dialog
       open={open}
       onOpenChange={(open) => {
+        // If closing the dialog and it's a blacklisted world, delete it
+        if (!open && isWorldBlacklisted && countdownSeconds > 0) {
+          handleDeleteWorld(worldId);
+        }
+
+        // Existing code
         if (!open) {
           setInstanceCreationType('normal');
           setGroupInstanceState({
@@ -239,7 +393,7 @@ export function WorldDetailPopup({
             selectedGroupId: null,
             permission: null,
             roles: [],
-            isLoading: true, // Add this
+            isLoading: true,
           });
         }
         onOpenChange(open);
@@ -278,16 +432,26 @@ export function WorldDetailPopup({
                 <span>{t('world-detail:loading-details')}</span>
               </div>
             ) : isWorldNotPublic && cachedWorldData ? (
-              // Show the 'world not public' display with cached data
+              // Combined display for both blacklisted and not public worlds
               <div className="flex flex-col gap-4">
                 <Card className="w-full">
                   <CardHeader>
-                    <Alert className="flex">
+                    <Alert
+                      variant={isWorldBlacklisted ? 'destructive' : undefined}
+                      className="flex"
+                    >
                       <span className="flex items-center h-full mr-2">
                         <AlertCircle className="h-5 w-5" />
                       </span>
                       <AlertDescription>
-                        {t('world-detail:world-not-public')}
+                        {isWorldBlacklisted
+                          ? t('world-detail:world-blacklisted')
+                          : t('world-detail:world-not-public')}
+                        {isWorldBlacklisted && (
+                          <div className="font-bold mt-1">
+                            {t('world-detail:closing-in', countdownSeconds)}
+                          </div>
+                        )}
                       </AlertDescription>
                     </Alert>
                   </CardHeader>
@@ -366,22 +530,24 @@ export function WorldDetailPopup({
                             </div>
                           </div>
                           <div className="mt-1 flex gap-2 flex-wrap">
-                            <Button
-                              variant="outline"
-                              className="flex items-center gap-1"
-                              asChild
-                            >
-                              <a
-                                href={`https://vrchat.com/home/world/${cachedWorldData.worldId}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                title={t('world-detail:show-on-website')}
+                            {/* Only show the website link for non-blacklisted worlds */}
+                            {!isWorldBlacklisted && (
+                              <Button
+                                variant="outline"
+                                className="flex items-center gap-1"
+                                asChild
                               >
-                                {t('world-detail:show-on-website')}
-                                <ExternalLink className="h-4 w-4" />
-                              </a>
-                            </Button>
-
+                                <a
+                                  href={`https://vrchat.com/home/world/${cachedWorldData.worldId}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={t('world-detail:show-on-website')}
+                                >
+                                  {t('world-detail:show-on-website')}
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            )}
                             <Button
                               variant="destructive"
                               className="flex items-center gap-1 ml-auto"
@@ -395,6 +561,34 @@ export function WorldDetailPopup({
                         </div>
                       </div>
                     </div>
+                    {!isWorldBlacklisted && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="text-sm text-muted-foreground">
+                          <p className="font-medium mb-2">
+                            {t('world-detail:author-removal-title')}
+                          </p>
+                          <p className="mb-3">
+                            {t('world-detail:author-removal-description')}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            asChild
+                          >
+                            <a
+                              href="https://docs.google.com/forms/d/e/1FAIpQLSctTr69Arr9VazZ2zj_5cUlmlafBxM3LDrx12jpyPN1lj5baQ/viewform"
+                              target="_blank"
+                              rel="noreferrer"
+                              title={t('world-detail:request-removal')}
+                            >
+                              {t('world-detail:request-removal')}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -526,9 +720,10 @@ export function WorldDetailPopup({
                           </Label>
                           <ToggleGroup
                             type="single"
-                            value={selectedRegion}
+                            value={mapRegion.toUI(selectedRegion)}
                             onValueChange={(value) => {
-                              if (value) setSelectedRegion(value as Region);
+                              if (value)
+                                setSelectedRegion(mapRegion.toBackend(value));
                             }}
                             className="flex gap-2"
                           >
@@ -552,14 +747,7 @@ export function WorldDetailPopup({
                               if (selectedInstanceType === 'group') {
                                 handleGroupInstanceClick();
                               } else {
-                                onCreateInstance(
-                                  worldId,
-                                  selectedInstanceType as Exclude<
-                                    InstanceType,
-                                    'group'
-                                  >,
-                                  selectedRegion,
-                                );
+                                handleInstanceClick();
                               }
                             }}
                           >
@@ -663,6 +851,53 @@ export function WorldDetailPopup({
                         </div>
                       </div>
                     </div>
+                  </div>
+                  <Separator className="my-2" />
+                  <div>
+                    <div className="text-sm font-semibold mb-2 flex flex-row items-center gap-2">
+                      {t('general:memo')}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="p-0 size-8 [&_svg]:size-4"
+                        onClick={() => setIsEditingMemo(true)}
+                      >
+                        <Pencil />
+                      </Button>
+                    </div>
+                    {!isEditingMemo && (
+                      <div className="pr-4">
+                        <MemoRenderer value={memo ?? ''} />
+                      </div>
+                    )}
+                    {isEditingMemo && (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={memoInput}
+                          onChange={(e) => setMemoInput(e.target.value)}
+                          className="h-64"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="secondary"
+                            className="w-full"
+                            onClick={() => {
+                              setIsEditingMemo(false);
+                              setMemoInput(memo ?? '');
+                            }}
+                          >
+                            {t('general:cancel')}
+                          </Button>
+                          <Button
+                            variant="default"
+                            className="w-full"
+                            onClick={handleSaveMemo}
+                          >
+                            {t('general:save')}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )

@@ -133,7 +133,7 @@ export default function SingleFilterItemSelector({
       >
         <Command className="max-h-[300px]">
           <CommandInput
-            placeholder={t('find-page:search-tag')}
+            placeholder={`${formattedPlaceholder}...`}
             value={inputValue}
             onValueChange={setInputValue}
             onKeyDown={(e) => {

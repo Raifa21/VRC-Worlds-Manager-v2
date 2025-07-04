@@ -5,6 +5,22 @@
 /** user-defined commands **/
 
 export const commands = {
+  async fetchPatreonData(): Promise<Result<PatreonData, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('fetch_patreon_data') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async fetchBlacklist(): Promise<Result<WorldBlacklist, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('fetch_blacklist') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async addWorldToFolder(
     folderName: string,
     worldId: string,
@@ -265,6 +281,80 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getRegion(): Promise<Result<InstanceRegion, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_region') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setRegion(region: InstanceRegion): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_region', { region }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getStarredFilterItems(
+    id: FilterItemSelectorStarredType,
+  ): Promise<Result<string[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_starred_filter_items', { id }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setStarredFilterItems(
+    id: FilterItemSelectorStarredType,
+    values: string[],
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_starred_filter_items', { id, values }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getFolderRemovalPreference(): Promise<
+    Result<FolderRemovalPreference, string>
+  > {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_folder_removal_preference'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setFolderRemovalPreference(
+    dontShowRemoveFromFolder: FolderRemovalPreference,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_folder_removal_preference', {
+          dontShowRemoveFromFolder,
+        }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async tryLogin(): Promise<Result<null, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('try_login') };
@@ -360,14 +450,21 @@ export const commands = {
   },
   async searchWorlds(
     sort: string,
-    tag: string,
+    tags: string[],
+    excludeTags: string[],
     search: string,
     page: number,
   ): Promise<Result<WorldDisplayData[], string>> {
     try {
       return {
         status: 'ok',
-        data: await TAURI_INVOKE('search_worlds', { sort, tag, search, page }),
+        data: await TAURI_INVOKE('search_worlds', {
+          sort,
+          tags,
+          excludeTags,
+          search,
+          page,
+        }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -441,9 +538,9 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async fetchPatreonData(): Promise<Result<PatreonData, string>> {
+  async openLogsDirectory(): Promise<Result<null, string>> {
     try {
-      return { status: 'ok', data: await TAURI_INVOKE('fetch_patreon_data') };
+      return { status: 'ok', data: await TAURI_INVOKE('open_logs_directory') };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: 'error', error: e as any };
@@ -622,6 +719,31 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getMemo(worldId: string): Promise<Result<string, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_memo', { worldId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setMemoAndSave(
+    worldId: string,
+    memo: string,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_memo_and_save', { worldId, memo }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
 };
 
 /** user-defined events **/
@@ -637,6 +759,12 @@ export type BackupMetaData = {
   app_version: string;
 };
 export type CardSize = 'Compact' | 'Normal' | 'Expanded' | 'Original';
+export type FilterItemSelectorStarredType =
+  | 'Author'
+  | 'Tag'
+  | 'ExcludeTag'
+  | 'Folder';
+export type FolderRemovalPreference = 'ask' | 'alwaysRemove' | 'neverRemove';
 export type GroupInstanceCreateAllowedType = {
   normal: boolean;
   plus: boolean;
@@ -683,6 +811,7 @@ export type GroupRole = {
   permissions: GroupPermission[];
   isManagementRole: boolean;
 };
+export type InstanceRegion = 'us' | 'use' | 'eu' | 'jp';
 export type PatreonData = {
   platinumSupporter: string[];
   goldSupporter: string[];
@@ -710,6 +839,7 @@ export type UserGroup = {
   isRepresenting: boolean;
   mutualGroup: boolean;
 };
+export type WorldBlacklist = { worlds: string[] };
 export type WorldDetails = {
   worldId: string;
   name: string;

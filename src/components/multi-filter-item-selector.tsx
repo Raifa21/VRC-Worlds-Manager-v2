@@ -6,9 +6,9 @@
  * Further modifications by @raifa21
  */
 
-import { useState } from 'react';
-import { ChevronsUpDown, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useRef, useEffect } from 'react';
+import { X, Star } from 'lucide-react';
+import { FilterItemSelectorStarredType } from '@/lib/bindings';
 import {
   Command,
   CommandEmpty,
@@ -25,6 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useLocalization } from '@/hooks/use-localization';
+import { commands } from '@/lib/bindings';
 
 export type Option = {
   value: string;
@@ -33,24 +34,29 @@ export type Option = {
 
 interface MultiFilterItemSelectorProps {
   placeholder?: string;
-  values?: string[]; // Changed from value to values array
+  values: string[];
   candidates: Option[];
-  onValuesChange?: (values: string[]) => void; // Changed from onValueChange
+  onValuesChange?: (values: string[]) => void;
   allowCustomValues?: boolean;
   maxItems?: number; // Optional limit on selections
+  id: FilterItemSelectorStarredType; // ID to fetch starred items
 }
 
 export default function MultiFilterItemSelector({
   placeholder,
-  values = [], // Default to empty array
+  values,
   candidates,
   onValuesChange,
   allowCustomValues = false,
   maxItems,
+  id,
 }: MultiFilterItemSelectorProps) {
   const { t } = useLocalization();
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [isMultiRow, setIsMultiRow] = useState(false);
+  const [starredItems, setStarredItems] = useState<string[]>([]);
+  const badgesContainerRef = useRef<HTMLDivElement>(null);
 
   const formattedPlaceholder = placeholder;
 
@@ -116,33 +122,156 @@ export default function MultiFilterItemSelector({
       item.label.toLowerCase().includes(inputValue.toLowerCase()),
   );
 
+  // Set starred items based on the provided ID
+  useEffect(() => {
+    const fetchStarredItems = async () => {
+      try {
+        const result = await commands.getStarredFilterItems(id);
+        if (result.status === 'ok') {
+          setStarredItems(result.data);
+        } else {
+          console.error('Failed to fetch starred items:', result.error);
+        }
+      } catch (error) {
+        console.error('Error fetching starred items:', error);
+      }
+    };
+    fetchStarredItems();
+  }, [id]);
+
+  // Save starred items with debounce to reduce file writes
+  useEffect(() => {
+    // Skip if no id provided or on initial render with empty array
+    if (!id) return;
+
+    // Wait 500ms after changes stop before saving
+    const saveTimeout = setTimeout(() => {
+      if (starredItems.length > 0) {
+        console.log(`Saving ${starredItems.length} starred items for ${id}`);
+        commands.setStarredFilterItems(id, starredItems);
+      }
+    }, 500);
+
+    // Clean up timeout if component unmounts or starredItems changes again
+    return () => clearTimeout(saveTimeout);
+  }, [starredItems, id]);
+
+  // Check if the badges are taking up multiple rows
+  useEffect(() => {
+    const checkHeight = () => {
+      if (badgesContainerRef.current) {
+        const containerHeight = badgesContainerRef.current.offsetHeight;
+        // If the container is taller than a typical single row (~24px), it's multi-row
+        setIsMultiRow(containerHeight > 28);
+      }
+    };
+
+    // Check after rendering and after any window resize
+    checkHeight();
+    window.addEventListener('resize', checkHeight);
+    return () => window.removeEventListener('resize', checkHeight);
+  }, [selectedOptions]);
+
+  // Create a map of all candidate items for quick lookup
+  const itemsMap = new Map(candidates.map((item) => [item.value, item]));
+
+  // Convert starred items to Options, handling items that might not be in candidates
+  const starredOptions = starredItems.map(
+    (value) => itemsMap.get(value) || { value, label: value },
+  );
+
+  // Filter non-selected items that match the input
+  const regularItems = candidates.filter(
+    (item) =>
+      !values.includes(item.value) &&
+      item.label.toLowerCase().includes(inputValue.toLowerCase()) &&
+      // Don't include items that are already in starredItems to avoid duplication
+      !starredItems.includes(item.value),
+  );
+
+  // Combine the lists: starred items first, then regular items
+  const combinedItems = [
+    // Starred items that match the filter and aren't already selected
+    ...starredOptions.filter(
+      (item) =>
+        !values.includes(item.value) &&
+        item.label.toLowerCase().includes(inputValue.toLowerCase()),
+    ),
+    ...regularItems,
+  ];
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <div className="relative">
         <div
-          className="flex items-center justify-between min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+          className={cn(
+            'flex items-center justify-between w-full rounded-md border border-input bg-background px-3 text-sm ring-offset-background hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer',
+            isMultiRow ? 'min-h-9' : 'h-9', // Use measured height instead of count
+          )}
           onClick={() => setOpen(!open)}
         >
-          <div className="flex flex-wrap gap-1 flex-grow min-w-0 max-h-[5rem] overflow-auto">
+          <div
+            ref={badgesContainerRef}
+            className={cn(
+              'flex flex-wrap gap-1 flex-grow min-w-0',
+              isMultiRow ? 'py-1.5 max-h-[4.5rem] overflow-y-auto' : 'py-1.5',
+            )}
+          >
             {selectedOptions.length > 0 ? (
-              selectedOptions.map((option) => (
-                <Badge
-                  key={option.value}
-                  variant="secondary"
-                  className="flex items-center gap-1 text-xs pointer-events-auto overflow-hidden"
-                >
-                  <span className="block max-w-[80px] truncate whitespace-nowrap flex-shrink">
-                    {option.label}
-                  </span>
-                  <X
-                    className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleClear(option.value, e);
-                    }}
-                  />
-                </Badge>
-              ))
+              selectedOptions.map((option) => {
+                const isStarred = starredItems.includes(option.value);
+                return (
+                  <Badge
+                    key={option.value}
+                    variant="secondary"
+                    className="flex items-center gap-1 bg-muted-foreground/30 hover:bg-muted-foreground/50 text-xs pointer-events-auto h-5"
+                    // Stop propagation on the entire badge to prevent dropdown toggle
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Make star icon clickable */}
+                    <div
+                      className="flex-shrink-0 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Toggle starred status
+                        if (isStarred) {
+                          setStarredItems(
+                            starredItems.filter((id) => id !== option.value),
+                          );
+                        } else {
+                          setStarredItems([...starredItems, option.value]);
+                        }
+                      }}
+                    >
+                      {/* Always show the star, but style it differently based on state */}
+                      <Star
+                        className={cn(
+                          'h-2.5 w-2.5',
+                          isStarred
+                            ? 'text-yellow-500'
+                            : 'text-muted-foreground/30 hover:text-muted-foreground/70',
+                        )}
+                        fill={isStarred ? 'currentColor' : 'none'}
+                      />
+                    </div>
+                    <span
+                      className={cn(
+                        'block truncate',
+                        isStarred ? 'max-w-[65px]' : 'max-w-[80px]',
+                      )}
+                    >
+                      {option.label}
+                    </span>
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClear(option.value, e);
+                      }}
+                    />
+                  </Badge>
+                );
+              })
             ) : (
               <span className="text-muted-foreground text-sm">
                 {formattedPlaceholder}
@@ -177,7 +306,7 @@ export default function MultiFilterItemSelector({
       >
         <Command>
           <CommandInput
-            placeholder={`Search ${placeholder?.toLowerCase()}...`}
+            placeholder={`${placeholder}...`}
             value={inputValue}
             onValueChange={setInputValue}
             onKeyDown={(e) => {
@@ -205,16 +334,44 @@ export default function MultiFilterItemSelector({
               )}
             </CommandEmpty>
             <CommandGroup className="max-h-[200px] overflow-y-auto">
-              {filteredItems.map((item) => (
-                <CommandItem
-                  key={item.value}
-                  value={item.value}
-                  onSelect={handleCommandSelect}
-                  className="cursor-pointer"
-                >
-                  <span className="truncate">{item.label}</span>
-                </CommandItem>
-              ))}
+              {combinedItems.map((item) => {
+                const isStarred = starredItems.includes(item.value);
+                return (
+                  <CommandItem
+                    key={item.value}
+                    value={item.value}
+                    onSelect={handleCommandSelect}
+                    className="cursor-pointer"
+                  >
+                    {/* Add clickable star icon for all items */}
+                    <div
+                      className="mr-2 flex-shrink-0 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent item selection when clicking the star
+                        // Toggle starred status
+                        if (isStarred) {
+                          setStarredItems(
+                            starredItems.filter((id) => id !== item.value),
+                          );
+                        } else {
+                          setStarredItems([...starredItems, item.value]);
+                        }
+                      }}
+                    >
+                      <Star
+                        className={cn(
+                          'h-3 w-3',
+                          isStarred
+                            ? 'text-yellow-500'
+                            : 'text-muted-foreground/50 hover:text-muted-foreground/70',
+                        )}
+                        fill={isStarred ? 'currentColor' : 'none'}
+                      />
+                    </div>
+                    <span className="truncate">{item.label}</span>
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           </CommandList>
 

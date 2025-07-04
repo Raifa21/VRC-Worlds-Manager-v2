@@ -36,15 +36,23 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
               alt={t('world-card:cross-platform')}
               width={24}
               height={24}
+              loading="lazy"
             />
           ) : world.platform == Platform.PC ? (
-            <Image src={QPc} alt={t('world-card:pc')} width={24} height={24} />
+            <Image
+              src={QPc}
+              alt={t('world-card:pc')}
+              width={24}
+              height={24}
+              loading="lazy"
+            />
           ) : (
             <Image
               src={QQ}
               alt={t('world-card:quest')}
               width={24}
               height={24}
+              loading="lazy"
             />
           )}
         </div>
@@ -54,6 +62,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
         alt={world.name}
         className={`w-full h-2/3 object-cover rounded-t-lg`}
         draggable="false"
+        loading="lazy"
       />
 
       {/* Various size renderings... */}

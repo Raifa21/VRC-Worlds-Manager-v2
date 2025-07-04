@@ -1,12 +1,15 @@
 use api::auth::VRChatAPIClientAuthenticator;
 use commands::generate_tauri_specta_builder;
 use definitions::{FolderModel, InitState, PreferenceModel, WorldModel};
+use directories::BaseDirs;
 use services::ApiService;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use state::InitCell;
 use std::sync::RwLock;
 use tauri::Manager;
 use tauri_plugin_updater::UpdaterExt;
+
+use crate::services::memo_manager::MemoManager;
 
 mod api;
 mod backup;
@@ -23,6 +26,7 @@ static WORLDS: InitCell<RwLock<Vec<WorldModel>>> = InitCell::new();
 static INITSTATE: InitCell<tokio::sync::RwLock<InitState>> = InitCell::new();
 static AUTHENTICATOR: InitCell<tokio::sync::RwLock<VRChatAPIClientAuthenticator>> = InitCell::new();
 static RATE_LIMIT_STORE: InitCell<RwLock<api::RateLimitStore>> = InitCell::new();
+static MEMO_MANAGER: InitCell<RwLock<MemoManager>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -78,6 +82,8 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            app.manage(app.handle().clone());
+
             let handle = app.handle().clone();
             let logs_dir = handle.path().app_log_dir().unwrap();
             logging::purge_outdated_logs(&logs_dir).expect("Failed to purge outdated logs");
@@ -136,6 +142,13 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
 fn initialize_app() -> Result<(), String> {
     match services::initialize_service::initialize_app() {
         Ok((preferences, folders, worlds, cookies, init_state)) => {
+            let memo_path = BaseDirs::new()
+                .expect("Failed to get base directories")
+                .data_local_dir()
+                .join("VRC_Worlds_Manager_new")
+                .join("memo.json");
+            let memo_manager = MemoManager::load(memo_path)?;
+
             log::info!("App initialized successfully");
             PREFERENCES.set(RwLock::new(preferences));
             FOLDERS.set(RwLock::new(folders));
@@ -145,6 +158,7 @@ fn initialize_app() -> Result<(), String> {
             AUTHENTICATOR.set(tokio::sync::RwLock::new(
                 VRChatAPIClientAuthenticator::from_cookie_store(cookie_store),
             ));
+            MEMO_MANAGER.set(RwLock::new(memo_manager));
             Ok(())
         }
         Err(e) => {

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 #[derive(PartialEq, Eq)]
 pub enum InstanceType {
@@ -48,7 +49,7 @@ pub struct GroupOnlyInstanceConfig {
     pub allowed_roles: Option<Vec<String>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Type)]
 pub enum InstanceRegion {
     #[serde(rename = "us")]
     UsWest,

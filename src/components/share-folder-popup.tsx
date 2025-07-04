@@ -40,6 +40,7 @@ export function ShareFolderPopup({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareId, setShareId] = useState<string | null>(null);
+  const [showCopied, setShowCopied] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -113,32 +114,10 @@ export function ShareFolderPopup({
       try {
         await navigator.clipboard.writeText(shareId);
         info('Copied share ID to clipboard');
+        setShowCopied('id');
+        setTimeout(() => setShowCopied(null), 2000);
       } catch (e) {
         error(`Clipboard copy failed: ${e}`);
-      }
-    }
-  };
-
-  // Handler to copy the share link to clipboard
-  const handleCopyLink = async () => {
-    if (shareLink) {
-      try {
-        await navigator.clipboard.writeText(shareLink);
-        info('Copied share link to clipboard');
-      } catch (e) {
-        error(`Clipboard copy failed: ${e}`);
-      }
-    }
-  };
-
-  // Handler to preview folder in browser
-  const handlePreviewFolder = async () => {
-    if (shareLink) {
-      try {
-        await openUrl(shareLink);
-        info('Opened folder preview in browser');
-      } catch (e) {
-        error(`Failed to open browser: ${e}`);
       }
     }
   };
@@ -159,6 +138,45 @@ export function ShareFolderPopup({
     ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`
     : '';
 
+  // Handler to copy the share link to clipboard
+  const handleCopyLink = async () => {
+    if (shareLink) {
+      try {
+        await navigator.clipboard.writeText(shareLink);
+        info('Copied share link to clipboard');
+        setShowCopied('link');
+        setTimeout(() => setShowCopied(null), 2000);
+      } catch (e) {
+        error(`Clipboard copy failed: ${e}`);
+      }
+    }
+  };
+
+  const handleCopyText = async () => {
+    if (shareText) {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        info('Copied share text to clipboard');
+        setShowCopied('text');
+        setTimeout(() => setShowCopied(null), 2000);
+      } catch (e) {
+        error(`Clipboard copy failed: ${e}`);
+      }
+    }
+  };
+
+  // Handler to preview folder in browser
+  const handlePreviewFolder = async () => {
+    if (shareLink) {
+      try {
+        await openUrl(shareLink);
+        info('Opened folder preview in browser');
+      } catch (e) {
+        error(`Failed to open browser: ${e}`);
+      }
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -172,7 +190,15 @@ export function ShareFolderPopup({
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              {/* Folder Info */}
+              {/* Error Message - Show whenever there's an error */}
+              {errorMessage && (
+                <div className="flex items-start bg-destructive/10 text-destructive rounded p-3">
+                  <AlertTriangle className="h-5 w-5 mr-2 mt-0.5" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Loading Info */}
               {infoLoading && (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -180,13 +206,7 @@ export function ShareFolderPopup({
                 </div>
               )}
 
-              {errorMessage && !folderInfo && (
-                <div className="flex items-start bg-destructive/10 text-destructive rounded p-3">
-                  <AlertTriangle className="h-5 w-5 mr-2 mt-0.5" />
-                  <span>{errorMessage}</span>
-                </div>
-              )}
-
+              {/* Folder Info - Only show if no error and folder info exists */}
               {folderInfo && (
                 <div className="flex flex-col gap-2 bg-muted rounded p-3">
                   <div className="flex flex-row items-center gap-2">
@@ -244,9 +264,19 @@ export function ShareFolderPopup({
                 </Label>
                 <div className="flex items-center gap-2">
                   <Input className="flex-1" value={shareId} readOnly />
-                  <Button onClick={handleCopyId} size="sm" variant="outline">
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <div className="relative">
+                    <Button onClick={handleCopyId} size="sm" variant="outline">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    {showCopied === 'id' && (
+                      <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-10">
+                        <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg">
+                          Copied!
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -257,9 +287,23 @@ export function ShareFolderPopup({
                 </Label>
                 <div className="flex items-center gap-2">
                   <Input className="flex-1" value={shareLink} readOnly />
-                  <Button onClick={handleCopyLink} size="sm" variant="outline">
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <div className="relative">
+                    <Button
+                      onClick={handleCopyLink}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    {showCopied === 'link' && (
+                      <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-10">
+                        <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg">
+                          Copied!
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <Button
                     onClick={handlePreviewFolder}
                     size="sm"
@@ -276,14 +320,24 @@ export function ShareFolderPopup({
                   {t('share-folder:share-options')}
                 </Label>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-2"
-                    onClick={handleCopyLink}
-                  >
-                    <Copy className="h-4 w-4" />
-                    {t('share-folder:copy-link')}
-                  </Button>
+                  <div className="relative flex-1">
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={handleCopyText}
+                    >
+                      <Copy className="h-4 w-4" />
+                      {t('share-folder:copy-link')}
+                    </Button>
+                    {showCopied === 'text' && (
+                      <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-10">
+                        <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg">
+                          Copied!
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <Button variant="outline" className="flex-1 gap-2" asChild>
                     <a
                       href={tweetIntentUrl}

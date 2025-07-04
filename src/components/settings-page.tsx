@@ -16,7 +16,7 @@ import {
 import { CardSize } from '@/types/preferences';
 import { WorldCardPreview } from '@/components/world-card';
 import { Platform } from '@/types/worlds';
-import { commands } from '@/lib/bindings';
+import { commands, FolderRemovalPreference } from '@/lib/bindings';
 import {
   Loader2,
   LogOut,
@@ -60,6 +60,8 @@ export function SettingsPage({
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [showMigrateDialog, setShowMigrateDialog] = React.useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [folderRemovalPreference, setFolderRemovalPreference] =
+    useState<FolderRemovalPreference>('ask');
 
   React.useEffect(() => {
     const loadPreferences = async () => {
@@ -93,6 +95,16 @@ export function SettingsPage({
             (cardSizeResult.status === 'error' ? cardSizeResult.error : ''),
           variant: 'destructive',
         });
+      }
+
+      // Load the folder removal preference
+      try {
+        const folderRemovalResult = await commands.getFolderRemovalPreference();
+        if (folderRemovalResult.status === 'ok') {
+          setFolderRemovalPreference(folderRemovalResult.data);
+        }
+      } catch (e) {
+        error(`Failed to load folder removal preference: ${e}`);
       }
     };
 
@@ -357,6 +369,43 @@ export function SettingsPage({
     }
   };
 
+  const handleOpenLogs = async () => {
+    try {
+      const result = await commands.openLogsDirectory();
+
+      if (result.status === 'ok') {
+        info('Opened logs directory');
+      } else {
+        error(`Failed to open logs directory: ${result.error}`);
+      }
+    } catch (e) {
+      error(`Failed to open logs directory: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-open-logs'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleFolderRemovalPreferenceChange = async (
+    value: FolderRemovalPreference,
+  ) => {
+    try {
+      const result = await commands.setFolderRemovalPreference(value);
+
+      setFolderRemovalPreference(value);
+      info(`Folder removal preference set to: ${value}`);
+    } catch (e) {
+      error(`Failed to save folder removal preference: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-save-preferences'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (!preferences) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -584,15 +633,53 @@ export function SettingsPage({
           <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
             <div className="flex flex-col space-y-1.5">
               <Label className="text-base font-medium">
-                {t('settings-page:logout-title')}
+                {t('settings-page:folder-removal-title')}
               </Label>
               <div className="text-sm text-muted-foreground">
-                {t('settings-page:logout-description')}
+                {t('settings-page:folder-removal-description')}
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout} className="gap-2">
-              <LogOut className="h-4 w-4" />
-              <span className="text-sm">{t('settings-page:logout')}</span>
+            <Select
+              value={folderRemovalPreference ?? 'ask'}
+              onValueChange={(value) =>
+                handleFolderRemovalPreferenceChange(
+                  value as FolderRemovalPreference,
+                )
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Folder Removal Preference" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ask">
+                  {t('settings-page:folder-removal-ask')}
+                </SelectItem>
+                <SelectItem value="neverRemove">
+                  {t('settings-page:folder-removal-keep')}
+                </SelectItem>
+                <SelectItem value="alwaysRemove">
+                  {t('settings-page:folder-removal-remove')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:logs-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:logs-description')}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleOpenLogs}
+              className="gap-2"
+            >
+              <FolderOpen className="h-4 w-4" />
+              <span className="text-sm">{t('settings-page:open-folder')}</span>
             </Button>
           </Card>
 
@@ -618,6 +705,21 @@ export function SettingsPage({
                 </SelectItem>
               </SelectContent>
             </Select>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:logout-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:logout-description')}
+              </div>
+            </div>
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              <span className="text-sm">{t('settings-page:logout')}</span>
+            </Button>
           </Card>
         </TabsContent>
       </Tabs>

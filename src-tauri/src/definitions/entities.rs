@@ -1,6 +1,9 @@
 use chrono::{DateTime, SecondsFormat, Utc};
 use reqwest::cookie::Jar;
 use serde::{Deserialize, Serialize};
+use specta::Type;
+
+use crate::api::instance::InstanceRegion;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldApiData {
@@ -225,6 +228,32 @@ pub enum CardSize {
     Original, // Just like the original VRC Worlds Manager
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+pub struct FilterItemSelectorStarred {
+    pub author: Vec<String>,
+    pub tag: Vec<String>,
+    pub exclude_tag: Vec<String>,
+    pub folder: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+pub enum FilterItemSelectorStarredType {
+    Author,
+    Tag,
+    ExcludeTag,
+    Folder,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Copy)]
+pub enum FolderRemovalPreference {
+    #[serde(rename = "ask")]
+    Ask, // Ask the user for confirmation
+    #[serde(rename = "alwaysRemove")]
+    AlwaysRemove, // Always remove from current folder without confirmation
+    #[serde(rename = "neverRemove")]
+    NeverRemove, // Never remove, always keep in the current folder
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreferenceModel {
     #[serde(rename = "firstTime")]
@@ -233,6 +262,26 @@ pub struct PreferenceModel {
     pub language: String,
     #[serde(rename = "cardSize")]
     pub card_size: CardSize,
+    #[serde(default = "default_region")]
+    pub region: InstanceRegion,
+    #[serde(
+        rename = "filterItemSelectorStarred",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub filter_item_selector_starred: Option<FilterItemSelectorStarred>,
+    #[serde(
+        rename = "dontShowRemoveFromFolder",
+        default = "default_folder_removal"
+    )]
+    pub dont_show_remove_from_folder: FolderRemovalPreference,
+}
+
+fn default_region() -> InstanceRegion {
+    InstanceRegion::JP
+}
+
+fn default_folder_removal() -> FolderRemovalPreference {
+    FolderRemovalPreference::Ask
 }
 
 impl PreferenceModel {
@@ -242,6 +291,9 @@ impl PreferenceModel {
             theme: "light".to_string(),
             language: "en".to_string(),
             card_size: CardSize::Normal,
+            region: InstanceRegion::JP,
+            filter_item_selector_starred: None,
+            dont_show_remove_from_folder: FolderRemovalPreference::Ask,
         }
     }
 }
@@ -330,4 +382,23 @@ impl InitState {
             user_id: "".to_string(),
         }
     }
+}
+
+#[derive(Debug, Type, Serialize, Deserialize)]
+pub struct WorldBlacklist {
+    pub worlds: Vec<String>,
+}
+
+#[derive(Debug, Type, Serialize, Deserialize)]
+pub struct PatreonData {
+    #[serde(rename = "platinumSupporter")]
+    pub platinum_supporter: Vec<String>,
+    #[serde(rename = "goldSupporter")]
+    pub gold_supporter: Vec<String>,
+    #[serde(rename = "silverSupporter")]
+    pub silver_supporter: Vec<String>,
+    #[serde(rename = "bronzeSupporter")]
+    pub bronze_supporter: Vec<String>,
+    #[serde(rename = "basicSupporter")]
+    pub basic_supporter: Vec<String>,
 }

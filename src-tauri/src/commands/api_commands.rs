@@ -165,7 +165,8 @@ pub async fn get_recently_visited_worlds() -> Result<Vec<WorldDisplayData>, Stri
 #[specta::specta]
 pub async fn search_worlds(
     sort: String,
-    tag: String,
+    tags: Vec<String>,
+    exclude_tags: Vec<String>,
     search: String,
     page: usize,
 ) -> Result<Vec<WorldDisplayData>, String> {
@@ -173,20 +174,27 @@ pub async fn search_worlds(
 
     let sort = if sort.is_empty() { None } else { Some(sort) };
 
-    let tag = if tag.is_empty() { None } else { Some(tag) };
+    let tags = if tags.is_empty() { None } else { Some(tags) };
+    let exclude_tags = if exclude_tags.is_empty() {
+        None
+    } else {
+        Some(exclude_tags)
+    };
     let search = if search.is_empty() {
         None
     } else {
         Some(search)
     };
 
-    let worlds = match ApiService::search_worlds(cookie_store, sort, tag, search, page).await {
-        Ok(worlds) => worlds,
-        Err(e) => {
-            log::info!("Failed to fetch worlds: {}", e);
-            return Err(format!("Failed to fetch worlds: {}", e));
-        }
-    };
+    let worlds =
+        match ApiService::search_worlds(cookie_store, sort, tags, exclude_tags, search, page).await
+        {
+            Ok(worlds) => worlds,
+            Err(e) => {
+                log::info!("Failed to fetch worlds: {}", e);
+                return Err(format!("Failed to fetch worlds: {}", e));
+            }
+        };
 
     Ok(worlds)
 }
