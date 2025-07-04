@@ -62,7 +62,7 @@ See the [LICENSE](LICENSE) file for details.
 Install the following dependencies:
 
 - [Rust](https://www.rust-lang.org/tools/install)
-- [Next.js](hhttps://nextjs.org/docs/app/getting-started/installation)
+- [Next.js](https://nextjs.org/docs/app/getting-started/installation)
 - [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 
 We recommend using [VSCode](https://code.visualstudio.com/), but you can use any editor you prefer.
