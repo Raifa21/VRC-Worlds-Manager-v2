@@ -2,6 +2,7 @@ use crate::api::instance::InstanceRegion;
 use crate::definitions::CardSize;
 use crate::definitions::FilterItemSelectorStarred;
 use crate::definitions::FilterItemSelectorStarredType;
+use crate::definitions::FolderRemovalPreference;
 use crate::services::FileService;
 use crate::PreferenceModel;
 use crate::PREFERENCES;
@@ -114,6 +115,29 @@ pub fn set_starred_filter_items(
             }
         }
     }
+    FileService::write_preferences(preferences).map_err(|e| {
+        log::error!("Error writing preferences: {}", e);
+        e.to_string()
+    })?;
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_folder_removal_preference() -> Result<FolderRemovalPreference, String> {
+    let preferences_lock = PREFERENCES.get().read();
+    let preferences = preferences_lock.as_ref().unwrap();
+    Ok(preferences.dont_show_remove_from_folder)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_folder_removal_preference(
+    dont_show_remove_from_folder: FolderRemovalPreference,
+) -> Result<(), String> {
+    let mut preferences_lock = PREFERENCES.get().write();
+    let preferences = preferences_lock.as_mut().unwrap();
+    preferences.dont_show_remove_from_folder = dont_show_remove_from_folder;
     FileService::write_preferences(preferences).map_err(|e| {
         log::error!("Error writing preferences: {}", e);
         e.to_string()

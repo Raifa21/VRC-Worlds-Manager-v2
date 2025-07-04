@@ -1797,6 +1797,7 @@ export default function ListView() {
         }
         isFindPage={isFindPage}
         onAddFolder={handleCreateFolder}
+        currentFolder={currentFolder}
       />
       <ShareFolderPopup
         open={showShareFolder}

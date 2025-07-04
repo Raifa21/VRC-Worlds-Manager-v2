@@ -327,6 +327,34 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getFolderRemovalPreference(): Promise<
+    Result<FolderRemovalPreference, string>
+  > {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_folder_removal_preference'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setFolderRemovalPreference(
+    dontShowRemoveFromFolder: FolderRemovalPreference,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_folder_removal_preference', {
+          dontShowRemoveFromFolder,
+        }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async tryLogin(): Promise<Result<null, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('try_login') };
@@ -736,6 +764,7 @@ export type FilterItemSelectorStarredType =
   | 'Tag'
   | 'ExcludeTag'
   | 'Folder';
+export type FolderRemovalPreference = 'ask' | 'alwaysRemove' | 'neverRemove';
 export type GroupInstanceCreateAllowedType = {
   normal: boolean;
   plus: boolean;
