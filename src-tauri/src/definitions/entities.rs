@@ -244,6 +244,16 @@ pub enum FilterItemSelectorStarredType {
     Folder,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Copy)]
+pub enum FolderRemovalPreference {
+    #[serde(rename = "ask")]
+    Ask, // Ask the user for confirmation
+    #[serde(rename = "alwaysRemove")]
+    AlwaysRemove, // Always remove from current folder without confirmation
+    #[serde(rename = "neverRemove")]
+    NeverRemove, // Never remove, always keep in the current folder
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreferenceModel {
     #[serde(rename = "firstTime")]
@@ -259,16 +269,19 @@ pub struct PreferenceModel {
         skip_serializing_if = "Option::is_none"
     )]
     pub filter_item_selector_starred: Option<FilterItemSelectorStarred>,
-    #[serde(rename = "dontShowRemoveFromFolder", default = "default_false")]
-    pub dont_show_remove_from_folder: bool,
+    #[serde(
+        rename = "dontShowRemoveFromFolder",
+        default = "default_folder_removal"
+    )]
+    pub dont_show_remove_from_folder: FolderRemovalPreference,
 }
 
 fn default_region() -> InstanceRegion {
     InstanceRegion::JP
 }
 
-fn default_false() -> bool {
-    false
+fn default_folder_removal() -> FolderRemovalPreference {
+    FolderRemovalPreference::Ask
 }
 
 impl PreferenceModel {
@@ -280,7 +293,7 @@ impl PreferenceModel {
             card_size: CardSize::Normal,
             region: InstanceRegion::JP,
             filter_item_selector_starred: None,
-            dont_show_remove_from_folder: false,
+            dont_show_remove_from_folder: FolderRemovalPreference::Ask,
         }
     }
 }
