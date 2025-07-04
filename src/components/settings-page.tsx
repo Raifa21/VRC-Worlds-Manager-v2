@@ -640,7 +640,7 @@ export function SettingsPage({
               </div>
             </div>
             <Select
-              value={folderRemovalPreference}
+              value={folderRemovalPreference ?? 'ask'}
               onValueChange={(value) =>
                 handleFolderRemovalPreferenceChange(
                   value as FolderRemovalPreference,
@@ -648,9 +648,7 @@ export function SettingsPage({
               }
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue
-                  placeholder={t('settings-page:folder-removal-placeholder')}
-                />
+                <SelectValue placeholder="Folder Removal Preference" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ask">
