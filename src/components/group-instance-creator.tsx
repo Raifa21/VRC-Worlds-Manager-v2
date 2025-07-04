@@ -7,14 +7,17 @@ import {
   GroupInstanceCreateAllowedType,
   GroupRole,
   GroupInstancePermissionInfo,
+  commands,
 } from '@/lib/bindings';
-import { GroupInstanceType, Region } from '@/types/instances';
+import { GroupInstanceType } from '@/types/instances';
+import { InstanceRegion } from '@/lib/bindings';
 import { useState, useEffect } from 'react';
 import { Label } from './ui/label';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import { ChevronRight } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useLocalization } from '@/hooks/use-localization';
+import { info, error } from '@tauri-apps/plugin-log'; // Add this import
 
 interface GroupInstanceCreatorProps {
   groups: UserGroup[];
@@ -26,7 +29,7 @@ interface GroupInstanceCreatorProps {
   onCreateInstance: (
     groupId: string,
     instanceType: GroupInstanceType,
-    region: Region,
+    region: InstanceRegion,
     queueEnabled: boolean,
     selectedRoles?: string[],
   ) => void;
@@ -38,10 +41,34 @@ type CreationStep = 'group' | 'type' | 'roles' | 'config';
 interface StepInfo {
   groupId: string | null;
   instanceType: GroupInstanceType | null;
-  region: Region;
+  region: InstanceRegion; // Changed from Region
   queueEnabled: boolean;
   selectedRoles: Set<string>;
 }
+
+const mapRegion = {
+  // UI to backend mapping
+  toBackend: (uiRegion: string): InstanceRegion => {
+    const mapping: Record<string, InstanceRegion> = {
+      USW: 'us' as InstanceRegion,
+      USE: 'use' as InstanceRegion,
+      EU: 'eu' as InstanceRegion,
+      JP: 'jp' as InstanceRegion,
+    };
+    return mapping[uiRegion] || ('jp' as InstanceRegion);
+  },
+
+  // Backend to UI mapping
+  toUI: (backendRegion: InstanceRegion): string => {
+    const mapping: Record<InstanceRegion, string> = {
+      us: 'USW',
+      use: 'USE',
+      eu: 'EU',
+      jp: 'JP',
+    };
+    return mapping[backendRegion] || 'JP';
+  },
+};
 
 export function GroupInstanceCreator({
   groups,
@@ -83,7 +110,7 @@ export function GroupInstanceCreator({
   const [stepInfo, setStepInfo] = useState<StepInfo>({
     groupId: initialGroupId || null,
     instanceType: null,
-    region: 'JP',
+    region: 'jp' as InstanceRegion, // Changed from 'JP'
     queueEnabled: false,
     selectedRoles: new Set(),
   });
@@ -98,6 +125,31 @@ export function GroupInstanceCreator({
       setIsLoading(false);
     }
   }, [groups]);
+
+  // Add useEffect to load the saved region preference
+  useEffect(() => {
+    const loadRegionPreference = async () => {
+      try {
+        const regionResult = await commands.getRegion();
+        if (regionResult.status === 'ok') {
+          setStepInfo((prev) => ({
+            ...prev,
+            region: regionResult.data,
+          }));
+          info(`Loaded region preference: ${regionResult.data}`);
+        }
+      } catch (e) {
+        error(`Failed to load region preference: ${e}`);
+        // Fall back to JP if we can't load the preference
+        setStepInfo((prev) => ({
+          ...prev,
+          region: 'jp' as InstanceRegion,
+        }));
+      }
+    };
+
+    loadRegionPreference();
+  }, []); // Empty dependency array means this runs once on mount
 
   const getRoleType = (role: GroupRole) => {
     if (role.isManagementRole) {
@@ -240,6 +292,16 @@ export function GroupInstanceCreator({
     return hasNormalRole && role.isManagementRole;
   };
 
+  // Add function to save region preference
+  const setRegionPreference = async (region: InstanceRegion) => {
+    try {
+      await commands.setRegion(region);
+      info(`Region preference set to ${region}`);
+    } catch (e) {
+      error(`Failed to set region preference: ${e}`);
+    }
+  };
+
   const handleCreateInstance = () => {
     if (!stepInfo.instanceType || !stepInfo.groupId) return;
 
@@ -249,6 +311,9 @@ export function GroupInstanceCreator({
           ? Array.from(stepInfo.selectedRoles)
           : undefined
         : undefined;
+
+    // Save the region preference before creating the instance
+    setRegionPreference(stepInfo.region);
 
     onCreateInstance(
       stepInfo.groupId,
@@ -264,7 +329,7 @@ export function GroupInstanceCreator({
     setStepInfo({
       groupId: null,
       instanceType: null,
-      region: 'JP',
+      region: 'jp' as InstanceRegion,
       queueEnabled: false,
       selectedRoles: new Set(),
     });
@@ -323,7 +388,7 @@ export function GroupInstanceCreator({
       setStepInfo({
         groupId: null,
         instanceType: null,
-        region: 'JP',
+        region: 'jp' as InstanceRegion, // Changed from 'JP' to 'jp'
         queueEnabled: false,
         selectedRoles: new Set(),
       });
@@ -586,10 +651,13 @@ export function GroupInstanceCreator({
         </Label>
         <ToggleGroup
           type="single"
-          value={stepInfo.region}
+          value={mapRegion.toUI(stepInfo.region)}
           onValueChange={(value) => {
             if (value)
-              setStepInfo((prev) => ({ ...prev, region: value as Region }));
+              setStepInfo((prev) => ({
+                ...prev,
+                region: mapRegion.toBackend(value),
+              }));
           }}
           className="flex gap-2 mt-1"
         >
