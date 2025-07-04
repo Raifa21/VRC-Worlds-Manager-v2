@@ -10,11 +10,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Check, Info, Loader2, Minus, AlertCircle } from 'lucide-react';
-import { WorldDisplayData } from '@/lib/bindings';
+import { commands, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { Alert, AlertDescription } from './ui/alert';
 import { Input } from './ui/input';
 import { SpecialFolders } from '@/types/folders'; // Add this import
+import { error, info } from '@tauri-apps/plugin-log';
+import { Checkbox } from './ui/checkbox';
+import { FolderRemovalPreference } from '@/lib/bindings';
 
 interface AddToFolderDialogProps {
   open: boolean;
@@ -41,7 +44,8 @@ export function AddToFolderDialog({
   currentFolder,
 }: AddToFolderDialogProps) {
   const { t } = useLocalization();
-  // Add state to track dialog page
+
+  // Remove duplicated state - keep only rememberChoice
   const [dialogPage, setDialogPage] = useState<'folders' | 'removeConfirm'>(
     'folders',
   );
@@ -49,6 +53,7 @@ export function AddToFolderDialog({
   const [foldersToRemove, setFoldersToRemove] = useState<Set<string>>(
     new Set(),
   );
+  const [rememberChoice, setRememberChoice] = useState<boolean>(false);
 
   // Check if current folder is a special folder
   const isCurrentFolderSpecial =
@@ -59,6 +64,8 @@ export function AddToFolderDialog({
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [createdFolder, setCreatedFolder] = useState<string | null>(null);
+  const [folderRemovalPreference, setFolderRemovalPreference] =
+    useState<FolderRemovalPreference>('ask'); // Default to 'ask' for folder removal preference
 
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -195,43 +202,161 @@ export function AddToFolderDialog({
     }
   };
 
+  // Load preferences once when component mounts
+  useEffect(() => {
+    const loadFolderRemovalPreference = async () => {
+      try {
+        const result = await commands.getFolderRemovalPreference();
+        if (result.status === 'ok') {
+          setFolderRemovalPreference(result.data);
+
+          // Only auto-select the folder for removal if preference is alwaysRemove
+          if (
+            result.data === 'alwaysRemove' &&
+            currentFolder &&
+            !isCurrentFolderSpecial
+          ) {
+            setFoldersToRemove((prev) => {
+              const next = new Set(prev);
+              next.add(currentFolder.toString());
+              return next;
+            });
+          }
+        }
+      } catch (e) {
+        error(`Failed to load folder removal preference: ${e}`);
+      }
+    };
+
+    if (open) {
+      loadFolderRemovalPreference();
+    }
+  }, [open, currentFolder, isCurrentFolderSpecial]); // Add open dependency to ensure it loads when dialog opens
+
+  // Update the confirmation button click handler
+  const handleConfirmButtonClick = () => {
+    // Log current state for debugging
+    info(
+      `Current folder: ${currentFolder}, isSpecial: ${isCurrentFolderSpecial}`,
+    );
+    info(`Current preference: ${folderRemovalPreference}`);
+    info(
+      `Current folder in removeList: ${foldersToRemove.has(currentFolder?.toString() || '')}`,
+    );
+
+    // Check if we should show confirmation dialog - FIX the condition
+    if (
+      !isCurrentFolderSpecial &&
+      currentFolder &&
+      !foldersToRemove.has(currentFolder.toString())
+    ) {
+      // Log the branch we're taking
+      info(
+        `Should show dialog based on preference: ${folderRemovalPreference}`,
+      );
+
+      // Compare as string to ensure correct matching
+      if (folderRemovalPreference === 'ask') {
+        info('Setting dialog page to confirmation');
+        setDialogPage('removeConfirm');
+      } else if (folderRemovalPreference === 'alwaysRemove') {
+        info('Auto-removing based on preference');
+        const next = new Set(foldersToRemove);
+        next.add(currentFolder.toString());
+        setFoldersToRemove(next);
+        handleConfirm();
+      } else {
+        info('Auto-keeping based on preference');
+        handleConfirm();
+      }
+    } else {
+      // No need for confirmation, proceed
+      info('No confirmation needed, proceeding directly');
+      handleConfirm();
+    }
+  };
+
+  // Save preference based on user action
+  const saveFolderRemovalPreference = async (action: 'keep' | 'remove') => {
+    if (!rememberChoice) return; // Only save if checkbox is checked
+
+    try {
+      const preference = action === 'keep' ? 'neverRemove' : 'alwaysRemove';
+      await commands.setFolderRemovalPreference(preference);
+      info(`Saved folder removal preference: ${preference}`);
+    } catch (e) {
+      error(`Failed to save folder removal preference: ${e}`);
+    }
+  };
+
+  // Handle removing from current folder
+  const handleRemoveFromCurrentFolder = async () => {
+    setIsLoading(true);
+    try {
+      if (rememberChoice) {
+        await saveFolderRemovalPreference('remove');
+      }
+
+      if (currentFolder && !isCurrentFolderSpecial) {
+        const addArray = Array.from(foldersToAdd);
+        // Explicitly add current folder to removeArray
+        const removeArray = [
+          ...Array.from(foldersToRemove),
+          currentFolder.toString(),
+        ];
+
+        await onConfirm(addArray, removeArray);
+      } else {
+        await onConfirm(Array.from(foldersToAdd), Array.from(foldersToRemove));
+      }
+
+      // Reset state
+      setFoldersToAdd(new Set());
+      setFoldersToRemove(new Set());
+      setDialogPage('folders');
+    } catch (error) {
+      console.error('Error during folder operations:', error);
+    } finally {
+      setIsLoading(false);
+      onOpenChange(false);
+    }
+  };
+
+  // Handle keeping in current folder
+  const handleKeepInCurrentFolder = async () => {
+    setIsLoading(true);
+    try {
+      if (rememberChoice) {
+        await saveFolderRemovalPreference('keep');
+      }
+
+      // Don't modify foldersToRemove, just use as-is
+      await onConfirm(Array.from(foldersToAdd), Array.from(foldersToRemove));
+
+      // Reset state
+      setFoldersToAdd(new Set());
+      setFoldersToRemove(new Set());
+      setDialogPage('folders');
+    } catch (error) {
+      console.error('Error during folder operations:', error);
+    } finally {
+      setIsLoading(false);
+      onOpenChange(false);
+    }
+  };
+
+  // Regular confirmation without special handling for current folder
   const handleConfirm = async () => {
     setIsLoading(true);
     try {
       await onConfirm(Array.from(foldersToAdd), Array.from(foldersToRemove));
       setFoldersToAdd(new Set());
       setFoldersToRemove(new Set());
-      setDialogPage('folders'); // Reset to main page
     } catch (error) {
       console.error('Error during confirmation:', error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Function to prepare current folder for removal and handle confirmation
-  const handleRemoveFromCurrentFolder = async () => {
-    setIsLoading(true);
-    try {
-      // Make sure currentFolder is a string and not a special folder
-      if (currentFolder && !isCurrentFolderSpecial) {
-        // Create new arrays instead of modifying sets (more reliable)
-        const addArray = Array.from(foldersToAdd);
-        const removeArray = [
-          ...Array.from(foldersToRemove),
-          currentFolder.toString(),
-        ];
-        await onConfirm(addArray, removeArray);
-      }
-      // Reset dialog state
-      setFoldersToAdd(new Set());
-      setFoldersToRemove(new Set());
-      setDialogPage('folders');
-    } catch (error) {
-      console.error('Error removing from current folder:', error);
-    } finally {
-      setIsLoading(false);
-      onOpenChange(false); // Close dialog after completion
+      onOpenChange(false);
     }
   };
 
@@ -243,7 +368,8 @@ export function AddToFolderDialog({
       setIsCreatingNew(false);
       setNewFolderName('');
       setIsLoading(false);
-      setDialogPage('folders'); // Reset page
+      setDialogPage('folders');
+      setRememberChoice(false);
     }
     onOpenChange(next);
   };
@@ -356,24 +482,7 @@ export function AddToFolderDialog({
               >
                 {t('general:cancel')}
               </Button>
-              <Button
-                onClick={() => {
-                  // Only show remove confirmation if:
-                  // 1. Current folder is not a special folder
-                  // 2. Current folder exists
-                  // 3. Current folder is not already being removed
-                  if (
-                    !isCurrentFolderSpecial &&
-                    currentFolder &&
-                    !foldersToRemove.has(currentFolder.toString())
-                  ) {
-                    setDialogPage('removeConfirm');
-                  } else {
-                    handleConfirm();
-                  }
-                }}
-                disabled={isLoading}
-              >
+              <Button onClick={handleConfirmButtonClick} disabled={isLoading}>
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -396,23 +505,36 @@ export function AddToFolderDialog({
 
             <div className="flex flex-col text-center gap-1 text-sm text-muted-foreground">
               <p>{t('add-to-folder-dialog:remove-description')}</p>
-              <p className="font-semibold">
-                {selectedWorlds?.length || 0} {t('general:worlds')}
-              </p>
+            </div>
+
+            {/* Remember choice checkbox */}
+            <div className="flex items-center space-x-2 self-start mt-2">
+              <Checkbox
+                id="remember-choice"
+                checked={rememberChoice}
+                onCheckedChange={(checked) => setRememberChoice(!!checked)}
+              />
+              <label
+                htmlFor="remember-choice"
+                className="text-sm text-muted-foreground cursor-pointer"
+              >
+                {t('add-to-folder-dialog:remember-choice')}
+              </label>
             </div>
 
             <div className="flex gap-2 mt-4 justify-center w-full">
-              {/* No more Back button */}
               <Button
                 variant="outline"
-                onClick={handleConfirm}
+                onClick={handleKeepInCurrentFolder}
                 disabled={isLoading}
                 className="flex-1"
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : rememberChoice ? (
+                  t('add-to-folder-dialog:always-keep')
                 ) : (
-                  t('general:keep')
+                  t('add-to-folder-dialog:keep')
                 )}
               </Button>
               <Button
@@ -423,8 +545,10 @@ export function AddToFolderDialog({
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : rememberChoice ? (
+                  t('add-to-folder-dialog:always-remove')
                 ) : (
-                  t('general:remove')
+                  t('add-to-folder-dialog:remove')
                 )}
               </Button>
             </div>
