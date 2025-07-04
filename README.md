@@ -2,9 +2,9 @@
 
 [日本語はこちら / 日本語のREADMEはREADME_JP.mdを参照してください。](./README_JP.md)
 
-![GitHub deployments](https://img.shields.io/github/deployments/raifa21/vrc-worlds-manager-tauri/release?style=flat)
-![GitHub Release](https://img.shields.io/github/v/release/raifa21/vrc-worlds-manager-tauri?label=Stable)
-![GitHub Release](https://img.shields.io/github/v/release/raifa21/vrc-worlds-manager-tauri?include_prereleases&label=Pre-Release)
+![GitHub deployments](https://img.shields.io/github/deployments/Raifa21/VRC-Worlds-Manager-v2/release?style=flat)
+![GitHub Release](https://img.shields.io/github/v/release/Raifa21/VRC-Worlds-Manager-v2?label=Stable)
+![GitHub Release](https://img.shields.io/github/v/release/Raifa21/VRC-Worlds-Manager-v2?include_prereleases&label=Pre-Release)
 
 VRC Worlds Manager is a Windows application designed to help VRChat users organize and store their favorite worlds more easily.
 
@@ -27,7 +27,7 @@ VRC Worlds Manager is a Windows application designed to help VRChat users organi
 
 ## Installation
 
-Download the latest release from the [Releases page](https://github.com/yourusername/vrc-world-manager-tauri/releases) and run the `.exe` file.  
+Download the latest release from the [Releases page](https://github.com/yourusername/VRC-Worlds-Manager-v2/releases) and run the `.exe` file.  
 No additional setup is required.
 
 ---

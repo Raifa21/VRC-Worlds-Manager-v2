@@ -7,7 +7,7 @@
  * https://github.com/vrc-get/vrc-get/blob/master/vrc-get-gui/src/logging.rs
  * Copyright (c) 2023 anatawa12 and other contributors
  *
- * Further modifications by @raifa21
+ * Further modifications by @Raifa21
  */
 
 use std::path::PathBuf;
