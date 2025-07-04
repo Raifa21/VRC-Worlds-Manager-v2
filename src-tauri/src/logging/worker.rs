@@ -7,7 +7,7 @@
  * https://github.com/vrc-get/vrc-get/blob/master/vrc-get-gui/src/logging.rs
  * Copyright (c) 2023 anatawa12 and other contributors
  *
- * Further modifications by @raifa21
+ * Further modifications by @Raifa21
  */
 
 use std::path::PathBuf;
@@ -38,17 +38,6 @@ pub fn purge_outdated_logs(logs_dir: &PathBuf) -> Result<(), std::io::Error> {
                 let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
                 log::debug!("Processing log file: {}", file_name);
-
-                // Handle old format log files
-                // This is for backward compatibility
-                // and should be removed in the future
-                if file_name == "logs.log" || file_name == "vrc-worlds-manager.log" {
-                    log::info!("removing old format log file: {}", path.display());
-                    if let Err(e) = std::fs::remove_file(&path) {
-                        log::warn!("failed to remove old log file: {}", e);
-                    }
-                    continue;
-                }
 
                 // Handle new format log files
                 if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {

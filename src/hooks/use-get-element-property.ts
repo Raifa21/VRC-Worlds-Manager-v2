@@ -5,7 +5,7 @@
  *
  * That file was originally derived from https://zenn.dev/tm35/articles/7ac0a932c15ef8
  *
- * Further modifications by @raifa21
+ * Further modifications by @Raifa21
  */
 import { RefObject, useCallback } from 'react';
 
