@@ -41,9 +41,13 @@
   "general:clear-all": "すべてクリア",
   "general:memo": "メモ",
   "general:save": "保存",
+  "general:error-open-logs": "ログフォルダの展開に失敗しました",
 
   "error-page:title": "アプリケーションの読み込みエラー",
-  "error-page:retry": "再試行",
+  "error-page:try-again": "再試行",
+  "error-page:read-data-error-message": "アプリケーションデータの読み込みに失敗しました。データが破損しているか、見つかりません。",
+  "error-page:logs": "ログを開く",
+  "error-page:contact-support": "サポートに連絡",
 
   "login-page:title": "VRChat にログイン",
   "login-page:username-placeholder": "メール / ユーザー名",
@@ -256,7 +260,6 @@
   "settings-page:open-folder": "フォルダを開く",
   "settings-page:logs-title": "ログフォルダ",
   "settings-page:logs-description": "デバッグ用にアプリケーションのログフォルダを開きます",
-  "settings-page:error-open-logs": "ログフォルダの展開に失敗しました",
   "settings-page:backup-title": "バックアップ",
   "settings-page:backup-description": "ワールドとフォルダのデータをバックアップします",
   "settings-page:create-backup": "バックアップを作成",

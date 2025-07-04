@@ -382,7 +382,7 @@ export function SettingsPage({
       error(`Failed to open logs directory: ${e}`);
       toast({
         title: t('general:error-title'),
-        description: t('settings-page:error-open-logs'),
+        description: t('general:error-open-logs'),
         variant: 'destructive',
       });
     }
@@ -476,10 +476,7 @@ export function SettingsPage({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ja-JP">日本語</SelectItem>
-                <SelectItem value="en-US">English (US)</SelectItem>
-                <SelectItem value="en-UK" disabled>
-                  English (UK)
-                </SelectItem>
+                <SelectItem value="en-US">English</SelectItem>
               </SelectContent>
             </Select>
           </Card>
