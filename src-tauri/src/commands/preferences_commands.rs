@@ -120,3 +120,24 @@ pub fn set_starred_filter_items(
     })?;
     Ok(())
 }
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_dont_show_remove_from_folder() -> Result<bool, String> {
+    let preferences_lock = PREFERENCES.get().read();
+    let preferences = preferences_lock.as_ref().unwrap();
+    Ok(preferences.dont_show_remove_from_folder)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_dont_show_remove_from_folder(dont_show_remove_from_folder: bool) -> Result<(), String> {
+    let mut preferences_lock = PREFERENCES.get().write();
+    let preferences = preferences_lock.as_mut().unwrap();
+    preferences.dont_show_remove_from_folder = dont_show_remove_from_folder;
+    FileService::write_preferences(preferences).map_err(|e| {
+        log::error!("Error writing preferences: {}", e);
+        e.to_string()
+    })?;
+    Ok(())
+}

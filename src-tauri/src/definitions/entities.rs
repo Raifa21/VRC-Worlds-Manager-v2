@@ -259,11 +259,16 @@ pub struct PreferenceModel {
         skip_serializing_if = "Option::is_none"
     )]
     pub filter_item_selector_starred: Option<FilterItemSelectorStarred>,
+    #[serde(rename = "dontShowRemoveFromFolder", default = "default_false")]
+    pub dont_show_remove_from_folder: bool,
 }
 
-// Add this function to provide the default JP region
 fn default_region() -> InstanceRegion {
     InstanceRegion::JP
+}
+
+fn default_false() -> bool {
+    false
 }
 
 impl PreferenceModel {
@@ -275,6 +280,7 @@ impl PreferenceModel {
             card_size: CardSize::Normal,
             region: InstanceRegion::JP,
             filter_item_selector_starred: None,
+            dont_show_remove_from_folder: false,
         }
     }
 }

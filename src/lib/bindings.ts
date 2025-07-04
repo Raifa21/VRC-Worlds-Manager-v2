@@ -327,6 +327,32 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getDontShowRemoveFromFolder(): Promise<Result<boolean, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_dont_show_remove_from_folder'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setDontShowRemoveFromFolder(
+    dontShowRemoveFromFolder: boolean,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_dont_show_remove_from_folder', {
+          dontShowRemoveFromFolder,
+        }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async tryLogin(): Promise<Result<null, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('try_login') };
