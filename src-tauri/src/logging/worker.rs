@@ -39,17 +39,6 @@ pub fn purge_outdated_logs(logs_dir: &PathBuf) -> Result<(), std::io::Error> {
 
                 log::debug!("Processing log file: {}", file_name);
 
-                // Handle old format log files
-                // This is for backward compatibility
-                // and should be removed in the future
-                if file_name == "logs.log" || file_name == "vrc-worlds-manager.log" {
-                    log::info!("removing old format log file: {}", path.display());
-                    if let Err(e) = std::fs::remove_file(&path) {
-                        log::warn!("failed to remove old log file: {}", e);
-                    }
-                    continue;
-                }
-
                 // Handle new format log files
                 if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
                     if file_stem.starts_with("vrc-worlds-manager-") {
