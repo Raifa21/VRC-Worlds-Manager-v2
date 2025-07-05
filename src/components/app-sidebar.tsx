@@ -197,7 +197,7 @@ export function AppSidebar({
       <header className={sidebarStyles.header}>
         <div className="flex items-center gap-1">
           <h2 className="text-lg font-semibold">VRC Worlds Manager</h2>
-          <h3 className="text-sm text-muted-foreground"> v2 </h3>
+          <h3 className="text-sm text-muted-foreground">v2</h3>
         </div>
       </header>
       <Separator className="" />
