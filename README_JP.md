@@ -27,7 +27,7 @@ VRC Worlds Managerは、好きなワールドを簡単に整理・保存する�
 
 ## インストール
 
-[リリースページ](https://github.com/yourusername/VRC-Worlds-Manager-v2/releases)から最新バージョンをダウンロードし、`.exe`ファイルを実行してください。  
+[リリースページ](https://github.com/Raifa21/VRC-Worlds-Manager-v2/releases)から最新バージョンをダウンロードし、`.exe`ファイルを実行してください。  
 追加のセットアップは不要です。
 
 ---
