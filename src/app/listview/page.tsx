@@ -965,10 +965,9 @@ export default function ListView() {
     try {
       await commands.renameFolder(oldName, newName);
       await loadFolders();
-      setCurrentFolder(newName);
       toast({
-        title: 'Success',
-        description: 'Folder renamed successfully',
+        title: t('listview-page:folder-renamed-title'),
+        description: t('listview-page:folder-renamed-description', newName),
       });
     } catch (e) {
       error(`Failed to rename folder: ${e}`);
