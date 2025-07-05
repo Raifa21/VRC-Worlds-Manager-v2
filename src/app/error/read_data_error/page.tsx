@@ -24,9 +24,9 @@ export default function ReadDataErrorPage() {
   const { toast } = useToast();
   const [language, setLanguageState] = useState('en-US');
 
-  // Get the first key from the query string as the error message
+  // Get the value of the 'error' query parameter as the error message
   const errorMessage =
-    Array.from(searchParams.keys())[0] || t('error-page:unknown-error');
+    searchParams.get('error') || t('error-page:unknown-error');
 
   const handleOpenLogs = async () => {
     try {
