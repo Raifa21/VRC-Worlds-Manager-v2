@@ -245,8 +245,7 @@
   "about-section:supporters-description:link-text": "here",
   "about-section:supporters-description:posttext": ".",
   "about-section:loading-supporters": "Loading supporters...",
-  "about-section:no-supporters": "No supporters found",
-  "about-section:version": "VRC Worlds Manager v.0.1.3a",
+  "about-section:no-supporters": "Unable to load supporters. Sorry!",
   "about-section:source-code": "Source Code",
   "about-section:report-issue": "Report an Issue",
 

@@ -245,8 +245,7 @@
   "about-section:supporters-description:link-text": "こちら",
   "about-section:supporters-description:posttext": "から！",
   "about-section:loading-supporters": "支援者を読み込み中...",
-  "about-section:no-supporters": "支援者が見つかりません",
-  "about-section:version": "VRC Worlds Manager v.0.1.3a",
+  "about-section:no-supporters": "支援者が読み込めませんでした。ごめんなさい！",
   "about-section:source-code": "ソースコード",
   "about-section:report-issue": "問題を報告する",
 
