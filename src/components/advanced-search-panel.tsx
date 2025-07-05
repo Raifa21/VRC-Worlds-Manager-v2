@@ -109,6 +109,7 @@ export function AdvancedSearchPanel({
               candidates={availableAuthors.map((a) => ({ label: a, value: a }))}
               onValueChange={onAuthorFilterChange}
               allowCustomValues={false}
+              id="Author"
             />
           </div>
           <div className="space-y-2">
