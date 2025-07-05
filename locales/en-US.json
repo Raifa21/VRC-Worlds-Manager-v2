@@ -48,6 +48,7 @@
   "error-page:read-data-error-message": "Failed to read application data. Your data seems to be corrupted or missing.",
   "error-page:logs": "Open Logs",
   "error-page:contact-support": "Contact Support",
+  "error-page:unknown-error": "Unknown Error",
 
   "login-page:title": "Login to VRChat",
   "login-page:username-placeholder": "Email / Username",

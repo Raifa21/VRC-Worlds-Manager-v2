@@ -48,6 +48,7 @@
   "error-page:read-data-error-message": "アプリケーションデータの読み込みに失敗しました。データが破損しているか、見つかりません。",
   "error-page:logs": "ログを開く",
   "error-page:contact-support": "サポートに連絡",
+  "error-page:unknown-error": "不明なエラー",
 
   "login-page:title": "VRChat にログイン",
   "login-page:username-placeholder": "メール / ユーザー名",
