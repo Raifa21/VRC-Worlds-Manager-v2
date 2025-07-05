@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "VRC Worlds Manager",
+        "title": "VRC Worlds Manager v2",
         "width": 1100,
         "height": 600,
         "resizable": true,
