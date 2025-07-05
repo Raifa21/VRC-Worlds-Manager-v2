@@ -110,29 +110,54 @@ export function AboutSection() {
               <CardTitle>{t('about-section:special-thanks')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-4">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">
-                    {' '}
-                    {t('about-section:vrchat')}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {t('about-section:vrchat-description')}
-                  </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="flex items-start gap-3">
+                  <div>
+                    <span className="text-base font-semibold">
+                      {t('about-section:vrchat')}
+                    </span>
+                    <div className="text-sm text-muted-foreground">
+                      {t('about-section:vrchat-description')}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">
-                    {t('about-section:api-community')}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {t('about-section:api-community-description')}
-                  </span>
+                <div className="flex items-start gap-3">
+                  <div>
+                    <span className="text-base font-semibold">
+                      {t('about-section:api-community')}
+                    </span>
+                    <div className="text-sm text-muted-foreground">
+                      {t('about-section:api-community-description')}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">黒音キト</span>
-                  <span className="text-sm text-muted-foreground">
-                    {t('about-section:icons-credit')}
-                  </span>
+                <div className="flex items-start gap-3">
+                  <div>
+                    <span className="text-base font-semibold">黒音キト</span>
+                    <div className="text-sm text-muted-foreground">
+                      {t('about-section:icons-credit')}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div>
+                    <span className="text-base font-semibold">
+                      {t('about-section:armoirelepus')}
+                    </span>
+                    <div className="text-sm text-muted-foreground">
+                      {t('about-section:armoirelepus-description')}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div>
+                    <span className="text-base font-semibold">
+                      {t('about-section:beta-testers')}
+                    </span>
+                    <div className="text-sm text-muted-foreground">
+                      {t('about-section:beta-testers-description')}
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -188,7 +213,7 @@ export function AboutSection() {
       <div className="w-full border-t bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-2 flex justify-between items-center">
           <div className="text-sm text-muted-foreground">
-            VRC Worlds Manager v.0.3.2b
+            VRC Worlds Manager v2 v.0.3.4b
           </div>
 
           <div className="flex gap-4">

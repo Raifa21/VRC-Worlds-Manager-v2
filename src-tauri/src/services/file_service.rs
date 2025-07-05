@@ -83,54 +83,29 @@ impl FileService {
         })?;
         match serde_json::from_str::<AuthCookies>(&content) {
             Ok(mut cookies) => {
-                if cookies.version == 1 {
-                    if let Some(auth) = &cookies.auth_token {
-                        if !auth.is_empty() {
-                            cookies.auth_token =
-                                Some(EncryptionService::decrypt_aes(auth).map_err(|e| {
-                                    log::error!("Failed to decrypt auth token: {}", e);
-                                    FileError::InvalidFile
-                                })?);
-                        }
-                    } else {
-                        cookies.auth_token = None;
-                    }
-                    if let Some(tfa) = &cookies.two_factor_auth {
-                        if !tfa.is_empty() {
-                            cookies.two_factor_auth =
-                                Some(EncryptionService::decrypt_aes(tfa).map_err(|e| {
-                                    log::error!("Failed to decrypt two-factor auth token: {}", e);
-                                    FileError::InvalidFile
-                                })?);
-                        }
-                    } else {
-                        cookies.two_factor_auth = None;
-                    }
-                    Ok(cookies)
-                } else {
-                    if let Some(auth) = cookies.auth_token {
+                if let Some(auth) = &cookies.auth_token {
+                    if !auth.is_empty() {
                         cookies.auth_token =
-                            Some(EncryptionService::encrypt_aes(&auth).unwrap_or_else(|e| {
-                                log::error!("Failed to encrypt auth token: {}", e);
-                                String::new()
-                            }));
+                            Some(EncryptionService::decrypt_aes(auth).map_err(|e| {
+                                log::error!("Failed to decrypt auth token: {}", e);
+                                FileError::InvalidFile
+                            })?);
                     }
-                    if let Some(tfa) = cookies.two_factor_auth {
-                        cookies.two_factor_auth =
-                            Some(EncryptionService::encrypt_aes(&tfa).unwrap_or_else(|e| {
-                                log::error!("Failed to encrypt two-factor auth token: {}", e);
-                                String::new()
-                            }));
-                    }
-                    cookies.version = 1;
-
-                    // Write back encrypted version
-                    let encrypted_content = serde_json::to_string_pretty(&cookies)
-                        .map_err(|_| FileError::InvalidFile)?;
-                    fs::write(path, encrypted_content).map_err(|_| FileError::FileWriteError)?;
-
-                    Ok(cookies)
+                } else {
+                    cookies.auth_token = None;
                 }
+                if let Some(tfa) = &cookies.two_factor_auth {
+                    if !tfa.is_empty() {
+                        cookies.two_factor_auth =
+                            Some(EncryptionService::decrypt_aes(tfa).map_err(|e| {
+                                log::error!("Failed to decrypt two-factor auth token: {}", e);
+                                FileError::InvalidFile
+                            })?);
+                    }
+                } else {
+                    cookies.two_factor_auth = None;
+                }
+                Ok(cookies)
             }
             Err(_) => Err(FileError::InvalidFile),
         }

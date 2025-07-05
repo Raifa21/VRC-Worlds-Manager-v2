@@ -546,6 +546,17 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async openFolderDirectory(): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('open_folder_directory'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   /**
    * Checks if the app is being run for the first time
    * As this is called every time / is loaded from the frontend, cache result in the state

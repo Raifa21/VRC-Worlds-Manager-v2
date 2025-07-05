@@ -609,8 +609,7 @@ const WelcomePage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ja-JP">日本語</SelectItem>
-                      <SelectItem value="en-US">English (US)</SelectItem>
-                      <SelectItem value="en-UK">English (UK)</SelectItem>
+                      <SelectItem value="en-US">English</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

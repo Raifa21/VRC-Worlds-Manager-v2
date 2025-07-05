@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "vrc-worlds-manager",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "identifier": "com.raifaworks.vrc-worlds-manager",
   "build": {
     "frontendDist": "../out",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "VRC Worlds Manager",
+        "title": "VRC Worlds Manager v2",
         "width": 1100,
         "height": 600,
         "resizable": true,
@@ -34,7 +34,15 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installerHooks": "./windows/hooks.nsi",
+        "languages": ["English", "Japanese"],
+        "displayLanguageSelector": true
+      }
+    }
   },
   "plugins": {
     "updater": {

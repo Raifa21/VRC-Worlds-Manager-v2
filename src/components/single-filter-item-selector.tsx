@@ -3,7 +3,7 @@
  * https://github.com/siloneco/KonoAsset
  * Copyright (c) 2025 siloneco and other contributors
  *
- * Further modifications by @raifa21
+ * Further modifications by @Raifa21
  */
 
 import { useState } from 'react';

@@ -3,7 +3,7 @@
  * https://github.com/siloneco/KonoAsset
  * Copyright (c) 2025 siloneco and other contributors
  *
- * Further modifications by @raifa21
+ * Further modifications by @Raifa21
  */
 
 import { useState, useRef, useEffect } from 'react';
@@ -330,7 +330,7 @@ export default function MultiFilterItemSelector({
                   {t('filter-item-selector:custom-value', inputValue.trim())}
                 </div>
               ) : (
-                t('general:no-results-found')
+                t('filter-item-selector:no-results-found')
               )}
             </CommandEmpty>
             <CommandGroup className="max-h-[200px] overflow-y-auto">
