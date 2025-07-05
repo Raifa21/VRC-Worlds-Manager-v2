@@ -42,6 +42,8 @@
   "general:memo": "Notes",
   "general:save": "Save",
   "general:error-open-logs": "Failed to open logs folder",
+  "general:error-open-folder": "Failed to open folder. It seems to be missing.",
+  "general:open-folder": "Open Folder",
 
   "error-page:title": "Error Loading Application",
   "error-page:try-again": "Retry",
@@ -257,7 +259,6 @@
   "settings-page:section-data-management": "Data Management",
   "settings-page:hidden-folder": "Hidden Folder",
   "settings-page:hidden-folder-description": "Access hidden worlds",
-  "settings-page:open-folder": "Open Folder",
   "settings-page:logs-title": "Logs Folder",
   "settings-page:logs-description": "Open folder with application logs for debugging",
   "settings-page:backup-title": "Backup",

@@ -62,6 +62,30 @@ export function ErrorContent() {
     }
   };
 
+  const handleOpenFolder = async () => {
+    try {
+      const result = await commands.openFolderDirectory();
+
+      if (result.status === 'ok') {
+        info('Opened folder directory');
+      } else {
+        error(`Failed to open folder directory: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('general:error-open-folder'),
+          variant: 'destructive',
+        });
+      }
+    } catch (e) {
+      error(`Failed to open folder directory: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('general:error-open-folder'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-screen p-6 relative">
       {/* Language Selector */}
@@ -105,14 +129,24 @@ export function ErrorContent() {
         </p>
 
         <div className="flex flex-col gap-4 items-center">
-          <Button
-            variant="outline"
-            onClick={handleOpenLogs}
-            className="gap-2 w-full"
-          >
-            <FolderOpen className="h-4 w-4" />
-            <span>{t('error-page:logs')}</span>
-          </Button>
+          <div className="flex flex-row gap-2 w-full">
+            <Button
+              variant="outline"
+              onClick={handleOpenLogs}
+              className="gap-2 w-full"
+            >
+              <FolderOpen className="h-4 w-4" />
+              <span>{t('error-page:logs')}</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleOpenFolder}
+              className="gap-2 w-full"
+            >
+              <FolderOpen className="h-4 w-4" />
+              <span>{t('general:open-folder')}</span>
+            </Button>
+          </div>
 
           <Button variant="secondary" className="gap-2 w-full" asChild>
             <a

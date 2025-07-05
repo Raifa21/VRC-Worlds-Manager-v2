@@ -42,8 +42,9 @@
   "general:memo": "メモ",
   "general:save": "保存",
   "general:error-open-logs": "ログフォルダの展開に失敗しました",
+  "general:open-folder": "フォルダを開く",
 
-  "error-page:title": "アプリケーションの読み込みエラー",
+  "error-page:title": "アプリケーションエラー",
   "error-page:try-again": "再試行",
   "error-page:read-data-error-message": "アプリケーションデータの読み込みに失敗しました。データが破損しているか、見つかりません。",
   "error-page:logs": "ログを開く",
@@ -257,7 +258,6 @@
   "settings-page:section-data-management": "データ管理",
   "settings-page:hidden-folder": "非表示フォルダ",
   "settings-page:hidden-folder-description": "非表示にしたワールドを表示します",
-  "settings-page:open-folder": "フォルダを開く",
   "settings-page:logs-title": "ログフォルダ",
   "settings-page:logs-description": "デバッグ用にアプリケーションのログフォルダを開きます",
   "settings-page:backup-title": "バックアップ",

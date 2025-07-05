@@ -54,6 +54,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         api_commands::get_permission_for_create_group_instance,
         api_commands::create_group_instance,
         open_folder_commands::open_logs_directory,
+        open_folder_commands::open_folder_directory,
         data::read_data_commands::require_initial_setup,
         data::read_data_commands::check_files_loaded,
         data::read_data_commands::detect_old_installation,

@@ -549,7 +549,7 @@ export function SettingsPage({
               className="gap-2"
             >
               <FolderOpen className="h-4 w-4" />
-              <span className="text-sm">{t('settings-page:open-folder')}</span>
+              <span className="text-sm">{t('general:open-folder')}</span>
             </Button>
           </Card>
 
@@ -676,7 +676,7 @@ export function SettingsPage({
               className="gap-2"
             >
               <FolderOpen className="h-4 w-4" />
-              <span className="text-sm">{t('settings-page:open-folder')}</span>
+              <span className="text-sm">{t('general:open-folder')}</span>
             </Button>
           </Card>
 
