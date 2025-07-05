@@ -107,6 +107,9 @@ export default function SingleFilterItemSelector({
       if (starredItems.length > 0) {
         console.log(`Saving ${starredItems.length} starred items for ${id}`);
         commands.setStarredFilterItems(id, starredItems);
+      } else {
+        console.log(`Clearing starred items for ${id}`);
+        commands.setStarredFilterItems(id, []);
       }
     }, 500);
 
