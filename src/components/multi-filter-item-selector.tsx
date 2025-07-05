@@ -333,7 +333,7 @@ export default function MultiFilterItemSelector({
                 t('filter-item-selector:no-results-found')
               )}
             </CommandEmpty>
-            <CommandGroup className="max-h-[200px] overflow-y-auto">
+            <CommandGroup className="max-h-[200px] overflow-y-auto scroll-container">
               {combinedItems.map((item) => {
                 const isStarred = starredItems.includes(item.value);
                 return (
@@ -348,6 +348,13 @@ export default function MultiFilterItemSelector({
                       className="mr-2 flex-shrink-0 cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent item selection when clicking the star
+                        e.preventDefault(); // Prevent default browser behavior
+
+                        // Store current scroll position
+                        const scrollContainer =
+                          e.currentTarget.closest('.scroll-container');
+                        const scrollPosition = scrollContainer?.scrollTop;
+
                         // Toggle starred status
                         if (isStarred) {
                           setStarredItems(
@@ -355,6 +362,13 @@ export default function MultiFilterItemSelector({
                           );
                         } else {
                           setStarredItems([...starredItems, item.value]);
+                        }
+
+                        // Restore scroll position after state update
+                        if (scrollContainer && scrollPosition !== undefined) {
+                          setTimeout(() => {
+                            scrollContainer.scrollTop = scrollPosition;
+                          }, 0);
                         }
                       }}
                     >
