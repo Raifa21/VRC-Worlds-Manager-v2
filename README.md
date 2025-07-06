@@ -12,34 +12,34 @@ VRC Worlds Manager is a Windows application designed to help VRChat users organi
 
 ## Features
 
-■ Add Favourite Worlds
-・Automatically fetch worlds marked as Favourites on VRChat using the API and save them in the app.
-・Once saved, the worlds will remain in the app even if removed from your VRChat Favourites.
-・You can also add worlds directly using their URL links.
+- Add Favourite Worlds
+  - Automatically fetch worlds marked as Favourites on VRChat using the API and save them in the app.
+  - Once saved, the worlds will remain in the app even if removed from your VRChat Favourites.
+  - You can also add worlds directly using their URL links.
 
-■ Organize Worlds into Folders
-・Organize saved worlds into folders.
-・A single world can be assigned to multiple folders.
+- Organize Worlds into Folders
+  - Organize saved worlds into folders.
+  - A single world can be assigned to multiple folders.
 
-■ View World Details
-・Check the details of a world from within the app.
-・You can also attach notes to each world.
+- View World Details
+  - Check the details of a world from within the app.
+  - You can also attach notes to each world.
 
-■ Search Function
-・Search through saved worlds in the app.
-・Supports searching by world creator, tags, and folders.
+- Search Function
+  - Search through saved worlds in the app.
+  - Supports searching by world creator, tags, and folders.
 
-■ Discover Worlds
-・Retrieve a list of recently visited worlds.
-・Search for worlds using tags, text, exclusion tags, and more.
+- Discover Worlds
+  - Retrieve a list of recently visited worlds.
+  - Search for worlds using tags, text, exclusion tags, and more.
 
-■ Create Instances
-・Generate instances directly from the app. Group instances can also be created.
-・When an instance is created, an invite will be sent, just like on the official VRChat website.
+- Create Instances
+  - Generate instances directly from the app. Group instances can also be created.
+  - When an instance is created, an invite will be sent, just like on the official VRChat website.
 
-■ Share Folders
-・Share folders and generate a UUID valid for 30 days.
-・Folders can also be viewed on the web.
+- Share Folders
+  - Share folders and generate a UUID valid for 30 days.
+  - Folders can also be viewed on the web.
 
 ---
 
