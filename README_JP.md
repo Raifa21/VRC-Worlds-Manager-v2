@@ -12,16 +12,52 @@ VRC Worlds Managerは、好きなワールドを簡単に整理・保存する�
 
 ## 機能
 
-- **フォルダーによるワールド管理 / World management with folders:** お気に入りのワールドをカスタムフォルダーで整理できます。
-- **ワールドインスタンス生成 / World instance generation:** 簡単に共有・参加できるワールドインスタンスを素早く生成します。
-- **VRChat APIによる自動ワールド追加 / Automatic world adding via VRChat API:** VRChat APIを使ってワールドを自動で追加できます。
-- **UUIDによるフォルダー共有 / Folder sharing via UUID:** ユニークなUUIDでフォルダーを他のユーザーと共有できます。
+- お気に入りワールドの追加
+  - APIを使用して、VRChatのFavouriteに入っているワールドを自動的に取得し、アプリ内に保存します。  
+  - 保存後、VRChatのFavouriteから削除してもアプリ側には残ります。  
+  - ワールドのURLリンクを直接追加することもできます。  
+
+- ワールドのフォルダわけ
+  - 保存されたワールドを、フォルダ分けできます。  
+  - 同じワールドを複数のフォルダに振り分けることも可能です。  
+
+- ワールドの詳細を確認
+  - アプリ内からワールドの詳細を確認することができます。  
+  - ワールドにメモをつけることもできます。  
+
+- 検索機能
+  - アプリ内に保存したワールドに対して、検索をかけることができます。  
+  - ワールド作者、タグ、フォルダの検索に対応しています。  
+
+- ワールドを見つける
+  - 最近訪れたワールドを取得できます。  
+  - タグ、テキスト、除外タグ等でワールドを検索できます。  
+
+- インスタンスを建てる
+  - アプリ内からインスタンスを生成できます。もちろんグループインスタンスも生成できます。  
+  - インスタンスを生成すると、VRChat公式サイトと同様に、そのインスタンスへのインバイトが届きます。  
+
+- フォルダを共有
+  - フォルダを共有し、30日間有効なUUIDを生成できます。  
+  - ウェブ上でフォルダを確認することもできます。
 
 ---
 
 ## スクリーンショット
 
-<!-- ここにスクリーンショットやデモリンクを追加してください / Add screenshots or demo links here -->
+![image](https://github.com/user-attachments/assets/0c66ccd5-13df-4064-8d08-b91256fc01dc)
+
+![image](https://github.com/user-attachments/assets/d7c7ff13-556e-4118-aefc-c2c3de2e661e)
+
+![image](https://github.com/user-attachments/assets/8ff776d4-3391-48d4-af9d-271db8f9ba94)
+
+![image](https://github.com/user-attachments/assets/6b1fde21-ba5d-4293-b418-7b401687e92e)
+
+![image](https://github.com/user-attachments/assets/bb141a65-dca4-43cb-b1b6-2516e4d66b15)
+
+![image](https://github.com/user-attachments/assets/31b36ff0-5032-47d9-981e-02e482942a67)
+
+
 
 ---
 
