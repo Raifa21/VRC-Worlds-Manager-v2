@@ -12,16 +12,49 @@ VRC Worlds Manager is a Windows application designed to help VRChat users organi
 
 ## Features
 
-- **World management with folders:** Organize your favorite worlds into custom folders.
-- **World instance generation:** Quickly generate world instances for easy sharing or joining.
-- **Automatic world adding via VRChat API:** Seamlessly add worlds using the VRChat API.
-- **Folder sharing via UUID:** Share your folders with others using unique UUIDs.
+■ Add Favourite Worlds
+・Automatically fetch worlds marked as Favourites on VRChat using the API and save them in the app.
+・Once saved, the worlds will remain in the app even if removed from your VRChat Favourites.
+・You can also add worlds directly using their URL links.
+
+■ Organize Worlds into Folders
+・Organize saved worlds into folders.
+・A single world can be assigned to multiple folders.
+
+■ View World Details
+・Check the details of a world from within the app.
+・You can also attach notes to each world.
+
+■ Search Function
+・Search through saved worlds in the app.
+・Supports searching by world creator, tags, and folders.
+
+■ Discover Worlds
+・Retrieve a list of recently visited worlds.
+・Search for worlds using tags, text, exclusion tags, and more.
+
+■ Create Instances
+・Generate instances directly from the app. Group instances can also be created.
+・When an instance is created, an invite will be sent, just like on the official VRChat website.
+
+■ Share Folders
+・Share folders and generate a UUID valid for 30 days.
+・Folders can also be viewed on the web.
 
 ---
 
 ## Screenshots
 
-<!-- Add screenshots or demo links here -->
+![image](https://github.com/user-attachments/assets/13e36a5b-0ea4-4d80-ba9d-ed7dde811abd)
+
+![image](https://github.com/user-attachments/assets/5b30cca7-b62c-4f11-b342-2ebbabcf0089)
+
+![image](https://github.com/user-attachments/assets/94a6ed0e-2828-484e-99d4-17fc9039fc44)
+
+![image](https://github.com/user-attachments/assets/8f567d9d-49eb-4e6b-a6d2-f65bf08cda84)
+
+![image](https://github.com/user-attachments/assets/d45f8363-b5d7-4a3b-8a94-d4cd39fdb372)
+
 
 ---
 
