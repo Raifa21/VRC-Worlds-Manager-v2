@@ -35,7 +35,7 @@ static AUTHENTICATOR: InitCell<tokio::sync::RwLock<VRChatAPIClientAuthenticator>
 static RATE_LIMIT_STORE: InitCell<RwLock<api::RateLimitStore>> = InitCell::new();
 static MEMO_MANAGER: InitCell<RwLock<MemoManager>> = InitCell::new();
 static TASK_CONTAINER: InitCell<RwLock<TaskContainer>> = InitCell::new();
-static UPDATE_HANDLER: InitCell<UpdateHandler> = InitCell::new();
+static UPDATE_HANDLER: InitCell<tokio::sync::RwLock<UpdateHandler>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -113,14 +113,14 @@ pub fn run() {
             if let Err(e) = initialize_app() {
                 log::error!("Failed to initialize app: {}", e);
             }
-            UPDATE_HANDLER.set(get_update_handler(
+            UPDATE_HANDLER.set(tokio::sync::RwLock::new(get_update_handler(
                 app.handle().clone(),
                 &PREFERENCES
                     .get()
                     .read()
                     .expect("Failed to read preferences")
                     .update_channel,
-            ));
+            )));
 
             Ok(())
         })

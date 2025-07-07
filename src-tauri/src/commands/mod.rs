@@ -1,10 +1,13 @@
 pub mod api_commands;
+pub mod changelog;
 pub mod data;
 pub mod data_commands;
 pub mod folder_commands;
 pub mod memo_commands;
 pub mod open_folder_commands;
 pub mod preferences_commands;
+pub mod task;
+pub mod update;
 
 use tauri_specta::{collect_commands, Builder};
 
@@ -12,6 +15,14 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
         data_commands::fetch_patreon_data,
         data_commands::fetch_blacklist,
+        changelog::get_changelog,
+        task::get_task_status,
+        task::cancel_task_request,
+        task::get_task_error,
+        update::check_for_update,
+        update::download_update,
+        update::install_update,
+        update::do_not_notify_update,
         folder_commands::add_world_to_folder,
         folder_commands::remove_world_from_folder,
         folder_commands::hide_world,

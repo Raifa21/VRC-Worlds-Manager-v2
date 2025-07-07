@@ -4,7 +4,6 @@ use crate::definitions::FilterItemSelectorStarred;
 use crate::definitions::FilterItemSelectorStarredType;
 use crate::definitions::FolderRemovalPreference;
 use crate::services::FileService;
-use crate::PreferenceModel;
 use crate::PREFERENCES;
 
 #[tauri::command]
