@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  useLayoutEffect,
-  useRef,
-  useState,
-  useMemo,
-  useEffect,
-  use,
-} from 'react';
+import { useRef, useState, useMemo, useEffect, useContext } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +21,6 @@ import {
   SortAsc,
   SortDesc,
   Square,
-  Settings,
   X,
   TextSearch,
 } from 'lucide-react'; // For the reload icon
@@ -63,6 +55,7 @@ import { Badge } from '@/components/ui/badge';
 import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
 import { ShareFolderPopup } from '@/components/share-folder-popup';
 import { ImportedFolderContainsHidden } from '@/components/imported-folder-contains-hidden';
+import { UpdateDialogContext } from '@/components/UpdateDialogContext';
 
 type SortField =
   | 'name'
@@ -126,6 +119,12 @@ export default function ListView() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showShareFolder, setShowShareFolder] = useState(false);
+
+  const { checkForUpdate } = useContext(UpdateDialogContext);
+
+  useEffect(() => {
+    checkForUpdate();
+  }, []);
 
   useEffect(() => {
     loadAllWorlds();

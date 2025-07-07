@@ -5,10 +5,11 @@ use directories::BaseDirs;
 use services::ApiService;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use state::InitCell;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_updater::UpdaterExt;
 use tauri_specta::collect_events;
+use tokio::sync::Mutex;
 
 use crate::services::memo_manager::MemoManager;
 use crate::task::cancellable_task::TaskContainer;
@@ -113,14 +114,15 @@ pub fn run() {
             if let Err(e) = initialize_app() {
                 log::error!("Failed to initialize app: {}", e);
             }
-            UPDATE_HANDLER.set(tokio::sync::RwLock::new(get_update_handler(
+
+            app.manage(Arc::new(Mutex::new(get_update_handler(
                 app.handle().clone(),
                 &PREFERENCES
                     .get()
                     .read()
                     .expect("Failed to read preferences")
                     .update_channel,
-            )));
+            ))));
 
             Ok(())
         })
