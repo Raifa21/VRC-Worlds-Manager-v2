@@ -46,21 +46,21 @@ export const UpdateDialog: FC<Props> = ({
         }}
       >
         <DialogHeader>
-          <DialogTitle>{t('top:update-dialog:title')}</DialogTitle>
+          <DialogTitle>{t('update-dialog:title')}</DialogTitle>
           <DialogDescription>
-            {t('top:update-dialog:description')}
+            {t('update-dialog:description')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-1 w-full overflow-hidden">
           <p className="text-muted-foreground">
             {progress >= 100 && (
-              <span>{t('top:update-dialog:download-complete')}</span>
+              <span>{t('update-dialog:download-complete')}</span>
             )}
             {progress < 100 && (
               <span>
-                {t('top:update-dialog:downloading:foretext')}
+                {t('update-dialog:downloading:foretext')}
                 {Math.round(progress * 100) / 100}
-                {t('top:update-dialog:downloading:posttext')}
+                {t('update-dialog:downloading:posttext')}
               </span>
             )}
           </p>
@@ -83,7 +83,7 @@ export const UpdateDialog: FC<Props> = ({
               disabled={progress < 100}
               onClick={onUpdateButtonClick}
             >
-              {t('top:update-dialog:execute')}
+              {t('update-dialog:execute')}
             </Button>
           </div>
         </DialogFooter>
