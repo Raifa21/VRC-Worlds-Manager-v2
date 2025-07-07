@@ -21,6 +21,79 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getChangelog(): Promise<Result<LocalizedChanges[], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_changelog') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getTaskStatus(id: string): Promise<Result<TaskStatus, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_task_status', { id }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async cancelTaskRequest(id: string): Promise<Result<TaskStatus, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('cancel_task_request', { id }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getTaskError(id: string): Promise<Result<string | null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_task_error', { id }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async checkForUpdate(): Promise<Result<boolean, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('check_for_update') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async downloadUpdate(): Promise<Result<string, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('download_update') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async installUpdate(): Promise<Result<null, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('install_update') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async doNotNotifyUpdate(): Promise<Result<boolean, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('do_not_notify_update') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async addWorldToFolder(
     folderName: string,
     worldId: string,
@@ -831,6 +904,13 @@ export type GroupRole = {
   isManagementRole: boolean;
 };
 export type InstanceRegion = 'us' | 'use' | 'eu' | 'jp';
+export type LocalizedChanges = {
+  version: string;
+  pre_release: boolean;
+  features: string[];
+  fixes: string[];
+  others: string[];
+};
 export type PatreonData = {
   platinumSupporter: string[];
   goldSupporter: string[];
