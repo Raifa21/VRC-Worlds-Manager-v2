@@ -759,6 +759,14 @@ export const commands = {
 
 /** user-defined events **/
 
+export const events = __makeEvents__<{
+  taskStatusChanged: TaskStatusChanged;
+  updateProgress: UpdateProgress;
+}>({
+  taskStatusChanged: 'task-status-changed',
+  updateProgress: 'update-progress',
+});
+
 /** user-defined constants **/
 
 /** user-defined types **/
@@ -835,6 +843,9 @@ export type PreviousMetadata = {
   number_of_folders: number;
   number_of_worlds: number;
 };
+export type TaskStatus = 'Running' | 'Completed' | 'Cancelled' | 'Failed';
+export type TaskStatusChanged = { id: string; status: TaskStatus };
+export type UpdateProgress = { progress: number };
 export type UserGroup = {
   id: string;
   name: string;

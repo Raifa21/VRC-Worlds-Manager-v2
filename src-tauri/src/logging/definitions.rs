@@ -25,7 +25,8 @@ pub struct Logger {
 impl Log for Logger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         metadata.level() <= log::Level::Info
-            || metadata.target().starts_with("konoasset") && metadata.level() <= log::Level::Debug
+            || metadata.target().starts_with("vrc-worlds-manager-v2")
+                && metadata.level() <= log::Level::Debug
     }
 
     fn log(&self, record: &Record) {

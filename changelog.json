@@ -1,0 +1,50 @@
+[
+    {
+        "version": "1.0.1",
+        "features": [
+            {
+                "text": "Show changelog for updates",
+                "langs": [
+                    {
+                        "lang": ["ja-JP"],
+                        "text": "更新時に変更ログを表示"
+                    }
+                ]
+            },
+            {
+                "text": "Added selection for update channel",
+                "langs": [
+                    {
+                        "lang": ["ja-JP"],
+                        "text": "更新チャネルの選択を追加"
+                    }
+                ]
+            }
+        ],
+        "fixes": [
+            {
+                "text": "Fixed link for github repository in about page",
+                "langs": [
+                    {
+                        "lang": ["ja-JP"],
+                        "text": "「このアプリについて」のGitHubリポジトリへのリンクを修正"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "version": "1.0.0",
+        "features": [
+            {
+                "text": "Initial Release",
+                "langs": [
+                    {
+                        "lang": ["ja-JP"],
+                        "text": "初期リリース"
+                    }
+                ]
+            }
+        ]
+    }
+]
