@@ -20,7 +20,7 @@ export const Changelog: FC<Props> = ({ changes }) => {
       <div className="flex flex-row items-center">
         <Separator className="flex w-32 shrink" />
         <span className="px-4 text-muted-foreground flex shrink-0">
-          {t('top:update-dialog:changelog:title')}
+          {t('changelog:title')}
         </span>
         <Separator className="flex w-32 shrink" />
       </div>
@@ -45,7 +45,7 @@ export const Changelog: FC<Props> = ({ changes }) => {
           )}
           {changes !== null && changes.length === 0 && (
             <div className="text-muted-foreground text-center mt-4">
-              {t('top:update-dialog:changelog:not-found')}
+              {t('changelog:not-found')}
             </div>
           )}
           {changes !== null &&
@@ -65,7 +65,7 @@ export const Changelog: FC<Props> = ({ changes }) => {
         >
           <Button variant="secondary">
             <ExternalLink />
-            {t('top:update-dialog:changelog:github')}
+            {t('changelog:github')}
           </Button>
         </a>
       </div>

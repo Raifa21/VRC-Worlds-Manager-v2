@@ -63,6 +63,7 @@ import { Badge } from '@/components/ui/badge';
 import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
 import { ShareFolderPopup } from '@/components/share-folder-popup';
 import { ImportedFolderContainsHidden } from '@/components/imported-folder-contains-hidden';
+import { UpdateDialogProvider } from '@/components/UpdateDialogContext';
 
 type SortField =
   | 'name'
@@ -1626,216 +1627,220 @@ export default function ListView() {
   };
 
   return (
-    <div className="flex h-screen">
-      <AppSidebar
-        folders={folders}
-        onFoldersChange={loadFolders}
-        onAddFolder={() => setShowCreateFolder(true)}
-        onSelectFolder={handleSelectFolder}
-        selectedFolder={currentFolder}
-        onSelectAbout={() => {
-          setShowAbout(true);
-          setShowSettings(false);
-          setShowFind(false);
-          setShowWorldDetails(false);
-          setCurrentFolder(SpecialFolders.NotFolder);
-        }}
-        onSelectSettings={() => {
-          setShowSettings(true);
-          setShowAbout(false);
-          setShowFind(false);
-          setShowWorldDetails(false);
-          setCurrentFolder(SpecialFolders.NotFolder);
-        }}
-        onRenameFolder={onRenameFolder}
-        onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
-      />
-      <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">
-        {/* Render header when in all worlds, unclassified, or in a folder*/}
-        {currentFolder === SpecialFolders.All ||
-        currentFolder === SpecialFolders.Unclassified ||
-        !Object.values(SpecialFolders).includes(
-          currentFolder as SpecialFolders,
-        ) ? (
-          <div className="p-4 flex justify-between items-center">
-            <h1 className="text-xl font-bold truncate">
-              {Object.values(SpecialFolders).includes(
-                currentFolder as SpecialFolders,
-              )
-                ? t(`general:${currentFolder.toLowerCase().replace(' ', '-')}`)
-                : currentFolder}
-            </h1>
-            <div className="flex items-center">
-              {(currentFolder === SpecialFolders.All ||
-                currentFolder === SpecialFolders.Unclassified) && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsAddWorldOpen(true)}
-                    className="ml-2 flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">
-                      {t('listview-page:add-world')}
-                    </span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleReload}
-                    className="ml-2 flex items-center gap-2"
-                    disabled={isLoading}
-                  >
-                    <RefreshCw
-                      className={`h-4 w-4${isLoading ? ' animate-spin' : ''}`}
-                    />
-                    <span className="hidden sm:inline">
-                      {t('listview-page:reload-worlds')}
-                    </span>
-                  </Button>
-                </>
-              )}
-              {!Object.values(SpecialFolders).includes(
-                currentFolder as SpecialFolders,
-              ) && (
-                <div className="flex items-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-9 flex items-center gap-2 ml-2 mr-1"
-                      >
-                        <Menu className="h-10 w-10" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        className="flex items-center gap-2 cursor-pointer"
-                        onClick={() => setIsAddWorldOpen(true)}
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>{t('listview-page:add-world')}</span>
-                      </DropdownMenuItem>
-                      {worlds.length > 0 && (
+    <UpdateDialogProvider>
+      <div className="flex h-screen">
+        <AppSidebar
+          folders={folders}
+          onFoldersChange={loadFolders}
+          onAddFolder={() => setShowCreateFolder(true)}
+          onSelectFolder={handleSelectFolder}
+          selectedFolder={currentFolder}
+          onSelectAbout={() => {
+            setShowAbout(true);
+            setShowSettings(false);
+            setShowFind(false);
+            setShowWorldDetails(false);
+            setCurrentFolder(SpecialFolders.NotFolder);
+          }}
+          onSelectSettings={() => {
+            setShowSettings(true);
+            setShowAbout(false);
+            setShowFind(false);
+            setShowWorldDetails(false);
+            setCurrentFolder(SpecialFolders.NotFolder);
+          }}
+          onRenameFolder={onRenameFolder}
+          onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
+        />
+        <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">
+          {/* Render header when in all worlds, unclassified, or in a folder*/}
+          {currentFolder === SpecialFolders.All ||
+          currentFolder === SpecialFolders.Unclassified ||
+          !Object.values(SpecialFolders).includes(
+            currentFolder as SpecialFolders,
+          ) ? (
+            <div className="p-4 flex justify-between items-center">
+              <h1 className="text-xl font-bold truncate">
+                {Object.values(SpecialFolders).includes(
+                  currentFolder as SpecialFolders,
+                )
+                  ? t(
+                      `general:${currentFolder.toLowerCase().replace(' ', '-')}`,
+                    )
+                  : currentFolder}
+              </h1>
+              <div className="flex items-center">
+                {(currentFolder === SpecialFolders.All ||
+                  currentFolder === SpecialFolders.Unclassified) && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAddWorldOpen(true)}
+                      className="ml-2 flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden sm:inline">
+                        {t('listview-page:add-world')}
+                      </span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleReload}
+                      className="ml-2 flex items-center gap-2"
+                      disabled={isLoading}
+                    >
+                      <RefreshCw
+                        className={`h-4 w-4${isLoading ? ' animate-spin' : ''}`}
+                      />
+                      <span className="hidden sm:inline">
+                        {t('listview-page:reload-worlds')}
+                      </span>
+                    </Button>
+                  </>
+                )}
+                {!Object.values(SpecialFolders).includes(
+                  currentFolder as SpecialFolders,
+                ) && (
+                  <div className="flex items-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-9 flex items-center gap-2 ml-2 mr-1"
+                        >
+                          <Menu className="h-10 w-10" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           className="flex items-center gap-2 cursor-pointer"
-                          onClick={() => setShowShareFolder(true)}
+                          onClick={() => setIsAddWorldOpen(true)}
                         >
-                          <Share className="h-4 w-4" />
-                          <span>{t('listview-page:share-folder')}</span>
+                          <Plus className="h-4 w-4" />
+                          <span>{t('listview-page:add-world')}</span>
                         </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
+                        {worlds.length > 0 && (
+                          <DropdownMenuItem
+                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={() => setShowShareFolder(true)}
+                          >
+                            <Share className="h-4 w-4" />
+                            <span>{t('listview-page:share-folder')}</span>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        <div>{renderMainContent()}</div>
+          <div>{renderMainContent()}</div>
+        </div>
+        <CreateFolderDialog
+          open={showCreateFolder}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowCreateFolder(false);
+            }
+          }}
+          onConfirm={handleCreateFolder}
+          onImportFolder={handleImportFolder}
+        />
+        <AddWorldPopup
+          open={isAddWorldOpen}
+          onConfirm={handleAddWorld}
+          onClose={() => setIsAddWorldOpen(false)}
+          existingWorlds={
+            Object.values(SpecialFolders).includes(
+              currentFolder as SpecialFolders,
+            )
+              ? worlds.map((world) => world.worldId)
+              : worlds
+                  .filter((world) =>
+                    world.folders.includes(currentFolder as string),
+                  )
+                  .map((world) => world.worldId)
+          }
+        />
+        <WorldDetailPopup
+          open={showWorldDetails}
+          onOpenChange={(open) => {
+            setShowWorldDetails(open);
+            if (!open) {
+              setSelectedWorldForDetails(null);
+              refreshCurrentView();
+            }
+          }}
+          worldId={selectedWorldForDetails ? selectedWorldForDetails : ''}
+          onCreateInstance={createInstance}
+          onCreateGroupInstance={createGroupInstance}
+          onGetGroups={getGroups}
+          onGetGroupPermissions={getGroupPermissions}
+          dontSaveToLocal={isFindPage}
+          onDeleteWorld={handleDeleteWorld}
+          onSelectAuthor={(author) => {
+            setAuthorFilter(author);
+          }}
+          onSelectTag={(tag) => {
+            setTagFilters((prev) => [...prev, tag]);
+          }}
+        />
+        <AddToFolderDialog
+          open={showFolderDialog}
+          onOpenChange={setShowFolderDialog}
+          selectedWorlds={worlds.filter((world) =>
+            selectedWorldsForFolder.includes(world.worldId),
+          )}
+          folders={folders}
+          onConfirm={(foldersToAdd, foldersToRemove) =>
+            handleAddToFolders(foldersToAdd, foldersToRemove)
+          }
+          isFindPage={isFindPage}
+          onAddFolder={handleCreateFolder}
+          currentFolder={currentFolder}
+        />
+        <ShareFolderPopup
+          open={showShareFolder}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowShareFolder(false);
+            }
+          }}
+          folderName={currentFolder}
+        />
+        <DeleteFolderDialog
+          folderName={showDeleteFolder}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowDeleteFolder(null);
+            }
+          }}
+          onConfirm={handleDeleteFolder}
+        />
+        <AdvancedSearchPanel
+          open={showAdvancedSearch}
+          authorFilter={authorFilter}
+          onAuthorFilterChange={setAuthorFilter}
+          tagFilters={tagFilters}
+          onTagFiltersChange={setTagFilters}
+          folderFilters={folderFilters}
+          onFolderFiltersChange={setFolderFilters}
+          onClose={() => setShowAdvancedSearch(false)}
+        />
+        <ImportedFolderContainsHidden
+          open={showImportedFolderContainsHidden}
+          worlds={containedHiddenWorlds}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowImportedFolderContainsHidden(false);
+            }
+          }}
+          onConfirm={handleRestoreInImport}
+        />
       </div>
-      <CreateFolderDialog
-        open={showCreateFolder}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowCreateFolder(false);
-          }
-        }}
-        onConfirm={handleCreateFolder}
-        onImportFolder={handleImportFolder}
-      />
-      <AddWorldPopup
-        open={isAddWorldOpen}
-        onConfirm={handleAddWorld}
-        onClose={() => setIsAddWorldOpen(false)}
-        existingWorlds={
-          Object.values(SpecialFolders).includes(
-            currentFolder as SpecialFolders,
-          )
-            ? worlds.map((world) => world.worldId)
-            : worlds
-                .filter((world) =>
-                  world.folders.includes(currentFolder as string),
-                )
-                .map((world) => world.worldId)
-        }
-      />
-      <WorldDetailPopup
-        open={showWorldDetails}
-        onOpenChange={(open) => {
-          setShowWorldDetails(open);
-          if (!open) {
-            setSelectedWorldForDetails(null);
-            refreshCurrentView();
-          }
-        }}
-        worldId={selectedWorldForDetails ? selectedWorldForDetails : ''}
-        onCreateInstance={createInstance}
-        onCreateGroupInstance={createGroupInstance}
-        onGetGroups={getGroups}
-        onGetGroupPermissions={getGroupPermissions}
-        dontSaveToLocal={isFindPage}
-        onDeleteWorld={handleDeleteWorld}
-        onSelectAuthor={(author) => {
-          setAuthorFilter(author);
-        }}
-        onSelectTag={(tag) => {
-          setTagFilters((prev) => [...prev, tag]);
-        }}
-      />
-      <AddToFolderDialog
-        open={showFolderDialog}
-        onOpenChange={setShowFolderDialog}
-        selectedWorlds={worlds.filter((world) =>
-          selectedWorldsForFolder.includes(world.worldId),
-        )}
-        folders={folders}
-        onConfirm={(foldersToAdd, foldersToRemove) =>
-          handleAddToFolders(foldersToAdd, foldersToRemove)
-        }
-        isFindPage={isFindPage}
-        onAddFolder={handleCreateFolder}
-        currentFolder={currentFolder}
-      />
-      <ShareFolderPopup
-        open={showShareFolder}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowShareFolder(false);
-          }
-        }}
-        folderName={currentFolder}
-      />
-      <DeleteFolderDialog
-        folderName={showDeleteFolder}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowDeleteFolder(null);
-          }
-        }}
-        onConfirm={handleDeleteFolder}
-      />
-      <AdvancedSearchPanel
-        open={showAdvancedSearch}
-        authorFilter={authorFilter}
-        onAuthorFilterChange={setAuthorFilter}
-        tagFilters={tagFilters}
-        onTagFiltersChange={setTagFilters}
-        folderFilters={folderFilters}
-        onFolderFiltersChange={setFolderFilters}
-        onClose={() => setShowAdvancedSearch(false)}
-      />
-      <ImportedFolderContainsHidden
-        open={showImportedFolderContainsHidden}
-        worlds={containedHiddenWorlds}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowImportedFolderContainsHidden(false);
-          }
-        }}
-        onConfirm={handleRestoreInImport}
-      />
-    </div>
+    </UpdateDialogProvider>
   );
 }

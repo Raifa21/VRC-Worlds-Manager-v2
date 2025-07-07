@@ -28,7 +28,7 @@ export const ChangelogVersionSection: FC<Props> = ({ change }) => {
             <ChangelogLineEntry
               key={`feature-${index}`}
               icon={<Rocket />}
-              title={t('top:update-dialog:changelog:prefix:new-feature')}
+              title={t('changelog:prefix:new-feature')}
               text={feature}
               titleClassName="bg-blue-200 text-blue-800 dark:bg-blue-950 dark:text-blue-400"
             />
@@ -38,7 +38,7 @@ export const ChangelogVersionSection: FC<Props> = ({ change }) => {
             <ChangelogLineEntry
               key={`fix-${index}`}
               icon={<Bug />}
-              title={t('top:update-dialog:changelog:prefix:bug-fixes')}
+              title={t('changelog:prefix:bug-fixes')}
               text={fix}
               titleClassName="bg-red-200 text-red-800 dark:bg-red-950 dark:text-red-400"
             />
@@ -49,7 +49,7 @@ export const ChangelogVersionSection: FC<Props> = ({ change }) => {
             <ChangelogLineEntry
               key={`other-${index}`}
               icon={<Cog />}
-              title={t('top:update-dialog:changelog:prefix:others')}
+              title={t('changelog:prefix:others')}
               text={other}
               titleClassName="bg-yellow-200 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-400"
             />
