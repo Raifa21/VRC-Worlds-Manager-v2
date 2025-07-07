@@ -33,8 +33,8 @@ export const useUpdateDialogContext = (): ReturnProps => {
     }
 
     toast({
-      title: t('top:new-update-toast'),
-      description: t('top:new-update-toast:description'),
+      title: t('new-update-toast'),
+      description: t('new-update-toast:description'),
       duration: 30000,
       onSwipeEnd: () => {
         dismissUpdate();
@@ -46,14 +46,14 @@ export const useUpdateDialogContext = (): ReturnProps => {
             className={buttonVariants({ variant: 'default' })}
             onClick={startUpdateDownloadingAndOpenDialog}
           >
-            {t('top:new-update-toast:button')}
+            {t('new-update-toast:button')}
           </ToastAction>
           <ToastAction
             altText="Ignore update"
             className={buttonVariants({ variant: 'outline' })}
             onClick={() => dismissUpdate()}
           >
-            {t('top:new-update-toast:close')}
+            {t('new-update-toast:close')}
           </ToastAction>
         </div>
       ),
