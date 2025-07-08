@@ -184,7 +184,9 @@ impl UpdateHandler {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, specta::Type)]
 pub enum UpdateChannel {
+    #[serde(rename = "stable")]
     Stable,
+    #[serde(rename = "pre-release")]
     PreRelease,
 }
 

@@ -6,20 +6,6 @@ use crate::{FOLDERS, WORLDS};
 
 #[tauri::command]
 #[specta::specta]
-pub async fn set_preferences(
-    theme: String,
-    language: String,
-    card_size: CardSize,
-) -> Result<(), String> {
-    match services::set_preferences(theme, language, card_size) {
-        Ok(true) => Ok(()),
-        Ok(false) => Err("Failed to set preferences".to_string()),
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-#[tauri::command]
-#[specta::specta]
 pub async fn create_empty_auth() -> Result<(), String> {
     services::FileService::create_empty_auth_file().map_err(|e| e.to_string())
 }
