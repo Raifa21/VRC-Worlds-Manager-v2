@@ -59,7 +59,7 @@ export function SettingsPage({
   const [cardSize, setCardSize] = React.useState<CardSize | null>(null);
   const [folderRemovalPreference, setFolderRemovalPreference] =
     React.useState<FolderRemovalPreference | null>(null);
-  const [updateChannele, setUpdateChannel] =
+  const [updateChannel, setUpdateChannel] =
     React.useState<UpdateChannel | null>(null);
 
   const router = useRouter();
@@ -730,7 +730,7 @@ export function SettingsPage({
               </div>
             </div>
             <Select
-              value={updateChannele || 'stable'}
+              value={updateChannel || 'stable'}
               onValueChange={(value) =>
                 handleUpdateChannelChange(value as UpdateChannel)
               }
