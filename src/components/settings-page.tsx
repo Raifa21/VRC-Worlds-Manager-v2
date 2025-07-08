@@ -73,7 +73,7 @@ export function SettingsPage({
         const themeResult = await commands.getTheme();
         const languageResult = await commands.getLanguage();
         const cardSizeResult = await commands.getCardSize();
-        const UpdateChannelResult = await commands.getUpdateChannel();
+        const updateChannelResult = await commands.getUpdateChannel();
         const folderRemovalPreferenceResult =
           await commands.getFolderRemovalPreference();
         const theme = themeResult.status === 'ok' ? themeResult.data : 'system';
@@ -82,8 +82,8 @@ export function SettingsPage({
         const cardSize =
           cardSizeResult.status === 'ok' ? cardSizeResult.data : 'Normal';
         const updateChannel =
-          UpdateChannelResult.status === 'ok'
-            ? UpdateChannelResult.data
+          updateChannelResult.status === 'ok'
+            ? updateChannelResult.data
             : 'stable';
 
         const folderRemovalPreference =
@@ -100,7 +100,7 @@ export function SettingsPage({
           themeResult.status === 'error' ||
           languageResult.status === 'error' ||
           cardSizeResult.status === 'error' ||
-          UpdateChannelResult.status === 'error' ||
+          updateChannelResult.status === 'error' ||
           folderRemovalPreferenceResult.status === 'error'
         ) {
           toast({
@@ -111,8 +111,8 @@ export function SettingsPage({
               (themeResult.status === 'error' ? themeResult.error : '') +
               (languageResult.status === 'error' ? languageResult.error : '') +
               (cardSizeResult.status === 'error' ? cardSizeResult.error : '') +
-              (UpdateChannelResult.status === 'error'
-                ? UpdateChannelResult.error
+              (updateChannelResult.status === 'error'
+                ? updateChannelResult.error
                 : '') +
               (folderRemovalPreferenceResult.status === 'error'
                 ? folderRemovalPreferenceResult.error
