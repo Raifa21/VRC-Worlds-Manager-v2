@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "vrc-world-manager",
-  "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "productName": "vrc-worlds-manager",
+  "version": "1.0.0",
+  "identifier": "com.raifaworks.vrc-worlds-manager",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
@@ -12,11 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "VRC World Manager",
-        "width": 800,
+        "title": "VRC Worlds Manager v2",
+        "width": 1100,
         "height": 600,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "decorations": true
       }
     ],
     "security": {
@@ -25,13 +26,36 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": "nsis",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installerHooks": "./windows/hooks.nsi",
+        "languages": ["English", "Japanese"],
+        "displayLanguageSelector": true
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVDNTJCMzNBMzVGQzk4MEYKUldRUG1QdzFPck5TWEE5UjZxUDc0ZDVwZThnM29RODlpNzl6bDhZbzA0YllQa3FUb1k5Qy93c28K",
+      "endpoints": ["https://releases.raifaworks.com/manifests/stable.json"]
+    },
+    "deep-link": {
+      "mobile": [
+        { "host": "vrcwm.raifaworks.com", "pathPrefix": ["/folder/import/"] }
+      ],
+      "desktop": {
+        "schemes": ["vrc-worlds-manager"]
+      }
+    }
   }
 }

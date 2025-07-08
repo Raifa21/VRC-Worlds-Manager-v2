@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# keys
+/src-tauri/.config
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -43,3 +46,6 @@ next-env.d.ts
 # tauri
 /src-tauri/target
 /src-tauri/bundled
+
+# pnpm
+pnpm-lock.yaml

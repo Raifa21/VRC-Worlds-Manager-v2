@@ -1,0 +1,67 @@
+name: Version Consistency Check
+on:
+  push:
+    paths:
+      - "package.json"
+      - "src-tauri/Cargo.toml"
+      - "src-tauri/tauri.conf.json"
+      - ".github/workflows/version-check.yml"
+    branches:
+      - "main"
+      - "pre-release"
+      - "develop"
+  pull_request:
+    types:
+      - reopened
+      - opened
+      - synchronize
+    paths:
+      - "package.json"
+      - "src-tauri/Cargo.toml"
+      - "src-tauri/tauri.conf.json"
+      - ".github/workflows/version-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Version Consistency Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: package-json
+        uses: mikefarah/yq@v4.45.1
+        with:
+          cmd: yq -oy '.version' package.json
+      - id: cargo-toml
+        uses: mikefarah/yq@v4.45.1
+        with:
+          cmd: yq -oy '.package.version' src-tauri/Cargo.toml
+      - id: tauri-conf-json
+        uses: mikefarah/yq@v4.45.1
+        with:
+          cmd: yq -oy '.version' src-tauri/tauri.conf.json
+      - name: Check Version Consistency
+        run: |
+          echo "Package.json version: ${{ steps.package-json.outputs.result }}"
+          echo "Cargo.toml version: ${{ steps.cargo-toml.outputs.result }}"
+          echo "Tauri.conf.json version: ${{ steps.tauri-conf-json.outputs.result }}"
+          if [[ -z "${{ steps.package-json.outputs.result }}" ]]; then
+            echo "Error: package.json version is missing. Please check package.json."
+            exit 1
+          fi
+          if [[ -z "${{ steps.cargo-toml.outputs.result }}" ]]; then
+            echo "Error: Cargo.toml version is missing. Please check src-tauri/Cargo.toml."
+            exit 1
+          fi
+          if [[ -z "${{ steps.tauri-conf-json.outputs.result }}" ]]; then
+            echo "Error: tauri.conf.json version is missing. Please check src-tauri/tauri.conf.json."
+            exit 1
+          fi
+          if [[ "${{ steps.package-json.outputs.result }}" != "${{ steps.cargo-toml.outputs.result }}" || "${{ steps.package-json.outputs.result }}" != "${{ steps.tauri-conf-json.outputs.result }}" ]]; then
+            echo "Version mismatch detected!"
+            exit 1
+          else
+            echo "All versions are consistent."
+          fi
