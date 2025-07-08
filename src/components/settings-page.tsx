@@ -13,10 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CardSize } from '@/types/preferences';
 import { WorldCardPreview } from '@/components/world-card';
 import { Platform } from '@/types/worlds';
-import { commands, FolderRemovalPreference } from '@/lib/bindings';
+import {
+  commands,
+  FolderRemovalPreference,
+  UpdateChannel,
+  CardSize,
+} from '@/lib/bindings';
 import {
   Loader2,
   LogOut,
@@ -46,158 +50,88 @@ export function SettingsPage({
   onOpenHiddenFolder,
   onDataChange,
 }: SettingsPageProps) {
-  const [preferences, setPreferences] = React.useState<{
-    theme: string;
-    language: string;
-    card_size: CardSize;
-  } | null>(null);
-  const { setTheme } = useTheme();
   const { toast } = useToast();
   const { t } = useLocalization();
   const [isSaving, setIsSaving] = React.useState(false);
-  const { setLanguage } = useContext(LocalizationContext);
+  const { setTheme } = useTheme();
+  const { setLanguage: changeLanguage } = useContext(LocalizationContext);
+  const [language, setLanguage] = React.useState<string>('en-US');
+  const [cardSize, setCardSize] = React.useState<CardSize | null>(null);
+  const [folderRemovalPreference, setFolderRemovalPreference] =
+    React.useState<FolderRemovalPreference | null>(null);
+  const [updateChannel, setUpdateChannel] =
+    React.useState<UpdateChannel | null>(null);
+
   const router = useRouter();
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [showMigrateDialog, setShowMigrateDialog] = React.useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
-  const [folderRemovalPreference, setFolderRemovalPreference] =
-    useState<FolderRemovalPreference>('ask');
 
   React.useEffect(() => {
     const loadPreferences = async () => {
-      const themeResult = await commands.getTheme();
-      const languageResult = await commands.getLanguage();
-      const cardSizeResult = await commands.getCardSize();
-      const theme = themeResult.status === 'ok' ? themeResult.data : 'system';
-      const language =
-        languageResult.status === 'ok' ? languageResult.data : 'en-US';
-      const cardSize =
-        cardSizeResult.status === 'ok' ? cardSizeResult.data : CardSize.Normal;
-      setPreferences({
-        theme,
-        language,
-        card_size: cardSize as CardSize,
-      });
-      setTheme(theme);
-      // put a toast if commands fail
-      if (
-        themeResult.status === 'error' ||
-        languageResult.status === 'error' ||
-        cardSizeResult.status === 'error'
-      ) {
-        toast({
-          title: t('general:error-title'),
-          description:
-            t('settings-page:error-load-preferences') +
-            ': ' +
-            (themeResult.status === 'error' ? themeResult.error : '') +
-            (languageResult.status === 'error' ? languageResult.error : '') +
-            (cardSizeResult.status === 'error' ? cardSizeResult.error : ''),
-          variant: 'destructive',
-        });
-      }
-
-      // Load the folder removal preference
       try {
-        const folderRemovalResult = await commands.getFolderRemovalPreference();
-        if (folderRemovalResult.status === 'ok') {
-          setFolderRemovalPreference(folderRemovalResult.data);
+        const themeResult = await commands.getTheme();
+        const languageResult = await commands.getLanguage();
+        const cardSizeResult = await commands.getCardSize();
+        const updateChannelResult = await commands.getUpdateChannel();
+        const folderRemovalPreferenceResult =
+          await commands.getFolderRemovalPreference();
+        const theme = themeResult.status === 'ok' ? themeResult.data : 'system';
+        const language =
+          languageResult.status === 'ok' ? languageResult.data : 'en-US';
+        const cardSize =
+          cardSizeResult.status === 'ok' ? cardSizeResult.data : 'Normal';
+        const updateChannel =
+          updateChannelResult.status === 'ok'
+            ? updateChannelResult.data
+            : 'stable';
+
+        const folderRemovalPreference =
+          folderRemovalPreferenceResult.status === 'ok'
+            ? folderRemovalPreferenceResult.data
+            : 'ask';
+        setTheme(theme);
+        setLanguage(language);
+        setCardSize(cardSize);
+        setFolderRemovalPreference(folderRemovalPreference);
+        setUpdateChannel(updateChannel);
+        // put a toast if commands fail
+        if (
+          themeResult.status === 'error' ||
+          languageResult.status === 'error' ||
+          cardSizeResult.status === 'error' ||
+          updateChannelResult.status === 'error' ||
+          folderRemovalPreferenceResult.status === 'error'
+        ) {
+          toast({
+            title: t('general:error-title'),
+            description:
+              t('settings-page:error-load-preferences') +
+              ': ' +
+              (themeResult.status === 'error' ? themeResult.error : '') +
+              (languageResult.status === 'error' ? languageResult.error : '') +
+              (cardSizeResult.status === 'error' ? cardSizeResult.error : '') +
+              (updateChannelResult.status === 'error'
+                ? updateChannelResult.error
+                : '') +
+              (folderRemovalPreferenceResult.status === 'error'
+                ? folderRemovalPreferenceResult.error
+                : ''),
+            variant: 'destructive',
+          });
         }
       } catch (e) {
-        error(`Failed to load folder removal preference: ${e}`);
+        error(`Failed to load preferences: ${e}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('settings-page:error-load-preferences'),
+          variant: 'destructive',
+        });
       }
     };
 
     loadPreferences();
   }, [setTheme]);
-
-  const handlePreferenceChange = async (
-    key: 'theme' | 'language' | 'card_size',
-    value: string | CardSize,
-  ) => {
-    if (!preferences) return;
-
-    // Update theme immediately for visual feedback
-    if (key === 'theme') {
-      setTheme(value as string);
-    }
-
-    // Create new preferences object
-    const newPreferences = {
-      ...preferences,
-      [key]: value,
-    };
-
-    try {
-      const result = await commands.setPreferences(
-        newPreferences.theme,
-        newPreferences.language,
-        newPreferences.card_size,
-      );
-
-      if (result.status === 'error') {
-        toast({
-          title: t('general:error-title'),
-          description:
-            t('settings-page:error-save-preferences') + ': ' + result.error,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (key === 'language') {
-        setLanguage(newPreferences.language);
-      }
-
-      // Update local state after successful save
-      setPreferences(newPreferences);
-    } catch (e) {
-      error(`Failed to save preferences: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('settings-page:error-save-preferences'),
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleCardSizeChange = async (value: CardSize) => {
-    if (!preferences) return;
-
-    const newPreferences = {
-      ...preferences,
-      card_size: value,
-    };
-
-    try {
-      const result = await commands.setPreferences(
-        newPreferences.theme,
-        newPreferences.language,
-        newPreferences.card_size,
-      );
-
-      if (result.status === 'error') {
-        toast({
-          title: t('general:error-title'),
-          description:
-            t('settings-page:error-save-preferences') + ': ' + result.error,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      setPreferences(newPreferences);
-      // Notify parent component to update card size
-      onCardSizeChange?.();
-    } catch (e) {
-      error(`Failed to save card size: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('settings-page:error-save-preferences'),
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleBackup = async () => {
     try {
@@ -388,14 +322,106 @@ export function SettingsPage({
     }
   };
 
+  const handleThemeChange = async (value: string) => {
+    try {
+      info(`Setting theme to: ${value}`);
+      const result = await commands.setTheme(value);
+
+      if (result.status === 'ok') {
+        setTheme(value);
+        info(`Theme set to: ${value}`);
+      } else {
+        error(`Failed to set theme: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description:
+            t('settings-page:error-save-preferences') + ': ' + result.error,
+          variant: 'destructive',
+        });
+      }
+    } catch (e) {
+      error(`Failed to save theme: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-save-preferences'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleLanguageChange = async (value: string) => {
+    try {
+      info(`Setting language to: ${value}`);
+      const result = await commands.setLanguage(value);
+      if (result.status === 'ok') {
+        changeLanguage(value);
+        setLanguage(value);
+        info(`Language set to: ${value}`);
+      } else {
+        error(`Failed to set language: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description:
+            t('settings-page:error-save-preferences') + ': ' + result.error,
+          variant: 'destructive',
+        });
+      }
+    } catch (e) {
+      error(`Failed to save language: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-save-preferences'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCardSizeChange = async (value: CardSize) => {
+    try {
+      info(`Setting card size to: ${value}`);
+      const result = await commands.setCardSize(value);
+      if (result.status === 'ok') {
+        setCardSize(value);
+        info(`Card size set to: ${value}`);
+      } else {
+        error(`Failed to set card size: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description:
+            t('settings-page:error-save-preferences') + ': ' + result.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+      onCardSizeChange?.();
+    } catch (e) {
+      error(`Failed to save card size: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-save-preferences'),
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleFolderRemovalPreferenceChange = async (
     value: FolderRemovalPreference,
   ) => {
     try {
+      info(`Setting folder removal preference to: ${value}`);
       const result = await commands.setFolderRemovalPreference(value);
-
-      setFolderRemovalPreference(value);
-      info(`Folder removal preference set to: ${value}`);
+      if (result.status === 'ok') {
+        info(`Folder removal preference set to: ${value}`);
+        setFolderRemovalPreference(value);
+      } else {
+        error(`Failed to set folder removal preference: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description:
+            t('settings-page:error-save-preferences') + ': ' + result.error,
+          variant: 'destructive',
+        });
+      }
     } catch (e) {
       error(`Failed to save folder removal preference: ${e}`);
       toast({
@@ -406,13 +432,31 @@ export function SettingsPage({
     }
   };
 
-  if (!preferences) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
+  const handleUpdateChannelChange = async (value: UpdateChannel) => {
+    try {
+      info(`Setting update channel to: ${value}`);
+      const result = await commands.setUpdateChannel(value);
+      if (result.status === 'ok') {
+        setUpdateChannel(value);
+        info(`Update channel set to: ${value}`);
+      } else {
+        error(`Failed to set update channel: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description:
+            t('settings-page:error-save-preferences') + ': ' + result.error,
+          variant: 'destructive',
+        });
+      }
+    } catch (e) {
+      error(`Failed to save update channel: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-save-preferences'),
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <div className="container max-w-4xl mx-auto p-6 space-y-6">
@@ -442,8 +486,8 @@ export function SettingsPage({
               </div>
             </div>
             <Select
-              value={preferences.theme}
-              onValueChange={(value) => handlePreferenceChange('theme', value)}
+              value={useTheme().theme || 'system'}
+              onValueChange={(value) => handleThemeChange(value)}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Theme" />
@@ -466,10 +510,8 @@ export function SettingsPage({
               </div>
             </div>
             <Select
-              value={preferences.language}
-              onValueChange={(value) =>
-                handlePreferenceChange('language', value)
-              }
+              value={language || 'en-US'}
+              onValueChange={(value) => handleLanguageChange(value)}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Language" />
@@ -492,30 +534,28 @@ export function SettingsPage({
                 </div>
               </div>
               <Select
-                value={preferences.card_size}
+                value={cardSize || 'Normal'}
                 onValueChange={handleCardSizeChange}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Card Size" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={CardSize.Compact}>
+                  <SelectItem value="Compact">
                     {t('general:compact')}
                   </SelectItem>
-                  <SelectItem value={CardSize.Normal}>
-                    {t('general:normal')}
-                  </SelectItem>
-                  <SelectItem value={CardSize.Expanded}>
+                  <SelectItem value="Normal">{t('general:normal')}</SelectItem>
+                  <SelectItem value="Expanded">
                     {t('general:expanded')}
                   </SelectItem>
-                  <SelectItem value={CardSize.Original}>
+                  <SelectItem value="Original">
                     {t('general:original')}
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <WorldCardPreview
-              size={preferences.card_size}
+              size={cardSize || 'Normal'}
               world={{
                 worldId: '1',
                 name: t('settings-page:preview-world'),
@@ -689,7 +729,12 @@ export function SettingsPage({
                 {t('settings-page:update-channel-description')}
               </div>
             </div>
-            <Select value="stable" onValueChange={() => {}} disabled>
+            <Select
+              value={updateChannel || 'stable'}
+              onValueChange={(value) =>
+                handleUpdateChannelChange(value as UpdateChannel)
+              }
+            >
               <SelectTrigger className="w-fit px-2">
                 <SelectValue placeholder="Update Channel" />
               </SelectTrigger>

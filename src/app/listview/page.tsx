@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  useLayoutEffect,
-  useRef,
-  useState,
-  useMemo,
-  useEffect,
-  use,
-} from 'react';
+import { useRef, useState, useMemo, useEffect, useContext } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +9,6 @@ import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
-import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import {
@@ -28,7 +20,6 @@ import {
   SortAsc,
   SortDesc,
   Square,
-  Settings,
   X,
   TextSearch,
 } from 'lucide-react'; // For the reload icon
@@ -42,7 +33,11 @@ import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType } from '@/types/instances';
 import { InstanceRegion } from '@/lib/bindings';
 import { toRomaji } from 'wanakana';
-import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
+import {
+  UserGroup,
+  GroupInstancePermissionInfo,
+  CardSize,
+} from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
 import { info, error } from '@tauri-apps/plugin-log';
@@ -63,6 +58,7 @@ import { Badge } from '@/components/ui/badge';
 import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
 import { ShareFolderPopup } from '@/components/share-folder-popup';
 import { ImportedFolderContainsHidden } from '@/components/imported-folder-contains-hidden';
+import { UpdateDialogContext } from '@/components/UpdateDialogContext';
 
 type SortField =
   | 'name'
@@ -91,7 +87,7 @@ export default function ListView() {
   const [showSettings, setShowSettings] = useState(false);
   const [showFind, setShowFind] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
-  const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
+  const [cardSize, setCardSize] = useState<CardSize>('Normal');
   const [isLoading, setIsLoading] = useState(false);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
     SpecialFolders.All,
@@ -126,6 +122,12 @@ export default function ListView() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showShareFolder, setShowShareFolder] = useState(false);
+
+  const { checkForUpdate } = useContext(UpdateDialogContext);
+
+  useEffect(() => {
+    checkForUpdate();
+  }, []);
 
   useEffect(() => {
     loadAllWorlds();
@@ -945,7 +947,7 @@ export default function ListView() {
     try {
       const result = await commands.getCardSize();
       if (result.status === 'ok') {
-        setCardSize(CardSize[result.data as keyof typeof CardSize]);
+        setCardSize(result.data);
       }
     } catch (e) {
       error(`Failed to load card size: ${e}`);

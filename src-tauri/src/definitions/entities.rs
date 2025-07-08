@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::api::instance::InstanceRegion;
+use crate::updater::update_handler::UpdateChannel;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldApiData {
@@ -274,6 +275,8 @@ pub struct PreferenceModel {
         default = "default_folder_removal"
     )]
     pub dont_show_remove_from_folder: FolderRemovalPreference,
+    #[serde(rename = "updateChannel", default = "default_update_channel")]
+    pub update_channel: UpdateChannel,
 }
 
 fn default_region() -> InstanceRegion {
@@ -282,6 +285,10 @@ fn default_region() -> InstanceRegion {
 
 fn default_folder_removal() -> FolderRemovalPreference {
     FolderRemovalPreference::Ask
+}
+
+fn default_update_channel() -> UpdateChannel {
+    UpdateChannel::Stable
 }
 
 impl PreferenceModel {
@@ -294,6 +301,7 @@ impl PreferenceModel {
             region: InstanceRegion::JP,
             filter_item_selector_starred: None,
             dont_show_remove_from_folder: FolderRemovalPreference::Ask,
+            update_channel: UpdateChannel::Stable,
         }
     }
 }

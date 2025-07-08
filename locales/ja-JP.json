@@ -43,6 +43,8 @@
   "general:save": "保存",
   "general:error-open-logs": "ログフォルダの展開に失敗しました",
   "general:open-folder": "フォルダを開く",
+  "general:cancelled": "キャンセルされました",
+  "general:failed": "失敗しました",
 
   "error-page:title": "アプリケーションエラー",
   "error-page:try-again": "再試行",
@@ -451,5 +453,24 @@
   "share-folder:share-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}",
 
   "delete-folder:title": "フォルダを削除",
-  "delete-folder:description": "「{0}」を削除しますか？この操作はフォルダのみを削除し、中のワールドは削除されません。"
+  "delete-folder:description": "「{0}」を削除しますか？この操作はフォルダのみを削除し、中のワールドは削除されません。",
+
+  "changelog:prefix:new-feature": "新機能",
+  "changelog:prefix:bug-fixes": "バグ修正",
+  "changelog:prefix:others": "その他",
+  "changelog:title": "変更履歴",
+  "changelog:not-found": "変更履歴はありません",
+  "changelog:github": "GitHubで変更を見る",
+
+  "new-update-toast": "新しいアップデートがあります！",
+  "new-update-toast:description": "このアップデートにはバグ修正や新機能などが含まれています",
+  "new-update-toast:button": "今すぐアップデート",
+  "new-update-toast:close": "後で",
+
+  "update-dialog:title": "アップデートの準備中",
+  "update-dialog:description": "アップデートをダウンロード中...",
+  "update-dialog:downloading:foretext": "ダウンロード中（",
+  "update-dialog:downloading:posttext": "%）",
+  "update-dialog:download-complete": "アップデートのダウンロードが完了しました",
+  "update-dialog:execute": "アップデート"
 }

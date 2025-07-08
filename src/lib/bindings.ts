@@ -21,6 +21,79 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getChangelog(): Promise<Result<LocalizedChanges[], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_changelog') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getTaskStatus(id: string): Promise<Result<TaskStatus, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_task_status', { id }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async cancelTaskRequest(id: string): Promise<Result<TaskStatus, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('cancel_task_request', { id }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getTaskError(id: string): Promise<Result<string | null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_task_error', { id }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async checkForUpdate(): Promise<Result<boolean, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('check_for_update') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async downloadUpdate(): Promise<Result<string, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('download_update') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async installUpdate(): Promise<Result<null, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('install_update') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async doNotNotifyUpdate(): Promise<Result<boolean, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('do_not_notify_update') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async addWorldToFolder(
     folderName: string,
     worldId: string,
@@ -265,6 +338,14 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async setTheme(theme: string): Promise<Result<null, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('set_theme', { theme }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getLanguage(): Promise<Result<string, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_language') };
@@ -273,9 +354,31 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async setLanguage(language: string): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_language', { language }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getCardSize(): Promise<Result<CardSize, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_card_size') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setCardSize(cardSize: CardSize): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_card_size', { cardSize }),
+      };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: 'error', error: e as any };
@@ -349,6 +452,27 @@ export const commands = {
         data: await TAURI_INVOKE('set_folder_removal_preference', {
           dontShowRemoveFromFolder,
         }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getUpdateChannel(): Promise<Result<UpdateChannel, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_update_channel') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setUpdateChannel(
+    channel: UpdateChannel,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_update_channel', { channel }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -664,25 +788,6 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async setPreferences(
-    theme: string,
-    language: string,
-    cardSize: CardSize,
-  ): Promise<Result<null, string>> {
-    try {
-      return {
-        status: 'ok',
-        data: await TAURI_INVOKE('set_preferences', {
-          theme,
-          language,
-          cardSize,
-        }),
-      };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
   async createBackup(backupPath: string): Promise<Result<null, string>> {
     try {
       return {
@@ -759,6 +864,14 @@ export const commands = {
 
 /** user-defined events **/
 
+export const events = __makeEvents__<{
+  taskStatusChanged: TaskStatusChanged;
+  updateProgress: UpdateProgress;
+}>({
+  taskStatusChanged: 'task-status-changed',
+  updateProgress: 'update-progress',
+});
+
 /** user-defined constants **/
 
 /** user-defined types **/
@@ -823,6 +936,13 @@ export type GroupRole = {
   isManagementRole: boolean;
 };
 export type InstanceRegion = 'us' | 'use' | 'eu' | 'jp';
+export type LocalizedChanges = {
+  version: string;
+  pre_release: boolean;
+  features: string[];
+  fixes: string[];
+  others: string[];
+};
 export type PatreonData = {
   platinumSupporter: string[];
   goldSupporter: string[];
@@ -835,6 +955,10 @@ export type PreviousMetadata = {
   number_of_folders: number;
   number_of_worlds: number;
 };
+export type TaskStatus = 'Running' | 'Completed' | 'Cancelled' | 'Failed';
+export type TaskStatusChanged = { id: string; status: TaskStatus };
+export type UpdateChannel = 'stable' | 'pre-release';
+export type UpdateProgress = { progress: number };
 export type UserGroup = {
   id: string;
   name: string;

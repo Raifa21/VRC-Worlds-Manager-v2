@@ -1,6 +1,5 @@
 'use client';
-import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import { commands } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { info, error } from '@tauri-apps/plugin-log';
 import { Loader2 } from 'lucide-react';
+import { UpdateDialogContext } from '@/components/UpdateDialogContext';
 
 export default function Login() {
   const router = useRouter();
@@ -26,6 +26,12 @@ export default function Login() {
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [loading2FA, setLoading2FA] = useState(false);
+
+  const { checkForUpdate } = useContext(UpdateDialogContext);
+
+  useEffect(() => {
+    checkForUpdate();
+  }, []);
 
   const handleLogin = async () => {
     setLoading(true);
