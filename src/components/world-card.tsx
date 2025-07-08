@@ -1,12 +1,11 @@
 import React from 'react';
-import { CardSize } from '@/types/preferences';
 import { Check, Heart, Plus } from 'lucide-react';
 import Image from 'next/image';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
 import { Platform } from '@/types/worlds';
-import { WorldDisplayData } from '@/lib/bindings';
+import { CardSize, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 
 interface WorldCardPreviewProps {
@@ -18,10 +17,10 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
   const { size, world } = props;
   const { t } = useLocalization();
   const sizeClasses: Record<CardSize, string> = {
-    [CardSize.Compact]: 'w-48 h-32',
-    [CardSize.Normal]: 'w-52 h-48',
-    [CardSize.Expanded]: 'w-64 h-64',
-    [CardSize.Original]: 'w-64 h-44',
+    Compact: 'w-48 h-32',
+    Normal: 'w-52 h-48',
+    Expanded: 'w-64 h-64',
+    Original: 'w-64 h-44',
   };
 
   return (
@@ -67,13 +66,13 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
 
       {/* Various size renderings... */}
 
-      {size === CardSize.Compact && (
+      {size === 'Compact' && (
         <div className="p-2">
           <h3 className="font-medium truncate">{world.name}</h3>
         </div>
       )}
 
-      {size === CardSize.Normal && (
+      {size === 'Normal' && (
         <div className="p-2 space-y-1">
           <div className="flex items-center justify-between">
             <h3 className="font-medium truncate">{world.name}</h3>
@@ -90,7 +89,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
         </div>
       )}
 
-      {size === CardSize.Expanded && (
+      {size === 'Expanded' && (
         <div className="p-2 space-y-1">
           <div className="flex items-center justify-between">
             <h3 className="font-medium truncate">{world.name}</h3>
@@ -113,7 +112,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
         </div>
       )}
 
-      {size === CardSize.Original && (
+      {size === 'Original' && (
         <div className="p-2">
           <h3 className="font-medium truncate">{world.name}</h3>
           <p className="text-sm text-muted-foreground truncate">

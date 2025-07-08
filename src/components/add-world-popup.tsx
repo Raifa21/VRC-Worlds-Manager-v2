@@ -11,7 +11,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { AlertCircle, Check, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
-import { commands, WorldDetails } from '@/lib/bindings';
+import { commands, WorldDetails, CardSize } from '@/lib/bindings';
 import {
   Card,
   CardContent,
@@ -22,7 +22,6 @@ import {
 } from './ui/card';
 import { Badge } from './ui/badge';
 import { WorldCardPreview } from './world-card';
-import { CardSize } from '@/types/preferences';
 import { useLocalization } from '@/hooks/use-localization';
 import { info, error as logError } from '@tauri-apps/plugin-log';
 
@@ -194,7 +193,7 @@ export function AddWorldPopup({
               <CardContent>
                 <div className="flex justify-between">
                   <WorldCardPreview
-                    size={CardSize.Compact}
+                    size="Normal"
                     world={{
                       worldId: previewWorld.worldId,
                       name: previewWorld.name,

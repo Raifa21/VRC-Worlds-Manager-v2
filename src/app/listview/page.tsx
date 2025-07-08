@@ -9,7 +9,6 @@ import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
-import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import {
@@ -34,7 +33,11 @@ import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType } from '@/types/instances';
 import { InstanceRegion } from '@/lib/bindings';
 import { toRomaji } from 'wanakana';
-import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
+import {
+  UserGroup,
+  GroupInstancePermissionInfo,
+  CardSize,
+} from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
 import { info, error } from '@tauri-apps/plugin-log';
@@ -84,7 +87,7 @@ export default function ListView() {
   const [showSettings, setShowSettings] = useState(false);
   const [showFind, setShowFind] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
-  const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
+  const [cardSize, setCardSize] = useState<CardSize>('Normal');
   const [isLoading, setIsLoading] = useState(false);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
     SpecialFolders.All,
@@ -944,7 +947,7 @@ export default function ListView() {
     try {
       const result = await commands.getCardSize();
       if (result.status === 'ok') {
-        setCardSize(CardSize[result.data as keyof typeof CardSize]);
+        setCardSize(result.data);
       }
     } catch (e) {
       error(`Failed to load card size: ${e}`);

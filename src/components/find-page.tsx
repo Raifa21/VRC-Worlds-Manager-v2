@@ -6,7 +6,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { CircleHelpIcon, Loader2, RefreshCcw, Search } from 'lucide-react';
 import { commands, WorldDisplayData } from '@/lib/bindings';
-import { CardSize } from '@/types/preferences';
 import { SpecialFolders } from '@/types/folders';
 import { info } from '@tauri-apps/plugin-log';
 import { useToast } from '@/hooks/use-toast';
@@ -445,7 +444,7 @@ export function FindPage({
                 folderName={SpecialFolders.Find}
                 initialSelectedWorlds={[]}
                 onShowFolderDialog={onShowFolderDialog}
-                size={CardSize.Normal}
+                size="Normal"
                 onOpenWorldDetails={onSelectWorld}
                 onSelectedWorldsChange={onSelectedWorldsChange}
                 shouldClearSelection={clearSelection}
@@ -476,7 +475,7 @@ export function FindPage({
                   folderName={SpecialFolders.Find}
                   initialSelectedWorlds={[]}
                   onShowFolderDialog={onShowFolderDialog}
-                  size={CardSize.Normal}
+                  size="Normal"
                   onOpenWorldDetails={onSelectWorld}
                   onSelectedWorldsChange={onSelectedWorldsChange}
                   isSelectionMode={true}

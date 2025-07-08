@@ -338,6 +338,14 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async setTheme(theme: string): Promise<Result<null, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('set_theme', { theme }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getLanguage(): Promise<Result<string, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_language') };
@@ -346,9 +354,31 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async setLanguage(language: string): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_language', { language }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async getCardSize(): Promise<Result<CardSize, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_card_size') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setCardSize(cardSize: CardSize): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_card_size', { cardSize }),
+      };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: 'error', error: e as any };
@@ -422,6 +452,27 @@ export const commands = {
         data: await TAURI_INVOKE('set_folder_removal_preference', {
           dontShowRemoveFromFolder,
         }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getUpdateChannel(): Promise<Result<UpdateChannel, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_update_channel') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setUpdateChannel(
+    channel: UpdateChannel,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_update_channel', { channel }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -737,25 +788,6 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async setPreferences(
-    theme: string,
-    language: string,
-    cardSize: CardSize,
-  ): Promise<Result<null, string>> {
-    try {
-      return {
-        status: 'ok',
-        data: await TAURI_INVOKE('set_preferences', {
-          theme,
-          language,
-          cardSize,
-        }),
-      };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
   async createBackup(backupPath: string): Promise<Result<null, string>> {
     try {
       return {
@@ -925,6 +957,7 @@ export type PreviousMetadata = {
 };
 export type TaskStatus = 'Running' | 'Completed' | 'Cancelled' | 'Failed';
 export type TaskStatusChanged = { id: string; status: TaskStatus };
+export type UpdateChannel = 'stable' | 'pre-release';
 export type UpdateProgress = { progress: number };
 export type UserGroup = {
   id: string;

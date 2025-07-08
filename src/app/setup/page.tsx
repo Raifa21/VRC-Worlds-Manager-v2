@@ -20,8 +20,7 @@ import { WorldCardPreview } from '@/components/world-card';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Loader2, Globe } from 'lucide-react';
-import { commands } from '@/lib/bindings';
-import { CardSize } from '@/types/preferences';
+import { commands, CardSize } from '@/lib/bindings';
 import { SetupLayout } from '@/components/setup-layout';
 import { useLocalization } from '@/hooks/use-localization';
 import { LocalizationContext } from '@/components/localization-context';
@@ -42,12 +41,12 @@ const WelcomePage: React.FC = () => {
   const { toast } = useToast();
   const { setTheme } = useTheme();
   const { setLanguage } = useContext(LocalizationContext);
-  const [selectedSize, setSelectedSize] = useState<CardSize>(CardSize.Normal);
+  const [selectedSize, setSelectedSize] = useState<CardSize>('Normal');
   const [page, setPage] = useState(1);
   const [preferences, setPreferences] = useState({
     theme: 'system',
     language: 'en-US',
-    card_size: CardSize.Normal,
+    card_size: 'Normal' as CardSize,
   });
   const [defaultPath, setDefaultPath] = useState<string>('');
   const [migrationPaths, setMigrationPaths] = useState<[string, string]>([
@@ -151,22 +150,32 @@ const WelcomePage: React.FC = () => {
       setAlreadyMigrated(true);
     }
     if (page === 5) {
-      const result = await commands.setPreferences(
-        preferences.theme,
-        preferences.language,
-        preferences.card_size,
-      );
+      const [result_theme, result_language, result_card_size] =
+        await Promise.all([
+          commands.setTheme(preferences.theme),
+          commands.setLanguage(preferences.language),
+          commands.setCardSize(preferences.card_size),
+        ]);
 
-      if (result.status === 'error') {
+      const errorResult =
+        result_theme.status === 'error'
+          ? result_theme
+          : result_language.status === 'error'
+            ? result_language
+            : result_card_size.status === 'error'
+              ? result_card_size
+              : null;
+
+      if (errorResult) {
         toast({
           title: t('general:error-title'),
           description: t(
             'setup-page:toast:error:save-preference:message',
-            result.error,
+            errorResult.error,
           ),
         });
 
-        error(`Failed to save preferences: ${result.error}`);
+        error(`Failed to save preferences: ${errorResult.error}`);
         setPage(4);
         return;
       }
@@ -507,16 +516,16 @@ const WelcomePage: React.FC = () => {
                       <SelectValue placeholder="Theme" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={CardSize.Compact}>
+                      <SelectItem value="Compact">
                         {t('general:compact')}
                       </SelectItem>
-                      <SelectItem value={CardSize.Normal}>
+                      <SelectItem value="Normal">
                         {t('general:normal')}
                       </SelectItem>
-                      <SelectItem value={CardSize.Expanded}>
+                      <SelectItem value="Expanded">
                         {t('general:expanded')}
                       </SelectItem>
-                      <SelectItem value={CardSize.Original}>
+                      <SelectItem value="Original">
                         {t('general:original')}
                       </SelectItem>
                     </SelectContent>
