@@ -1,19 +1,20 @@
 use std::sync::Arc;
 
+use tauri::async_runtime::Mutex;
 use tauri::State;
-use tokio::sync::Mutex;
 
 use crate::{
     changelog::{fetch_and_parse_changelog, pick_changes_in_preferred_lang, LocalizedChanges},
     updater::update_handler::{UpdateChannel, UpdateHandler},
-    PREFERENCES, UPDATE_HANDLER,
+    PREFERENCES,
 };
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_changelog() -> Result<Vec<LocalizedChanges>, String> {
-    let mut handler = UPDATE_HANDLER.get().write().await;
-
+pub async fn get_changelog(
+    update_handler: State<'_, Arc<Mutex<UpdateHandler>>>,
+) -> Result<Vec<LocalizedChanges>, String> {
+    let mut handler = update_handler.lock().await;
     if !handler.is_initialized() {
         let err = "Update handler is not initialized yet.".to_string();
         log::error!("{}", err);

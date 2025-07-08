@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use tauri::State;
-use tokio::sync::Mutex;
+use tauri::{async_runtime::Mutex, State};
 use uuid::Uuid;
 
 use crate::{task::cancellable_task::TaskContainer, updater::update_handler::UpdateHandler};

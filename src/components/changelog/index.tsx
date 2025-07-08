@@ -17,7 +17,7 @@ export const Changelog: FC<Props> = ({ changes }) => {
 
   return (
     <div className="w-full">
-      <div className="flex flex-row items-center">
+      <div className="flex flex-row items-center justify-center">
         <Separator className="flex w-32 shrink" />
         <span className="px-4 text-muted-foreground flex shrink-0">
           {t('changelog:title')}

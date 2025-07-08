@@ -6,10 +6,10 @@ use services::ApiService;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use state::InitCell;
 use std::sync::{Arc, RwLock};
+use tauri::async_runtime::Mutex;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_updater::UpdaterExt;
 use tauri_specta::collect_events;
-use tokio::sync::Mutex;
 
 use crate::services::memo_manager::MemoManager;
 use crate::task::cancellable_task::TaskContainer;
@@ -35,14 +35,12 @@ static INITSTATE: InitCell<tokio::sync::RwLock<InitState>> = InitCell::new();
 static AUTHENTICATOR: InitCell<tokio::sync::RwLock<VRChatAPIClientAuthenticator>> = InitCell::new();
 static RATE_LIMIT_STORE: InitCell<RwLock<api::RateLimitStore>> = InitCell::new();
 static MEMO_MANAGER: InitCell<RwLock<MemoManager>> = InitCell::new();
-static TASK_CONTAINER: InitCell<RwLock<TaskContainer>> = InitCell::new();
-static UPDATE_HANDLER: InitCell<tokio::sync::RwLock<UpdateHandler>> = InitCell::new();
 
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder =
-        generate_tauri_specta_builder().events(collect_events![TaskStatusChanged, UpdateProgress,]);
+        generate_tauri_specta_builder().events(collect_events![TaskStatusChanged, UpdateProgress]);
 
     #[cfg(debug_assertions)]
     builder
@@ -78,6 +76,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .invoke_handler(builder.invoke_handler())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .target({
@@ -92,10 +91,13 @@ pub fn run() {
                 .level(log::LevelFilter::Info)
                 .build(),
         )
-        .setup(|app| {
+        .setup(move |app| {
+            builder.mount_events(app);
             app.manage(app.handle().clone());
 
-            TASK_CONTAINER.set(RwLock::new(TaskContainer::new(app.handle().clone())));
+            app.manage(Arc::new(Mutex::new(TaskContainer::new(
+                app.handle().clone(),
+            ))));
 
             let handle = app.handle().clone();
             let logs_dir = handle.path().app_log_dir().unwrap();
@@ -115,18 +117,19 @@ pub fn run() {
                 log::error!("Failed to initialize app: {}", e);
             }
 
-            app.manage(Arc::new(Mutex::new(get_update_handler(
-                app.handle().clone(),
-                &PREFERENCES
-                    .get()
-                    .read()
-                    .expect("Failed to read preferences")
-                    .update_channel,
-            ))));
+            app.manage(Arc::new(Mutex::new(
+                (get_update_handler(
+                    app.handle().clone(),
+                    &PREFERENCES
+                        .get()
+                        .read()
+                        .expect("Failed to read preferences")
+                        .update_channel,
+                )),
+            )));
 
             Ok(())
         })
-        .invoke_handler(builder.invoke_handler())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
     log::info!("Application started");

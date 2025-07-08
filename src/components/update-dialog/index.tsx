@@ -66,7 +66,7 @@ export const UpdateDialog: FC<Props> = ({
           </p>
           <Progress value={progress} />
         </div>
-        <div className="max-w-[550px]">
+        <div className="max-w-[600px]">
           <Changelog changes={localizedChanges} />
         </div>
         <DialogFooter className="mt-4">
@@ -76,7 +76,7 @@ export const UpdateDialog: FC<Props> = ({
               className="mr-auto"
               onClick={onCancelButtonClick}
             >
-              {t('general:button:cancel')}
+              {t('general:cancel')}
             </Button>
             <Button
               className="ml-auto"
