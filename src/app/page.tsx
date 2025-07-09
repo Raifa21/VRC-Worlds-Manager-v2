@@ -33,7 +33,7 @@ export default function Home() {
 
           if (authResult.status === 'ok') {
             info('User is authenticated');
-            router.push('/listview');
+            router.push('/main');
           } else {
             router.push('/login');
           }

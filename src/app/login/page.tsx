@@ -59,8 +59,8 @@ export default function Login() {
         return;
       }
 
-      info('Login successful, redirecting to listview');
-      router.push('/listview');
+      info('Login successful, redirecting to main');
+      router.push('/main');
     } finally {
       setLoading(false);
     }
@@ -81,8 +81,8 @@ export default function Login() {
         setE(errorMessage);
         return;
       }
-      info('2FA verification successful, redirecting to listview');
-      router.push('/listview');
+      info('2FA verification successful, redirecting to main');
+      router.push('/main');
     } catch (e) {
       const errorMessage = (e as string) || t('login-page:error-invalid-2fa');
       error(`2FA error: ${errorMessage}`);
