@@ -228,6 +228,7 @@
   "advanced-search:search-author": "Search by author name",
   "advanced-search:search-tags": "Search by tags",
   "advanced-search:search-folders": "Search by folders",
+  "advanced-search:search-memo-text": "Search by memo text",
   "advanced-search:apply-filters": "Apply Filters",
 
   "filter-item-selector:custom-value": "Press Enter to add {0}",

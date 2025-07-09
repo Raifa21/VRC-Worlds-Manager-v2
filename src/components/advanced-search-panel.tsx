@@ -145,6 +145,7 @@ export function AdvancedSearchPanel({
             <Input
               value={memotextFilter}
               onChange={(e) => onMemoTextFilterChange(e.target.value)}
+              placeholder={t('advanced-search:search-memo-text')}
             />
           </div>
         </div>
