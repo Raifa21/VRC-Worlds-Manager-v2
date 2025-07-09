@@ -356,7 +356,7 @@
   "find-page:tag-placeholder": "Search tags",
   "find-page:select-tag": "Select Tags",
   "find-page:add-custom-tag": "Add {0}",
-  "find-page:no-matching-tags": "No matching tags found",
+  "find-page:no-matching-items": "No matching items found",
   "find-page:exclude-tag": "Exclude Tag",
   "find-page:exclude-tag-placeholder": "Search tags to exclude",
   "find-page:exclude-tag-tooltip": "Exclude worlds with this tag from search results",

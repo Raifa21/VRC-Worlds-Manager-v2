@@ -355,7 +355,7 @@
   "find-page:tag-placeholder": "タグを検索",
   "find-page:select-tag": "タグを選択",
   "find-page:add-custom-tag": "{0} を追加",
-  "find-page:no-matching-tags": "一致するタグが見つかりません",
+  "find-page:no-matching-items": "一致するものが見つかりません",
   "find-page:exclude-tag": "タグを除外",
   "find-page:exclude-tag-placeholder": "除外するタグを検索",
   "find-page:exclude-tag-tooltip": "このタグを持つワールドを検索結果から除外します",
