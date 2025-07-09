@@ -12,6 +12,7 @@ import SingleFilterItemSelector from '@/components/single-filter-item-selector';
 import { commands } from '@/lib/bindings';
 import MultiFilterItemSelector from './multi-filter-item-selector';
 import { useLocalization } from '@/hooks/use-localization';
+import { Input } from './ui/input';
 
 interface AdvancedSearchPanelProps {
   open: boolean;
@@ -21,6 +22,8 @@ interface AdvancedSearchPanelProps {
   onTagFiltersChange: (tags: string[]) => void;
   folderFilters: string[];
   onFolderFiltersChange: (folders: string[]) => void;
+  memotextFilter: string;
+  onMemoTextFilterChange: (text: string) => void;
   onClose: () => void;
 }
 
@@ -32,6 +35,8 @@ export function AdvancedSearchPanel({
   onTagFiltersChange,
   folderFilters,
   onFolderFiltersChange,
+  memotextFilter,
+  onMemoTextFilterChange,
   onClose,
 }: AdvancedSearchPanelProps) {
   const { t } = useLocalization();
@@ -91,6 +96,7 @@ export function AdvancedSearchPanel({
     onAuthorFilterChange('');
     onTagFiltersChange([]);
     onFolderFiltersChange([]);
+    onMemoTextFilterChange('');
   };
 
   return (
@@ -132,6 +138,13 @@ export function AdvancedSearchPanel({
               onValuesChange={onFolderFiltersChange}
               allowCustomValues={false}
               id="Folder"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="memo-text-filter">{t('general:memo')}</Label>
+            <Input
+              value={memotextFilter}
+              onChange={(e) => onMemoTextFilterChange(e.target.value)}
             />
           </div>
         </div>
