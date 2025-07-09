@@ -119,7 +119,7 @@ export default function ListView() {
   const [authorFilter, setAuthorFilter] = useState('');
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [folderFilters, setFolderFilters] = useState<string[]>([]);
-  const [memotextFilter, setMemoTextFilter] = useState('');
+  const [memoTextFilter, setMemoTextFilter] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -1058,7 +1058,7 @@ export default function ListView() {
     });
 
     // If no memotext filter, set directly
-    if (!memotextFilter) {
+    if (!memoTextFilter) {
       setFilteredWorlds(baseFiltered);
       return;
     }
@@ -1066,7 +1066,7 @@ export default function ListView() {
     // Otherwise, filter by memo text asynchronously
     const filterByMemoText = async () => {
       try {
-        const result = await commands.searchMemoText(memotextFilter);
+        const result = await commands.searchMemoText(memoTextFilter);
         if (result.status === 'ok') {
           setFilteredWorlds(
             baseFiltered.filter((world) =>
@@ -1099,7 +1099,7 @@ export default function ListView() {
     authorFilter,
     tagFilters,
     folderFilters,
-    memotextFilter,
+    memoTextFilter,
   ]);
 
   const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
@@ -1303,7 +1303,7 @@ export default function ListView() {
           {authorFilter ||
           tagFilters.length > 0 ||
           folderFilters.length > 0 ||
-          memotextFilter ? (
+          memoTextFilter ? (
             <div className="px-4 pb-2 border-b bg-muted/50">
               {/* Header: Filters title + Clear All */}
               <div className="flex justify-between items-center mb-2">
@@ -1353,7 +1353,7 @@ export default function ListView() {
                   </div>
                 )}
                 {/* MEMO TEXT - Add this block */}
-                {memotextFilter && (
+                {memoTextFilter && (
                   <div
                     ref={memoTextRef}
                     className="flex items-center gap-2 shrink-0"
@@ -1367,9 +1367,9 @@ export default function ListView() {
                     >
                       <span
                         className="max-w-[120px] truncate"
-                        title={memotextFilter}
+                        title={memoTextFilter}
                       >
-                        {memotextFilter}
+                        {memoTextFilter}
                       </span>
                       <X
                         className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
@@ -1906,7 +1906,7 @@ export default function ListView() {
         onTagFiltersChange={setTagFilters}
         folderFilters={folderFilters}
         onFolderFiltersChange={setFolderFilters}
-        memotextFilter={memotextFilter}
+        memoTextFilter={memoTextFilter}
         onMemoTextFilterChange={setMemoTextFilter}
         onClose={() => setShowAdvancedSearch(false)}
       />

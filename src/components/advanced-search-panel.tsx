@@ -22,7 +22,7 @@ interface AdvancedSearchPanelProps {
   onTagFiltersChange: (tags: string[]) => void;
   folderFilters: string[];
   onFolderFiltersChange: (folders: string[]) => void;
-  memotextFilter: string;
+  memoTextFilter: string;
   onMemoTextFilterChange: (text: string) => void;
   onClose: () => void;
 }
@@ -35,7 +35,7 @@ export function AdvancedSearchPanel({
   onTagFiltersChange,
   folderFilters,
   onFolderFiltersChange,
-  memotextFilter,
+  memoTextFilter,
   onMemoTextFilterChange,
   onClose,
 }: AdvancedSearchPanelProps) {
@@ -143,7 +143,7 @@ export function AdvancedSearchPanel({
           <div className="space-y-2">
             <Label htmlFor="memo-text-filter">{t('general:memo')}</Label>
             <Input
-              value={memotextFilter}
+              value={memoTextFilter}
               onChange={(e) => onMemoTextFilterChange(e.target.value)}
               placeholder={t('advanced-search:search-memo-text')}
             />
