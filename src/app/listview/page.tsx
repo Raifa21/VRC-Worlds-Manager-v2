@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo, useEffect, useContext } from 'react';
+import { useRef, useState, useMemo, useEffect, useContext, memo } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -59,6 +59,7 @@ import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
 import { ShareFolderPopup } from '@/components/share-folder-popup';
 import { ImportedFolderContainsHidden } from '@/components/imported-folder-contains-hidden';
 import { UpdateDialogContext } from '@/components/UpdateDialogContext';
+import { Input } from '@/components/ui/input';
 
 type SortField =
   | 'name'
@@ -72,7 +73,8 @@ export default function ListView() {
   const authorRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
   const foldersRef = useRef<HTMLDivElement>(null);
-  const foldersLabelRef = useRef<HTMLSpanElement>(null); // ← new
+  const foldersLabelRef = useRef<HTMLSpanElement>(null);
+  const memoTextRef = useRef<HTMLDivElement>(null);
   const clearRef = useRef<HTMLButtonElement>(null);
   const [wrapFolders, setWrapFolders] = useState(false);
 
@@ -117,6 +119,7 @@ export default function ListView() {
   const [authorFilter, setAuthorFilter] = useState('');
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [folderFilters, setFolderFilters] = useState<string[]>([]);
+  const [memoTextFilter, setMemoTextFilter] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -1005,8 +1008,11 @@ export default function ListView() {
     }
   };
 
-  const filteredWorlds = useMemo(() => {
-    return worlds.filter((world) => {
+  const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>([]);
+
+  useEffect(() => {
+    // Synchronous filtering (except memotext)
+    const baseFiltered = worlds.filter((world) => {
       // Check text search
       const textMatch =
         !searchQuery ||
@@ -1050,7 +1056,51 @@ export default function ListView() {
 
       return finalMatch;
     });
-  }, [worlds, searchQuery, authorFilter, tagFilters, folderFilters]);
+
+    // If no memotext filter, set directly
+    if (!memoTextFilter) {
+      setFilteredWorlds(baseFiltered);
+      return;
+    }
+
+    // Otherwise, filter by memo text asynchronously
+    const filterByMemoText = async () => {
+      try {
+        const result = await commands.searchMemoText(memoTextFilter);
+        if (result.status === 'ok') {
+          setFilteredWorlds(
+            baseFiltered.filter((world) =>
+              result.data.some((worldId) => world.worldId === worldId),
+            ),
+          );
+        } else {
+          toast({
+            title: t('general:error-title'),
+            description: result.error,
+            variant: 'destructive',
+          });
+          setFilteredWorlds(baseFiltered);
+        }
+      } catch (e) {
+        error(`Error searching memo text: ${e}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('listview-page:error-search-memo-text'),
+          variant: 'destructive',
+        });
+        setFilteredWorlds(baseFiltered);
+      }
+    };
+
+    filterByMemoText();
+  }, [
+    worlds,
+    searchQuery,
+    authorFilter,
+    tagFilters,
+    folderFilters,
+    memoTextFilter,
+  ]);
 
   const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
     switch (field) {
@@ -1117,6 +1167,7 @@ export default function ListView() {
     setTagFilters([]);
     setFolderFilters([]);
     setSearchQuery('');
+    setMemoTextFilter('');
   };
 
   const renderMainContent = () => {
@@ -1168,7 +1219,7 @@ export default function ListView() {
             <div className="flex-1 flex items-center gap-2">
               <div className="relative flex-1">
                 <div className="relative">
-                  <input
+                  <Input
                     type="text"
                     placeholder={t('world-grid:search-placeholder')}
                     value={searchQuery}
@@ -1249,7 +1300,10 @@ export default function ListView() {
           </div>
 
           {/* Filter Section */}
-          {authorFilter || tagFilters.length > 0 || folderFilters.length > 0 ? (
+          {authorFilter ||
+          tagFilters.length > 0 ||
+          folderFilters.length > 0 ||
+          memoTextFilter ? (
             <div className="px-4 pb-2 border-b bg-muted/50">
               {/* Header: Filters title + Clear All */}
               <div className="flex justify-between items-center mb-2">
@@ -1294,6 +1348,32 @@ export default function ListView() {
                       <X
                         className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
                         onClick={() => setAuthorFilter('')}
+                      />
+                    </Badge>
+                  </div>
+                )}
+                {/* MEMO TEXT - Add this block */}
+                {memoTextFilter && (
+                  <div
+                    ref={memoTextRef}
+                    className="flex items-center gap-2 shrink-0"
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {t('general:memo')}:
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <span
+                        className="max-w-[120px] truncate"
+                        title={memoTextFilter}
+                      >
+                        {memoTextFilter}
+                      </span>
+                      <X
+                        className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                        onClick={() => setMemoTextFilter('')}
                       />
                     </Badge>
                   </div>
@@ -1826,6 +1906,8 @@ export default function ListView() {
         onTagFiltersChange={setTagFilters}
         folderFilters={folderFilters}
         onFolderFiltersChange={setFolderFilters}
+        memoTextFilter={memoTextFilter}
+        onMemoTextFilterChange={setMemoTextFilter}
         onClose={() => setShowAdvancedSearch(false)}
       />
       <ImportedFolderContainsHidden

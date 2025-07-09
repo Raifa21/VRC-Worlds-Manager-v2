@@ -152,7 +152,7 @@ export default function SingleFilterItemSelector({
             {selectedOption ? (
               <Badge
                 variant="secondary"
-                className="mr-1 flex items-center max-w-[100px] truncate whitespace-nowrap"
+                className="mr-1 flex items-center max-w-full truncate whitespace-nowrap"
               >
                 {/* Add star icon for selected value */}
                 {starredItems.includes(selectedOption.value) && (
@@ -218,7 +218,7 @@ export default function SingleFilterItemSelector({
               </div>
             ) : (
               <div className="px-2 py-1.5 text-sm truncate">
-                {t('find-page:no-matching-tags')}
+                {t('find-page:no-matching-items')}
               </div>
             )}
           </CommandEmpty>

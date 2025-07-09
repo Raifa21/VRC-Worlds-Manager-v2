@@ -86,5 +86,6 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         data::write_data_commands::delete_data,
         memo_commands::get_memo,
         memo_commands::set_memo_and_save,
+        memo_commands::search_memo_text,
     ])
 }
