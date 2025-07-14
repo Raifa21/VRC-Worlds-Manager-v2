@@ -64,6 +64,7 @@ import { Input } from '@/components/ui/input';
 type SortField =
   | 'name'
   | 'authorName'
+  | 'visits'
   | 'favorites'
   | 'dateAdded'
   | 'lastUpdated';
@@ -1104,6 +1105,7 @@ export default function ListView() {
 
   const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
     switch (field) {
+      case 'visits':
       case 'favorites':
       case 'dateAdded':
       case 'lastUpdated':
@@ -1131,6 +1133,8 @@ export default function ListView() {
           return multiplier * a.name.localeCompare(b.name);
         case 'authorName':
           return multiplier * a.authorName.localeCompare(b.authorName);
+        case 'visits':
+          return multiplier * (a.visits - b.visits);
         case 'favorites':
           return multiplier * (a.favorites - b.favorites);
         case 'dateAdded': {
@@ -1253,6 +1257,9 @@ export default function ListView() {
                   </SelectItem>
                   <SelectItem value="authorName">
                     {t('general:author')}
+                  </SelectItem>
+                  <SelectItem value="visits">
+                    {t('world-grid:sort-visits')}
                   </SelectItem>
                   <SelectItem value="favorites">
                     {t('world-grid:sort-favorites')}
