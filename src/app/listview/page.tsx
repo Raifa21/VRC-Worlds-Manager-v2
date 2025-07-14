@@ -66,6 +66,7 @@ type SortField =
   | 'authorName'
   | 'visits'
   | 'favorites'
+  | 'capacity'
   | 'dateAdded'
   | 'lastUpdated';
 
@@ -1107,6 +1108,7 @@ export default function ListView() {
     switch (field) {
       case 'visits':
       case 'favorites':
+      case 'capacity':
       case 'dateAdded':
       case 'lastUpdated':
         return 'desc';
@@ -1137,6 +1139,8 @@ export default function ListView() {
           return multiplier * (a.visits - b.visits);
         case 'favorites':
           return multiplier * (a.favorites - b.favorites);
+        case 'capacity':
+          return multiplier * (a.capacity - b.capacity);
         case 'dateAdded': {
           const dateA = a.dateAdded || '';
           const dateB = b.dateAdded || '';
@@ -1263,6 +1267,9 @@ export default function ListView() {
                   </SelectItem>
                   <SelectItem value="favorites">
                     {t('world-grid:sort-favorites')}
+                  </SelectItem>
+                  <SelectItem value="capacity">
+                    {t('world-grid:sort-capacity')}
                   </SelectItem>
                   <SelectItem value="dateAdded">
                     {t('general:date-added')}

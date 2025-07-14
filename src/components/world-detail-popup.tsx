@@ -472,6 +472,7 @@ export function WorldDetailPopup({
                               cachedWorldData.platform as unknown as import('@/types/worlds').Platform,
                             folders: [],
                             tags: cachedWorldData.tags,
+                            capacity: cachedWorldData.capacity,
                           }}
                         />
                       </div>

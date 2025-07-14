@@ -169,6 +169,7 @@
   "world-grid:sort-name": "名前",
   "world-grid:sort-visits": "訪問数",
   "world-grid:sort-favorites": "お気に入り",
+  "world-grid:sort-capacity": "最大人数",
   "world-grid:sort-last-updated": "最終更新",
   "world-grid:move-multiple": "{0} 件のワールドをフォルダに移動",
   "world-grid:move-single": "ワールドをフォルダに移動",
