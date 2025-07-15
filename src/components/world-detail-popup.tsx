@@ -35,7 +35,6 @@ import { useLocalization } from '@/hooks/use-localization';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Textarea } from './ui/textarea';
 import MemoRenderer from './memo-renderer';
-import { ScrollArea } from '@radix-ui/react-scroll-area';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -594,7 +593,7 @@ export function WorldDetailPopup({
               </div>
             ) : (
               worldDetails && (
-                <ScrollArea className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4">
                   <div className="flex gap-4 py-4">
                     <div className="w-[60%]">
                       <div className="h-[220px] relative overflow-hidden rounded-lg mb-4 bg-black">
@@ -899,7 +898,7 @@ export function WorldDetailPopup({
                       </div>
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               )
             )}
           </>

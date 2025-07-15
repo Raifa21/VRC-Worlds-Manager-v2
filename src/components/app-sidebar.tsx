@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from './ui/scroll-area';
 
 const sidebarStyles = {
   container:
@@ -270,7 +269,7 @@ export function AppSidebar({
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="folders">
               {(provided) => (
-                <ScrollArea
+                <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   className="h-[calc(100vh-417px)] overflow-y-auto pl-8"
@@ -391,7 +390,7 @@ export function AppSidebar({
                     </Draggable>
                   ))}
                   {provided.placeholder}
-                </ScrollArea>
+                </div>
               )}
             </Droppable>
           </DragDropContext>
