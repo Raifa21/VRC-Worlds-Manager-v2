@@ -19,6 +19,15 @@
                         "text": "更新チャネルの選択を追加"
                     }
                 ]
+            },
+            {
+                "text": "Added memo text searching in advanced search",
+                "langs": [
+                    {
+                        "lang": ["ja-JP"],
+                        "text": "詳細検索でメモのテキスト検索を追加"
+                    }
+                ]
             }
         ],
         "fixes": [
