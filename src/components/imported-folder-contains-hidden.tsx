@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { WorldDisplayData } from '@/lib/bindings';
 import { WorldGrid } from '@/components/world-grid';
-import { CardSize } from '@/types/preferences';
 import { useLocalization } from '@/hooks/use-localization';
 
 interface ImportedFolderContainsHiddenProps {
@@ -52,7 +51,7 @@ export function ImportedFolderContainsHidden({
 
         <div className="mt-4 max-h-[200px] overflow-y-auto" ref={containerRef}>
           <WorldGrid
-            size={CardSize.Compact}
+            size="Compact"
             worlds={worlds}
             isSelectionMode={true}
             initialSelectedWorlds={selectedWorlds}

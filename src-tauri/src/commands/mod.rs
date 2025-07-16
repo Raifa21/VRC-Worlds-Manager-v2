@@ -1,10 +1,13 @@
 pub mod api_commands;
+pub mod changelog;
 pub mod data;
 pub mod data_commands;
 pub mod folder_commands;
 pub mod memo_commands;
 pub mod open_folder_commands;
 pub mod preferences_commands;
+pub mod task;
+pub mod update;
 
 use tauri_specta::{collect_commands, Builder};
 
@@ -12,6 +15,14 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
         data_commands::fetch_patreon_data,
         data_commands::fetch_blacklist,
+        changelog::get_changelog,
+        task::get_task_status,
+        task::cancel_task_request,
+        task::get_task_error,
+        update::check_for_update,
+        update::download_update,
+        update::install_update,
+        update::do_not_notify_update,
         folder_commands::add_world_to_folder,
         folder_commands::remove_world_from_folder,
         folder_commands::hide_world,
@@ -32,14 +43,19 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         folder_commands::update_folder_share,
         folder_commands::download_folder,
         preferences_commands::get_theme,
+        preferences_commands::set_theme,
         preferences_commands::get_language,
+        preferences_commands::set_language,
         preferences_commands::get_card_size,
+        preferences_commands::set_card_size,
         preferences_commands::get_region,
         preferences_commands::set_region,
         preferences_commands::get_starred_filter_items,
         preferences_commands::set_starred_filter_items,
         preferences_commands::get_folder_removal_preference,
         preferences_commands::set_folder_removal_preference,
+        preferences_commands::get_update_channel,
+        preferences_commands::set_update_channel,
         api_commands::try_login,
         api_commands::login_with_credentials,
         api_commands::login_with_2fa,
@@ -64,12 +80,12 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         data::read_data_commands::get_migration_metadata,
         data::write_data_commands::create_empty_auth,
         data::write_data_commands::create_empty_files,
-        data::write_data_commands::set_preferences,
         data::write_data_commands::create_backup,
         data::write_data_commands::restore_from_backup,
         data::write_data_commands::migrate_old_data,
         data::write_data_commands::delete_data,
         memo_commands::get_memo,
         memo_commands::set_memo_and_save,
+        memo_commands::search_memo_text,
     ])
 }

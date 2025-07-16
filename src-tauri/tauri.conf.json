@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "vrc-worlds-manager",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "identifier": "com.raifaworks.vrc-worlds-manager",
   "build": {
     "frontendDist": "../out",
@@ -17,7 +17,7 @@
         "height": 600,
         "resizable": true,
         "fullscreen": false,
-        "devtools": true
+        "decorations": true
       }
     ],
     "security": {

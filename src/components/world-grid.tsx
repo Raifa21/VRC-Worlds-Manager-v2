@@ -1,8 +1,7 @@
 import { WorldCardPreview } from './world-card';
-import { CardSize } from '@/types/preferences';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { SpecialFolders } from '@/types/folders';
-import { WorldDisplayData } from '@/lib/bindings';
+import { CardSize, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
@@ -69,17 +68,17 @@ export function WorldGrid({
 }: WorldGridProps) {
   const { t } = useLocalization();
   const gap = 16;
-  const cardHeights = {
-    [CardSize.Compact]: 128, // h-32 = 8rem = 128px
-    [CardSize.Normal]: 192, // h-48 = 12rem = 192px
-    [CardSize.Expanded]: 256, // h-64 = 16rem = 256px
-    [CardSize.Original]: 176, // h-44 = 11rem = 176px
+  const cardHeights: Record<CardSize, number> = {
+    Compact: 128, // h-32 = 8rem = 128px
+    Normal: 192, // h-48 = 12rem = 192px
+    Expanded: 256, // h-64 = 16rem = 256px
+    Original: 176, // h-44 = 11rem = 176px
   };
-  const cardWidths = {
-    [CardSize.Compact]: 192, // w-48 = 12rem = 192px
-    [CardSize.Normal]: 208, // w-52 = 13rem = 208px
-    [CardSize.Expanded]: 256, // w-64 = 16rem = 256px
-    [CardSize.Original]: 256, // w-64 = 16rem = 256px
+  const cardWidths: Record<CardSize, number> = {
+    Compact: 192, // w-48 = 12rem = 192px
+    Normal: 208, // w-52 = 13rem = 208px
+    Expanded: 256, // w-64 = 16rem = 256px
+    Original: 256, // w-64 = 16rem = 256px
   };
   const cardH = cardHeights[size];
   const cardW = cardWidths[size];

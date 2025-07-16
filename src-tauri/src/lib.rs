@@ -5,20 +5,28 @@ use directories::BaseDirs;
 use services::ApiService;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use state::InitCell;
-use std::sync::RwLock;
-use tauri::Manager;
+use std::sync::{Arc, RwLock};
+use tauri::async_runtime::Mutex;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_updater::UpdaterExt;
+use tauri_specta::collect_events;
 
 use crate::services::memo_manager::MemoManager;
+use crate::task::cancellable_task::TaskContainer;
+use crate::task::definitions::TaskStatusChanged;
+use crate::updater::update_handler::{UpdateChannel, UpdateHandler, UpdateProgress};
 
 mod api;
 mod backup;
+mod changelog;
 mod commands;
 mod definitions;
 mod errors;
 mod logging;
 mod migration;
 mod services;
+mod task;
+mod updater;
 
 static PREFERENCES: InitCell<RwLock<PreferenceModel>> = InitCell::new();
 static FOLDERS: InitCell<RwLock<Vec<FolderModel>>> = InitCell::new();
@@ -31,7 +39,8 @@ static MEMO_MANAGER: InitCell<RwLock<MemoManager>> = InitCell::new();
 /// Application entry point for all platforms
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = generate_tauri_specta_builder();
+    let builder =
+        generate_tauri_specta_builder().events(collect_events![TaskStatusChanged, UpdateProgress]);
 
     #[cfg(debug_assertions)]
     builder
@@ -67,6 +76,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .invoke_handler(builder.invoke_handler())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .target({
@@ -81,8 +91,13 @@ pub fn run() {
                 .level(log::LevelFilter::Info)
                 .build(),
         )
-        .setup(|app| {
+        .setup(move |app| {
+            builder.mount_events(app);
             app.manage(app.handle().clone());
+
+            app.manage(Arc::new(Mutex::new(TaskContainer::new(
+                app.handle().clone(),
+            ))));
 
             let handle = app.handle().clone();
             let logs_dir = handle.path().app_log_dir().unwrap();
@@ -98,45 +113,26 @@ pub fn run() {
             RATE_LIMIT_STORE.set(RwLock::new(api::RateLimitStore::load(rate_limit_path)));
             log::info!("Rate limit store initialized");
 
-            tauri::async_runtime::spawn(async move {
-                update(handle).await.unwrap();
-            });
             if let Err(e) = initialize_app() {
                 log::error!("Failed to initialize app: {}", e);
             }
+
+            app.manage(Arc::new(Mutex::new(
+                (get_update_handler(
+                    app.handle().clone(),
+                    &PREFERENCES
+                        .get()
+                        .read()
+                        .expect("Failed to read preferences")
+                        .update_channel,
+                )),
+            )));
+
             Ok(())
         })
-        .invoke_handler(builder.invoke_handler())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
     log::info!("Application started");
-}
-
-async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
-    if let Some(update) = app.updater()?.check().await? {
-        let mut downloaded = 0;
-
-        log::info!("update found: {}", update.version);
-        log::info!("current version: {}", app.package_info().version);
-        log::info!("latest version: {}", update.version);
-        log::info!("download url: {}", update.download_url);
-        update
-            .download_and_install(
-                |chunk_length, content_length| {
-                    downloaded += chunk_length;
-                    log::info!("downloaded {downloaded} from {content_length:?}");
-                },
-                || {
-                    log::info!("download finished");
-                },
-            )
-            .await?;
-
-        log::info!("update installed");
-        app.restart();
-    }
-
-    Ok(())
 }
 
 fn initialize_app() -> Result<(), String> {
@@ -173,4 +169,17 @@ fn initialize_app() -> Result<(), String> {
             Err(e)
         }
     }
+}
+
+fn get_update_handler(app: AppHandle, channel: &UpdateChannel) -> UpdateHandler {
+    tauri::async_runtime::block_on(async move {
+        let mut update_handler = UpdateHandler::new(app);
+        let result = update_handler.check_for_update(channel).await;
+
+        if result.is_err() {
+            log::error!("Failed to check for update: {}", result.unwrap_err());
+        }
+
+        update_handler
+    })
 }

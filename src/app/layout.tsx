@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 
 import '@/app/globals.css';
 import { LocalizationContextProvider } from '@/components/localization-context';
+import { UpdateDialogProvider } from '@/components/UpdateDialogContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,7 +37,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LocalizationContextProvider>
-            <main>{children}</main>
+            <UpdateDialogProvider>
+              <main>{children}</main>
+            </UpdateDialogProvider>
           </LocalizationContextProvider>
         </ThemeProvider>
         <Toaster />

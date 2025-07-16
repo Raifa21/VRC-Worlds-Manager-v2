@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  useLayoutEffect,
-  useRef,
-  useState,
-  useMemo,
-  useEffect,
-  use,
-} from 'react';
+import { useRef, useState, useMemo, useEffect, useContext, memo } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +9,6 @@ import { useFolders } from '../listview/hook';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
-import { CardSize } from '@/types/preferences';
 import { Button } from '@/components/ui/button';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import {
@@ -28,7 +20,6 @@ import {
   SortAsc,
   SortDesc,
   Square,
-  Settings,
   X,
   TextSearch,
 } from 'lucide-react'; // For the reload icon
@@ -42,7 +33,11 @@ import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType } from '@/types/instances';
 import { InstanceRegion } from '@/lib/bindings';
 import { toRomaji } from 'wanakana';
-import { UserGroup, GroupInstancePermissionInfo } from '@/lib/bindings';
+import {
+  UserGroup,
+  GroupInstancePermissionInfo,
+  CardSize,
+} from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
 import { FindPage } from '@/components/find-page';
 import { info, error } from '@tauri-apps/plugin-log';
@@ -63,6 +58,8 @@ import { Badge } from '@/components/ui/badge';
 import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
 import { ShareFolderPopup } from '@/components/share-folder-popup';
 import { ImportedFolderContainsHidden } from '@/components/imported-folder-contains-hidden';
+import { UpdateDialogContext } from '@/components/UpdateDialogContext';
+import { Input } from '@/components/ui/input';
 
 type SortField =
   | 'name'
@@ -76,7 +73,8 @@ export default function ListView() {
   const authorRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
   const foldersRef = useRef<HTMLDivElement>(null);
-  const foldersLabelRef = useRef<HTMLSpanElement>(null); // ← new
+  const foldersLabelRef = useRef<HTMLSpanElement>(null);
+  const memoTextRef = useRef<HTMLDivElement>(null);
   const clearRef = useRef<HTMLButtonElement>(null);
   const [wrapFolders, setWrapFolders] = useState(false);
 
@@ -91,7 +89,7 @@ export default function ListView() {
   const [showSettings, setShowSettings] = useState(false);
   const [showFind, setShowFind] = useState(false);
   const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
-  const [cardSize, setCardSize] = useState<CardSize>(CardSize.Normal);
+  const [cardSize, setCardSize] = useState<CardSize>('Normal');
   const [isLoading, setIsLoading] = useState(false);
   const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
     SpecialFolders.All,
@@ -121,11 +119,18 @@ export default function ListView() {
   const [authorFilter, setAuthorFilter] = useState('');
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [folderFilters, setFolderFilters] = useState<string[]>([]);
+  const [memoTextFilter, setMemoTextFilter] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showShareFolder, setShowShareFolder] = useState(false);
+
+  const { checkForUpdate } = useContext(UpdateDialogContext);
+
+  useEffect(() => {
+    checkForUpdate();
+  }, []);
 
   useEffect(() => {
     loadAllWorlds();
@@ -945,7 +950,7 @@ export default function ListView() {
     try {
       const result = await commands.getCardSize();
       if (result.status === 'ok') {
-        setCardSize(CardSize[result.data as keyof typeof CardSize]);
+        setCardSize(result.data);
       }
     } catch (e) {
       error(`Failed to load card size: ${e}`);
@@ -1003,8 +1008,11 @@ export default function ListView() {
     }
   };
 
-  const filteredWorlds = useMemo(() => {
-    return worlds.filter((world) => {
+  const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>([]);
+
+  useEffect(() => {
+    // Synchronous filtering (except memotext)
+    const baseFiltered = worlds.filter((world) => {
       // Check text search
       const textMatch =
         !searchQuery ||
@@ -1048,7 +1056,51 @@ export default function ListView() {
 
       return finalMatch;
     });
-  }, [worlds, searchQuery, authorFilter, tagFilters, folderFilters]);
+
+    // If no memotext filter, set directly
+    if (!memoTextFilter) {
+      setFilteredWorlds(baseFiltered);
+      return;
+    }
+
+    // Otherwise, filter by memo text asynchronously
+    const filterByMemoText = async () => {
+      try {
+        const result = await commands.searchMemoText(memoTextFilter);
+        if (result.status === 'ok') {
+          setFilteredWorlds(
+            baseFiltered.filter((world) =>
+              result.data.some((worldId) => world.worldId === worldId),
+            ),
+          );
+        } else {
+          toast({
+            title: t('general:error-title'),
+            description: result.error,
+            variant: 'destructive',
+          });
+          setFilteredWorlds(baseFiltered);
+        }
+      } catch (e) {
+        error(`Error searching memo text: ${e}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('listview-page:error-search-memo-text'),
+          variant: 'destructive',
+        });
+        setFilteredWorlds(baseFiltered);
+      }
+    };
+
+    filterByMemoText();
+  }, [
+    worlds,
+    searchQuery,
+    authorFilter,
+    tagFilters,
+    folderFilters,
+    memoTextFilter,
+  ]);
 
   const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
     switch (field) {
@@ -1115,6 +1167,7 @@ export default function ListView() {
     setTagFilters([]);
     setFolderFilters([]);
     setSearchQuery('');
+    setMemoTextFilter('');
   };
 
   const renderMainContent = () => {
@@ -1166,7 +1219,7 @@ export default function ListView() {
             <div className="flex-1 flex items-center gap-2">
               <div className="relative flex-1">
                 <div className="relative">
-                  <input
+                  <Input
                     type="text"
                     placeholder={t('world-grid:search-placeholder')}
                     value={searchQuery}
@@ -1247,7 +1300,10 @@ export default function ListView() {
           </div>
 
           {/* Filter Section */}
-          {authorFilter || tagFilters.length > 0 || folderFilters.length > 0 ? (
+          {authorFilter ||
+          tagFilters.length > 0 ||
+          folderFilters.length > 0 ||
+          memoTextFilter ? (
             <div className="px-4 pb-2 border-b bg-muted/50">
               {/* Header: Filters title + Clear All */}
               <div className="flex justify-between items-center mb-2">
@@ -1292,6 +1348,32 @@ export default function ListView() {
                       <X
                         className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
                         onClick={() => setAuthorFilter('')}
+                      />
+                    </Badge>
+                  </div>
+                )}
+                {/* MEMO TEXT - Add this block */}
+                {memoTextFilter && (
+                  <div
+                    ref={memoTextRef}
+                    className="flex items-center gap-2 shrink-0"
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {t('general:memo')}:
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <span
+                        className="max-w-[120px] truncate"
+                        title={memoTextFilter}
+                      >
+                        {memoTextFilter}
+                      </span>
+                      <X
+                        className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                        onClick={() => setMemoTextFilter('')}
                       />
                     </Badge>
                   </div>
@@ -1824,6 +1906,8 @@ export default function ListView() {
         onTagFiltersChange={setTagFilters}
         folderFilters={folderFilters}
         onFolderFiltersChange={setFolderFilters}
+        memoTextFilter={memoTextFilter}
+        onMemoTextFilterChange={setMemoTextFilter}
         onClose={() => setShowAdvancedSearch(false)}
       />
       <ImportedFolderContainsHidden

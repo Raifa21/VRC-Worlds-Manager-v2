@@ -27,7 +27,6 @@ import {
 import { WorldDisplayData } from '@/lib/bindings';
 import { WorldDetails } from '@/lib/bindings';
 import { WorldCardPreview } from './world-card';
-import { CardSize } from '@/types/preferences';
 import { GroupInstanceCreator } from './group-instance-creator';
 import { Platform } from '@/types/worlds';
 import { GroupInstanceType, InstanceType } from '@/types/instances';
@@ -459,7 +458,7 @@ export function WorldDetailPopup({
                     <div className="flex flex-col sm:flex-row gap-6 justify-between">
                       <div className="flex justify-center items-center pl-8 w-full sm:w-1/3">
                         <WorldCardPreview
-                          size={CardSize.Normal}
+                          size="Normal"
                           world={{
                             worldId: cachedWorldData.worldId,
                             name: cachedWorldData.name,

@@ -148,33 +148,61 @@ export default function SingleFilterItemSelector({
           aria-expanded={open}
           className="w-full justify-between min-w-0"
         >
-          <div className="flex flex-grow items-center gap-1 truncate min-w-0">
+          <div className="flex flex-grow items-center gap-1 truncate min-w-0 py-1.5">
             {selectedOption ? (
               <Badge
                 variant="secondary"
-                className="mr-1 flex items-center max-w-[100px] truncate whitespace-nowrap"
+                className="flex items-center gap-1 bg-muted-foreground/30 hover:bg-muted-foreground/50 text-xs pointer-events-auto h-5"
+                onClick={(e) => e.stopPropagation()}
               >
-                {/* Add star icon for selected value */}
-                {starredItems.includes(selectedOption.value) && (
-                  <Star
-                    className="h-2.5 w-2.5 mr-1 text-yellow-500"
-                    fill="currentColor"
-                  />
-                )}
-                <span className="truncate block">{selectedOption.label}</span>
-                <span
-                  className="ml-1 cursor-pointer rounded-full hover:bg-muted/50"
-                  role="button"
-                  aria-label="Clear selection"
-                  tabIndex={-1}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
+                <div
+                  className="flex-shrink-0 cursor-pointer"
+                  onClick={(e) => {
                     e.stopPropagation();
+                    // Toggle starred status
+                    if (starredItems.includes(selectedOption.value)) {
+                      setStarredItems(
+                        starredItems.filter(
+                          (id) => id !== selectedOption.value,
+                        ),
+                      );
+                    } else {
+                      setStarredItems([...starredItems, selectedOption.value]);
+                    }
                   }}
-                  onClick={handleClear}
                 >
-                  <X className="h-3 w-3" />
+                  {/* Always show the star, but style it differently based on state */}
+                  <Star
+                    className={cn(
+                      'h-2.5 w-2.5',
+                      starredItems.includes(selectedOption.value)
+                        ? 'text-yellow-500'
+                        : 'text-muted-foreground/30 hover:text-muted-foreground/70',
+                    )}
+                    fill={
+                      starredItems.includes(selectedOption.value)
+                        ? 'currentColor'
+                        : 'none'
+                    }
+                  />
+                </div>
+                <span
+                  className={cn(
+                    'block truncate',
+                    starredItems.includes(selectedOption.value)
+                      ? 'max-w-[65px]'
+                      : 'max-w-[80px]',
+                  )}
+                >
+                  {selectedOption.label}
                 </span>
+                <X
+                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClear(e);
+                  }}
+                />
               </Badge>
             ) : (
               <span className="text-muted-foreground text-sm truncate block">
@@ -218,7 +246,7 @@ export default function SingleFilterItemSelector({
               </div>
             ) : (
               <div className="px-2 py-1.5 text-sm truncate">
-                {t('find-page:no-matching-tags')}
+                {t('find-page:no-matching-items')}
               </div>
             )}
           </CommandEmpty>

@@ -44,6 +44,8 @@
   "general:error-open-logs": "Failed to open logs folder",
   "general:error-open-folder": "Failed to open folder. It seems to be missing.",
   "general:open-folder": "Open Folder",
+  "general:cancelled": "Cancelled",
+  "general:failed": "Failed",
 
   "error-page:title": "Error Loading Application",
   "error-page:try-again": "Retry",
@@ -226,6 +228,7 @@
   "advanced-search:search-author": "Search by author name",
   "advanced-search:search-tags": "Search by tags",
   "advanced-search:search-folders": "Search by folders",
+  "advanced-search:search-memo-text": "Search by memo text",
   "advanced-search:apply-filters": "Apply Filters",
 
   "filter-item-selector:custom-value": "Press Enter to add {0}",
@@ -354,7 +357,7 @@
   "find-page:tag-placeholder": "Search tags",
   "find-page:select-tag": "Select Tags",
   "find-page:add-custom-tag": "Add {0}",
-  "find-page:no-matching-tags": "No matching tags found",
+  "find-page:no-matching-items": "No matching items found",
   "find-page:exclude-tag": "Exclude Tag",
   "find-page:exclude-tag-placeholder": "Search tags to exclude",
   "find-page:exclude-tag-tooltip": "Exclude worlds with this tag from search results",
@@ -452,5 +455,24 @@
   "share-folder:share-text": "I just shared “{0}” with VRC Worlds Manager v2!\nView the worlds here 👇\n{1}",
 
   "delete-folder:title": "Delete Folder",
-  "delete-folder:description": "Are you sure you want to delete \"{0}\"? This will remove the folder but not delete the worlds inside."
+  "delete-folder:description": "Are you sure you want to delete \"{0}\"? This will remove the folder but not delete the worlds inside.",
+
+  "changelog:prefix:new-feature": "New Features",
+  "changelog:prefix:bug-fixes": "Bug Fixes",
+  "changelog:prefix:others": "Others",
+  "changelog:title": "Changelog",
+  "changelog:not-found": "No changelog available",
+  "changelog:github": "View changes on GitHub",
+
+  "new-update-toast": "A new update is available!",
+  "new-update-toast:description": "This update includes bug fixes, new features, and more",
+  "new-update-toast:button": "Update now",
+  "new-update-toast:close": "Not now",
+
+  "update-dialog:title": "Preparing update",
+  "update-dialog:description": "Downloading update...",
+  "update-dialog:downloading:foretext": "Downloading (",
+  "update-dialog:downloading:posttext": "%)",
+  "update-dialog:download-complete": "Update downloaded",
+  "update-dialog:execute": "Update"
 }

@@ -213,13 +213,13 @@ export function AboutSection() {
       <div className="w-full border-t bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-2 flex justify-between items-center">
           <div className="text-sm text-muted-foreground">
-            VRC Worlds Manager v2 1.0.0
+            VRC Worlds Manager v2 1.1.0
           </div>
 
           <div className="flex gap-4">
             <Button variant="ghost" size="sm" asChild>
               <a
-                href="https://github.com/Raifa21/vrc-world-manager"
+                href="https://github.com/Raifa21/vrc-worlds-manager-v2"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-row gap-2"
