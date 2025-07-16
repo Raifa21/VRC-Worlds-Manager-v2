@@ -1014,6 +1014,7 @@ export type WorldDisplayData = {
   platform: Platform;
   folders: string[];
   tags: string[];
+  capacity: number;
 };
 
 /** tauri-specta globals **/
