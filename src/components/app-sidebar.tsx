@@ -284,7 +284,7 @@ export function AppSidebar({
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               className={`
-                                w-[193px] px-3 py-2 text-sm font-medium rounded-lg
+                                w-[190px] px-3 py-2 text-sm font-medium rounded-lg
                                 overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
                                 ${
                                   selectedFolder === folder
@@ -354,10 +354,12 @@ export function AppSidebar({
                                     }, 150);
                                   }}
                                   className="h-6 py-0 folder-edit-container" // Added class for identifying container
-                                  autoFocus
+                                  autoFocus={true}
                                 />
                               ) : (
-                                folder
+                                <span className="truncate w-full">
+                                  {folder}
+                                </span>
                               )}
                             </div>
                           </ContextMenuTrigger>
