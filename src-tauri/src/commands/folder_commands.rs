@@ -1,7 +1,7 @@
 use crate::definitions::{WorldApiData, WorldDisplayData, WorldModel};
 use crate::services::folder_manager::FolderManager;
 use crate::services::share_service;
-use crate::{FOLDERS, WORLDS};
+use crate::{FOLDERS, PREFERENCES, WORLDS};
 use std::collections::HashSet;
 
 #[tauri::command]
@@ -96,7 +96,14 @@ pub async fn move_folder(folder_name: String, new_index: usize) -> Result<(), St
 #[tauri::command]
 #[specta::specta]
 pub async fn rename_folder(old_name: String, new_name: String) -> Result<(), String> {
-    FolderManager::rename_folder(old_name, new_name, FOLDERS.get(), WORLDS.get()).map_err(|e| {
+    FolderManager::rename_folder(
+        old_name,
+        new_name,
+        FOLDERS.get(),
+        WORLDS.get(),
+        PREFERENCES.get(),
+    )
+    .map_err(|e| {
         log::error!("Error renaming folder: {}", e);
         e.to_string()
     })
