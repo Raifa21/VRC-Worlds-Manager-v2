@@ -408,7 +408,9 @@ impl FolderManager {
     /// * `new_name` - The new name of the folder
     /// * `folders` - The list of folders, as a RwLock
     /// * `worlds` - The list of worlds, as a RwLock
-    /// * `preferences` - The preferences, as a RwLock. Used as the
+    /// * `preferences` - The preferences, as a RwLock. Used to store user-specific settings 
+    ///   and configurations that may influence folder renaming behavior, such as naming conventions 
+    ///   or restrictions.
     ///
     /// # Returns
     /// Ok if the folder was renamed successfully
