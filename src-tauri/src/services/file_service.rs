@@ -340,6 +340,39 @@ impl FileService {
         }
         opener::open(path).map_err(|e| format!("Failed to open path: {}", e))
     }
+
+    /// Export a file to the exports folder, and opens the exports folder once the file is written
+    /// Writes the given data to a file in the exports directory
+    ///
+    /// # Arguments
+    /// * `file_name` - The name of the file to create
+    /// * `data` - The data to write to the file
+    ///
+    /// # Returns
+    /// Ok(()) if the file was written successfully
+    /// # Errors
+    /// Returns a FileError if the file could not be written
+    pub fn export_file(file_name: &str, data: &str) -> Result<(), FileError> {
+        let exports_dir = BaseDirs::new()
+            .expect("Failed to get base directories")
+            .data_local_dir()
+            .join("VRC_Worlds_Manager_new")
+            .join("exports");
+
+        if !exports_dir.exists() {
+            fs::create_dir_all(&exports_dir).map_err(|_| FileError::FileWriteError)?;
+        }
+
+        let file_path = exports_dir.join(file_name);
+        fs::write(file_path, data).map_err(|_| FileError::FileWriteError)?;
+
+        // Open the exports directory after writing the file
+        Self::open_path(exports_dir).map_err(|e| {
+            log::error!("{}", e);
+            FileError::FileWriteError
+        })?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
