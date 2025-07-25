@@ -23,7 +23,7 @@ interface AddToFolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedWorlds?: WorldDisplayData[];
-  folders: string[];
+  folders: [string, number][];
   onConfirm: (
     foldersToAdd: string[],
     foldersToRemove: string[],
@@ -403,19 +403,26 @@ export function AddToFolderDialog({
             <ScrollArea className={isFindPage ? 'h-[240px]' : 'h-[300px]'}>
               <div ref={listRef} className="space-y-2 px-2 pb-2">
                 {folders.map((folder) => {
-                  const isNew = folder === createdFolder;
+                  const isNew = folder[0] === createdFolder;
                   return (
                     <Button
-                      key={folder}
-                      data-folder={folder}
+                      key={folder[0]}
+                      data-folder={folder[0]}
                       variant="outline"
                       className="w-full justify-between group"
-                      onClick={() => handleClick(folder)}
+                      onClick={() => handleClick(folder[0])}
                     >
-                      <span className="truncate">{folder}</span>
+                      <span className="flex flex-row items-center w-full justify-start">
+                        <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
+                          {folder[1]}
+                        </span>
+                        <span className="truncate flex-1 pr-2 text-left w-[10px]">
+                          asdkjshdfkjhsdkfhskdfhlshfdlkhaskljdfhajkshdflkahsldfhalshdflkhsdfklahsldkfjh
+                        </span>
+                      </span>
                       <span>
-                        {getFolderState(folder) === 'all' && <Check />}
-                        {getFolderState(folder) === 'some' && <Minus />}
+                        {getFolderState(folder[0]) === 'all' && <Check />}
+                        {getFolderState(folder[0]) === 'some' && <Minus />}
                       </span>
                     </Button>
                   );

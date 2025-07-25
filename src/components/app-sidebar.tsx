@@ -36,7 +36,7 @@ const sidebarStyles = {
 const SIDEBAR_CLASS = 'app-sidebar';
 
 interface AppSidebarProps {
-  folders: string[];
+  folders: [string, number][];
   onFoldersChange: () => Promise<void>;
   onAddFolder: () => void;
   onSelectFolder: (
@@ -66,7 +66,7 @@ export function AppSidebar({
   onDeleteFolder,
 }: AppSidebarProps) {
   const { t } = useLocalization();
-  const [localFolders, setLocalFolders] = useState<string[]>(folders);
+  const [localFolders, setLocalFolders] = useState<[string, number][]>(folders);
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
@@ -92,7 +92,7 @@ export function AppSidebar({
     setLocalFolders(newFolders);
 
     try {
-      await commands.moveFolder(movedFolder, destination.index);
+      await commands.moveFolder(movedFolder[0], destination.index);
       // Only refresh if needed (in case of error or sync issues)
       await onFoldersChange();
     } catch (e) {
@@ -275,7 +275,11 @@ export function AppSidebar({
                   className="h-[calc(100vh-417px)] overflow-y-auto pl-8"
                 >
                   {localFolders.map((folder, index) => (
-                    <Draggable key={folder} draggableId={folder} index={index}>
+                    <Draggable
+                      key={folder[0]}
+                      draggableId={folder[0]}
+                      index={index}
+                    >
                       {(provided) => (
                         <ContextMenu>
                           <ContextMenuTrigger>
@@ -287,17 +291,17 @@ export function AppSidebar({
                                 w-[190px] px-3 py-2 text-sm font-medium rounded-lg
                                 overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
                                 ${
-                                  selectedFolder === folder
+                                  selectedFolder === folder[0]
                                     ? sidebarStyles.activeLink
                                     : 'hover:bg-accent/50 hover:text-accent-foreground'
                                 }
                               `}
                               onClick={() => {
-                                if (selectedFolder === folder) return;
-                                onSelectFolder('folder', folder);
+                                if (selectedFolder === folder[0]) return;
+                                onSelectFolder('folder', folder[0]);
                               }}
                             >
-                              {editingFolder === folder ? (
+                              {editingFolder === folder[0] ? (
                                 <Input
                                   ref={inputRef}
                                   value={newFolderName}
@@ -320,7 +324,7 @@ export function AppSidebar({
                                       !composingRef.current
                                     ) {
                                       e.preventDefault();
-                                      handleRename(folder);
+                                      handleRename(folder[0]);
                                     } else if (e.key === 'Escape') {
                                       e.preventDefault();
                                       setEditingFolder(null);
@@ -357,8 +361,13 @@ export function AppSidebar({
                                   autoFocus={true}
                                 />
                               ) : (
-                                <span className="truncate w-full">
-                                  {folder}
+                                <span className="flex items-center w-full">
+                                  <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
+                                    ({folder[1]})
+                                  </span>
+                                  <span className="truncate flex-1 pl-1">
+                                    {folder[0]}
+                                  </span>
                                 </span>
                               )}
                             </div>
@@ -367,8 +376,8 @@ export function AppSidebar({
                             <ContextMenuItem
                               onClick={() => {
                                 // First set the editing state
-                                setEditingFolder(folder);
-                                setNewFolderName(folder);
+                                setEditingFolder(folder[0]);
+                                setNewFolderName(folder[0]);
                                 // Use double RAF to ensure DOM has updated and context menu has closed
                                 requestAnimationFrame(() => {
                                   requestAnimationFrame(() => {
@@ -382,7 +391,7 @@ export function AppSidebar({
                             </ContextMenuItem>
                             <ContextMenuItem
                               className="text-destructive"
-                              onClick={() => onDeleteFolder(folder)}
+                              onClick={() => onDeleteFolder(folder[0])}
                             >
                               {t('general:delete')}
                             </ContextMenuItem>

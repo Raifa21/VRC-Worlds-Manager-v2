@@ -82,7 +82,8 @@ export function AdvancedSearchPanel({
         try {
           const result = await commands.getFolders();
           if (result.status === 'ok') {
-            setAvailableFolders(result.data);
+            // only use the first element of the tuple for the folder name
+            setAvailableFolders(result.data.map((f) => f[0]));
           }
         } catch (error) {
           console.error('Failed to load folders:', error);
