@@ -299,6 +299,12 @@
   "settings-page:worlds-count": "Worlds",
   "settings-page:folders-count": "Folders",
   "settings-page:backup-path": "Path",
+  "settings-page:export-title": "Export to external services",
+  "settings-page:export-description": "Export your worlds and folders to external services",
+  "settings-page:export-data": "Export",
+  "settings-page:export-success-title": "Export Successful",
+  "settings-page:export-success-description": "Your data was successfully exported.",
+  "settings-page:error-export-data": "Export Failed",
   "settings-page:warning": "Warning",
   "settings-page:warning-text-1": "This will overwrite your current data.",
   "settings-page:warning-text-2": "Taking a backup first is recommended.",
@@ -476,5 +482,8 @@
   "update-dialog:downloading:foretext": "Downloading (",
   "update-dialog:downloading:posttext": "%)",
   "update-dialog:download-complete": "Update downloaded",
-  "update-dialog:execute": "Update"
+  "update-dialog:execute": "Update",
+
+  "export-popup:title": "Export Worlds",
+  "export-popup:export": "Export to: "
 }
