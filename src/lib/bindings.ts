@@ -150,7 +150,7 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async getFolders(): Promise<Result<string[], string>> {
+  async getFolders(): Promise<Result<[string, number][], string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_folders') };
     } catch (e) {
