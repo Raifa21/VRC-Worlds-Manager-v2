@@ -82,6 +82,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         data::write_data_commands::create_empty_files,
         data::write_data_commands::create_backup,
         data::write_data_commands::restore_from_backup,
+        data::write_data_commands::export_to_portal_library_system,
         data::write_data_commands::migrate_old_data,
         data::write_data_commands::delete_data,
         memo_commands::get_memo,
