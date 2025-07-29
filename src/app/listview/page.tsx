@@ -1010,7 +1010,7 @@ export default function ListView() {
     }
   };
 
-  const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>([]);
+  const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>(worlds || []);
 
   useEffect(() => {
     // Synchronous filtering (except memotext)
