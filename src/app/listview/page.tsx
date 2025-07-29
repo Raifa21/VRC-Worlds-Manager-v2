@@ -1939,3 +1939,53 @@ export default function ListView() {
     </div>
   );
 }
+function doesWorldMatchFilters(
+  world: WorldDisplayData,
+  searchQuery: string,
+  authorFilter: string,
+  tagFilters: string[],
+  folderFilters: string[],
+  memoTextWorldIds: Set<string> | null,
+): boolean {
+  // Text search: name or authorName (case-insensitive, also romaji)
+  const textMatch =
+    !searchQuery ||
+    world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    toRomaji(world.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    toRomaji(world.authorName)
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+  // Author filter: exact match (case-insensitive)
+  const authorMatch =
+    !authorFilter ||
+    world.authorName.toLowerCase() === authorFilter.toLowerCase();
+
+  // Tag filters: all tags must match (AND logic, exact match with prefix)
+  const tagMatch =
+    tagFilters.length === 0 ||
+    (world.tags &&
+      tagFilters.every((searchTag) => {
+        const prefixedTag = `author_tag_${searchTag}`;
+        return world.tags.some(
+          (worldTag) => worldTag.toLowerCase() === prefixedTag.toLowerCase(),
+        );
+      }));
+
+  // Folder filters: world must be in all specified folders (AND logic, exact match)
+  const folderMatch =
+    folderFilters.length === 0 ||
+    folderFilters.every((searchFolder) =>
+      world.folders.some(
+        (worldFolder) =>
+          worldFolder.toLowerCase() === searchFolder.toLowerCase(),
+      ),
+    );
+
+  // Memo text filter: if present, worldId must be in memoTextWorldIds
+  const memoTextMatch =
+    memoTextWorldIds == null || memoTextWorldIds.has(world.worldId);
+
+  return textMatch && authorMatch && tagMatch && folderMatch && memoTextMatch;
+}

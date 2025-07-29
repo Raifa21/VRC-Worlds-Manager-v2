@@ -401,7 +401,9 @@ export function WorldDetailPopup({
         // Remove folder
         const result = await commands.removeWorldFromFolder(folder, worldId);
         if (result.status !== 'ok') {
-          error(`Failed to remove world from folder "${folder}" for world ID "${worldId}": ${result.error}`);
+          error(
+            `Failed to remove world from folder "${folder}" for world ID "${worldId}": ${result.error}`,
+          );
           return;
         }
         updatedFolders = worldFolders.filter((f) => f !== folder);
@@ -409,7 +411,9 @@ export function WorldDetailPopup({
         // Add folder
         const result = await commands.addWorldToFolder(folder, worldId);
         if (result.status !== 'ok') {
-          error(`Failed to add world to folder "${folder}" for world ID "${worldId}": ${result.error}`);
+          error(
+            `Failed to add world to folder "${folder}" for world ID "${worldId}": ${result.error}`,
+          );
           return;
         }
         updatedFolders = [...worldFolders, folder];
