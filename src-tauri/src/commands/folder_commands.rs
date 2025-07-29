@@ -174,6 +174,15 @@ pub async fn delete_world(world_id: String) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_folders_for_world(world_id: String) -> Result<Vec<String>, String> {
+    FolderManager::get_folders_for_world(world_id, WORLDS.get()).map_err(|e| {
+        log::error!("Error getting folders for world: {}", e);
+        e.to_string()
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn share_folder(folder_name: String) -> Result<String, String> {
     let result: Result<(String, String), String> =
         share_service::share_folder(&folder_name, FOLDERS.get(), WORLDS.get())

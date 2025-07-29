@@ -5,7 +5,7 @@ import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
-import { useFolders } from '../listview/hook';
+import { useFolders } from '@/hooks/useFolders';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
@@ -80,7 +80,7 @@ export default function ListView() {
   const clearRef = useRef<HTMLButtonElement>(null);
   const [wrapFolders, setWrapFolders] = useState(false);
 
-  const { folders, loadFolders } = useFolders();
+  const { folders, refresh: refreshFolders } = useFolders();
   const { toast } = useToast();
   const { t } = useLocalization();
   const gridScrollRef = useRef<HTMLDivElement>(null);
@@ -287,7 +287,7 @@ export default function ListView() {
   const handleCreateFolder = async (name: string) => {
     try {
       const newName = await invoke<string>('create_folder', { name: name });
-      await loadFolders();
+      await refreshFolders();
 
       // Only navigate to the new folder if not in Find page or if add-to-folder dialog is open
       if (currentFolder !== SpecialFolders.Find && !showFolderDialog) {
@@ -971,7 +971,7 @@ export default function ListView() {
   const onRenameFolder = async (oldName: string, newName: string) => {
     try {
       await commands.renameFolder(oldName, newName);
-      await loadFolders();
+      await refreshFolders();
       toast({
         title: t('listview-page:folder-renamed-title'),
         description: t('listview-page:folder-renamed-description', newName),
@@ -989,7 +989,7 @@ export default function ListView() {
   const handleDeleteFolder = async (folderName: string) => {
     try {
       await commands.deleteFolder(folderName);
-      await loadFolders();
+      await refreshFolders();
       setShowDeleteFolder(null);
       // if we are deleting the current folder, reset to All
       if (currentFolder === folderName) {
@@ -1190,7 +1190,7 @@ export default function ListView() {
           onOpenHiddenFolder={() => {
             handleSelectFolder(SpecialFolders.Hidden);
           }}
-          onDataChange={loadFolders}
+          onDataChange={refreshFolders}
         />
       );
     }
@@ -1654,7 +1654,7 @@ export default function ListView() {
       if (result.status === 'ok') {
         const folderName = result.data[0];
         const hiddenWorlds = result.data[1];
-        await loadFolders();
+        await refreshFolders();
         setShowCreateFolder(false);
         handleSelectFolder('folder', folderName);
         if (hiddenWorlds.length > 0) {
@@ -1724,8 +1724,6 @@ export default function ListView() {
   return (
     <div className="flex h-screen">
       <AppSidebar
-        folders={folders}
-        onFoldersChange={loadFolders}
         onAddFolder={() => setShowCreateFolder(true)}
         onSelectFolder={handleSelectFolder}
         selectedFolder={currentFolder}
@@ -1886,7 +1884,6 @@ export default function ListView() {
         selectedWorlds={worlds.filter((world) =>
           selectedWorldsForFolder.includes(world.worldId),
         )}
-        folders={folders}
         onConfirm={(foldersToAdd, foldersToRemove) =>
           handleAddToFolders(foldersToAdd, foldersToRemove)
         }
