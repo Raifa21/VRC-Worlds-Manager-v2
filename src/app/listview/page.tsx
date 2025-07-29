@@ -1724,8 +1724,6 @@ export default function ListView() {
   return (
     <div className="flex h-screen">
       <AppSidebar
-        folders={folders}
-        onFoldersChange={refreshFolders}
         onAddFolder={() => setShowCreateFolder(true)}
         onSelectFolder={handleSelectFolder}
         selectedFolder={currentFolder}
@@ -1886,7 +1884,6 @@ export default function ListView() {
         selectedWorlds={worlds.filter((world) =>
           selectedWorldsForFolder.includes(world.worldId),
         )}
-        folders={folders}
         onConfirm={(foldersToAdd, foldersToRemove) =>
           handleAddToFolders(foldersToAdd, foldersToRemove)
         }
