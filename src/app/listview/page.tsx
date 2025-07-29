@@ -1059,42 +1059,88 @@ export default function ListView() {
       return finalMatch;
     });
 
-    // If no memotext filter, set directly
-    if (!memoTextFilter) {
-      setFilteredWorlds(baseFiltered);
-      return;
-    }
-
-    // Otherwise, filter by memo text asynchronously
-    const filterByMemoText = async () => {
-      try {
-        const result = await commands.searchMemoText(memoTextFilter);
-        if (result.status === 'ok') {
-          setFilteredWorlds(
-            baseFiltered.filter((world) =>
-              result.data.some((worldId) => world.worldId === worldId),
-            ),
-          );
-        } else {
+    // Perform filtering, including memo text if applicable
+    const filterWorlds = async () => {
+      let memoTextWorldIds = null;
+      if (memoTextFilter) {
+        try {
+          const result = await commands.searchMemoText(memoTextFilter);
+          if (result.status === 'ok') {
+            memoTextWorldIds = new Set(result.data);
+          } else {
+            toast({
+              title: t('general:error-title'),
+              description: result.error,
+              variant: 'destructive',
+            });
+          }
+        } catch (e) {
+          error(`Error searching memo text: ${e}`);
           toast({
             title: t('general:error-title'),
-            description: result.error,
+            description: t('listview-page:error-search-memo-text'),
             variant: 'destructive',
           });
-          setFilteredWorlds(baseFiltered);
         }
-      } catch (e) {
-        error(`Error searching memo text: ${e}`);
-        toast({
-          title: t('general:error-title'),
-          description: t('listview-page:error-search-memo-text'),
-          variant: 'destructive',
-        });
-        setFilteredWorlds(baseFiltered);
       }
+
+      const finalFiltered = worlds.filter((world) => {
+        // Check text search
+        const textMatch =
+          !searchQuery ||
+          world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          toRomaji(world.name)
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          toRomaji(world.authorName)
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase());
+
+        // Check author filter (EXACT matching)
+        const authorMatch =
+          !authorFilter ||
+          world.authorName.toLowerCase() === authorFilter.toLowerCase();
+
+        // Check tag filters (ALL tags must match - AND logic with EXACT matching)
+        const tagMatch =
+          tagFilters.length === 0 ||
+          (world.tags &&
+            tagFilters.every((searchTag) => {
+              const prefixedTag = `author_tag_${searchTag}`;
+              return world.tags.some(
+                (worldTag) =>
+                  worldTag.toLowerCase() === prefixedTag.toLowerCase(),
+              );
+            }));
+
+        // Check folder filters (world must be in ALL specified folders - AND logic with EXACT matching)
+        const folderMatch =
+          folderFilters.length === 0 ||
+          folderFilters.every((searchFolder) =>
+            world.folders.some(
+              (worldFolder) =>
+                worldFolder.toLowerCase() === searchFolder.toLowerCase(),
+            ),
+          );
+
+        // Check memo text filter if applicable
+        const memoTextMatch =
+          !memoTextWorldIds || memoTextWorldIds.has(world.worldId);
+
+        return (
+          textMatch &&
+          authorMatch &&
+          tagMatch &&
+          folderMatch &&
+          memoTextMatch
+        );
+      });
+
+      setFilteredWorlds(finalFiltered);
     };
 
-    filterByMemoText();
+    filterWorlds();
   }, [
     worlds,
     searchQuery,
