@@ -112,7 +112,7 @@ export function WorldDetailPopup({
   onSelectTag,
 }: WorldDetailDialogProps) {
   const { t } = useLocalization();
-  const { folders, refresh } = useFolders();
+  const { folders } = useFolders();
   const [isLoading, setIsLoading] = useState(false);
   const [worldDetails, setWorldDetails] = useState<WorldDetails | null>(null);
   const [errorState, setErrorState] = useState<string | null>(null);
