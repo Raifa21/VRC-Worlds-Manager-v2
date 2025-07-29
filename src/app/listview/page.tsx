@@ -1086,55 +1086,16 @@ export default function ListView() {
         }
       }
 
-      const finalFiltered = worlds.filter((world) => {
-        // Check text search
-        const textMatch =
-          !searchQuery ||
-          world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          toRomaji(world.name)
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          toRomaji(world.authorName)
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase());
-
-        // Check author filter (EXACT matching)
-        const authorMatch =
-          !authorFilter ||
-          world.authorName.toLowerCase() === authorFilter.toLowerCase();
-
-        // Check tag filters (ALL tags must match - AND logic with EXACT matching)
-        const tagMatch =
-          tagFilters.length === 0 ||
-          (world.tags &&
-            tagFilters.every((searchTag) => {
-              const prefixedTag = `author_tag_${searchTag}`;
-              return world.tags.some(
-                (worldTag) =>
-                  worldTag.toLowerCase() === prefixedTag.toLowerCase(),
-              );
-            }));
-
-        // Check folder filters (world must be in ALL specified folders - AND logic with EXACT matching)
-        const folderMatch =
-          folderFilters.length === 0 ||
-          folderFilters.every((searchFolder) =>
-            world.folders.some(
-              (worldFolder) =>
-                worldFolder.toLowerCase() === searchFolder.toLowerCase(),
-            ),
-          );
-
-        // Check memo text filter if applicable
-        const memoTextMatch =
-          !memoTextWorldIds || memoTextWorldIds.has(world.worldId);
-
-        return (
-          textMatch && authorMatch && tagMatch && folderMatch && memoTextMatch
-        );
-      });
-
+      const finalFiltered = worlds.filter((world) =>
+        doesWorldMatchFilters(
+          world,
+          searchQuery,
+          authorFilter,
+          tagFilters,
+          folderFilters,
+          memoTextWorldIds,
+        ),
+      );
       setFilteredWorlds(finalFiltered);
     };
 
