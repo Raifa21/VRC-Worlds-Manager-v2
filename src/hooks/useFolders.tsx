@@ -13,7 +13,12 @@ export function useFolders() {
     error,
     isLoading,
     mutate: refresh,
-  } = useSWR('folders', fetchFolders);
+  } = useSWR('folders', fetchFolders, {
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    errorRetryCount: 3, // Retry fetching on error
+    errorRetryInterval: 2000, // Retry every 2 seconds
+  });
 
   return { folders, error, isLoading, refresh };
 }
