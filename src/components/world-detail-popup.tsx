@@ -409,7 +409,7 @@ export function WorldDetailPopup({
         // Add folder
         const result = await commands.addWorldToFolder(folder, worldId);
         if (result.status !== 'ok') {
-          error(`Failed to add world to folder: ${result.error}`);
+          error(`Failed to add world to folder "${folder}" for world ID "${worldId}": ${result.error}`);
           return;
         }
         updatedFolders = [...worldFolders, folder];
