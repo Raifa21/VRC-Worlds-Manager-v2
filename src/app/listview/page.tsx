@@ -1010,7 +1010,9 @@ export default function ListView() {
     }
   };
 
-  const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>(worlds || []);
+  const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>(
+    worlds || [],
+  );
 
   useEffect(() => {
     // Synchronous filtering (except memotext)
@@ -1129,11 +1131,7 @@ export default function ListView() {
           !memoTextWorldIds || memoTextWorldIds.has(world.worldId);
 
         return (
-          textMatch &&
-          authorMatch &&
-          tagMatch &&
-          folderMatch &&
-          memoTextMatch
+          textMatch && authorMatch && tagMatch && folderMatch && memoTextMatch
         );
       });
 

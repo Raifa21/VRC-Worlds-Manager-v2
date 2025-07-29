@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { useLocalization } from '@/hooks/use-localization';
 import { commands } from '@/lib/bindings';
 import { FilterItemSelectorStarredType } from '@/lib/bindings';
+import { info } from '@tauri-apps/plugin-log';
 
 export type Option = {
   value: string;
@@ -36,7 +37,7 @@ interface SingleFilterItemSelectorProps {
   placeholder?: string;
   value?: string;
   candidates: Option[];
-  onValueChange?: (value: string) => void;
+  onValueChange: (value: string) => void;
   allowCustomValues: boolean;
   id: FilterItemSelectorStarredType; // Add ID to identify which type of starred items
 }
@@ -64,7 +65,8 @@ export default function SingleFilterItemSelector({
   // Clear the selection
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onValueChange?.('');
+    info('Clearing selection');
+    onValueChange('');
   };
 
   // Handle command selection (both for candidates and custom values)
@@ -146,9 +148,9 @@ export default function SingleFilterItemSelector({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between min-w-0"
+          className="w-full justify-between min-w-0 pl-3"
         >
-          <div className="flex flex-grow items-center gap-1 truncate min-w-0 py-1.5">
+          <div className="flex flex-grow items-center gap-1 truncate min-w-0">
             {selectedOption ? (
               <Badge
                 variant="secondary"
@@ -171,10 +173,9 @@ export default function SingleFilterItemSelector({
                     }
                   }}
                 >
-                  {/* Always show the star, but style it differently based on state */}
                   <Star
+                    style={{ width: '10px', height: '10px' }}
                     className={cn(
-                      'h-2.5 w-2.5',
                       starredItems.includes(selectedOption.value)
                         ? 'text-yellow-500'
                         : 'text-muted-foreground/30 hover:text-muted-foreground/70',
@@ -197,7 +198,8 @@ export default function SingleFilterItemSelector({
                   {selectedOption.label}
                 </span>
                 <X
-                  className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                  style={{ width: '12px', height: '12px' }}
+                  className="cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClear(e);
