@@ -401,7 +401,7 @@ export function WorldDetailPopup({
         // Remove folder
         const result = await commands.removeWorldFromFolder(folder, worldId);
         if (result.status !== 'ok') {
-          error(`Failed to remove world from folder: ${result.error}`);
+          error(`Failed to remove world from folder "${folder}" for world ID "${worldId}": ${result.error}`);
           return;
         }
         updatedFolders = worldFolders.filter((f) => f !== folder);
