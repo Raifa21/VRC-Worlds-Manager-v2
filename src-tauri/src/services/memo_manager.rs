@@ -42,21 +42,4 @@ impl MemoManager {
     pub fn set_memo(&mut self, world_id: &str, memo: &str) {
         self.memo.insert(world_id.to_string(), memo.to_string());
     }
-
-    pub fn search_memo_text(&self, search_text: &str) -> Vec<String> {
-        let search_text = search_text.to_lowercase();
-        let results: Vec<String> = self
-            .memo
-            .iter()
-            .filter_map(|(id, memo)| {
-                if memo.to_lowercase().contains(&search_text) {
-                    Some(id.clone())
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        results
-    }
 }

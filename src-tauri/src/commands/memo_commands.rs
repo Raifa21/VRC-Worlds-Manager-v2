@@ -19,10 +19,3 @@ pub fn set_memo_and_save(world_id: String, memo: String) -> Result<(), String> {
     })?;
     Ok(())
 }
-
-#[tauri::command]
-#[specta::specta]
-pub fn search_memo_text(search_text: String) -> Result<Vec<String>, String> {
-    let memo_manager = MEMO_MANAGER.get().read().map_err(|e| e.to_string())?;
-    Ok(memo_manager.search_memo_text(&search_text))
-}

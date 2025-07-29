@@ -26,7 +26,6 @@ import { cn } from '@/lib/utils';
 import { useLocalization } from '@/hooks/use-localization';
 import { commands } from '@/lib/bindings';
 import { FilterItemSelectorStarredType } from '@/lib/bindings';
-import { info } from '@tauri-apps/plugin-log';
 
 export type Option = {
   value: string;
@@ -37,7 +36,7 @@ interface SingleFilterItemSelectorProps {
   placeholder?: string;
   value?: string;
   candidates: Option[];
-  onValueChange: (value: string) => void;
+  onValueChange?: (value: string) => void;
   allowCustomValues: boolean;
   id: FilterItemSelectorStarredType; // Add ID to identify which type of starred items
 }
@@ -65,8 +64,7 @@ export default function SingleFilterItemSelector({
   // Clear the selection
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
-    info('Clearing selection');
-    onValueChange('');
+    onValueChange?.('');
   };
 
   // Handle command selection (both for candidates and custom values)
@@ -148,65 +146,35 @@ export default function SingleFilterItemSelector({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between min-w-0 pl-3"
+          className="w-full justify-between min-w-0"
         >
           <div className="flex flex-grow items-center gap-1 truncate min-w-0">
             {selectedOption ? (
               <Badge
                 variant="secondary"
-                className="flex items-center gap-1 bg-muted-foreground/30 hover:bg-muted-foreground/50 text-xs pointer-events-auto h-5"
-                onClick={(e) => e.stopPropagation()}
+                className="mr-1 flex items-center max-w-[100px] truncate whitespace-nowrap"
               >
-                <div
-                  className="flex-shrink-0 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Toggle starred status
-                    if (starredItems.includes(selectedOption.value)) {
-                      setStarredItems(
-                        starredItems.filter(
-                          (id) => id !== selectedOption.value,
-                        ),
-                      );
-                    } else {
-                      setStarredItems([...starredItems, selectedOption.value]);
-                    }
-                  }}
-                >
+                {/* Add star icon for selected value */}
+                {starredItems.includes(selectedOption.value) && (
                   <Star
-                    style={{ width: '10px', height: '10px' }}
-                    className={cn(
-                      starredItems.includes(selectedOption.value)
-                        ? 'text-yellow-500'
-                        : 'text-muted-foreground/30 hover:text-muted-foreground/70',
-                    )}
-                    fill={
-                      starredItems.includes(selectedOption.value)
-                        ? 'currentColor'
-                        : 'none'
-                    }
+                    className="h-2.5 w-2.5 mr-1 text-yellow-500"
+                    fill="currentColor"
                   />
-                </div>
+                )}
+                <span className="truncate block">{selectedOption.label}</span>
                 <span
-                  className={cn(
-                    'block truncate',
-                    starredItems.includes(selectedOption.value)
-                      ? 'max-w-[65px]'
-                      : 'max-w-[80px]',
-                  )}
-                >
-                  {selectedOption.label}
-                </span>
-                <div
-                  className="flex-shrink-0 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  className="ml-1 cursor-pointer rounded-full hover:bg-muted/50"
+                  role="button"
+                  aria-label="Clear selection"
+                  tabIndex={-1}
+                  onMouseDown={(e) => {
                     e.preventDefault();
-                    handleClear(e);
+                    e.stopPropagation();
                   }}
+                  onClick={handleClear}
                 >
-                  <X style={{ width: '12px', height: '12px' }} />
-                </div>
+                  <X className="h-3 w-3" />
+                </span>
               </Badge>
             ) : (
               <span className="text-muted-foreground text-sm truncate block">
@@ -250,7 +218,7 @@ export default function SingleFilterItemSelector({
               </div>
             ) : (
               <div className="px-2 py-1.5 text-sm truncate">
-                {t('find-page:no-matching-items')}
+                {t('find-page:no-matching-tags')}
               </div>
             )}
           </CommandEmpty>

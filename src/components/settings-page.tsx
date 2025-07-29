@@ -568,7 +568,6 @@ export function SettingsPage({
                 platform: Platform.CrossPlatform,
                 folders: [],
                 tags: [],
-                capacity: 16,
               }}
             />
           </Card>

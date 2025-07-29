@@ -309,7 +309,6 @@ impl TryInto<WorldDisplayData> for VRChatWorld {
             },
             folders: Vec::new(),
             tags: self.tags.clone(),
-            capacity: self.capacity,
         })
     }
 }

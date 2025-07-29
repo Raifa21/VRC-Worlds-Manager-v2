@@ -18,12 +18,12 @@ import { SpecialFolders } from '@/types/folders'; // Add this import
 import { error, info } from '@tauri-apps/plugin-log';
 import { Checkbox } from './ui/checkbox';
 import { FolderRemovalPreference } from '@/lib/bindings';
-import { useFolders } from '@/hooks/useFolders';
 
 interface AddToFolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedWorlds?: WorldDisplayData[];
+  folders: string[];
   onConfirm: (
     foldersToAdd: string[],
     foldersToRemove: string[],
@@ -37,13 +37,14 @@ export function AddToFolderDialog({
   open,
   onOpenChange,
   selectedWorlds,
+  folders,
   onConfirm,
   isFindPage,
   onAddFolder,
   currentFolder,
 }: AddToFolderDialogProps) {
   const { t } = useLocalization();
-  const { folders, refresh } = useFolders();
+
   // Remove duplicated state - keep only rememberChoice
   const [dialogPage, setDialogPage] = useState<'folders' | 'removeConfirm'>(
     'folders',

@@ -35,8 +35,6 @@ import { useLocalization } from '@/hooks/use-localization';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Textarea } from './ui/textarea';
 import MemoRenderer from './memo-renderer';
-import { useFolders } from '@/hooks/useFolders';
-import { Checkbox } from './ui/checkbox';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -112,7 +110,6 @@ export function WorldDetailPopup({
   onSelectTag,
 }: WorldDetailDialogProps) {
   const { t } = useLocalization();
-  const { folders } = useFolders();
   const [isLoading, setIsLoading] = useState(false);
   const [worldDetails, setWorldDetails] = useState<WorldDetails | null>(null);
   const [errorState, setErrorState] = useState<string | null>(null);
@@ -141,7 +138,6 @@ export function WorldDetailPopup({
   // Add these new state variables
   const [countdownSeconds, setCountdownSeconds] = useState<number>(5);
   const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
-  const [worldFolders, setWorldFolders] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchWorldDetails = async () => {
@@ -228,24 +224,9 @@ export function WorldDetailPopup({
         console.error(result.error);
       }
     };
-    const fetchWorldFolders = async () => {
-      if (!worldId) return;
-
-      try {
-        const result = await commands.getFoldersForWorld(worldId);
-        if (result.status === 'ok') {
-          setWorldFolders(result.data);
-        } else {
-          error(`Failed to fetch folders for world: ${result.error}`);
-        }
-      } catch (e) {
-        error(`Error fetching folders for world: ${e}`);
-      }
-    };
 
     fetchWorldDetails();
     fetchMemo();
-    fetchWorldFolders();
   }, [open, worldId]);
 
   useEffect(() => {
@@ -394,31 +375,6 @@ export function WorldDetailPopup({
     worldId,
   ]);
 
-  async function toggleWorldFolder(folder: string): Promise<void> {
-    try {
-      let updatedFolders: string[];
-      if (worldFolders.includes(folder)) {
-        // Remove folder
-        const result = await commands.removeWorldFromFolder(folder, worldId);
-        if (result.status !== 'ok') {
-          error(`Failed to remove world from folder "${folder}" for world ID "${worldId}": ${result.error}`);
-          return;
-        }
-        updatedFolders = worldFolders.filter((f) => f !== folder);
-      } else {
-        // Add folder
-        const result = await commands.addWorldToFolder(folder, worldId);
-        if (result.status !== 'ok') {
-          error(`Failed to add world to folder "${folder}" for world ID "${worldId}": ${result.error}`);
-          return;
-        }
-        updatedFolders = [...worldFolders, folder];
-      }
-      setWorldFolders(updatedFolders);
-    } catch (e) {
-      error(`Error toggling world folder: ${e}`);
-    }
-  }
   return (
     <Dialog
       open={open}
@@ -516,7 +472,6 @@ export function WorldDetailPopup({
                               cachedWorldData.platform as unknown as import('@/types/worlds').Platform,
                             folders: [],
                             tags: cachedWorldData.tags,
-                            capacity: cachedWorldData.capacity,
                           }}
                         />
                       </div>
@@ -897,85 +852,51 @@ export function WorldDetailPopup({
                     </div>
                   </div>
                   <Separator className="my-2" />
-                  <div className="flex gap-4">
-                    <div className="w-2/3">
-                      <div className="text-sm font-semibold mb-2 flex flex-row items-center gap-2">
-                        {t('general:memo')}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="p-0 size-8 [&_svg]:size-4"
-                          onClick={() => setIsEditingMemo(true)}
-                        >
-                          <Pencil />
-                        </Button>
-                      </div>
-                      <div className="flex flex-row">
-                        {!isEditingMemo && (
-                          <div className="pr-4">
-                            <MemoRenderer value={memo ?? ''} />
-                          </div>
-                        )}
-                        {isEditingMemo && (
-                          <div className="space-y-2 w-full">
-                            <Textarea
-                              value={memoInput}
-                              onChange={(e) => setMemoInput(e.target.value)}
-                              className="h-32"
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                variant="secondary"
-                                className="w-full"
-                                onClick={() => {
-                                  setIsEditingMemo(false);
-                                  setMemoInput(memo ?? '');
-                                }}
-                              >
-                                {t('general:cancel')}
-                              </Button>
-                              <Button
-                                variant="default"
-                                className="w-full"
-                                onClick={handleSaveMemo}
-                              >
-                                {t('general:save')}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                  <div>
+                    <div className="text-sm font-semibold mb-2 flex flex-row items-center gap-2">
+                      {t('general:memo')}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="p-0 size-8 [&_svg]:size-4"
+                        onClick={() => setIsEditingMemo(true)}
+                      >
+                        <Pencil />
+                      </Button>
                     </div>
-                    <Separator orientation="vertical" />
-                    <div className="w-1/3">
-                      <div className="text-sm font-semibold mb-2 flex items-center gap-2">
-                        {t('general:folders')}
+                    {!isEditingMemo && (
+                      <div className="pr-4">
+                        <MemoRenderer value={memo ?? ''} />
                       </div>
-                      <div className="flex flex-col gap-2 h-48 overflow-y-auto">
-                        {folders.length > 0 ? (
-                          folders.map((folder) => (
-                            <div
-                              className="flex items-center space-x-2"
-                              key={folder}
-                            >
-                              <Checkbox
-                                checked={worldFolders.includes(folder)}
-                                onCheckedChange={() =>
-                                  toggleWorldFolder(folder)
-                                }
-                              />
-                              <span className="truncate max-w-[200px] text-sm">
-                                {folder}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            {t('general:no-folders')}
-                          </span>
-                        )}
+                    )}
+                    {isEditingMemo && (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={memoInput}
+                          onChange={(e) => setMemoInput(e.target.value)}
+                          className="h-64"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="secondary"
+                            className="w-full"
+                            onClick={() => {
+                              setIsEditingMemo(false);
+                              setMemoInput(memo ?? '');
+                            }}
+                          >
+                            {t('general:cancel')}
+                          </Button>
+                          <Button
+                            variant="default"
+                            className="w-full"
+                            onClick={handleSaveMemo}
+                          >
+                            {t('general:save')}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )

@@ -1,7 +1,7 @@
 use crate::definitions::{WorldApiData, WorldDisplayData, WorldModel};
 use crate::services::folder_manager::FolderManager;
 use crate::services::share_service;
-use crate::{FOLDERS, PREFERENCES, WORLDS};
+use crate::{FOLDERS, WORLDS};
 use std::collections::HashSet;
 
 #[tauri::command]
@@ -96,14 +96,7 @@ pub async fn move_folder(folder_name: String, new_index: usize) -> Result<(), St
 #[tauri::command]
 #[specta::specta]
 pub async fn rename_folder(old_name: String, new_name: String) -> Result<(), String> {
-    FolderManager::rename_folder(
-        old_name,
-        new_name,
-        FOLDERS.get(),
-        WORLDS.get(),
-        PREFERENCES.get(),
-    )
-    .map_err(|e| {
+    FolderManager::rename_folder(old_name, new_name, FOLDERS.get(), WORLDS.get()).map_err(|e| {
         log::error!("Error renaming folder: {}", e);
         e.to_string()
     })
@@ -168,15 +161,6 @@ pub async fn get_authors_by_count() -> Result<Vec<String>, String> {
 pub async fn delete_world(world_id: String) -> Result<(), String> {
     FolderManager::delete_world(world_id, FOLDERS.get(), WORLDS.get()).map_err(|e| {
         log::error!("Error deleting world: {}", e);
-        e.to_string()
-    })
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn get_folders_for_world(world_id: String) -> Result<Vec<String>, String> {
-    FolderManager::get_folders_for_world(world_id, WORLDS.get()).map_err(|e| {
-        log::error!("Error getting folders for world: {}", e);
         e.to_string()
     })
 }
