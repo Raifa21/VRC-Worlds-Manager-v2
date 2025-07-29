@@ -1,6 +1,7 @@
 [
     {
         "version": "1.1.1-rc.0",
+        "preRelease": true,
         "features": [
             {
                 "text": "Add capacity and visit sort options for worlds (by @Takadayoo)",
