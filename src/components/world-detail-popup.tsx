@@ -964,7 +964,7 @@ export function WorldDetailPopup({
                                   toggleWorldFolder(folder)
                                 }
                               />
-                              <span className="truncate max-w-[200px]">
+                              <span className="truncate max-w-[200px] text-sm">
                                 {folder}
                               </span>
                             </div>
