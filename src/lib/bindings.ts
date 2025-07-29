@@ -275,6 +275,17 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getFoldersForWorld(worldId: string): Promise<Result<string[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_folders_for_world', { worldId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async shareFolder(folderName: string): Promise<Result<string, string>> {
     try {
       return {

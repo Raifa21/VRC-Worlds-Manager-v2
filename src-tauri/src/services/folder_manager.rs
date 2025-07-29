@@ -408,8 +408,8 @@ impl FolderManager {
     /// * `new_name` - The new name of the folder
     /// * `folders` - The list of folders, as a RwLock
     /// * `worlds` - The list of worlds, as a RwLock
-    /// * `preferences` - The preferences, as a RwLock. Used to store user-specific settings 
-    ///   and configurations that may influence folder renaming behavior, such as naming conventions 
+    /// * `preferences` - The preferences, as a RwLock. Used to store user-specific settings
+    ///   and configurations that may influence folder renaming behavior, such as naming conventions
     ///   or restrictions.
     ///
     /// # Returns
@@ -778,6 +778,34 @@ impl FolderManager {
             FileService::write_folders(&*folders_lock)?;
         }
         Ok(())
+    }
+
+    /// Gets the folders for a world
+    /// This is done by checking the folders for the world_id
+    /// If the world is not found, return an error
+    ///
+    /// # Arguments
+    /// * `world_id` - The ID of the world to get folders for
+    /// * `worlds` - The list of worlds, as a RwLock
+    ///
+    /// # Returns
+    /// A vector of folder names that the world is in
+    /// # Errors
+    /// Returns an error if the world is not found
+    /// Returns an error if the worlds lock is poisoned
+    #[must_use]
+    pub fn get_folders_for_world(
+        world_id: String,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<Vec<String>, AppError> {
+        let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
+        let world = worlds_lock.iter().find(|w| w.api_data.world_id == world_id);
+        if world.is_none() {
+            return Err(EntityError::WorldNotFound(world_id).into());
+        }
+        let world = world.unwrap();
+        let folders = world.user_data.folders.clone();
+        Ok(folders)
     }
 
     /// Set the share field of a folder
