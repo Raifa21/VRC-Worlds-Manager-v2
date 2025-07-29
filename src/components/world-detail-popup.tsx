@@ -960,7 +960,9 @@ export function WorldDetailPopup({
                             >
                               <Checkbox
                                 checked={worldFolders.includes(folder)}
-                                onClick={() => toggleWorldFolder(folder)}
+                                onCheckedChange={() =>
+                                  toggleWorldFolder(folder)
+                                }
                               />
                               <span className="truncate max-w-[200px]">
                                 {folder}
