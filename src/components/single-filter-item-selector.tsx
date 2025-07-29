@@ -197,14 +197,16 @@ export default function SingleFilterItemSelector({
                 >
                   {selectedOption.label}
                 </span>
-                <X
-                  style={{ width: '12px', height: '12px' }}
-                  className="cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
+                <div
+                  className="flex-shrink-0 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
                   onClick={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
                     handleClear(e);
                   }}
-                />
+                >
+                  <X style={{ width: '12px', height: '12px' }} />
+                </div>
               </Badge>
             ) : (
               <span className="text-muted-foreground text-sm truncate block">
