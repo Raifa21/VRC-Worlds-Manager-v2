@@ -133,6 +133,7 @@ impl WorldModel {
             },
             folders: self.user_data.folders.clone(),
             tags: self.api_data.tags.clone(),
+            capacity: self.api_data.capacity,
         }
     }
 }
@@ -165,6 +166,7 @@ pub struct WorldDisplayData {
     pub platform: Platform,
     pub folders: Vec<String>,
     pub tags: Vec<String>,
+    pub capacity: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]

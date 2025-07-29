@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef, useState, useMemo, useEffect, useContext } from 'react';
+import { useRef, useState, useMemo, useEffect, useContext, memo } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
-import { useFolders } from '../listview/hook';
+import { useFolders } from '@/hooks/useFolders';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
@@ -59,11 +59,14 @@ import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
 import { ShareFolderPopup } from '@/components/share-folder-popup';
 import { ImportedFolderContainsHidden } from '@/components/imported-folder-contains-hidden';
 import { UpdateDialogContext } from '@/components/UpdateDialogContext';
+import { Input } from '@/components/ui/input';
 
 type SortField =
   | 'name'
   | 'authorName'
+  | 'visits'
   | 'favorites'
+  | 'capacity'
   | 'dateAdded'
   | 'lastUpdated';
 
@@ -72,11 +75,12 @@ export default function ListView() {
   const authorRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
   const foldersRef = useRef<HTMLDivElement>(null);
-  const foldersLabelRef = useRef<HTMLSpanElement>(null); // ← new
+  const foldersLabelRef = useRef<HTMLSpanElement>(null);
+  const memoTextRef = useRef<HTMLDivElement>(null);
   const clearRef = useRef<HTMLButtonElement>(null);
   const [wrapFolders, setWrapFolders] = useState(false);
 
-  const { folders, loadFolders } = useFolders();
+  const { folders, refresh: refreshFolders } = useFolders();
   const { toast } = useToast();
   const { t } = useLocalization();
   const gridScrollRef = useRef<HTMLDivElement>(null);
@@ -117,6 +121,7 @@ export default function ListView() {
   const [authorFilter, setAuthorFilter] = useState('');
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [folderFilters, setFolderFilters] = useState<string[]>([]);
+  const [memoTextFilter, setMemoTextFilter] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -282,7 +287,7 @@ export default function ListView() {
   const handleCreateFolder = async (name: string) => {
     try {
       const newName = await invoke<string>('create_folder', { name: name });
-      await loadFolders();
+      await refreshFolders();
 
       // Only navigate to the new folder if not in Find page or if add-to-folder dialog is open
       if (currentFolder !== SpecialFolders.Find && !showFolderDialog) {
@@ -966,7 +971,7 @@ export default function ListView() {
   const onRenameFolder = async (oldName: string, newName: string) => {
     try {
       await commands.renameFolder(oldName, newName);
-      await loadFolders();
+      await refreshFolders();
       toast({
         title: t('listview-page:folder-renamed-title'),
         description: t('listview-page:folder-renamed-description', newName),
@@ -984,7 +989,7 @@ export default function ListView() {
   const handleDeleteFolder = async (folderName: string) => {
     try {
       await commands.deleteFolder(folderName);
-      await loadFolders();
+      await refreshFolders();
       setShowDeleteFolder(null);
       // if we are deleting the current folder, reset to All
       if (currentFolder === folderName) {
@@ -1005,8 +1010,13 @@ export default function ListView() {
     }
   };
 
-  const filteredWorlds = useMemo(() => {
-    return worlds.filter((world) => {
+  const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>(
+    worlds || [],
+  );
+
+  useEffect(() => {
+    // Synchronous filtering (except memotext)
+    const baseFiltered = worlds.filter((world) => {
       // Check text search
       const textMatch =
         !searchQuery ||
@@ -1050,11 +1060,60 @@ export default function ListView() {
 
       return finalMatch;
     });
-  }, [worlds, searchQuery, authorFilter, tagFilters, folderFilters]);
+
+    // Perform filtering, including memo text if applicable
+    const filterWorlds = async () => {
+      let memoTextWorldIds = null;
+      if (memoTextFilter) {
+        try {
+          const result = await commands.searchMemoText(memoTextFilter);
+          if (result.status === 'ok') {
+            memoTextWorldIds = new Set(result.data);
+          } else {
+            toast({
+              title: t('general:error-title'),
+              description: result.error,
+              variant: 'destructive',
+            });
+          }
+        } catch (e) {
+          error(`Error searching memo text: ${e}`);
+          toast({
+            title: t('general:error-title'),
+            description: t('listview-page:error-search-memo-text'),
+            variant: 'destructive',
+          });
+        }
+      }
+
+      const finalFiltered = worlds.filter((world) =>
+        doesWorldMatchFilters(
+          world,
+          searchQuery,
+          authorFilter,
+          tagFilters,
+          folderFilters,
+          memoTextWorldIds,
+        ),
+      );
+      setFilteredWorlds(finalFiltered);
+    };
+
+    filterWorlds();
+  }, [
+    worlds,
+    searchQuery,
+    authorFilter,
+    tagFilters,
+    folderFilters,
+    memoTextFilter,
+  ]);
 
   const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
     switch (field) {
+      case 'visits':
       case 'favorites':
+      case 'capacity':
       case 'dateAdded':
       case 'lastUpdated':
         return 'desc';
@@ -1081,8 +1140,12 @@ export default function ListView() {
           return multiplier * a.name.localeCompare(b.name);
         case 'authorName':
           return multiplier * a.authorName.localeCompare(b.authorName);
+        case 'visits':
+          return multiplier * (a.visits - b.visits);
         case 'favorites':
           return multiplier * (a.favorites - b.favorites);
+        case 'capacity':
+          return multiplier * (a.capacity - b.capacity);
         case 'dateAdded': {
           const dateA = a.dateAdded || '';
           const dateB = b.dateAdded || '';
@@ -1117,6 +1180,7 @@ export default function ListView() {
     setTagFilters([]);
     setFolderFilters([]);
     setSearchQuery('');
+    setMemoTextFilter('');
   };
 
   const renderMainContent = () => {
@@ -1131,7 +1195,7 @@ export default function ListView() {
           onOpenHiddenFolder={() => {
             handleSelectFolder(SpecialFolders.Hidden);
           }}
-          onDataChange={loadFolders}
+          onDataChange={refreshFolders}
         />
       );
     }
@@ -1168,7 +1232,7 @@ export default function ListView() {
             <div className="flex-1 flex items-center gap-2">
               <div className="relative flex-1">
                 <div className="relative">
-                  <input
+                  <Input
                     type="text"
                     placeholder={t('world-grid:search-placeholder')}
                     value={searchQuery}
@@ -1203,8 +1267,14 @@ export default function ListView() {
                   <SelectItem value="authorName">
                     {t('general:author')}
                   </SelectItem>
+                  <SelectItem value="visits">
+                    {t('world-grid:sort-visits')}
+                  </SelectItem>
                   <SelectItem value="favorites">
                     {t('world-grid:sort-favorites')}
+                  </SelectItem>
+                  <SelectItem value="capacity">
+                    {t('world-grid:sort-capacity')}
                   </SelectItem>
                   <SelectItem value="dateAdded">
                     {t('general:date-added')}
@@ -1249,7 +1319,10 @@ export default function ListView() {
           </div>
 
           {/* Filter Section */}
-          {authorFilter || tagFilters.length > 0 || folderFilters.length > 0 ? (
+          {authorFilter ||
+          tagFilters.length > 0 ||
+          folderFilters.length > 0 ||
+          memoTextFilter ? (
             <div className="px-4 pb-2 border-b bg-muted/50">
               {/* Header: Filters title + Clear All */}
               <div className="flex justify-between items-center mb-2">
@@ -1294,6 +1367,32 @@ export default function ListView() {
                       <X
                         className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
                         onClick={() => setAuthorFilter('')}
+                      />
+                    </Badge>
+                  </div>
+                )}
+                {/* MEMO TEXT - Add this block */}
+                {memoTextFilter && (
+                  <div
+                    ref={memoTextRef}
+                    className="flex items-center gap-2 shrink-0"
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {t('general:memo')}:
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <span
+                        className="max-w-[120px] truncate"
+                        title={memoTextFilter}
+                      >
+                        {memoTextFilter}
+                      </span>
+                      <X
+                        className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
+                        onClick={() => setMemoTextFilter('')}
                       />
                     </Badge>
                   </div>
@@ -1560,7 +1659,7 @@ export default function ListView() {
       if (result.status === 'ok') {
         const folderName = result.data[0];
         const hiddenWorlds = result.data[1];
-        await loadFolders();
+        await refreshFolders();
         setShowCreateFolder(false);
         handleSelectFolder('folder', folderName);
         if (hiddenWorlds.length > 0) {
@@ -1630,8 +1729,6 @@ export default function ListView() {
   return (
     <div className="flex h-screen">
       <AppSidebar
-        folders={folders}
-        onFoldersChange={loadFolders}
         onAddFolder={() => setShowCreateFolder(true)}
         onSelectFolder={handleSelectFolder}
         selectedFolder={currentFolder}
@@ -1792,7 +1889,6 @@ export default function ListView() {
         selectedWorlds={worlds.filter((world) =>
           selectedWorldsForFolder.includes(world.worldId),
         )}
-        folders={folders}
         onConfirm={(foldersToAdd, foldersToRemove) =>
           handleAddToFolders(foldersToAdd, foldersToRemove)
         }
@@ -1826,6 +1922,8 @@ export default function ListView() {
         onTagFiltersChange={setTagFilters}
         folderFilters={folderFilters}
         onFolderFiltersChange={setFolderFilters}
+        memoTextFilter={memoTextFilter}
+        onMemoTextFilterChange={setMemoTextFilter}
         onClose={() => setShowAdvancedSearch(false)}
       />
       <ImportedFolderContainsHidden

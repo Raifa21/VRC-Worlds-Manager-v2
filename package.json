@@ -1,6 +1,6 @@
 {
   "name": "vrc-world-manager",
-  "version": "1.0.1-rc.0",
+  "version": "1.1.1-rc.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -54,6 +54,7 @@
     "next-themes": "^0.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "swr": "^2.3.4",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
     "wanakana": "^5.3.1"

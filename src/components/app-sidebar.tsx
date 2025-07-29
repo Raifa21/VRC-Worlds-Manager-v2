@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useFolders } from '@/hooks/useFolders';
 
 const sidebarStyles = {
   container:
@@ -36,8 +37,6 @@ const sidebarStyles = {
 const SIDEBAR_CLASS = 'app-sidebar';
 
 interface AppSidebarProps {
-  folders: string[];
-  onFoldersChange: () => Promise<void>;
   onAddFolder: () => void;
   onSelectFolder: (
     type:
@@ -55,8 +54,6 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({
-  folders,
-  onFoldersChange,
   onAddFolder,
   onSelectFolder,
   selectedFolder,
@@ -66,10 +63,10 @@ export function AppSidebar({
   onDeleteFolder,
 }: AppSidebarProps) {
   const { t } = useLocalization();
+  const { folders, refresh } = useFolders();
   const [localFolders, setLocalFolders] = useState<string[]>(folders);
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
-  const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const composingRef = useRef(false);
@@ -93,8 +90,7 @@ export function AppSidebar({
 
     try {
       await commands.moveFolder(movedFolder, destination.index);
-      // Only refresh if needed (in case of error or sync issues)
-      await onFoldersChange();
+      await refresh();
     } catch (e) {
       // Revert on error
       setLocalFolders(folders);
@@ -284,7 +280,7 @@ export function AppSidebar({
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               className={`
-                                w-[193px] px-3 py-2 text-sm font-medium rounded-lg
+                                w-[190px] px-3 py-2 text-sm font-medium rounded-lg
                                 overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
                                 ${
                                   selectedFolder === folder
@@ -354,10 +350,12 @@ export function AppSidebar({
                                     }, 150);
                                   }}
                                   className="h-6 py-0 folder-edit-container" // Added class for identifying container
-                                  autoFocus
+                                  autoFocus={true}
                                 />
                               ) : (
-                                folder
+                                <span className="truncate w-full">
+                                  {folder}
+                                </span>
                               )}
                             </div>
                           </ContextMenuTrigger>
