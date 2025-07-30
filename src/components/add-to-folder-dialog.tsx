@@ -417,7 +417,7 @@ export function AddToFolderDialog({
                           {folder[1]}
                         </span>
                         <span className="truncate flex-1 pr-2 text-left w-[10px]">
-                          asdkjshdfkjhsdkfhskdfhlshfdlkhaskljdfhajkshdflkahsldfhalshdflkhsdfklahsldkfjh
+                          {folder[0]}
                         </span>
                       </span>
                       <span>
