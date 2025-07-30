@@ -60,15 +60,6 @@ export function ExportPopup({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        {/* Top-right X button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-2 top-2"
-          onClick={() => onOpenChange(false)}
-        >
-          <X className="h-5 w-5" />
-        </Button>
         <DialogHeader>
           <DialogTitle>{t('export-popup:title', 'Export Worlds')}</DialogTitle>
         </DialogHeader>
@@ -90,12 +81,17 @@ export function ExportPopup({
                     );
                   }}
                   className="shrink-0 self-center"
+                  disabled={folder.worldCount === 0}
                 />
                 <span className="flex items-center w-full">
                   <span className="font-mono text-xs text-muted-foreground w-10 text-right flex-shrink-0">
                     ({folder.worldCount})
                   </span>
-                  <span className="truncate flex-1 pl-2 -mt-[2px]">
+                  <span
+                    className={`truncate flex-1 pl-2 -mt-[2px] ${
+                      folder.worldCount === 0 ? 'text-muted-foreground' : ''
+                    }`}
+                  >
                     {folder.name}
                   </span>
                 </span>
