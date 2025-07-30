@@ -7,26 +7,9 @@ use crate::{
 };
 
 #[derive(Serialize)]
-struct PLSPlatform {
-    pc: bool,
-    android: bool,
-    ios: bool,
-}
-
-#[derive(Serialize)]
-struct PLSWorlds {
+struct PLSWorld {
     #[serde(rename = "ID")]
-    id: String,
-    #[serde(rename = "Name")]
-    name: String,
-    #[serde(rename = "RecommendedCapacity")]
-    recommended_capacity: i32,
-    #[serde(rename = "Capacity")]
-    capacity: i32,
-    #[serde(rename = "Description")]
-    description: String,
-    #[serde(rename = "Platform")]
-    platform: PLSPlatform,
+    world_id: String,
 }
 
 #[derive(Serialize)]
@@ -34,7 +17,7 @@ struct PLSCategory {
     #[serde(rename = "Category")]
     category: String,
     #[serde(rename = "Worlds")]
-    worlds: Vec<PLSWorlds>,
+    worlds: Vec<PLSWorld>,
 }
 
 #[derive(Serialize)]
@@ -82,40 +65,35 @@ impl ExportService {
 
     pub fn export_to_portal_library_system(
         folder_names: Vec<String>,
-        worlds: &RwLock<Vec<WorldModel>>,
+        folders: &RwLock<Vec<FolderModel>>,
     ) -> Result<(), String> {
-        let folders = Self::get_folders_with_worlds(folder_names, worlds)?;
-
+        let folders_lock = folders.read().map_err(|e| {
+            log::error!("Failed to acquire read lock for folders: {}", e);
+            "Failed to acquire read lock for folders".to_string()
+        })?;
         let mut categories: Vec<PLSCategory> = Vec::new();
 
-        for folder in folders {
-            let mut worlds_list: Vec<PLSWorlds> = Vec::new();
-            for world in folder.worlds {
-                let platform = PLSPlatform {
-                    pc: world
-                        .api_data
-                        .platform
-                        .contains(&"standalonewindows".to_string()),
-                    android: world.api_data.platform.contains(&"android".to_string()),
-                    ios: false, // todo: add ios support
-                };
-
-                worlds_list.push(PLSWorlds {
-                    id: world.api_data.world_id.clone(),
-                    name: world.api_data.world_name.clone(),
-                    recommended_capacity: world
-                        .api_data
-                        .recommended_capacity
-                        .unwrap_or(world.api_data.capacity),
-                    capacity: world.api_data.capacity,
-                    description: world.api_data.description.clone(),
-                    platform,
+        for folder in folder_names {
+            log::info!("Processing folder: {}", folder);
+            let folder_worlds = folders_lock
+                .iter()
+                .filter(|f| f.folder_name == folder)
+                .cloned()
+                .collect::<Vec<FolderModel>>();
+            if !folder_worlds.is_empty() {
+                let worlds: Vec<PLSWorld> = folder_worlds
+                    .iter()
+                    .flat_map(|f| {
+                        f.world_ids.iter().map(|id| PLSWorld {
+                            world_id: id.clone(),
+                        })
+                    })
+                    .collect();
+                categories.push(PLSCategory {
+                    category: folder,
+                    worlds,
                 });
             }
-            categories.push(PLSCategory {
-                category: folder.folder_name,
-                worlds: worlds_list,
-            });
         }
 
         let portal_library_system_json = PortalLibrarySystemJson {
