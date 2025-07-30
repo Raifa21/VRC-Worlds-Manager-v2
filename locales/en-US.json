@@ -484,6 +484,6 @@
   "update-dialog:download-complete": "Update downloaded",
   "update-dialog:execute": "Update",
 
-  "export-popup:title": "Export Worlds",
+  "export-popup:title": "Export Folders",
   "export-popup:export": "Export to: "
 }
