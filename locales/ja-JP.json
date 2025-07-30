@@ -483,6 +483,6 @@
   "update-dialog:download-complete": "アップデートのダウンロードが完了しました",
   "update-dialog:execute": "アップデートを実行",
 
-  "export-popup:title": "ワールドをエクスポート",
+  "export-popup:title": "フォルダをエクスポート",
   "export-popup:export": "エクスポート先: "
 }
