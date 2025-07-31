@@ -407,7 +407,7 @@ export function AddToFolderDialog({
                         <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
                           {folder.world_count}
                         </span>
-                        <span className="truncate flex-1 pr-2 text-left w-[10px]">
+                        <span className="truncate flex-1 pr-2 text-left max-w-[290px]">
                           {folder.name}
                         </span>
                       </span>
