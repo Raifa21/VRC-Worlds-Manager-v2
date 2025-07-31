@@ -367,6 +367,7 @@ export default function ListView() {
 
   const refreshCurrentView = async () => {
     try {
+      refreshFolders();
       info('Refreshing current view');
       info(`Current folder: ${currentFolder}`);
       switch (currentFolder) {
