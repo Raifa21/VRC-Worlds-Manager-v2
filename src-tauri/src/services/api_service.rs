@@ -11,6 +11,8 @@ use reqwest::cookie::CookieStore;
 use reqwest::{cookie::Jar, Client, Url};
 use std::sync::{Arc, RwLock};
 use tauri::http::HeaderValue;
+use tauri::AppHandle;
+use tauri_plugin_opener::OpenerExt;
 use world::ReleaseStatus;
 
 pub struct ApiService;
@@ -356,9 +358,23 @@ impl ApiService {
         cookie_store: Arc<Jar>,
         world_id: String,
         instance_id: String,
+        app: &tauri::AppHandle,
     ) -> Result<(), String> {
         match invite::invite_self_to_instance(cookie_store, &world_id, &instance_id).await {
-            Ok(_) => Ok(()),
+            Ok(_) => {
+                // open the instance in the user's client
+                // using vrchat://launch?ref=vrchat.com&id={world_id}:{instance_id}
+                let url = format!(
+                    "vrchat://launch?ref=vrchat.com&id={}:{}",
+                    world_id, instance_id
+                );
+                log::info!("Opening instance in client: {}", url);
+                app.opener().open_url(&url, None::<String>).map_err(|e| {
+                    log::error!("Failed to open instance in client: {}", e);
+                    format!("Failed to open instance in client: {}", e)
+                })?;
+                Ok(())
+            }
             Err(e) => Err(format!("Failed to invite self to instance: {}", e)),
         }
     }
@@ -503,6 +519,7 @@ impl ApiService {
         region_str: String,
         cookie_store: Arc<Jar>,
         user_id: String,
+        app: AppHandle,
     ) -> Result<(), String> {
         log::info!(
             "Creating instance: {} {} {}",
@@ -539,7 +556,7 @@ impl ApiService {
                 // Invite self to the instance
                 let instance_id = _instance.instance_id.clone();
                 let world_id = _instance.world_id.clone();
-                Self::invite_self_to_instance(cookie_store, world_id, instance_id).await?;
+                Self::invite_self_to_instance(cookie_store, world_id, instance_id, &app).await?;
                 Ok(())
             }
             Err(e) => Err(format!("Failed to create world instance: {}", e)),
@@ -615,6 +632,7 @@ impl ApiService {
         region_str: String,
         queue_enabled: bool,
         cookie_store: Arc<Jar>,
+        app: AppHandle,
     ) -> Result<(), String> {
         log::info!(
             "Creating group instance: {} {} {} {} {:?}",
@@ -670,7 +688,7 @@ impl ApiService {
                 // Invite self to the instance
                 let instance_id = _instance.instance_id.clone();
                 let world_id = _instance.world_id.clone();
-                Self::invite_self_to_instance(cookie_store, world_id, instance_id).await?;
+                Self::invite_self_to_instance(cookie_store, world_id, instance_id, &app).await?;
                 Ok(())
             }
             Err(e) => Err(format!("Failed to create group instance: {}", e)),
