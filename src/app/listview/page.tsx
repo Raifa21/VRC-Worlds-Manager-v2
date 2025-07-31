@@ -669,7 +669,7 @@ export default function ListView() {
 
         // Gather all remove operations - with validation
         const validFoldersToRemove = foldersToRemove.filter((folder) =>
-          folders.map((f) => f.name).includes(folder),
+          folders.some((f) => f.name === folder),
         );
 
         for (const folder of validFoldersToRemove) {
