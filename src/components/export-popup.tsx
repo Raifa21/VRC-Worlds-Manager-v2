@@ -75,7 +75,13 @@ export function ExportPopup({
                   disabled={folder.world_count === 0}
                 />
                 <span className="flex items-center w-full">
-                  <span className="font-mono text-xs text-muted-foreground w-10 text-right flex-shrink-0">
+                  <span
+                    className={`font-mono text-xs w-10 text-right flex-shrink-0 ${
+                      folder.world_count === 0
+                        ? 'text-red-500'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
                     ({folder.world_count})
                   </span>
                   <span
