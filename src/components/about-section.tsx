@@ -213,7 +213,7 @@ export function AboutSection() {
       <div className="w-full border-t bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-2 flex justify-between items-center">
           <div className="text-sm text-muted-foreground">
-            VRC Worlds Manager v2 1.1.1-rc.0
+            VRC Worlds Manager v2 1.1.1-rc.1
           </div>
 
           <div className="flex gap-4">
