@@ -9,16 +9,11 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
-import { commands } from '@/lib/bindings';
+import { commands, FolderData } from '@/lib/bindings';
 import { Checkbox } from './ui/checkbox';
 
 export enum ExportType {
   PLS = 'pls',
-}
-
-interface FolderInfo {
-  name: string;
-  worldCount: number;
 }
 
 interface ExportPopupProps {
@@ -33,7 +28,7 @@ export function ExportPopup({
   onConfirm,
 }: ExportPopupProps) {
   const { t } = useLocalization();
-  const [folders, setFolders] = useState<FolderInfo[]>([]);
+  const [folders, setFolders] = useState<FolderData[]>([]);
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
   const [exportType, setExportType] = useState<ExportType>(ExportType.PLS);
 
@@ -43,11 +38,7 @@ export function ExportPopup({
       try {
         const result = await commands.getFolders();
         if (result.status === 'ok') {
-          const folderData = result.data.map((folder: [string, number]) => ({
-            name: folder[0],
-            worldCount: folder[1],
-          }));
-          setFolders(folderData);
+          setFolders(result.data);
         } else {
           console.error('Failed to fetch folders:', result.error);
         }
@@ -81,15 +72,15 @@ export function ExportPopup({
                     );
                   }}
                   className="shrink-0 self-center"
-                  disabled={folder.worldCount === 0}
+                  disabled={folder.world_count === 0}
                 />
                 <span className="flex items-center w-full">
                   <span className="font-mono text-xs text-muted-foreground w-10 text-right flex-shrink-0">
-                    ({folder.worldCount})
+                    ({folder.world_count})
                   </span>
                   <span
                     className={`truncate flex-1 pl-2 -mt-[2px] ${
-                      folder.worldCount === 0 ? 'text-muted-foreground' : ''
+                      folder.world_count === 0 ? 'text-muted-foreground' : ''
                     }`}
                   >
                     {folder.name}
