@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useFolders } from '@/hooks/useFolders';
+import { useFolders } from '@/hooks/use-folders';
 
 const sidebarStyles = {
   container:

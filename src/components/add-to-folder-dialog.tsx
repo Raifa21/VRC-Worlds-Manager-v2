@@ -18,7 +18,7 @@ import { SpecialFolders } from '@/types/folders'; // Add this import
 import { error, info } from '@tauri-apps/plugin-log';
 import { Checkbox } from './ui/checkbox';
 import { FolderRemovalPreference } from '@/lib/bindings';
-import { useFolders } from '@/hooks/useFolders';
+import { useFolders } from '@/hooks/use-folders';
 
 interface AddToFolderDialogProps {
   open: boolean;

@@ -35,7 +35,7 @@ import { useLocalization } from '@/hooks/use-localization';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Textarea } from './ui/textarea';
 import MemoRenderer from './memo-renderer';
-import { useFolders } from '@/hooks/useFolders';
+import { useFolders } from '@/hooks/use-folders';
 import { Checkbox } from './ui/checkbox';
 
 export interface WorldDetailDialogProps {
