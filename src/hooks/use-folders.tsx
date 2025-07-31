@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 import { commands } from '@/lib/bindings';
 
-const fetchFolders = async () => {
+const fetchFolders = async (): Promise<[string, number][]> => {
   const result = await commands.getFolders();
   if (result.status === 'ok') return result.data;
   throw new Error(result.error);
@@ -13,7 +13,7 @@ export function useFolders() {
     error,
     isLoading,
     mutate: refresh,
-  } = useSWR('folders', fetchFolders, {
+  } = useSWR<[string, number][]>('folders', fetchFolders, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
     errorRetryCount: 3, // Retry fetching on error
