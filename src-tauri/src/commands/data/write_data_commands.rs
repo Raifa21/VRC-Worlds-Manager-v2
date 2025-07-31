@@ -1,7 +1,7 @@
 use crate::backup;
 use crate::definitions::CardSize;
 use crate::migration::MigrationService;
-use crate::services;
+use crate::services::{self, ExportService};
 use crate::{FOLDERS, WORLDS};
 
 #[tauri::command]
@@ -28,6 +28,13 @@ pub async fn create_backup(backup_path: String) -> Result<(), String> {
 #[specta::specta]
 pub async fn restore_from_backup(backup_path: String) -> Result<(), String> {
     backup::restore_from_backup(backup_path, WORLDS.get(), FOLDERS.get()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn export_to_portal_library_system(folders: Vec<String>) -> Result<(), String> {
+    ExportService::export_to_portal_library_system(folders, FOLDERS.get())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

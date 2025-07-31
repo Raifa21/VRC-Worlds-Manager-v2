@@ -299,6 +299,12 @@
   "settings-page:folders-count": "フォルダ数",
   "settings-page:backup-path": "パス",
   "settings-page:warning": "警告",
+  "settings-page:export-title": "外部サービスへエクスポート",
+  "settings-page:export-description": "ワールドとフォルダを外部サービスへエクスポートします",
+  "settings-page:export-data": "エクスポート",
+  "settings-page:export-success-title": "エクスポート成功",
+  "settings-page:export-success-description": "データが正常にエクスポートされました。",
+  "settings-page:error-export-data": "エクスポート失敗",
   "settings-page:warning-text-1": "現在のデータが上書きされます。",
   "settings-page:warning-text-2": "事前にバックアップを取ることをお勧めします。",
   "settings-page:restore-confirm": "バックアップを復元",
@@ -475,5 +481,8 @@
   "update-dialog:downloading:foretext": "ダウンロード中（",
   "update-dialog:downloading:posttext": "%）",
   "update-dialog:download-complete": "アップデートのダウンロードが完了しました",
-  "update-dialog:execute": "アップデート"
+  "update-dialog:execute": "アップデートを実行",
+
+  "export-popup:title": "フォルダをエクスポート",
+  "export-popup:export": "エクスポート先: "
 }

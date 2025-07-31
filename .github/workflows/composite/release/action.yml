@@ -92,6 +92,7 @@ runs:
           const url = latestJson['platforms']['windows-x86_64']['url'];
           const filename = path.basename(url);
           const newUrl = `https://releases.raifaworks.com/installer/${filename}`;
+          
 
           latestJson['platforms']['windows-x86_64']['url'] = newUrl;
 
@@ -101,6 +102,7 @@ runs:
       shell: bash
       run: |
         mkdir -p upload/manifests upload/installer
+        cp changelog.json ./upload/manifests/changelog.json
         mv latest.json ./upload/manifests/${{ inputs.releaseChannel }}.json
         mv ./src-tauri/target/release/bundle/nsis/* ./upload/installer/
 

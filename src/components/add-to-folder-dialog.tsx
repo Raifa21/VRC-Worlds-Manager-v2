@@ -18,7 +18,7 @@ import { SpecialFolders } from '@/types/folders'; // Add this import
 import { error, info } from '@tauri-apps/plugin-log';
 import { Checkbox } from './ui/checkbox';
 import { FolderRemovalPreference } from '@/lib/bindings';
-import { useFolders } from '@/hooks/useFolders';
+import { useFolders } from '@/hooks/use-folders';
 
 interface AddToFolderDialogProps {
   open: boolean;
@@ -29,7 +29,6 @@ interface AddToFolderDialogProps {
     foldersToRemove: string[],
   ) => Promise<void>;
   isFindPage?: boolean;
-  onAddFolder?: (name: string) => Promise<void>;
   currentFolder: string | SpecialFolders;
 }
 
@@ -39,11 +38,10 @@ export function AddToFolderDialog({
   selectedWorlds,
   onConfirm,
   isFindPage,
-  onAddFolder,
   currentFolder,
 }: AddToFolderDialogProps) {
   const { t } = useLocalization();
-  const { folders, refresh } = useFolders();
+  const { folders, createFolder } = useFolders();
   // Remove duplicated state - keep only rememberChoice
   const [dialogPage, setDialogPage] = useState<'folders' | 'removeConfirm'>(
     'folders',
@@ -81,18 +79,12 @@ export function AddToFolderDialog({
     }
   }, [isCreatingNew]);
 
-  const handleAddClick = () => {
-    if (onAddFolder) {
-      setIsCreatingNew(true);
-    }
-  };
-
   const handleNewNameKey = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return;
     const name = newFolderName.trim();
-    if (!name || !onAddFolder) return;
+    if (!name) return;
     setIsLoading(true);
-    await onAddFolder(name);
+    await createFolder(name);
     setIsLoading(false);
     setIsCreatingNew(false);
     setNewFolderName('');
@@ -402,19 +394,26 @@ export function AddToFolderDialog({
             <ScrollArea className={isFindPage ? 'h-[240px]' : 'h-[300px]'}>
               <div ref={listRef} className="space-y-2 px-2 pb-2">
                 {folders.map((folder) => {
-                  const isNew = folder === createdFolder;
+                  const isNew = folder.name === createdFolder;
                   return (
                     <Button
-                      key={folder}
-                      data-folder={folder}
+                      key={folder.name}
+                      data-folder={folder.name}
                       variant="outline"
                       className="w-full justify-between group"
-                      onClick={() => handleClick(folder)}
+                      onClick={() => handleClick(folder.name)}
                     >
-                      <span className="truncate">{folder}</span>
+                      <span className="flex flex-row items-center w-full justify-start">
+                        <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
+                          {folder.world_count}
+                        </span>
+                        <span className="truncate flex-1 pr-2 text-left max-w-[290px]">
+                          {folder.name}
+                        </span>
+                      </span>
                       <span>
-                        {getFolderState(folder) === 'all' && <Check />}
-                        {getFolderState(folder) === 'some' && <Minus />}
+                        {getFolderState(folder.name) === 'all' && <Check />}
+                        {getFolderState(folder.name) === 'some' && <Minus />}
                       </span>
                     </Button>
                   );
@@ -457,7 +456,7 @@ export function AddToFolderDialog({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleAddClick}
+                onClick={() => setIsCreatingNew(true)}
                 disabled={isLoading || isCreatingNew}
                 className="w-full"
               >

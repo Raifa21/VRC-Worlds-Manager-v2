@@ -35,7 +35,7 @@ import { useLocalization } from '@/hooks/use-localization';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Textarea } from './ui/textarea';
 import MemoRenderer from './memo-renderer';
-import { useFolders } from '@/hooks/useFolders';
+import { useFolders } from '@/hooks/use-folders';
 import { Checkbox } from './ui/checkbox';
 
 export interface WorldDetailDialogProps {
@@ -960,16 +960,19 @@ export function WorldDetailPopup({
                           folders.map((folder) => (
                             <div
                               className="flex items-center space-x-2"
-                              key={folder}
+                              key={folder.name}
                             >
                               <Checkbox
-                                checked={worldFolders.includes(folder)}
+                                checked={worldFolders.includes(folder.name)}
                                 onCheckedChange={() =>
-                                  toggleWorldFolder(folder)
+                                  toggleWorldFolder(folder.name)
                                 }
                               />
+                              <span className="text-sm text-muted-foreground">
+                                {folder.world_count}
+                              </span>
                               <span className="truncate max-w-[200px] text-sm">
-                                {folder}
+                                {folder.name}
                               </span>
                             </div>
                           ))

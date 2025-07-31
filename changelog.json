@@ -1,102 +1,138 @@
 [
-    {
-        "version": "1.1.1-rc.0",
-        "features": [
-            {
-                "text": "Add capacity and visit sort options for worlds (by @Takadayoo)",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "並び替えに最大人数と訪問数を追加 (by @Takadayoo)"
-                    }
-                ]
-            },
-            {
-                "text": "Added folder selection in world detail popup",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "ワールド詳細ポップアップからフォルダを選択できるように"
-                    }
-                ]
-            }
-        ],
-        "fixes": [
-            {
-                "text": "Fixed size of items being different in advanced search",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "詳細検索におけるアイテムのサイズが異なる問題を修正"
-                    }
-                ]
-            },
-            {
-                "text": "Fixed folder renaming not applying to starred folders",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "スター付きフォルダの名前変更が適用されない問題を修正"
-                    }
-                ]
-            }
+  {
+    "version": "1.1.1-rc.1",
+    "preRelease": true,
+    "features": [
+      {
+        "text": "Added export to PortalLibrarySystem",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "幻会興業と連携し、PortalLibrarySystemへのエクスポートを追加"
+          }
         ]
-    },
-    {
-        "version": "1.1.0",
-        "features": [
-            {
-                "text": "Show changelog for updates",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "更新時に変更ログを表示"
-                    }
-                ]
-            },
-            {
-                "text": "Added selection for update channel",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "更新チャネルの選択を追加"
-                    }
-                ]
-            },
-            {
-                "text": "Added memo text searching in advanced search",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "詳細検索でメモのテキスト検索を追加"
-                    }
-                ]
-            }
-        ],
-        "fixes": [
-            {
-                "text": "Fixed link for github repository in about page",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "「このアプリについて」のGitHubリポジトリへのリンクを修正"
-                    }
-                ]
-            }
+      },
+      {
+        "text": "Added world count to folders",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "フォルダにワールド数を追加"
+          }
         ]
-    },
-    {
-        "version": "1.0.0",
-        "features": [
-            {
-                "text": "Initial Release",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "初期リリース"
-                    }
-                ]
-            }
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Fixed folders not updating correctly on certain operations",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "特定の操作でフォルダが正しく更新されない問題を修正"
+          }
         ]
-    }
+      }
+    ]
+  },
+  {
+    "version": "1.1.1-rc.0",
+    "preRelease": true,
+    "features": [
+      {
+        "text": "Add capacity and visit sort options for worlds (by @Takadayoo)",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "並び替えに最大人数と訪問数を追加 (by @Takadayoo)"
+          }
+        ]
+      },
+      {
+        "text": "Added folder selection in world detail popup",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "ワールド詳細ポップアップからフォルダを選択できるように"
+          }
+        ]
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Fixed size of items being different in advanced search",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "詳細検索におけるアイテムのサイズが異なる問題を修正"
+          }
+        ]
+      },
+      {
+        "text": "Fixed folder renaming not applying to starred folders",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "スター付きフォルダの名前変更が適用されない問題を修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.1.0",
+    "features": [
+      {
+        "text": "Show changelog for updates",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "更新時に変更ログを表示"
+          }
+        ]
+      },
+      {
+        "text": "Added selection for update channel",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "更新チャネルの選択を追加"
+          }
+        ]
+      },
+      {
+        "text": "Added memo text searching in advanced search",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "詳細検索でメモのテキスト検索を追加"
+          }
+        ]
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Fixed link for github repository in about page",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "「このアプリについて」のGitHubリポジトリへのリンクを修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "features": [
+      {
+        "text": "Initial Release",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "初期リリース"
+          }
+        ]
+      }
+    ]
+  }
 ]
