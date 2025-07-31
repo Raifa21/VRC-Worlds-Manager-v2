@@ -52,7 +52,7 @@ export function ExportPopup({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('export-popup:title', 'Export Worlds')}</DialogTitle>
+          <DialogTitle>{t('export-popup:title')}</DialogTitle>
         </DialogHeader>
         <div className="py-4 space-y-4">
           {/* Folder selection */}
@@ -104,7 +104,7 @@ export function ExportPopup({
               onClick={() => onConfirm(selectedFolders, exportType)}
             >
               <FileJson className="h-4 w-4" />
-              {t('export-popup:export', 'Export to')}
+              {t('export-popup:export')}
               <span className="font-semibold">
                 {exportType === ExportType.PLS
                   ? 'PortalLibrarySystem'
@@ -118,10 +118,7 @@ export function ExportPopup({
                   variant="outline"
                   size="icon"
                   className="h-9 w-9"
-                  aria-label={t(
-                    'export-popup:select-type',
-                    'Select export type',
-                  )}
+                  aria-label={t('export-popup:select-type')}
                 >
                   <ChevronDown className="h-4 w-4" />
                 </Button>
