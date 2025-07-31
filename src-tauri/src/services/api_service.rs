@@ -583,15 +583,13 @@ impl ApiService {
                 )
                 .await?;
 
-                // DISABLED: until VRChat updates to open the instance menu
-
-                // Self::get_instance_short_name_and_open_client(
-                //     cookie_store,
-                //     &world_id,
-                //     &instance_id,
-                //     app,
-                // )
-                // .await?;
+                Self::get_instance_short_name_and_open_client(
+                    cookie_store,
+                    &world_id,
+                    &instance_id,
+                    app,
+                )
+                .await?;
 
                 Ok(())
             }
@@ -730,15 +728,14 @@ impl ApiService {
                     instance_id.clone(),
                 )
                 .await?;
-                // DISABLED: until VRChat updates to open the instance menu
 
-                // Self::get_instance_short_name_and_open_client(
-                //     cookie_store,
-                //     &world_id,
-                //     &instance_id,
-                //     app,
-                // )
-                // .await?;
+                Self::get_instance_short_name_and_open_client(
+                    cookie_store,
+                    &world_id,
+                    &instance_id,
+                    app,
+                )
+                .await?;
                 Ok(())
             }
             Err(e) => Err(format!("Failed to create group instance: {}", e)),
