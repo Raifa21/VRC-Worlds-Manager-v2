@@ -59,7 +59,7 @@ pub async fn unhide_world(world_id: String) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_folders() -> Result<Vec<String>, String> {
+pub async fn get_folders() -> Result<Vec<(String, u16)>, String> {
     FolderManager::get_folders(FOLDERS.get()).map_err(|e| {
         log::error!("Error getting folders: {}", e);
         e.to_string()
