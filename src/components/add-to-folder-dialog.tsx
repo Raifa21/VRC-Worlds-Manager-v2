@@ -394,26 +394,26 @@ export function AddToFolderDialog({
             <ScrollArea className={isFindPage ? 'h-[240px]' : 'h-[300px]'}>
               <div ref={listRef} className="space-y-2 px-2 pb-2">
                 {folders.map((folder) => {
-                  const isNew = folder[0] === createdFolder;
+                  const isNew = folder.name === createdFolder;
                   return (
                     <Button
-                      key={folder[0]}
-                      data-folder={folder[0]}
+                      key={folder.name}
+                      data-folder={folder.name}
                       variant="outline"
                       className="w-full justify-between group"
-                      onClick={() => handleClick(folder[0])}
+                      onClick={() => handleClick(folder.name)}
                     >
                       <span className="flex flex-row items-center w-full justify-start">
                         <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
-                          {folder[1]}
+                          {folder.world_count}
                         </span>
                         <span className="truncate flex-1 pr-2 text-left w-[10px]">
-                          {folder[0]}
+                          {folder.name}
                         </span>
                       </span>
                       <span>
-                        {getFolderState(folder[0]) === 'all' && <Check />}
-                        {getFolderState(folder[0]) === 'some' && <Minus />}
+                        {getFolderState(folder.name) === 'all' && <Check />}
+                        {getFolderState(folder.name) === 'some' && <Minus />}
                       </span>
                     </Button>
                   );

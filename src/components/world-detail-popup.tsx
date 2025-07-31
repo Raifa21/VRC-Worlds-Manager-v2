@@ -960,19 +960,19 @@ export function WorldDetailPopup({
                           folders.map((folder) => (
                             <div
                               className="flex items-center space-x-2"
-                              key={folder[0]}
+                              key={folder.name}
                             >
                               <Checkbox
-                                checked={worldFolders.includes(folder[0])}
+                                checked={worldFolders.includes(folder.name)}
                                 onCheckedChange={() =>
-                                  toggleWorldFolder(folder[0])
+                                  toggleWorldFolder(folder.name)
                                 }
                               />
                               <span className="text-sm text-muted-foreground">
-                                {folder[1]}
+                                {folder.world_count}
                               </span>
                               <span className="truncate max-w-[200px] text-sm">
-                                {folder[0]}
+                                {folder.name}
                               </span>
                             </div>
                           ))

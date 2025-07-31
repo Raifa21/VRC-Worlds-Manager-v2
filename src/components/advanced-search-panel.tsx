@@ -119,7 +119,10 @@ export function AdvancedSearchPanel({
             <MultiFilterItemSelector
               placeholder={t('advanced-search:search-folders')}
               values={folderFilters}
-              candidates={folders.map((f) => ({ label: f[0], value: f[0] }))}
+              candidates={folders.map((f) => ({
+                label: f.name,
+                value: f.name,
+              }))}
               onValuesChange={onFolderFiltersChange}
               allowCustomValues={false}
               id="Folder"

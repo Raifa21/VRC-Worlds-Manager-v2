@@ -1,9 +1,9 @@
 import useSWR, { mutate } from 'swr';
-import { commands } from '@/lib/bindings';
+import { commands, FolderData } from '@/lib/bindings';
 import { toast } from './use-toast';
 import { useLocalization } from './use-localization';
 
-const fetchFolders = async (): Promise<[string, number][]> => {
+const fetchFolders = async (): Promise<FolderData[]> => {
   const result = await commands.getFolders();
   if (result.status === 'ok') return result.data;
   throw new Error(result.error);
@@ -36,7 +36,7 @@ export function useFolders() {
     error,
     isLoading,
     mutate: refresh,
-  } = useSWR<[string, number][]>('folders', fetchFolders, {
+  } = useSWR<FolderData[]>('folders', fetchFolders, {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
     errorRetryCount: 3,

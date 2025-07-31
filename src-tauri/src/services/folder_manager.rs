@@ -4,10 +4,23 @@ use crate::definitions::{
     FolderModel, PreferenceModel, WorldApiData, WorldDisplayData, WorldModel,
 };
 use crate::errors::{AppError, ConcurrencyError, EntityError};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 
 use super::FileService;
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+pub struct FolderData {
+    pub name: String,
+    pub world_count: u16,
+}
+
+impl FolderData {
+    pub fn new(name: String, world_count: u16) -> Self {
+        Self { name, world_count }
+    }
+}
 
 /// Service for managing world/folder operations
 #[derive(Debug)]
@@ -241,12 +254,12 @@ impl FolderManager {
     /// # Errors
     /// Returns an error if the folders lock is poisoned
     #[must_use]
-    pub fn get_folders(folders: &RwLock<Vec<FolderModel>>) -> Result<Vec<(String, u16)>, AppError> {
+    pub fn get_folders(folders: &RwLock<Vec<FolderModel>>) -> Result<Vec<FolderData>, AppError> {
         let folders_lock = folders.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
-        let mut folder_data: Vec<(String, u16)> = Vec::new();
+        let mut folder_data: Vec<FolderData> = Vec::new();
         for folder in folders_lock.iter() {
             let world_count = folder.world_ids.len() as u16;
-            folder_data.push((folder.folder_name.clone(), world_count));
+            folder_data.push(FolderData::new(folder.folder_name.clone(), world_count));
         }
         Ok(folder_data)
     }

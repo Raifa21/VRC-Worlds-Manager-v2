@@ -5,7 +5,7 @@ import { GearIcon } from './icons/gear-icon';
 import { Info, FileQuestion, History, Plus } from 'lucide-react';
 import { SpecialFolders } from '@/types/folders';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { commands } from '@/lib/bindings';
+import { commands, FolderData } from '@/lib/bindings';
 import { useState, useEffect, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 
@@ -63,7 +63,7 @@ export function AppSidebar({
   const { t } = useLocalization();
   const { renameFolder } = useFolders();
   const { folders, moveFolder } = useFolders();
-  const [localFolders, setLocalFolders] = useState<[string, number][]>(folders);
+  const [localFolders, setLocalFolders] = useState<FolderData[]>(folders);
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [isComposing, setIsComposing] = useState(false);
@@ -88,7 +88,7 @@ export function AppSidebar({
     setLocalFolders(newFolders);
 
     try {
-      moveFolder(movedFolder[0], destination.index);
+      moveFolder(movedFolder.name, destination.index);
     } catch (e) {
       // Revert on error
       setLocalFolders(folders);
@@ -265,8 +265,8 @@ export function AppSidebar({
                 >
                   {localFolders.map((folder, index) => (
                     <Draggable
-                      key={folder[0]}
-                      draggableId={folder[0]}
+                      key={folder.name}
+                      draggableId={folder.name}
                       index={index}
                     >
                       {(provided) => (
@@ -280,17 +280,17 @@ export function AppSidebar({
                                 w-[190px] px-3 py-2 text-sm font-medium rounded-lg
                                 overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
                                 ${
-                                  selectedFolder === folder[0]
+                                  selectedFolder === folder.name
                                     ? sidebarStyles.activeLink
                                     : 'hover:bg-accent/50 hover:text-accent-foreground'
                                 }
                               `}
                               onClick={() => {
-                                if (selectedFolder === folder[0]) return;
-                                onSelectFolder('folder', folder[0]);
+                                if (selectedFolder === folder.name) return;
+                                onSelectFolder('folder', folder.name);
                               }}
                             >
-                              {editingFolder === folder[0] ? (
+                              {editingFolder === folder.name ? (
                                 <Input
                                   ref={inputRef}
                                   value={newFolderName}
@@ -313,7 +313,7 @@ export function AppSidebar({
                                       !composingRef.current
                                     ) {
                                       e.preventDefault();
-                                      handleRename(folder[0]);
+                                      handleRename(folder.name);
                                     } else if (e.key === 'Escape') {
                                       e.preventDefault();
                                       setEditingFolder(null);
@@ -352,10 +352,10 @@ export function AppSidebar({
                               ) : (
                                 <span className="flex items-center w-full">
                                   <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
-                                    ({folder[1]})
+                                    ({folder.world_count})
                                   </span>
                                   <span className="truncate flex-1 pl-1">
-                                    {folder[0]}
+                                    {folder.name}
                                   </span>
                                 </span>
                               )}
@@ -365,8 +365,8 @@ export function AppSidebar({
                             <ContextMenuItem
                               onClick={() => {
                                 // First set the editing state
-                                setEditingFolder(folder[0]);
-                                setNewFolderName(folder[0]);
+                                setEditingFolder(folder.name);
+                                setNewFolderName(folder.name);
                                 // Use double RAF to ensure DOM has updated and context menu has closed
                                 requestAnimationFrame(() => {
                                   requestAnimationFrame(() => {
@@ -380,7 +380,7 @@ export function AppSidebar({
                             </ContextMenuItem>
                             <ContextMenuItem
                               className="text-destructive"
-                              onClick={() => onDeleteFolder(folder[0])}
+                              onClick={() => onDeleteFolder(folder.name)}
                             >
                               {t('general:delete')}
                             </ContextMenuItem>
