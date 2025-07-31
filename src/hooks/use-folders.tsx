@@ -112,20 +112,8 @@ export function useFolders() {
   ): Promise<void> => {
     const result = await moveFolderCommand(folderName, destinationIndex);
     if (result.status !== 'ok') {
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-move-folder'),
-        variant: 'destructive',
-      });
-      throw new Error(result.error);
-    } else {
-      toast({
-        title: t('listview-page:folder-moved-title'),
-        description: t('listview-page:folder-moved-description', folderName),
-        duration: 2000,
-      });
+      mutate('folders');
     }
-    mutate('folders');
   };
 
   return {
