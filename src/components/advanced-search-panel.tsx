@@ -13,6 +13,7 @@ import { commands } from '@/lib/bindings';
 import MultiFilterItemSelector from './multi-filter-item-selector';
 import { useLocalization } from '@/hooks/use-localization';
 import { Input } from './ui/input';
+import { useFolders } from '@/hooks/use-folders';
 
 interface AdvancedSearchPanelProps {
   open: boolean;
@@ -40,9 +41,9 @@ export function AdvancedSearchPanel({
   onClose,
 }: AdvancedSearchPanelProps) {
   const { t } = useLocalization();
+  const { folders } = useFolders();
   const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [availableFolders, setAvailableFolders] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -73,22 +74,6 @@ export function AdvancedSearchPanel({
         }
       };
       loadTags();
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (open) {
-      const loadFolders = async () => {
-        try {
-          const result = await commands.getFolders();
-          if (result.status === 'ok') {
-            setAvailableFolders(result.data);
-          }
-        } catch (error) {
-          console.error('Failed to load folders:', error);
-        }
-      };
-      loadFolders();
     }
   }, [open]);
 
@@ -134,7 +119,10 @@ export function AdvancedSearchPanel({
             <MultiFilterItemSelector
               placeholder={t('advanced-search:search-folders')}
               values={folderFilters}
-              candidates={availableFolders.map((f) => ({ label: f, value: f }))}
+              candidates={folders.map((f) => ({
+                label: f.name,
+                value: f.name,
+              }))}
               onValuesChange={onFolderFiltersChange}
               allowCustomValues={false}
               id="Folder"

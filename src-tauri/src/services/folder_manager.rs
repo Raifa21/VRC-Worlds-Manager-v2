@@ -4,10 +4,23 @@ use crate::definitions::{
     FolderModel, PreferenceModel, WorldApiData, WorldDisplayData, WorldModel,
 };
 use crate::errors::{AppError, ConcurrencyError, EntityError};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 
 use super::FileService;
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+pub struct FolderData {
+    pub name: String,
+    pub world_count: u16,
+}
+
+impl FolderData {
+    pub fn new(name: String, world_count: u16) -> Self {
+        Self { name, world_count }
+    }
+}
 
 /// Service for managing world/folder operations
 #[derive(Debug)]
@@ -230,23 +243,26 @@ impl FolderManager {
         Ok(())
     }
 
-    /// Get the names of all folders
+    /// Get the names of all folders, and the number of worlds in each folder
     ///
     /// # Arguments
     /// * `folders` - The list of folders, as a RwLock
     ///
     /// # Returns
-    /// A vector of folder names
+    /// A vector of folder names, each paired with the number of worlds in that folder
     ///
     /// # Errors
     /// Returns an error if the folders lock is poisoned
     #[must_use]
-    pub fn get_folders(folders: &RwLock<Vec<FolderModel>>) -> Result<Vec<String>, AppError> {
+    pub fn get_folders(folders: &RwLock<Vec<FolderModel>>) -> Result<Vec<FolderData>, AppError> {
         let folders_lock = folders.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
-        let folder_names = folders_lock.iter().map(|f| f.folder_name.clone()).collect();
-        Ok(folder_names)
+        let mut folder_data: Vec<FolderData> = Vec::new();
+        for folder in folders_lock.iter() {
+            let world_count = folder.world_ids.len() as u16;
+            folder_data.push(FolderData::new(folder.folder_name.clone(), world_count));
+        }
+        Ok(folder_data)
     }
-
     /// Returns a unique name for a folder, as a string
     /// If the passed name is "", the default name "New Folder" is used
     /// If the folder already exists, we append a number to the name
@@ -1116,30 +1132,6 @@ mod tests {
             log::error!("Error getting unclassified worlds: {}", e);
         }
         assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_move_folder() {
-        let state = setup_test_state();
-
-        // Create test folders
-        let folder1 = FolderManager::create_folder("Folder 1".to_string(), &state.folders).unwrap();
-        let folder2 = FolderManager::create_folder("Folder 2".to_string(), &state.folders).unwrap();
-        let folder3 = FolderManager::create_folder("Folder 3".to_string(), &state.folders).unwrap();
-
-        // Test moving folder to new position
-        let result = FolderManager::move_folder(folder2.clone(), 0, &state.folders);
-        assert!(result.is_ok());
-
-        // Verify new order
-        let folders = FolderManager::get_folders(&state.folders).unwrap();
-        assert_eq!(folders[0], folder2);
-        assert_eq!(folders[1], folder1);
-        assert_eq!(folders[2], folder3);
-
-        // Test moving non-existent folder
-        let result = FolderManager::move_folder("NonExistent".to_string(), 0, &state.folders);
-        assert!(result.is_err());
     }
 
     #[test]

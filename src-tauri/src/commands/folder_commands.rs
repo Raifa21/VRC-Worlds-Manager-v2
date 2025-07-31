@@ -1,5 +1,5 @@
 use crate::definitions::{WorldApiData, WorldDisplayData, WorldModel};
-use crate::services::folder_manager::FolderManager;
+use crate::services::folder_manager::{FolderData, FolderManager};
 use crate::services::share_service;
 use crate::{FOLDERS, PREFERENCES, WORLDS};
 use std::collections::HashSet;
@@ -59,7 +59,7 @@ pub async fn unhide_world(world_id: String) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_folders() -> Result<Vec<String>, String> {
+pub async fn get_folders() -> Result<Vec<FolderData>, String> {
     FolderManager::get_folders(FOLDERS.get()).map_err(|e| {
         log::error!("Error getting folders: {}", e);
         e.to_string()
