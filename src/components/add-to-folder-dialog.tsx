@@ -29,7 +29,6 @@ interface AddToFolderDialogProps {
     foldersToRemove: string[],
   ) => Promise<void>;
   isFindPage?: boolean;
-  onAddFolder?: (name: string) => Promise<void>;
   currentFolder: string | SpecialFolders;
 }
 
@@ -39,11 +38,10 @@ export function AddToFolderDialog({
   selectedWorlds,
   onConfirm,
   isFindPage,
-  onAddFolder,
   currentFolder,
 }: AddToFolderDialogProps) {
   const { t } = useLocalization();
-  const { folders, refresh } = useFolders();
+  const { folders, createFolder } = useFolders();
   // Remove duplicated state - keep only rememberChoice
   const [dialogPage, setDialogPage] = useState<'folders' | 'removeConfirm'>(
     'folders',
@@ -81,18 +79,12 @@ export function AddToFolderDialog({
     }
   }, [isCreatingNew]);
 
-  const handleAddClick = () => {
-    if (onAddFolder) {
-      setIsCreatingNew(true);
-    }
-  };
-
   const handleNewNameKey = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return;
     const name = newFolderName.trim();
-    if (!name || !onAddFolder) return;
+    if (!name) return;
     setIsLoading(true);
-    await onAddFolder(name);
+    await createFolder(name);
     setIsLoading(false);
     setIsCreatingNew(false);
     setNewFolderName('');
@@ -464,7 +456,7 @@ export function AddToFolderDialog({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleAddClick}
+                onClick={() => setIsCreatingNew(true)}
                 disabled={isLoading || isCreatingNew}
                 className="w-full"
               >

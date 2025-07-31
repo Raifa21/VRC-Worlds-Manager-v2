@@ -49,7 +49,6 @@ interface AppSidebarProps {
   selectedFolder?: string;
   onSelectAbout: () => void;
   onSelectSettings: () => void;
-  onRenameFolder: (oldName: string, newName: string) => Promise<void>;
   onDeleteFolder: (folderName: string) => void;
 }
 
@@ -59,11 +58,11 @@ export function AppSidebar({
   selectedFolder,
   onSelectAbout,
   onSelectSettings,
-  onRenameFolder,
   onDeleteFolder,
 }: AppSidebarProps) {
   const { t } = useLocalization();
-  const { folders, refresh } = useFolders();
+  const { renameFolder } = useFolders();
+  const { folders, moveFolder } = useFolders();
   const [localFolders, setLocalFolders] = useState<[string, number][]>(folders);
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
@@ -89,8 +88,7 @@ export function AppSidebar({
     setLocalFolders(newFolders);
 
     try {
-      await commands.moveFolder(movedFolder[0], destination.index);
-      await refresh();
+      moveFolder(movedFolder[0], destination.index);
     } catch (e) {
       // Revert on error
       setLocalFolders(folders);
@@ -99,15 +97,10 @@ export function AppSidebar({
   };
 
   const handleRename = async (folder: string) => {
-    try {
-      if (newFolderName && newFolderName !== folder) {
-        await onRenameFolder(folder, newFolderName);
-      }
-      await refresh();
-    } finally {
+    renameFolder(folder, newFolderName).then(() => {
       setEditingFolder(null);
       setNewFolderName('');
-    }
+    });
   };
 
   useEffect(() => {

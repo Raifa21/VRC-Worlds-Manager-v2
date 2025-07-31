@@ -284,33 +284,6 @@ export default function ListView() {
     }
   };
 
-  const handleCreateFolder = async (name: string) => {
-    try {
-      const newName = await invoke<string>('create_folder', { name: name });
-      await refreshFolders();
-
-      // Only navigate to the new folder if not in Find page or if add-to-folder dialog is open
-      if (currentFolder !== SpecialFolders.Find && !showFolderDialog) {
-        setShowCreateFolder(false);
-        handleSelectFolder('folder', newName);
-      } else {
-        setShowCreateFolder(false);
-      }
-      toast({
-        title: t('listview-page:folder-created-title'),
-        description: t('listview-page:folder-created-description', newName),
-        duration: 2000,
-      });
-    } catch (e) {
-      error(`Failed to create folder: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-create-folder'),
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleAddWorld = async (worldId: string) => {
     try {
       const world = await commands.getWorld(worldId, null);
@@ -918,7 +891,6 @@ export default function ListView() {
     }
   };
 
-  // Create a proper handleDeleteWorld function like your other handlers
   const handleDeleteWorld = async (worldId: string) => {
     try {
       const result = await commands.deleteWorld(worldId);
@@ -967,48 +939,6 @@ export default function ListView() {
   useEffect(() => {
     loadCardSize();
   }, [showSettings]);
-
-  const onRenameFolder = async (oldName: string, newName: string) => {
-    try {
-      await commands.renameFolder(oldName, newName);
-      await refreshFolders();
-      toast({
-        title: t('listview-page:folder-renamed-title'),
-        description: t('listview-page:folder-renamed-description', newName),
-      });
-    } catch (e) {
-      error(`Failed to rename folder: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-rename-folder'),
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteFolder = async (folderName: string) => {
-    try {
-      await commands.deleteFolder(folderName);
-      await refreshFolders();
-      setShowDeleteFolder(null);
-      // if we are deleting the current folder, reset to All
-      if (currentFolder === folderName) {
-        handleSelectFolder(SpecialFolders.All);
-        await loadAllWorlds();
-      }
-      toast({
-        title: 'Success',
-        description: 'Folder deleted successfully',
-      });
-    } catch (e) {
-      error(`Failed to delete folder: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-delete-folder'),
-        variant: 'destructive',
-      });
-    }
-  };
 
   const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>(
     worlds || [],
@@ -1746,7 +1676,6 @@ export default function ListView() {
           setShowWorldDetails(false);
           setCurrentFolder(SpecialFolders.NotFolder);
         }}
-        onRenameFolder={onRenameFolder}
         onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
       />
       <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">
@@ -1841,7 +1770,6 @@ export default function ListView() {
             setShowCreateFolder(false);
           }
         }}
-        onConfirm={handleCreateFolder}
         onImportFolder={handleImportFolder}
       />
       <AddWorldPopup
@@ -1893,7 +1821,6 @@ export default function ListView() {
           handleAddToFolders(foldersToAdd, foldersToRemove)
         }
         isFindPage={isFindPage}
-        onAddFolder={handleCreateFolder}
         currentFolder={currentFolder}
       />
       <ShareFolderPopup
@@ -1912,7 +1839,6 @@ export default function ListView() {
             setShowDeleteFolder(null);
           }
         }}
-        onConfirm={handleDeleteFolder}
       />
       <AdvancedSearchPanel
         open={showAdvancedSearch}
