@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.1.1-rc.2",
+    "preRelease": true,
+    "features": [
+      {
+        "text": "Creating instance now opens instance menu page following VRChat client update",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "インスタンスを作成すると、VRChatクライアントの更新に伴いインスタンスメニューが開くようになりました"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.1.1-rc.1",
     "preRelease": true,
     "features": [
