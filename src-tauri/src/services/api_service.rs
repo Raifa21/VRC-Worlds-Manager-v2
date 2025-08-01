@@ -358,7 +358,7 @@ impl ApiService {
         cookie_store: Arc<Jar>,
         world_id: String,
         instance_id: String,
-        app: &tauri::AppHandle,
+        app: AppHandle,
     ) -> Result<(), String> {
         match invite::invite_self_to_instance(cookie_store, &world_id, &instance_id).await {
             Ok(_) => {
@@ -556,7 +556,7 @@ impl ApiService {
                 // Invite self to the instance
                 let instance_id = _instance.instance_id.clone();
                 let world_id = _instance.world_id.clone();
-                Self::invite_self_to_instance(cookie_store, world_id, instance_id, &app).await?;
+                Self::invite_self_to_instance(cookie_store, world_id, instance_id, app).await?;
                 Ok(())
             }
             Err(e) => Err(format!("Failed to create world instance: {}", e)),
@@ -688,7 +688,7 @@ impl ApiService {
                 // Invite self to the instance
                 let instance_id = _instance.instance_id.clone();
                 let world_id = _instance.world_id.clone();
-                Self::invite_self_to_instance(cookie_store, world_id, instance_id, &app).await?;
+                Self::invite_self_to_instance(cookie_store, world_id, instance_id, app).await?;
                 Ok(())
             }
             Err(e) => Err(format!("Failed to create group instance: {}", e)),
