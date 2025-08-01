@@ -185,3 +185,11 @@ pub struct Instance {
     #[serde(rename = "worldId")]
     pub world_id: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct GetInstanceShortNameResponse {
+    #[serde(rename = "secureName")]
+    pub secure_name: String,
+    #[serde(rename = "shortName")]
+    pub short_name: Option<String>,
+}

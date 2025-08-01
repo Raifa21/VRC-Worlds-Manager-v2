@@ -358,25 +358,45 @@ impl ApiService {
         cookie_store: Arc<Jar>,
         world_id: String,
         instance_id: String,
-        app: AppHandle,
     ) -> Result<(), String> {
         match invite::invite_self_to_instance(cookie_store, &world_id, &instance_id).await {
-            Ok(_) => {
-                // open the instance in the user's client
-                // using vrchat://launch?ref=vrchat.com&id={world_id}:{instance_id}
-                let url = format!(
-                    "vrchat://launch?ref=vrchat.com&id={}:{}",
-                    world_id, instance_id
-                );
-                log::info!("Opening instance in client: {}", url);
-                app.opener().open_url(&url, None::<String>).map_err(|e| {
-                    log::error!("Failed to open instance in client: {}", e);
-                    format!("Failed to open instance in client: {}", e)
-                })?;
-                Ok(())
-            }
+            Ok(_) => Ok(()),
             Err(e) => Err(format!("Failed to invite self to instance: {}", e)),
         }
+    }
+
+    // Get the instance short name, and open the instance menu in the user's client
+    ///
+    /// # Arguments
+    /// * `cookie` - The cookie jar to use for the API
+    /// * `world_id` - The ID of the world to get the instance short name
+    /// * `instance_id` - The ID of the instance to get the short name for
+    /// * `app` - The AppHandle to use for opening the instance in the user's client
+    ///
+    /// # Returns
+    /// Returns a Result containing the short name of the instance if the request was successful
+    ///
+    /// # Errors
+    /// Returns a string error message if the request fails
+    pub async fn get_instance_short_name_and_open_client<J: Into<Arc<Jar>>>(
+        cookie: J,
+        world_id: &str,
+        instance_id: &str,
+        app: AppHandle,
+    ) -> Result<String, String> {
+        let short_name = instance::get_instance_short_name(cookie, world_id, instance_id).await?;
+
+        // Open the instance in the user's client
+        let url = format!(
+            "vrchat://launch?ref=vrchat.com&id={}:{}&shortName={}",
+            world_id, instance_id, short_name
+        );
+        log::info!("Opening instance in client: {}", url);
+        app.opener().open_url(&url, None::<String>).map_err(|e| {
+            log::error!("Failed to open instance in client: {}", e);
+            format!("Failed to open instance in client: {}", e)
+        })?;
+        Ok(short_name)
     }
 
     /// Get the user's recently visited worlds  
@@ -556,7 +576,23 @@ impl ApiService {
                 // Invite self to the instance
                 let instance_id = _instance.instance_id.clone();
                 let world_id = _instance.world_id.clone();
-                Self::invite_self_to_instance(cookie_store, world_id, instance_id, app).await?;
+                Self::invite_self_to_instance(
+                    cookie_store.clone(),
+                    world_id.clone(),
+                    instance_id.clone(),
+                )
+                .await?;
+
+                // DISABLED: until VRChat updates to open the instance menu
+
+                // Self::get_instance_short_name_and_open_client(
+                //     cookie_store,
+                //     &world_id,
+                //     &instance_id,
+                //     app,
+                // )
+                // .await?;
+
                 Ok(())
             }
             Err(e) => Err(format!("Failed to create world instance: {}", e)),
@@ -688,7 +724,7 @@ impl ApiService {
                 // Invite self to the instance
                 let instance_id = _instance.instance_id.clone();
                 let world_id = _instance.world_id.clone();
-                Self::invite_self_to_instance(cookie_store, world_id, instance_id, app).await?;
+                Self::invite_self_to_instance(cookie_store, world_id, instance_id).await?;
                 Ok(())
             }
             Err(e) => Err(format!("Failed to create group instance: {}", e)),
