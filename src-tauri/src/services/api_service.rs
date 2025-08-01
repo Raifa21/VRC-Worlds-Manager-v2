@@ -724,7 +724,21 @@ impl ApiService {
                 // Invite self to the instance
                 let instance_id = _instance.instance_id.clone();
                 let world_id = _instance.world_id.clone();
-                Self::invite_self_to_instance(cookie_store, world_id, instance_id).await?;
+                Self::invite_self_to_instance(
+                    cookie_store.clone(),
+                    world_id.clone(),
+                    instance_id.clone(),
+                )
+                .await?;
+                // DISABLED: until VRChat updates to open the instance menu
+
+                // Self::get_instance_short_name_and_open_client(
+                //     cookie_store,
+                //     &world_id,
+                //     &instance_id,
+                //     app,
+                // )
+                // .await?;
                 Ok(())
             }
             Err(e) => Err(format!("Failed to create group instance: {}", e)),
