@@ -117,9 +117,5 @@ pub async fn get_instance_short_name<J: Into<Arc<Jar>>>(
     };
 
     // if short name is None, return the secure name
-    if parsed.short_name.is_none() {
-        Ok(parsed.secure_name)
-    } else {
-        Ok(parsed.short_name.unwrap())
-    }
+    Ok(parsed.short_name.unwrap_or(parsed.secure_name))
 }
