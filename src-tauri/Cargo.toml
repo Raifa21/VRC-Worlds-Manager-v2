@@ -1,6 +1,6 @@
 [package]
 name = "vrc-worlds-manager"
-version = "1.1.1-rc.1"
+version = "1.1.1-rc.2"
 description = "A Tauri App"
 authors = ["Raifa", "siloneco"]
 license = ""
