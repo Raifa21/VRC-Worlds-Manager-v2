@@ -365,7 +365,7 @@ impl ApiService {
         }
     }
 
-    // Get the instance short name, and open the instance menu in the user's client
+    /// Get the instance short name, and open the instance menu in the user's client
     ///
     /// # Arguments
     /// * `cookie` - The cookie jar to use for the API
