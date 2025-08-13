@@ -29,7 +29,7 @@ const moveFolderCommand = async (
 };
 
 export function useFolders() {
-  const { t } = useLocalization(); // Move this inside the hook
+  const { t } = useLocalization();
 
   const {
     data: folders = [],
