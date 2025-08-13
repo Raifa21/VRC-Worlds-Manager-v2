@@ -1,6 +1,6 @@
 import useSWR, { mutate } from 'swr';
 import { commands, FolderData } from '@/lib/bindings';
-import { toast } from '../../../hooks/use-toast';
+import { toast } from 'sonner';
 import { useLocalization } from '../../../hooks/use-localization';
 
 const fetchFolders = async (): Promise<FolderData[]> => {
@@ -46,15 +46,12 @@ export function useFolders() {
   const createFolder = async (name: string): Promise<void> => {
     const result = await createFolderCommand(name);
     if (result.status !== 'ok') {
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-create-folder'),
-        variant: 'destructive',
       });
       throw new Error(result.error);
     } else {
-      toast({
-        title: t('listview-page:folder-created-title'),
+      toast(t('listview-page:folder-created-title'), {
         description: t('listview-page:folder-created-description', name),
         duration: 2000,
       });
@@ -65,15 +62,12 @@ export function useFolders() {
   const deleteFolder = async (name: string): Promise<void> => {
     const result = await deleteFolderCommand(name);
     if (result.status !== 'ok') {
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-delete-folder'),
-        variant: 'destructive',
       });
       throw new Error(result.error);
     } else {
-      toast({
-        title: t('listview-page:folder-deleted-title'),
+      toast(t('listview-page:folder-deleted-title'), {
         description: t('listview-page:folder-deleted-description', name),
         duration: 2000,
       });
@@ -90,15 +84,12 @@ export function useFolders() {
     }
     const result = await renameFolderCommand(oldName, newName);
     if (result.status !== 'ok') {
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-rename-folder'),
-        variant: 'destructive',
       });
       throw new Error(result.error);
     } else {
-      toast({
-        title: t('listview-page:folder-renamed-title'),
+      toast(t('listview-page:folder-renamed-title'), {
         description: t('listview-page:folder-renamed-description', newName),
         duration: 2000,
       });

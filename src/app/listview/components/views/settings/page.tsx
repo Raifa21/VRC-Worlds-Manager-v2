@@ -2,7 +2,7 @@
 
 import React, { useContext, useState } from 'react';
 import { useTheme } from 'next-themes';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useLocalization } from '@/hooks/use-localization';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -37,7 +37,7 @@ import { useRouter } from 'next/navigation';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RestoreBackupDialog } from '@/app/listview/components/views/settings/components/popups/restore-backup-dialog';
-import { MigrationPopup } from '@/components/migration-popup';
+import { MigrationPopup } from '@/app/listview/components/views/settings/components/popups/migration-popup';
 import { DeleteDataConfirmationDialog } from '@/app/listview/components/views/settings/components/popups/delete-data-confirmation';
 import { ExportPopup, ExportType } from './components/popups/export';
 
@@ -52,7 +52,6 @@ export function SettingsPage({
   onOpenHiddenFolder,
   onDataChange,
 }: SettingsPageProps) {
-  const { toast } = useToast();
   const { t } = useLocalization();
   const [isSaving, setIsSaving] = React.useState(false);
   const { setTheme } = useTheme();
@@ -84,33 +83,26 @@ export function SettingsPage({
           break;
         default:
           error(`Unknown export type: ${exportType}`);
-          toast({
-            title: t('general:error-title'),
+          toast(t('general:error-title'), {
             description: t('settings-page:error-unknown-export-type'),
-            variant: 'destructive',
           });
           return;
       }
       if (result.status === 'error') {
         error(`Export failed: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t('settings-page:error-export-data'),
-          variant: 'destructive',
         });
         return;
       }
       info('Export completed successfully');
-      toast({
-        title: t('settings-page:export-success-title'),
+      toast(t('settings-page:export-success-title'), {
         description: t('settings-page:export-success-description'),
       });
     } catch (e) {
       error(`Export error: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-export-data'),
-        variant: 'destructive',
       });
     }
   };
@@ -151,8 +143,7 @@ export function SettingsPage({
           updateChannelResult.status === 'error' ||
           folderRemovalPreferenceResult.status === 'error'
         ) {
-          toast({
-            title: t('general:error-title'),
+          toast(t('general:error-title'), {
             description:
               t('settings-page:error-load-preferences') +
               ': ' +
@@ -165,15 +156,12 @@ export function SettingsPage({
               (folderRemovalPreferenceResult.status === 'error'
                 ? folderRemovalPreferenceResult.error
                 : ''),
-            variant: 'destructive',
           });
         }
       } catch (e) {
         error(`Failed to load preferences: ${e}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t('settings-page:error-load-preferences'),
-          variant: 'destructive',
         });
       }
     };
@@ -205,25 +193,20 @@ export function SettingsPage({
 
       if (result.status === 'error') {
         error(`Backup creation failed: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t('settings-page:error-create-backup'),
-          variant: 'destructive',
         });
         return;
       }
 
       info(`Backup created successfully at: ${backupPath}`);
-      toast({
-        title: t('settings-page:backup-success-title'),
+      toast(t('settings-page:backup-success-title'), {
         description: t('settings-page:backup-success-description'),
       });
     } catch (e) {
       error(`Backup error: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-create-backup'),
-        variant: 'destructive',
       });
     }
   };
@@ -235,26 +218,21 @@ export function SettingsPage({
 
       if (result.status === 'error') {
         error(`Restore failed: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t('settings-page:error-restore-backup'),
-          variant: 'destructive',
         });
         return;
       }
 
       info('Restore completed successfully');
-      toast({
-        title: t('settings-page:restore-success-title'),
+      toast(t('settings-page:restore-success-title'), {
         description: t('settings-page:restore-success-description'),
       });
       onDataChange();
     } catch (e) {
       error(`Restore error: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-restore-backup'),
-        variant: 'destructive',
       });
     }
   };
@@ -269,26 +247,21 @@ export function SettingsPage({
 
       if (result.status === 'error') {
         error(`Migration failed: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t('settings-page:error-migrate-data'),
-          variant: 'destructive',
         });
         return;
       }
 
       info('Migration completed successfully');
-      toast({
-        title: t('settings-page:migration-success-title'),
+      toast(t('settings-page:migration-success-title'), {
         description: t('settings-page:migration-success-description'),
       });
       onDataChange();
     } catch (e) {
       error(`Migration error: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-migrate-data'),
-        variant: 'destructive',
       });
     }
   };
@@ -299,16 +272,13 @@ export function SettingsPage({
       const result = await commands.deleteData();
       if (result.status === 'error') {
         error(`Data deletion failed: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t('settings-page:error-delete-data'),
-          variant: 'destructive',
         });
         return;
       }
       info('Data deleted successfully');
-      toast({
-        title: t('settings-page:delete-success-title'),
+      toast(t('settings-page:delete-success-title'), {
         description: t('settings-page:delete-success-description'),
       });
 
@@ -316,10 +286,8 @@ export function SettingsPage({
       onDataChange();
     } catch (e) {
       error(`Data deletion error: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-delete-data'),
-        variant: 'destructive',
       });
     }
   };
@@ -331,10 +299,8 @@ export function SettingsPage({
 
       if (result.status === 'error') {
         error(`Logout failed: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t('settings-page:error-logout'),
-          variant: 'destructive',
         });
         return;
       }
@@ -343,10 +309,8 @@ export function SettingsPage({
       router.push('/login');
     } catch (e) {
       error(`Logout error: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-logout'),
-        variant: 'destructive',
       });
     }
   };
@@ -362,10 +326,8 @@ export function SettingsPage({
       }
     } catch (e) {
       error(`Failed to open logs directory: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('general:error-open-logs'),
-        variant: 'destructive',
       });
     }
   };
@@ -380,19 +342,15 @@ export function SettingsPage({
         info(`Theme set to: ${value}`);
       } else {
         error(`Failed to set theme: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description:
             t('settings-page:error-save-preferences') + ': ' + result.error,
-          variant: 'destructive',
         });
       }
     } catch (e) {
       error(`Failed to save theme: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-save-preferences'),
-        variant: 'destructive',
       });
     }
   };
@@ -407,19 +365,15 @@ export function SettingsPage({
         info(`Language set to: ${value}`);
       } else {
         error(`Failed to set language: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description:
             t('settings-page:error-save-preferences') + ': ' + result.error,
-          variant: 'destructive',
         });
       }
     } catch (e) {
       error(`Failed to save language: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-save-preferences'),
-        variant: 'destructive',
       });
     }
   };
@@ -433,21 +387,17 @@ export function SettingsPage({
         info(`Card size set to: ${value}`);
       } else {
         error(`Failed to set card size: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description:
             t('settings-page:error-save-preferences') + ': ' + result.error,
-          variant: 'destructive',
         });
         return;
       }
       onCardSizeChange?.();
     } catch (e) {
       error(`Failed to save card size: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-save-preferences'),
-        variant: 'destructive',
       });
     }
   };
@@ -463,19 +413,15 @@ export function SettingsPage({
         setFolderRemovalPreference(value);
       } else {
         error(`Failed to set folder removal preference: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description:
             t('settings-page:error-save-preferences') + ': ' + result.error,
-          variant: 'destructive',
         });
       }
     } catch (e) {
       error(`Failed to save folder removal preference: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-save-preferences'),
-        variant: 'destructive',
       });
     }
   };
@@ -489,19 +435,15 @@ export function SettingsPage({
         info(`Update channel set to: ${value}`);
       } else {
         error(`Failed to set update channel: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description:
             t('settings-page:error-save-preferences') + ': ' + result.error,
-          variant: 'destructive',
         });
       }
     } catch (e) {
       error(`Failed to save update channel: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('settings-page:error-save-preferences'),
-        variant: 'destructive',
       });
     }
   };

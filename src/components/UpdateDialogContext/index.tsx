@@ -60,11 +60,9 @@ export const UpdateDialogProvider = ({ children }: Props) => {
 
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h4 className="font-semibold text-sm">
-                {t('top:new-update-toast')}
-              </h4>
+              <h4 className="font-semibold text-sm">{t('new-update-toast')}</h4>
               <p className="text-sm text-muted-foreground mt-1">
-                {t('top:new-update-toast:description')}
+                {t('new-update-toast:description')}
               </p>
             </div>
           </div>
@@ -76,7 +74,7 @@ export const UpdateDialogProvider = ({ children }: Props) => {
               onClick={dismissUpdateNotification}
               className="w-full"
             >
-              {t('top:new-update-toast:close')}
+              {t('new-update-toast:close')}
             </Button>
             <Button
               variant="default"
@@ -84,7 +82,7 @@ export const UpdateDialogProvider = ({ children }: Props) => {
               onClick={startUpdateDownloadingAndOpenDialog}
               className="w-full"
             >
-              {t('top:new-update-toast:button')}
+              {t('new-update-toast:button')}
             </Button>
           </div>
         </div>
