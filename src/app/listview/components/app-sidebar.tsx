@@ -1,7 +1,7 @@
 'use client';
 
-import { SaturnIcon } from './icons/saturn-icon';
-import { GearIcon } from './icons/gear-icon';
+import { SaturnIcon } from '../../../components/icons/saturn-icon';
+import { GearIcon } from '../../../components/icons/gear-icon';
 import { Info, FileQuestion, History, Plus } from 'lucide-react';
 import { SpecialFolders } from '@/types/folders';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useFolders } from '@/hooks/use-folders';
+import { useFolders } from '@/app/listview/hook/use-folders';
 
 const sidebarStyles = {
   container:

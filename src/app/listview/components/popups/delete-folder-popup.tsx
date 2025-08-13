@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useFolders } from '@/hooks/use-folders';
+import { useFolders } from '@/app/listview/hook/use-folders';
 import { useLocalization } from '@/hooks/use-localization';
 
 interface DeleteFolderDialogProps {

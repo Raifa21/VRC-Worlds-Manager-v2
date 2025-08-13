@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { WorldDisplayData } from '@/lib/bindings';
-import { WorldGrid } from '@/components/world-grid';
+import { WorldGrid } from '../world-grid';
 import { useLocalization } from '@/hooks/use-localization';
 
 interface ImportedFolderContainsHiddenProps {

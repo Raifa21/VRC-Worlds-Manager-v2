@@ -26,17 +26,17 @@ import {
 } from '@/lib/bindings';
 import { WorldDisplayData } from '@/lib/bindings';
 import { WorldDetails } from '@/lib/bindings';
-import { WorldCardPreview } from './world-card';
+import { WorldCardPreview } from '@/components/world-card';
 import { GroupInstanceCreator } from './group-instance-creator';
 import { Platform } from '@/types/worlds';
 import { GroupInstanceType, InstanceType } from '@/types/instances';
 import { InstanceRegion } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
-import { Card, CardContent, CardHeader } from './ui/card';
-import { Textarea } from './ui/textarea';
-import MemoRenderer from './memo-renderer';
-import { useFolders } from '@/hooks/use-folders';
-import { Checkbox } from './ui/checkbox';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import MemoRenderer from '@/components/memo-renderer';
+import { useFolders } from '@/app/listview/hook/use-folders';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export interface WorldDetailDialogProps {
   open: boolean;

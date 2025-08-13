@@ -19,14 +19,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { WorldGrid } from './world-grid';
-import MultiFilterItemSelector from './multi-filter-item-selector';
+import { WorldGrid } from '@/app/listview/components/world-grid';
+import MultiFilterItemSelector from '@/components/multi-filter-item-selector';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from './ui/tooltip';
+} from '@/components/ui/tooltip';
 
 interface FindPageProps {
   onWorldsChange: (worlds: WorldDisplayData[]) => void;

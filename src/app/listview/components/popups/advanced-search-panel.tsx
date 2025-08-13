@@ -10,10 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import SingleFilterItemSelector from '@/components/single-filter-item-selector';
 import { commands } from '@/lib/bindings';
-import MultiFilterItemSelector from './multi-filter-item-selector';
+import MultiFilterItemSelector from '../../../../components/multi-filter-item-selector';
 import { useLocalization } from '@/hooks/use-localization';
-import { Input } from './ui/input';
-import { useFolders } from '@/hooks/use-folders';
+import { Input } from '../../../../components/ui/input';
+import { useFolders } from '@/app/listview/hook/use-folders';
 
 interface AdvancedSearchPanelProps {
   open: boolean;

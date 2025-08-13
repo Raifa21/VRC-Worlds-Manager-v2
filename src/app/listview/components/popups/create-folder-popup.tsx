@@ -10,8 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLocalization } from '@/hooks/use-localization';
-import { Label } from './ui/label';
-import { useFolders } from '@/hooks/use-folders';
+import { Label } from '../../../../components/ui/label';
+import { useFolders } from '@/app/listview/hook/use-folders';
 
 interface CreateFolderDialogProps {
   open: boolean;
