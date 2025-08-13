@@ -1,69 +1,91 @@
-import { buttonVariants } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { ToastAction } from '@radix-ui/react-toast';
-import { useLocalization } from '@/hooks/use-localization';
-import { useState } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { checkForUpdate, dismissUpdate, downloadUpdate } from '../logic';
+
+const ANIMATION_DURATION_MS = 300;
 
 type ReturnProps = {
   updateDialogOpen: boolean;
   setUpdateDialogOpen: (open: boolean) => void;
   updateDownloadTaskId: string | null;
   checkForUpdate: () => Promise<void>;
+  updateNotificationVisible: boolean;
+  setUpdateNotificationVisible: (visible: boolean) => void;
+  startUpdateDownloadingAndOpenDialog: () => Promise<void>;
+  dismissUpdateNotification: () => void;
+  isNotificationClosing: boolean;
 };
 
 export const useUpdateDialogContext = (): ReturnProps => {
-  const { toast } = useToast();
-  const { t } = useLocalization();
   const [updateDownloadTaskId, setUpdateDownloadTaskId] = useState<
     string | null
   >(null);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [updateNotificationVisible, setUpdateNotificationVisible] =
+    useState(false);
+  const [isNotificationClosing, setIsNotificationClosing] = useState(false);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const startUpdateDownloadingAndOpenDialog = async () => {
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const startUpdateDownloadingAndOpenDialog = useCallback(async () => {
     await downloadUpdate(setUpdateDownloadTaskId);
-    setUpdateDialogOpen(true);
-  };
 
-  const executeUpdateCheck = async () => {
+    setUpdateDialogOpen(true);
+    setIsNotificationClosing(true);
+
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+
+    closeTimeoutRef.current = setTimeout(() => {
+      setUpdateNotificationVisible(false);
+      setIsNotificationClosing(false);
+      closeTimeoutRef.current = null;
+    }, ANIMATION_DURATION_MS);
+  }, [setUpdateDownloadTaskId, setUpdateDialogOpen]);
+
+  const dismissUpdateNotification = useCallback(() => {
+    dismissUpdate();
+
+    setIsNotificationClosing(true);
+
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+
+    closeTimeoutRef.current = setTimeout(() => {
+      setUpdateNotificationVisible(false);
+      setIsNotificationClosing(false);
+      closeTimeoutRef.current = null;
+    }, ANIMATION_DURATION_MS);
+  }, []);
+
+  const executeUpdateCheck = useCallback(async () => {
     const updateAvailable = await checkForUpdate();
 
     if (!updateAvailable) {
       return;
     }
 
-    toast({
-      title: t('new-update-toast'),
-      description: t('new-update-toast:description'),
-      duration: 30000,
-      onSwipeEnd: () => {
-        dismissUpdate();
-      },
-      action: (
-        <div className="flex flex-col space-y-2">
-          <ToastAction
-            altText="Open update dialog"
-            className={buttonVariants({ variant: 'default' })}
-            onClick={startUpdateDownloadingAndOpenDialog}
-          >
-            {t('new-update-toast:button')}
-          </ToastAction>
-          <ToastAction
-            altText="Ignore update"
-            className={buttonVariants({ variant: 'outline' })}
-            onClick={() => dismissUpdate()}
-          >
-            {t('new-update-toast:close')}
-          </ToastAction>
-        </div>
-      ),
-    });
-  };
+    setUpdateNotificationVisible(true);
+    setIsNotificationClosing(false);
+  }, []);
 
   return {
     updateDialogOpen,
     setUpdateDialogOpen,
     updateDownloadTaskId,
     checkForUpdate: executeUpdateCheck,
+    updateNotificationVisible,
+    setUpdateNotificationVisible,
+    startUpdateDownloadingAndOpenDialog,
+    dismissUpdateNotification,
+    isNotificationClosing,
   };
 };
