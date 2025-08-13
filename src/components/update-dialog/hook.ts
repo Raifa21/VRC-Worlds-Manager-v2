@@ -1,5 +1,5 @@
 import { useLocalization } from '@/hooks/use-localization';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { events, commands, LocalizedChanges } from '@/lib/bindings';
 import { UnlistenFn } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useState } from 'react';
@@ -27,7 +27,6 @@ export const useUpdateDialog = ({
     LocalizedChanges[] | null
   >(null);
 
-  const { toast } = useToast();
   const { t } = useLocalization();
 
   const onCancelButtonClick = useCallback(async () => {
@@ -39,10 +38,8 @@ export const useUpdateDialog = ({
     }
 
     setDialogOpen(false);
-    toast({
-      title: t('general:cancelled'),
-    });
-  }, [taskId, setDialogOpen, t, toast]);
+    toast(t('general:cancelled'));
+  }, [taskId, setDialogOpen, t]);
 
   const onUpdateButtonClick = async () => {
     const result = await commands.installUpdate();
@@ -100,8 +97,7 @@ export const useUpdateDialog = ({
           } else if (status === 'Failed') {
             commands.getTaskError(taskId).then((result) => {
               if (result.status === 'ok') {
-                toast({
-                  title: t('general:failed'),
+                toast(t('general:failed'), {
                   description: result.data,
                 });
               } else {
@@ -147,8 +143,7 @@ export const useUpdateDialog = ({
           const result = await commands.getTaskError(taskId);
 
           if (result.status === 'ok') {
-            toast({
-              title: t('general:failed'),
+            toast(t('general:failed'), {
               description: result.data,
             });
           } else {

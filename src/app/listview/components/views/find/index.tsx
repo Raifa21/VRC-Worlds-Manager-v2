@@ -8,7 +8,7 @@ import { CircleHelpIcon, Loader2, RefreshCcw, Search } from 'lucide-react';
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
 import { info } from '@tauri-apps/plugin-log';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -50,7 +50,6 @@ export function FindPage({
   onWorldsJustAddedProcessed,
 }: FindPageProps) {
   const { t } = useLocalization();
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('recently-visited');
   const [recentlyVisitedWorlds, setRecentlyVisitedWorlds] = useState<
     WorldDisplayData[]
@@ -87,8 +86,7 @@ export function FindPage({
         info(`Fetched recently visited worlds: ${worlds.data.length}`);
         setRecentlyVisitedWorlds(worlds.data);
       }
-      toast({
-        title: t('find-page:fetch-recently-visited-worlds'),
+      toast(t('find-page:fetch-recently-visited-worlds'), {
         description: t(
           'find-page:fetch-recently-visited-worlds-success',
           worlds.data.length,
@@ -179,8 +177,7 @@ export function FindPage({
         setHasMoreResults(result.data.length > 0);
 
         if (result.data.length === 0 && !loadMore) {
-          toast({
-            title: t('find-page:no-more-results'),
+          toast(t('find-page:no-more-results'), {
             description: t('find-page:try-different-search'),
           });
         }
@@ -189,9 +186,7 @@ export function FindPage({
       }
     } catch (error) {
       console.error('Search error:', error);
-      toast({
-        variant: 'destructive',
-        title: t('find-page:search-error'),
+      toast(t('find-page:search-error'), {
         description: String(error),
       });
     } finally {

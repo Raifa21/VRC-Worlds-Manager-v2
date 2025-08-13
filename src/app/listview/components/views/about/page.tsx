@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { UserProfile } from '@/app/listview/components/views/about/components/user-profile';
 import { ExternalLink, Heart } from 'lucide-react';
 import { SiGithub, SiDiscord } from '@icons-pack/react-simple-icons';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { commands } from '@/lib/bindings';
 import { info, error } from '@tauri-apps/plugin-log';
 
@@ -15,7 +15,6 @@ export function AboutSection() {
   const { t } = useLocalization();
   const [orderedSupporters, setOrderedSupporters] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchPatreonData() {
@@ -28,10 +27,8 @@ export function AboutSection() {
         }
       } catch (e) {
         error(`Failed to fetch Patreon data: ${e}`);
-        toast({
-          title: 'Error',
+        toast('Error', {
           description: 'Failed to load supporter data.',
-          variant: 'destructive',
         });
       } finally {
         setIsLoading(false);
