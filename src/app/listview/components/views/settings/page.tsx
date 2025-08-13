@@ -30,16 +30,16 @@ import {
   Save,
   FolderUp,
 } from 'lucide-react';
-import { LocalizationContext } from './localization-context';
+import { LocalizationContext } from '../../../../../components/localization-context';
 import { info, error } from '@tauri-apps/plugin-log';
-import { Card } from './ui/card';
+import { Card } from '../../../../../components/ui/card';
 import { useRouter } from 'next/navigation';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RestoreBackupDialog } from '@/components/restore-backup-dialog';
+import { RestoreBackupDialog } from '@/app/listview/components/views/settings/components/popups/restore-backup-dialog';
 import { MigrationPopup } from '@/components/migration-popup';
-import { DeleteDataConfirmationDialog } from '@/components/delete-data-confirmation-dialog';
-import { ExportPopup, ExportType } from './export-popup';
+import { DeleteDataConfirmationDialog } from '@/app/listview/components/views/settings/components/popups/delete-data-confirmation';
+import { ExportPopup, ExportType } from './components/popups/export';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;

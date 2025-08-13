@@ -2,13 +2,12 @@
 
 import { useRef, useState, useMemo, useEffect, useContext, memo } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
-import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
-import { CreateFolderDialog } from '@/components/create-folder-dialog';
-import { useFolders } from '@/hooks/use-folders';
-import { AppSidebar } from '@/components/app-sidebar';
+import { CreateFolderDialog } from '@/app/listview/components/popups/create-folder-popup';
+import { useFolders } from '@/app/listview/hook/use-folders';
+import { AppSidebar } from '@/app/listview/components/app-sidebar';
 import { Platform } from '@/types/worlds';
-import { WorldGrid } from '@/components/world-grid';
+import { WorldGrid } from '@app/listview/components/world-grid';
 import { Button } from '@/components/ui/button';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import {
@@ -24,11 +23,11 @@ import {
   TextSearch,
 } from 'lucide-react'; // For the reload icon
 import { commands, WorldDisplayData } from '@/lib/bindings';
-import { AboutSection } from '@/components/about-section';
-import { SettingsPage } from '@/components/settings-page';
+import { AboutSection } from '@/app/listview/components/views/about/about-view';
+import { SettingsPage } from '@/app/listview/components/views/settings/page';
 import { WorldDetailPopup } from '@/components/world-detail-popup';
-import { AddToFolderDialog } from '@/components/add-to-folder-dialog';
-import { DeleteFolderDialog } from '@/components/delete-folder-dialog';
+import { AddToFolderDialog } from '@/app/listview/components/popups/add-to-folder';
+import { DeleteFolderDialog } from '@/app/listview/components/popups/delete-folder-popup';
 import { AddWorldPopup } from '@/components/add-world-popup';
 import { GroupInstanceType, InstanceType } from '@/types/instances';
 import { InstanceRegion } from '@/lib/bindings';
@@ -39,7 +38,7 @@ import {
   CardSize,
 } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
-import { FindPage } from '@/components/find-page';
+import { FindPage } from '@/app/listview/components/views/find';
 import { info, error } from '@tauri-apps/plugin-log';
 import {
   DropdownMenu,
@@ -55,11 +54,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { AdvancedSearchPanel } from '@/components/advanced-search-panel';
+import { AdvancedSearchPanel } from '@/app/listview/components/popups/advanced-search-panel';
 import { ShareFolderPopup } from '@/components/share-folder-popup';
 import { ImportedFolderContainsHidden } from '@/components/imported-folder-contains-hidden';
 import { UpdateDialogContext } from '@/components/UpdateDialogContext';
 import { Input } from '@/components/ui/input';
+import { useSelectedWorlds } from '@/app/listview/hook/use-selected-worlds';
 
 type SortField =
   | 'name'

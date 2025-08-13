@@ -2,7 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { X, FileJson, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../../../../../../../components/ui/dialog';
 import {
   Popover,
   PopoverContent,
@@ -10,7 +15,7 @@ import {
 } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
 import { commands, FolderData } from '@/lib/bindings';
-import { Checkbox } from './ui/checkbox';
+import { Checkbox } from '../../../../../../../components/ui/checkbox';
 
 export enum ExportType {
   PLS = 'pls',

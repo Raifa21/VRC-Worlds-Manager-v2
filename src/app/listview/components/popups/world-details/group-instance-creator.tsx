@@ -12,10 +12,13 @@ import {
 import { GroupInstanceType } from '@/types/instances';
 import { InstanceRegion } from '@/lib/bindings';
 import { useState, useEffect } from 'react';
-import { Label } from './ui/label';
-import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
+import { Label } from '../../../../../components/ui/label';
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from '../../../../../components/ui/toggle-group';
 import { ChevronRight } from 'lucide-react';
-import { Separator } from './ui/separator';
+import { Separator } from '../../../../../components/ui/separator';
 import { useLocalization } from '@/hooks/use-localization';
 import { info, error } from '@tauri-apps/plugin-log'; // Add this import
 

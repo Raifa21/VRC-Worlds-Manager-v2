@@ -1,7 +1,7 @@
 import useSWR, { mutate } from 'swr';
 import { commands, FolderData } from '@/lib/bindings';
-import { toast } from './use-toast';
-import { useLocalization } from './use-localization';
+import { toast } from '../../../hooks/use-toast';
+import { useLocalization } from '../../../hooks/use-localization';
 
 const fetchFolders = async (): Promise<FolderData[]> => {
   const result = await commands.getFolders();
