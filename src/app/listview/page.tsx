@@ -2,12 +2,12 @@
 
 import { useRef, useState, useMemo, useEffect, useContext, memo } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { CreateFolderDialog } from '@/app/listview/components/popups/create-folder-popup';
 import { useFolders } from '@/app/listview/hook/use-folders';
 import { AppSidebar } from '@/app/listview/components/app-sidebar';
 import { Platform } from '@/types/worlds';
-import { WorldGrid } from '@app/listview/components/world-grid';
+import { WorldGrid } from './components/world-grid';
 import { Button } from '@/components/ui/button';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import {
@@ -23,12 +23,12 @@ import {
   TextSearch,
 } from 'lucide-react'; // For the reload icon
 import { commands, WorldDisplayData } from '@/lib/bindings';
-import { AboutSection } from '@/app/listview/components/views/about/about-view';
+import { AboutSection } from './components/views/about/page';
 import { SettingsPage } from '@/app/listview/components/views/settings/page';
-import { WorldDetailPopup } from '@/components/world-detail-popup';
+import { WorldDetailPopup } from './components/popups/world-details';
 import { AddToFolderDialog } from '@/app/listview/components/popups/add-to-folder';
 import { DeleteFolderDialog } from '@/app/listview/components/popups/delete-folder-popup';
-import { AddWorldPopup } from '@/components/add-world-popup';
+import { AddWorldPopup } from './components/popups/add-world';
 import { GroupInstanceType, InstanceType } from '@/types/instances';
 import { InstanceRegion } from '@/lib/bindings';
 import { toRomaji } from 'wanakana';
@@ -56,7 +56,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { AdvancedSearchPanel } from '@/app/listview/components/popups/advanced-search-panel';
 import { ShareFolderPopup } from '@/components/share-folder-popup';
-import { ImportedFolderContainsHidden } from '@/components/imported-folder-contains-hidden';
+import { ImportedFolderContainsHidden } from '@/app/listview/components/popups/imported-folder-contains-hidden';
 import { UpdateDialogContext } from '@/components/UpdateDialogContext';
 import { Input } from '@/components/ui/input';
 import { useSelectedWorlds } from '@/app/listview/hook/use-selected-worlds';
@@ -71,6 +71,7 @@ type SortField =
   | 'lastUpdated';
 
 export default function ListView() {
+  // filter references for ui
   const filterRowRef = useRef<HTMLDivElement>(null);
   const authorRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
@@ -79,44 +80,9 @@ export default function ListView() {
   const memoTextRef = useRef<HTMLDivElement>(null);
   const clearRef = useRef<HTMLButtonElement>(null);
   const [wrapFolders, setWrapFolders] = useState(false);
-
-  const { folders, refresh: refreshFolders } = useFolders();
-  const { toast } = useToast();
-  const { t } = useLocalization();
   const gridScrollRef = useRef<HTMLDivElement>(null);
-  const [showCreateFolder, setShowCreateFolder] = useState(false);
-  const [showDeleteFolder, setShowDeleteFolder] = useState<string | null>(null);
-  const [isAddWorldOpen, setIsAddWorldOpen] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showFind, setShowFind] = useState(false);
-  const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
-  const [cardSize, setCardSize] = useState<CardSize>('Normal');
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
-    SpecialFolders.All,
-  );
-  const [
-    showImportedFolderContainsHidden,
-    setShowImportedFolderContainsHidden,
-  ] = useState(false);
-  const [containedHiddenWorlds, setContainedHiddenWorlds] = useState<
-    WorldDisplayData[]
-  >([]);
-  const [showWorldDetails, setShowWorldDetails] = useState(false);
-  const [selectedWorldForDetails, setSelectedWorldForDetails] = useState<
-    string | null
-  >(null);
-  const [showFolderDialog, setShowFolderDialog] = useState(false);
-  const [selectedWorldsForFolder, setSelectedWorldsForFolder] = useState<
-    string[]
-  >([]);
-  const [selectedWorldsState, setSelectedWorldsState] = useState<
-    Map<string | SpecialFolders, string[]>
-  >(new Map<string | SpecialFolders, string[]>());
-  const [shouldClearMultiSelection, setShouldClearMultiSelection] =
-    useState(false);
-  const [worldsJustAdded, setWorldsJustAdded] = useState<string[]>([]);
+
+  // filter + sort
   const [searchQuery, setSearchQuery] = useState('');
   const [authorFilter, setAuthorFilter] = useState('');
   const [tagFilters, setTagFilters] = useState<string[]>([]);
@@ -124,9 +90,46 @@ export default function ListView() {
   const [memoTextFilter, setMemoTextFilter] = useState('');
   const [sortField, setSortField] = useState<SortField>('dateAdded');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  // popups
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [showDeleteFolder, setShowDeleteFolder] = useState<string | null>(null);
+  const [isAddWorldOpen, setIsAddWorldOpen] = useState(false);
+  const [showFolderDialog, setShowFolderDialog] = useState(false);
+  const [showWorldDetails, setShowWorldDetails] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showShareFolder, setShowShareFolder] = useState(false);
+  const [
+    showImportedFolderContainsHidden,
+    setShowImportedFolderContainsHidden,
+  ] = useState(false);
+  // hidden world popup data
+  const [containedHiddenWorlds, setContainedHiddenWorlds] = useState<
+    WorldDisplayData[]
+  >([]);
+
+  // special pages
+  const [showAbout, setShowAbout] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showFind, setShowFind] = useState(false);
+
+  // worlds
+  const [worlds, setWorlds] = useState<WorldDisplayData[]>([]);
+
+  // preferences
+  const [cardSize, setCardSize] = useState<CardSize>('Normal');
+
+  // loading
+  const [isLoading, setIsLoading] = useState(false);
+
+  // current folder
+  const [currentFolder, setCurrentFolder] = useState<string | SpecialFolders>(
+    SpecialFolders.All,
+  );
+
+  const { folders, refresh: refreshFolders } = useFolders();
+  const { t } = useLocalization();
+  const { toggleWorldSelection, selectAllWorlds } = useSelectedWorlds();
 
   const { checkForUpdate } = useContext(UpdateDialogContext);
 
@@ -142,26 +145,6 @@ export default function ListView() {
     return currentFolder === SpecialFolders.Find;
   }, [currentFolder]);
 
-  const saveSelectedState = (type: string | SpecialFolders) => {
-    if (type === SpecialFolders.Find) {
-      return;
-    }
-    setSelectedWorldsState((prev) => {
-      const newState = new Map(prev);
-      newState.set(type, selectedWorldsForFolder);
-      return newState;
-    });
-  };
-
-  const loadSelectedState = (type: string | SpecialFolders) => {
-    const selected = selectedWorldsState.get(type);
-    if (selected) {
-      setSelectedWorldsForFolder(selected);
-    } else {
-      setSelectedWorldsForFolder([]);
-    }
-  };
-
   const handleSelectFolder = async (
     type:
       | SpecialFolders.All
@@ -173,7 +156,6 @@ export default function ListView() {
   ) => {
     try {
       clearFilters();
-      saveSelectedState(currentFolder);
 
       setShowAbout(false);
       setShowSettings(false);
@@ -208,10 +190,8 @@ export default function ListView() {
           break;
       }
     } catch (error) {
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-load-worlds'),
-        duration: 3000,
       });
     }
   };
@@ -222,17 +202,13 @@ export default function ListView() {
       if (worlds.status === 'ok') {
         setWorlds(worlds.data);
       } else {
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: worlds.error,
-          variant: 'destructive',
         });
       }
     } catch (error) {
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-load-worlds'),
-        variant: 'destructive',
       });
     }
   };
@@ -242,17 +218,13 @@ export default function ListView() {
       if (worlds.status === 'ok') {
         setWorlds(worlds.data);
       } else {
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: worlds.error,
-          variant: 'destructive',
         });
       }
     } catch (error) {
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-load-worlds'),
-        variant: 'destructive',
       });
     }
   };
@@ -261,10 +233,8 @@ export default function ListView() {
     try {
       const hiddenWorlds = await commands.getHiddenWorlds();
       if (hiddenWorlds.status === 'error') {
-        toast({
-          title: 'Error',
+        toast('Error', {
           description: hiddenWorlds.error as string,
-          variant: 'destructive',
         });
         return;
       }
@@ -276,10 +246,8 @@ export default function ListView() {
         })),
       );
     } catch (error) {
-      toast({
-        title: 'Error',
+      toast('Error', {
         description: 'Failed to load hidden worlds',
-        variant: 'destructive',
       });
     }
   };
@@ -296,18 +264,14 @@ export default function ListView() {
       ) {
         await commands.addWorldToFolder(currentFolder, worldId);
       }
-      toast({
-        title: t('listview-page:world-added-title'),
+      toast(t('listview-page:world-added-title'), {
         description: t('listview-page:world-added-description'),
-        duration: 1000,
       });
       await refreshCurrentView();
     } catch (e) {
       error(`Failed to add world: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-add-world'),
-        variant: 'destructive',
       });
     }
   };
@@ -319,17 +283,13 @@ export default function ListView() {
         setWorlds(result.data);
         setCurrentFolder(folder);
       } else {
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: result.error,
-          variant: 'destructive',
         });
       }
     } catch (e) {
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-load-worlds'),
-        variant: 'destructive',
       });
       error(`Error loading worlds: ${e}`);
     }
@@ -342,10 +302,8 @@ export default function ListView() {
     if (result.status === 'error') {
       const e = result.error;
 
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: e as string,
-        variant: 'destructive',
       });
       error(`Failed to reload: ${e}`);
       setIsLoading(false);
@@ -358,10 +316,8 @@ export default function ListView() {
     }
 
     setIsLoading(false);
-    toast({
-      title: t('general:success-title'),
+    toast(t('general:success-title'), {
       description: t('listview-page:worlds-fetched'),
-      duration: 2000,
     });
   };
 
@@ -388,98 +344,8 @@ export default function ListView() {
           }
       }
     } catch (error) {
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-refresh-worlds'),
-        duration: 3000,
-      });
-    }
-  };
-
-  const handleHideWorld = async (worldId: string[], worldName: string[]) => {
-    try {
-      // Store original folder information for each world before hiding
-      const worldFoldersMap = new Map<string, string[]>();
-
-      // Get folder information for each world (this is already fast - just in-memory lookup)
-      for (const id of worldId) {
-        const world = worlds.find((w) => w.worldId === id);
-        if (world) {
-          worldFoldersMap.set(id, [...world.folders]);
-        }
-      }
-
-      // Hide worlds in parallel instead of one by one
-      await Promise.all(worldId.map((id) => commands.hideWorld(id)));
-
-      toast({
-        title: t('listview-page:worlds-hidden-title'),
-        description: (
-          <div className="flex w-full items-center justify-between gap-2">
-            <span>
-              {worldName.length > 1
-                ? t(
-                    'listview-page:worlds-hidden-multiple',
-                    worldName[0],
-                    worldName.length - 1,
-                  )
-                : t('listview-page:worlds-hidden-single', worldName[0])}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                try {
-                  // Parallel unhide and folder restoration
-                  await Promise.all(
-                    worldId.map(async (id) => {
-                      await commands.unhideWorld(id);
-
-                      // Restore folders for this world
-                      const originalFolders = worldFoldersMap.get(id);
-                      if (originalFolders?.length) {
-                        await Promise.all(
-                          originalFolders.map((folder) =>
-                            commands.addWorldToFolder(folder, id),
-                          ),
-                        );
-                      }
-                    }),
-                  );
-
-                  await refreshCurrentView();
-                  toast({
-                    title: t('listview-page:restored-title'),
-                    description: t('listview-page:worlds-restored'),
-                  });
-                } catch (e) {
-                  error(`Failed to restore worlds: ${e}`);
-                  toast({
-                    title: t('general:error-title'),
-                    description: t('listview-page:error-restore-worlds'),
-                    variant: 'destructive',
-                  });
-                }
-              }}
-            >
-              {t('listview-page:undo-button')}
-            </Button>
-          </div>
-        ),
-        duration: 3000,
-        className: 'relative',
-        style: {
-          '--progress': '100%',
-        } as React.CSSProperties,
-      });
-
-      await refreshCurrentView();
-    } catch (e) {
-      error(`Failed to hide world: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-hide-world'),
-        variant: 'destructive',
       });
     }
   };
@@ -491,8 +357,7 @@ export default function ListView() {
       // Unhide all worlds in parallel
       await Promise.all(worldIds.map((id) => commands.unhideWorld(id)));
 
-      toast({
-        title: t('listview-page:restored-title'),
+      toast(t('listview-page:restored-title'), {
         description: (
           <div className="flex w-full items-center justify-between gap-2">
             <span>{t('listview-page:worlds-restored')}</span>
@@ -507,16 +372,13 @@ export default function ListView() {
                   );
 
                   await refreshCurrentView();
-                  toast({
-                    title: t('listview-page:worlds-hidden-title'),
+                  toast(t('listview-page:worlds-hidden-title'), {
                     description: t('listview-page:worlds-hidden-again'),
                   });
                 } catch (e) {
                   error(`Failed to restore worlds: ${e}`);
-                  toast({
-                    title: t('general:error-title'),
+                  toast(t('general:error-title'), {
                     description: t('listview-page:error-hide-world'),
-                    variant: 'destructive',
                   });
                 }
               }}
@@ -525,16 +387,13 @@ export default function ListView() {
             </Button>
           </div>
         ),
-        duration: 3000,
       });
 
       await refreshCurrentView();
     } catch (e) {
       error(`Failed to restore worlds: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-restore-worlds'),
-        variant: 'destructive',
       });
     }
   };
@@ -548,8 +407,7 @@ export default function ListView() {
         worldIds.map((id) => commands.removeWorldFromFolder(currentFolder, id)),
       );
 
-      toast({
-        title: t('listview-page:worlds-removed-title'),
+      toast(t('listview-page:worlds-removed-title'), {
         description: (
           <div className="flex w-full items-center justify-between gap-2">
             <span>{t('listview-page:removed-from-folder', currentFolder)}</span>
@@ -566,16 +424,13 @@ export default function ListView() {
                   );
 
                   await refreshCurrentView();
-                  toast({
-                    title: t('listview-page:restored-title'),
+                  toast(t('listview-page:restored-title'), {
                     description: t('listview-page:worlds-restored-to-folder'),
                   });
                 } catch (e) {
                   error(`Failed to restore worlds: ${e}`);
-                  toast({
-                    title: t('general:error-title'),
+                  toast(t('general:error-title'), {
                     description: t('listview-page:error-restore-worlds'),
-                    variant: 'destructive',
                   });
                 }
               }}
@@ -584,7 +439,6 @@ export default function ListView() {
             </Button>
           </div>
         ),
-        duration: 3000,
         className: 'relative',
         style: {
           '--progress': '100%',
@@ -594,10 +448,8 @@ export default function ListView() {
       await refreshCurrentView();
     } catch (e) {
       error(`Failed to remove worlds from folder: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('listview-page:error-remove-from-folder'),
-        variant: 'destructive',
       });
     }
   };
@@ -640,7 +492,6 @@ export default function ListView() {
                   worldsToAdd.length,
                 )
               : t('listview-page:worlds-added-description-single'),
-          duration: 1000,
         });
       }
       // Store original state for each world-folder combination
@@ -745,7 +596,6 @@ export default function ListView() {
                     toast({
                       title: t('general:error-title'),
                       description: t('listview-page:error-undo-folder-changes'),
-                      variant: 'destructive',
                     });
                   }
                 }}
@@ -754,7 +604,6 @@ export default function ListView() {
               </Button>
             </div>
           ),
-          duration: 3000,
           className: 'relative',
           style: {
             '--progress': '100%',
@@ -770,7 +619,6 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-update-folders'),
-        variant: 'destructive',
       });
     }
   };
@@ -797,7 +645,6 @@ export default function ListView() {
         toast({
           title: t('general:error-title'),
           description: error as string,
-          variant: 'destructive',
         });
         return;
       }
@@ -812,7 +659,6 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-create-instance'),
-        variant: 'destructive',
       });
     }
   };
@@ -849,7 +695,6 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-create-group-instance'),
-        variant: 'destructive',
       });
     }
   };
@@ -866,7 +711,6 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-get-groups'),
-        variant: 'destructive',
       });
       return [];
     }
@@ -886,7 +730,6 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-get-group-permissions'),
-        variant: 'destructive',
       });
       throw new Error('Group permissions not found');
     }
@@ -900,7 +743,6 @@ export default function ListView() {
         toast({
           title: t('general:error-title'),
           description: t('listview-page:error-delete-world'),
-          variant: 'destructive',
         });
         return;
       }
@@ -909,14 +751,12 @@ export default function ListView() {
       toast({
         title: t('general:success-title'),
         description: t('listview-page:world-deleted-success'),
-        duration: 2000,
       });
     } catch (e) {
       error(`Failed to delete world: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-delete-world'),
-        variant: 'destructive',
       });
     }
   };
@@ -932,7 +772,6 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-load-card-size'),
-        variant: 'destructive',
       });
     }
   };
@@ -1004,7 +843,6 @@ export default function ListView() {
             toast({
               title: t('general:error-title'),
               description: result.error,
-              variant: 'destructive',
             });
           }
         } catch (e) {
@@ -1012,7 +850,6 @@ export default function ListView() {
           toast({
             title: t('general:error-title'),
             description: t('listview-page:error-search-memo-text'),
-            variant: 'destructive',
           });
         }
       }
@@ -1603,13 +1440,11 @@ export default function ListView() {
             'listview-page:folder-imported-description',
             result.data[0],
           ),
-          duration: 2000,
         });
       } else {
         toast({
           title: t('general:error-title'),
           description: t('listview-page:error-import-folder'),
-          variant: 'destructive',
         });
       }
     } catch (e) {
@@ -1617,7 +1452,6 @@ export default function ListView() {
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-import-folder'),
-        variant: 'destructive',
       });
     }
   };
@@ -1628,7 +1462,6 @@ export default function ListView() {
         toast({
           title: t('general:error-title'),
           description: t('listview-page:error-no-hidden-worlds'),
-          variant: 'destructive',
         });
         return;
       }
@@ -1645,14 +1478,12 @@ export default function ListView() {
           'listview-page:restored-hidden-worlds-description',
           containedHiddenWorlds.length,
         ),
-        duration: 2000,
       });
     } catch (e) {
       error(`Failed to restore hidden worlds: ${e}`);
       toast({
         title: t('general:error-title'),
         description: t('listview-page:error-restore-hidden-worlds'),
-        variant: 'destructive',
       });
     }
   };
