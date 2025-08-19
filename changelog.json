@@ -1,59 +1,73 @@
 [
-    {
-        "version": "1.1.0",
-        "features": [
-            {
-                "text": "Show changelog for updates",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "更新時に変更ログを表示"
-                    }
-                ]
-            },
-            {
-                "text": "Added selection for update channel",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "更新チャネルの選択を追加"
-                    }
-                ]
-            },
-            {
-                "text": "Added memo text searching in advanced search",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "詳細検索でメモのテキスト検索を追加"
-                    }
-                ]
-            }
-        ],
-        "fixes": [
-            {
-                "text": "Fixed link for github repository in about page",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "「このアプリについて」のGitHubリポジトリへのリンクを修正"
-                    }
-                ]
-            }
+  {
+    "version": "1.1.1",
+    "features": [
+      {
+        "text": "Fixed login not working for some users under a certain condition",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "特定の条件下で一部のユーザーがログインできない問題を修正"
+          }
         ]
-    },
-    {
-        "version": "1.0.0",
-        "features": [
-            {
-                "text": "Initial Release",
-                "langs": [
-                    {
-                        "lang": ["ja-JP"],
-                        "text": "初期リリース"
-                    }
-                ]
-            }
+      }
+    ]
+  },
+  {
+    "version": "1.1.0",
+    "features": [
+      {
+        "text": "Show changelog for updates",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "更新時に変更ログを表示"
+          }
         ]
-    }
+      },
+      {
+        "text": "Added selection for update channel",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "更新チャネルの選択を追加"
+          }
+        ]
+      },
+      {
+        "text": "Added memo text searching in advanced search",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "詳細検索でメモのテキスト検索を追加"
+          }
+        ]
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Fixed link for github repository in about page",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "「このアプリについて」のGitHubリポジトリへのリンクを修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "features": [
+      {
+        "text": "Initial Release",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "初期リリース"
+          }
+        ]
+      }
+    ]
+  }
 ]
