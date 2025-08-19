@@ -547,7 +547,6 @@ const WelcomePage: React.FC = () => {
                         platform: Platform.CrossPlatform,
                         folders: [],
                         tags: [],
-                        capacity: 16,
                       }}
                     />
                   </div>

@@ -1,26 +1,11 @@
 use log::info;
 
-use crate::definitions::{
-    FolderModel, PreferenceModel, WorldApiData, WorldDisplayData, WorldModel,
-};
+use crate::definitions::{FolderModel, WorldApiData, WorldDisplayData, WorldModel};
 use crate::errors::{AppError, ConcurrencyError, EntityError};
-use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 
 use super::FileService;
-
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-pub struct FolderData {
-    pub name: String,
-    pub world_count: u16,
-}
-
-impl FolderData {
-    pub fn new(name: String, world_count: u16) -> Self {
-        Self { name, world_count }
-    }
-}
 
 /// Service for managing world/folder operations
 #[derive(Debug)]
@@ -243,26 +228,23 @@ impl FolderManager {
         Ok(())
     }
 
-    /// Get the names of all folders, and the number of worlds in each folder
+    /// Get the names of all folders
     ///
     /// # Arguments
     /// * `folders` - The list of folders, as a RwLock
     ///
     /// # Returns
-    /// A vector of folder names, each paired with the number of worlds in that folder
+    /// A vector of folder names
     ///
     /// # Errors
     /// Returns an error if the folders lock is poisoned
     #[must_use]
-    pub fn get_folders(folders: &RwLock<Vec<FolderModel>>) -> Result<Vec<FolderData>, AppError> {
+    pub fn get_folders(folders: &RwLock<Vec<FolderModel>>) -> Result<Vec<String>, AppError> {
         let folders_lock = folders.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
-        let mut folder_data: Vec<FolderData> = Vec::new();
-        for folder in folders_lock.iter() {
-            let world_count = folder.world_ids.len() as u16;
-            folder_data.push(FolderData::new(folder.folder_name.clone(), world_count));
-        }
-        Ok(folder_data)
+        let folder_names = folders_lock.iter().map(|f| f.folder_name.clone()).collect();
+        Ok(folder_names)
     }
+
     /// Returns a unique name for a folder, as a string
     /// If the passed name is "", the default name "New Folder" is used
     /// If the folder already exists, we append a number to the name
@@ -424,9 +406,6 @@ impl FolderManager {
     /// * `new_name` - The new name of the folder
     /// * `folders` - The list of folders, as a RwLock
     /// * `worlds` - The list of worlds, as a RwLock
-    /// * `preferences` - The preferences, as a RwLock. Used to store user-specific settings
-    ///   and configurations that may influence folder renaming behavior, such as naming conventions
-    ///   or restrictions.
     ///
     /// # Returns
     /// Ok if the folder was renamed successfully
@@ -440,19 +419,7 @@ impl FolderManager {
         new_name: String,
         folders: &RwLock<Vec<FolderModel>>,
         worlds: &RwLock<Vec<WorldModel>>,
-        preferences: &RwLock<PreferenceModel>,
     ) -> Result<(), AppError> {
-        let mut preferences_lock = preferences
-            .write()
-            .map_err(|_| ConcurrencyError::PoisonedLock)?;
-
-        if let Some(starred_selector) = &mut preferences_lock.filter_item_selector_starred {
-            if let Some(folder_index) = starred_selector.folder.iter().position(|f| f == &old_name)
-            {
-                starred_selector.folder[folder_index] = new_name.clone();
-            }
-        }
-
         let mut folders_lock = folders
             .write()
             .map_err(|_| ConcurrencyError::PoisonedLock)?;
@@ -796,34 +763,6 @@ impl FolderManager {
         Ok(())
     }
 
-    /// Gets the folders for a world
-    /// This is done by checking the folders for the world_id
-    /// If the world is not found, return an error
-    ///
-    /// # Arguments
-    /// * `world_id` - The ID of the world to get folders for
-    /// * `worlds` - The list of worlds, as a RwLock
-    ///
-    /// # Returns
-    /// A vector of folder names that the world is in
-    /// # Errors
-    /// Returns an error if the world is not found
-    /// Returns an error if the worlds lock is poisoned
-    #[must_use]
-    pub fn get_folders_for_world(
-        world_id: String,
-        worlds: &RwLock<Vec<WorldModel>>,
-    ) -> Result<Vec<String>, AppError> {
-        let worlds_lock = worlds.read().map_err(|_| ConcurrencyError::PoisonedLock)?;
-        let world = worlds_lock.iter().find(|w| w.api_data.world_id == world_id);
-        if world.is_none() {
-            return Err(EntityError::WorldNotFound(world_id).into());
-        }
-        let world = world.unwrap();
-        let folders = world.user_data.folders.clone();
-        Ok(folders)
-    }
-
     /// Set the share field of a folder
     /// Set the given ID and expiry time for the share
     /// If the folder does not exist, return an error
@@ -1132,6 +1071,30 @@ mod tests {
             log::error!("Error getting unclassified worlds: {}", e);
         }
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_folder() {
+        let state = setup_test_state();
+
+        // Create test folders
+        let folder1 = FolderManager::create_folder("Folder 1".to_string(), &state.folders).unwrap();
+        let folder2 = FolderManager::create_folder("Folder 2".to_string(), &state.folders).unwrap();
+        let folder3 = FolderManager::create_folder("Folder 3".to_string(), &state.folders).unwrap();
+
+        // Test moving folder to new position
+        let result = FolderManager::move_folder(folder2.clone(), 0, &state.folders);
+        assert!(result.is_ok());
+
+        // Verify new order
+        let folders = FolderManager::get_folders(&state.folders).unwrap();
+        assert_eq!(folders[0], folder2);
+        assert_eq!(folders[1], folder1);
+        assert_eq!(folders[2], folder3);
+
+        // Test moving non-existent folder
+        let result = FolderManager::move_folder("NonExistent".to_string(), 0, &state.folders);
+        assert!(result.is_err());
     }
 
     #[test]

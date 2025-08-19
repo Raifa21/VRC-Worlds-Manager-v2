@@ -150,7 +150,7 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async getFolders(): Promise<Result<FolderData[], string>> {
+  async getFolders(): Promise<Result<string[], string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_folders') };
     } catch (e) {
@@ -269,17 +269,6 @@ export const commands = {
       return {
         status: 'ok',
         data: await TAURI_INVOKE('delete_world', { worldId }),
-      };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getFoldersForWorld(worldId: string): Promise<Result<string[], string>> {
-    try {
-      return {
-        status: 'ok',
-        data: await TAURI_INVOKE('get_folders_for_world', { worldId }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -821,21 +810,6 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async exportToPortalLibrarySystem(
-    folders: string[],
-  ): Promise<Result<null, string>> {
-    try {
-      return {
-        status: 'ok',
-        data: await TAURI_INVOKE('export_to_portal_library_system', {
-          folders,
-        }),
-      };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
   async migrateOldData(
     worldsPath: string,
     foldersPath: string,
@@ -925,7 +899,6 @@ export type FilterItemSelectorStarredType =
   | 'Tag'
   | 'ExcludeTag'
   | 'Folder';
-export type FolderData = { name: string; world_count: number };
 export type FolderRemovalPreference = 'ask' | 'alwaysRemove' | 'neverRemove';
 export type GroupInstanceCreateAllowedType = {
   normal: boolean;
@@ -1041,7 +1014,6 @@ export type WorldDisplayData = {
   platform: Platform;
   folders: string[];
   tags: string[];
-  capacity: number;
 };
 
 /** tauri-specta globals **/

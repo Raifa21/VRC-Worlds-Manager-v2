@@ -90,19 +90,6 @@ Backend code changes will trigger an automatic restart.
 > Modifying backend code triggers a dev build on every save, which can slow development.  
 > It is recommended to restart only when necessary.
 
-### Useful Commands
-
-Sometimes after merging a PR on GitHub, the remote branch is deleted, but the local branch still remains.
-To avoid clutter, you can clean up your local branches that:
- - Were already merged and deleted on GitHub
- - 	Were previously pushed, but are now gone on origin
- - Are not your private local-only branches
-
-```
-git fetch --prune
-git branch -vv | grep ': gone]' | awk '{print $1}' | xargs -n 1 git branch -d
-```
-
 ## Code Formatting
 
 Use the following commands to format the code:

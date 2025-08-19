@@ -8,20 +8,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useFolders } from '@/hooks/use-folders';
 import { useLocalization } from '@/hooks/use-localization';
 
 interface DeleteFolderDialogProps {
   folderName: string | null;
   onOpenChange: (open: boolean) => void;
+  onConfirm: (name: string) => void;
 }
 
 export function DeleteFolderDialog({
   folderName,
   onOpenChange,
+  onConfirm,
 }: DeleteFolderDialogProps) {
   const { t } = useLocalization();
-  const { deleteFolder } = useFolders();
   return (
     <AlertDialog open={!!folderName} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -36,7 +36,7 @@ export function DeleteFolderDialog({
             {t('general:cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => folderName && deleteFolder(folderName)}
+            onClick={() => folderName && onConfirm(folderName)}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {t('general:delete')}

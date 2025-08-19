@@ -1,6 +1,3 @@
-use tauri::AppHandle;
-use tauri::State;
-
 use crate::api::group::GroupInstancePermissionInfo;
 use crate::api::group::UserGroup;
 use crate::definitions::WorldDetails;
@@ -208,7 +205,6 @@ pub async fn create_world_instance(
     world_id: String,
     instance_type_str: String,
     region_str: String,
-    handle: State<'_, AppHandle>,
 ) -> Result<(), String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
     let user_id = INITSTATE.get().read().await.user_id.clone();
@@ -219,7 +215,6 @@ pub async fn create_world_instance(
         region_str,
         cookie_store,
         user_id,
-        (*handle).clone(),
     )
     .await;
 
@@ -279,7 +274,6 @@ pub async fn create_group_instance(
     allowed_roles: Option<Vec<String>>,
     region_str: String,
     queue_enabled: bool,
-    handle: State<'_, AppHandle>,
 ) -> Result<(), String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
 
@@ -291,7 +285,6 @@ pub async fn create_group_instance(
         region_str,
         queue_enabled,
         cookie_store,
-        (*handle).clone(),
     )
     .await;
 

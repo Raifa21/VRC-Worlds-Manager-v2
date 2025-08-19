@@ -8,4 +8,3 @@ pub use definitions::InstanceRegion;
 pub use definitions::InstanceType;
 
 pub use logic::create_instance;
-pub use logic::get_instance_short_name;

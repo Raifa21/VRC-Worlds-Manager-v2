@@ -11,21 +11,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLocalization } from '@/hooks/use-localization';
 import { Label } from './ui/label';
-import { useFolders } from '@/hooks/use-folders';
 
 interface CreateFolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onConfirm: (name: string) => Promise<void>;
   onImportFolder?: (UUID: string) => Promise<void>;
 }
 
 export function CreateFolderDialog({
   open,
   onOpenChange,
+  onConfirm,
   onImportFolder,
 }: CreateFolderDialogProps) {
   const { t } = useLocalization();
-  const { createFolder } = useFolders();
   const [folderName, setFolderName] = useState('');
   const [importUUID, setImportUUID] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +52,7 @@ export function CreateFolderDialog({
     if (!folderName) return;
     setIsLoading(true);
     try {
-      await createFolder(folderName);
+      await onConfirm(folderName);
       setFolderName('');
       onOpenChange(false);
     } catch (e) {
