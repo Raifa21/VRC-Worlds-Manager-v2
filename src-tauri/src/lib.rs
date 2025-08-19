@@ -88,7 +88,8 @@ pub fn run() {
                         file_name: Some(log_path),
                     })
                 })
-                .level(log::LevelFilter::Info)
+                .level(log::LevelFilter::Debug)
+                .level_for("cookie_store", log::LevelFilter::Info)
                 .build(),
         )
         .setup(move |app| {
