@@ -5,7 +5,7 @@ import { useLocalization } from '@/hooks/use-localization';
 import { invoke } from '@tauri-apps/api/core';
 import { useToast } from '@/hooks/use-toast';
 import { CreateFolderDialog } from '@/components/create-folder-dialog';
-import { useFolders } from '../listview/hook';
+import { useFolders } from '@/hooks/use-folders';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Platform } from '@/types/worlds';
 import { WorldGrid } from '@/components/world-grid';
@@ -64,7 +64,9 @@ import { Input } from '@/components/ui/input';
 type SortField =
   | 'name'
   | 'authorName'
+  | 'visits'
   | 'favorites'
+  | 'capacity'
   | 'dateAdded'
   | 'lastUpdated';
 
@@ -78,7 +80,7 @@ export default function ListView() {
   const clearRef = useRef<HTMLButtonElement>(null);
   const [wrapFolders, setWrapFolders] = useState(false);
 
-  const { folders, loadFolders } = useFolders();
+  const { folders, refresh: refreshFolders } = useFolders();
   const { toast } = useToast();
   const { t } = useLocalization();
   const gridScrollRef = useRef<HTMLDivElement>(null);
@@ -282,33 +284,6 @@ export default function ListView() {
     }
   };
 
-  const handleCreateFolder = async (name: string) => {
-    try {
-      const newName = await invoke<string>('create_folder', { name: name });
-      await loadFolders();
-
-      // Only navigate to the new folder if not in Find page or if add-to-folder dialog is open
-      if (currentFolder !== SpecialFolders.Find && !showFolderDialog) {
-        setShowCreateFolder(false);
-        handleSelectFolder('folder', newName);
-      } else {
-        setShowCreateFolder(false);
-      }
-      toast({
-        title: t('listview-page:folder-created-title'),
-        description: t('listview-page:folder-created-description', newName),
-        duration: 2000,
-      });
-    } catch (e) {
-      error(`Failed to create folder: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-create-folder'),
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleAddWorld = async (worldId: string) => {
     try {
       const world = await commands.getWorld(worldId, null);
@@ -392,6 +367,7 @@ export default function ListView() {
 
   const refreshCurrentView = async () => {
     try {
+      refreshFolders();
       info('Refreshing current view');
       info(`Current folder: ${currentFolder}`);
       switch (currentFolder) {
@@ -693,7 +669,7 @@ export default function ListView() {
 
         // Gather all remove operations - with validation
         const validFoldersToRemove = foldersToRemove.filter((folder) =>
-          folders.includes(folder),
+          folders.some((f) => f.name === folder),
         );
 
         for (const folder of validFoldersToRemove) {
@@ -916,7 +892,6 @@ export default function ListView() {
     }
   };
 
-  // Create a proper handleDeleteWorld function like your other handlers
   const handleDeleteWorld = async (worldId: string) => {
     try {
       const result = await commands.deleteWorld(worldId);
@@ -966,49 +941,9 @@ export default function ListView() {
     loadCardSize();
   }, [showSettings]);
 
-  const onRenameFolder = async (oldName: string, newName: string) => {
-    try {
-      await commands.renameFolder(oldName, newName);
-      await loadFolders();
-      toast({
-        title: t('listview-page:folder-renamed-title'),
-        description: t('listview-page:folder-renamed-description', newName),
-      });
-    } catch (e) {
-      error(`Failed to rename folder: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-rename-folder'),
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteFolder = async (folderName: string) => {
-    try {
-      await commands.deleteFolder(folderName);
-      await loadFolders();
-      setShowDeleteFolder(null);
-      // if we are deleting the current folder, reset to All
-      if (currentFolder === folderName) {
-        handleSelectFolder(SpecialFolders.All);
-        await loadAllWorlds();
-      }
-      toast({
-        title: 'Success',
-        description: 'Folder deleted successfully',
-      });
-    } catch (e) {
-      error(`Failed to delete folder: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-delete-folder'),
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>([]);
+  const [filteredWorlds, setFilteredWorlds] = useState<WorldDisplayData[]>(
+    worlds || [],
+  );
 
   useEffect(() => {
     // Synchronous filtering (except memotext)
@@ -1057,42 +992,45 @@ export default function ListView() {
       return finalMatch;
     });
 
-    // If no memotext filter, set directly
-    if (!memoTextFilter) {
-      setFilteredWorlds(baseFiltered);
-      return;
-    }
-
-    // Otherwise, filter by memo text asynchronously
-    const filterByMemoText = async () => {
-      try {
-        const result = await commands.searchMemoText(memoTextFilter);
-        if (result.status === 'ok') {
-          setFilteredWorlds(
-            baseFiltered.filter((world) =>
-              result.data.some((worldId) => world.worldId === worldId),
-            ),
-          );
-        } else {
+    // Perform filtering, including memo text if applicable
+    const filterWorlds = async () => {
+      let memoTextWorldIds = null;
+      if (memoTextFilter) {
+        try {
+          const result = await commands.searchMemoText(memoTextFilter);
+          if (result.status === 'ok') {
+            memoTextWorldIds = new Set(result.data);
+          } else {
+            toast({
+              title: t('general:error-title'),
+              description: result.error,
+              variant: 'destructive',
+            });
+          }
+        } catch (e) {
+          error(`Error searching memo text: ${e}`);
           toast({
             title: t('general:error-title'),
-            description: result.error,
+            description: t('listview-page:error-search-memo-text'),
             variant: 'destructive',
           });
-          setFilteredWorlds(baseFiltered);
         }
-      } catch (e) {
-        error(`Error searching memo text: ${e}`);
-        toast({
-          title: t('general:error-title'),
-          description: t('listview-page:error-search-memo-text'),
-          variant: 'destructive',
-        });
-        setFilteredWorlds(baseFiltered);
       }
+
+      const finalFiltered = worlds.filter((world) =>
+        doesWorldMatchFilters(
+          world,
+          searchQuery,
+          authorFilter,
+          tagFilters,
+          folderFilters,
+          memoTextWorldIds,
+        ),
+      );
+      setFilteredWorlds(finalFiltered);
     };
 
-    filterByMemoText();
+    filterWorlds();
   }, [
     worlds,
     searchQuery,
@@ -1104,7 +1042,9 @@ export default function ListView() {
 
   const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
     switch (field) {
+      case 'visits':
       case 'favorites':
+      case 'capacity':
       case 'dateAdded':
       case 'lastUpdated':
         return 'desc';
@@ -1131,8 +1071,12 @@ export default function ListView() {
           return multiplier * a.name.localeCompare(b.name);
         case 'authorName':
           return multiplier * a.authorName.localeCompare(b.authorName);
+        case 'visits':
+          return multiplier * (a.visits - b.visits);
         case 'favorites':
           return multiplier * (a.favorites - b.favorites);
+        case 'capacity':
+          return multiplier * (a.capacity - b.capacity);
         case 'dateAdded': {
           const dateA = a.dateAdded || '';
           const dateB = b.dateAdded || '';
@@ -1182,7 +1126,7 @@ export default function ListView() {
           onOpenHiddenFolder={() => {
             handleSelectFolder(SpecialFolders.Hidden);
           }}
-          onDataChange={loadFolders}
+          onDataChange={refreshFolders}
         />
       );
     }
@@ -1254,8 +1198,14 @@ export default function ListView() {
                   <SelectItem value="authorName">
                     {t('general:author')}
                   </SelectItem>
+                  <SelectItem value="visits">
+                    {t('world-grid:sort-visits')}
+                  </SelectItem>
                   <SelectItem value="favorites">
                     {t('world-grid:sort-favorites')}
+                  </SelectItem>
+                  <SelectItem value="capacity">
+                    {t('world-grid:sort-capacity')}
                   </SelectItem>
                   <SelectItem value="dateAdded">
                     {t('general:date-added')}
@@ -1640,7 +1590,7 @@ export default function ListView() {
       if (result.status === 'ok') {
         const folderName = result.data[0];
         const hiddenWorlds = result.data[1];
-        await loadFolders();
+        await refreshFolders();
         setShowCreateFolder(false);
         handleSelectFolder('folder', folderName);
         if (hiddenWorlds.length > 0) {
@@ -1710,8 +1660,6 @@ export default function ListView() {
   return (
     <div className="flex h-screen">
       <AppSidebar
-        folders={folders}
-        onFoldersChange={loadFolders}
         onAddFolder={() => setShowCreateFolder(true)}
         onSelectFolder={handleSelectFolder}
         selectedFolder={currentFolder}
@@ -1729,7 +1677,6 @@ export default function ListView() {
           setShowWorldDetails(false);
           setCurrentFolder(SpecialFolders.NotFolder);
         }}
-        onRenameFolder={onRenameFolder}
         onDeleteFolder={(folderName) => setShowDeleteFolder(folderName)}
       />
       <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">
@@ -1824,7 +1771,6 @@ export default function ListView() {
             setShowCreateFolder(false);
           }
         }}
-        onConfirm={handleCreateFolder}
         onImportFolder={handleImportFolder}
       />
       <AddWorldPopup
@@ -1872,12 +1818,10 @@ export default function ListView() {
         selectedWorlds={worlds.filter((world) =>
           selectedWorldsForFolder.includes(world.worldId),
         )}
-        folders={folders}
         onConfirm={(foldersToAdd, foldersToRemove) =>
           handleAddToFolders(foldersToAdd, foldersToRemove)
         }
         isFindPage={isFindPage}
-        onAddFolder={handleCreateFolder}
         currentFolder={currentFolder}
       />
       <ShareFolderPopup
@@ -1896,7 +1840,6 @@ export default function ListView() {
             setShowDeleteFolder(null);
           }
         }}
-        onConfirm={handleDeleteFolder}
       />
       <AdvancedSearchPanel
         open={showAdvancedSearch}
@@ -1922,4 +1865,54 @@ export default function ListView() {
       />
     </div>
   );
+}
+function doesWorldMatchFilters(
+  world: WorldDisplayData,
+  searchQuery: string,
+  authorFilter: string,
+  tagFilters: string[],
+  folderFilters: string[],
+  memoTextWorldIds: Set<string> | null,
+): boolean {
+  // Text search: name or authorName (case-insensitive, also romaji)
+  const textMatch =
+    !searchQuery ||
+    world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    world.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    toRomaji(world.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    toRomaji(world.authorName)
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+  // Author filter: exact match (case-insensitive)
+  const authorMatch =
+    !authorFilter ||
+    world.authorName.toLowerCase() === authorFilter.toLowerCase();
+
+  // Tag filters: all tags must match (AND logic, exact match with prefix)
+  const tagMatch =
+    tagFilters.length === 0 ||
+    (world.tags &&
+      tagFilters.every((searchTag) => {
+        const prefixedTag = `author_tag_${searchTag}`;
+        return world.tags.some(
+          (worldTag) => worldTag.toLowerCase() === prefixedTag.toLowerCase(),
+        );
+      }));
+
+  // Folder filters: world must be in all specified folders (AND logic, exact match)
+  const folderMatch =
+    folderFilters.length === 0 ||
+    folderFilters.every((searchFolder) =>
+      world.folders.some(
+        (worldFolder) =>
+          worldFolder.toLowerCase() === searchFolder.toLowerCase(),
+      ),
+    );
+
+  // Memo text filter: if present, worldId must be in memoTextWorldIds
+  const memoTextMatch =
+    memoTextWorldIds == null || memoTextWorldIds.has(world.worldId);
+
+  return textMatch && authorMatch && tagMatch && folderMatch && memoTextMatch;
 }

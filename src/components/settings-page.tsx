@@ -28,6 +28,7 @@ import {
   Upload,
   FolderOpen,
   Save,
+  FolderUp,
 } from 'lucide-react';
 import { LocalizationContext } from './localization-context';
 import { info, error } from '@tauri-apps/plugin-log';
@@ -38,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RestoreBackupDialog } from '@/components/restore-backup-dialog';
 import { MigrationPopup } from '@/components/migration-popup';
 import { DeleteDataConfirmationDialog } from '@/components/delete-data-confirmation-dialog';
+import { ExportPopup, ExportType } from './export-popup';
 
 interface SettingsPageProps {
   onCardSizeChange?: () => void;
@@ -66,6 +68,52 @@ export function SettingsPage({
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [showMigrateDialog, setShowMigrateDialog] = React.useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+
+  // Add missing export confirm handler
+  const handleExportConfirm = async (
+    folders: string[],
+    exportType: ExportType,
+  ) => {
+    try {
+      let result;
+      switch (exportType) {
+        case ExportType.PLS:
+          info('Exporting to Portal Library System...');
+          result = await commands.exportToPortalLibrarySystem(folders);
+          break;
+        default:
+          error(`Unknown export type: ${exportType}`);
+          toast({
+            title: t('general:error-title'),
+            description: t('settings-page:error-unknown-export-type'),
+            variant: 'destructive',
+          });
+          return;
+      }
+      if (result.status === 'error') {
+        error(`Export failed: ${result.error}`);
+        toast({
+          title: t('general:error-title'),
+          description: t('settings-page:error-export-data'),
+          variant: 'destructive',
+        });
+        return;
+      }
+      info('Export completed successfully');
+      toast({
+        title: t('settings-page:export-success-title'),
+        description: t('settings-page:export-success-description'),
+      });
+    } catch (e) {
+      error(`Export error: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('settings-page:error-export-data'),
+        variant: 'destructive',
+      });
+    }
+  };
 
   React.useEffect(() => {
     const loadPreferences = async () => {
@@ -461,19 +509,20 @@ export function SettingsPage({
   return (
     <div className="container max-w-4xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold">{t('general:settings')}</h1>
-
       <Tabs defaultValue="preferences" className="w-full">
-        <TabsList className="grid grid-cols-3 mb-6">
-          <TabsTrigger value="preferences">
-            {t('settings-page:section-preferences')}
-          </TabsTrigger>
-          <TabsTrigger value="data-management">
-            {t('settings-page:section-data-management')}
-          </TabsTrigger>
-          <TabsTrigger value="others">
-            {t('settings-page:section-others')}
-          </TabsTrigger>
-        </TabsList>
+        <div className="sticky top-0 z-10 bg-background pt-2 pb-2">
+          <TabsList className="grid grid-cols-3">
+            <TabsTrigger value="preferences">
+              {t('settings-page:section-preferences')}
+            </TabsTrigger>
+            <TabsTrigger value="data-management">
+              {t('settings-page:section-data-management')}
+            </TabsTrigger>
+            <TabsTrigger value="others">
+              {t('settings-page:section-others')}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="preferences" className="space-y-4">
           <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
@@ -568,6 +617,7 @@ export function SettingsPage({
                 platform: Platform.CrossPlatform,
                 folders: [],
                 tags: [],
+                capacity: 16,
               }}
             />
           </Card>
@@ -624,6 +674,24 @@ export function SettingsPage({
                 </span>
               </Button>
             </div>
+          </Card>
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:export-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:export-description')}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowExportDialog(true)}
+              className="gap-2"
+            >
+              <FolderUp className="h-4 w-4" />
+              <span className="text-sm">{t('settings-page:export-data')}</span>
+            </Button>
           </Card>
 
           <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
@@ -771,7 +839,11 @@ export function SettingsPage({
         onOpenChange={setShowRestoreDialog}
         onConfirm={handleRestoreConfirm}
       />
-
+      <ExportPopup
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        onConfirm={handleExportConfirm}
+      />
       <MigrationPopup
         open={showMigrateDialog}
         onOpenChange={setShowMigrateDialog}
