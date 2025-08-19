@@ -295,7 +295,9 @@ impl VRChatAPIClientAuthenticator {
     }
 
     fn generate_auth_header<S: AsRef<str>>(&self, password: S) -> String {
-        let auth_value = format!("{}:{}", self.username, password.as_ref());
+        let uriencoded_username = urlencoding::encode(&self.username);
+        let uriencoded_password = urlencoding::encode(password.as_ref());
+        let auth_value = format!("{}:{}", uriencoded_username, uriencoded_password);
         let encoded_value = BASE64_STANDARD.encode(auth_value);
         format!("Basic {}", encoded_value)
     }
