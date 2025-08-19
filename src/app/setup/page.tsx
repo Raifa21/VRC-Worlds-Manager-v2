@@ -162,8 +162,7 @@ const WelcomePage: React.FC = () => {
               : null;
 
       if (errorResult) {
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t(
             'setup-page:toast:error:save-preference:message',
             errorResult.error,
