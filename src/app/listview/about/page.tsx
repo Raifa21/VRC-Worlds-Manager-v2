@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { commands } from '@/lib/bindings';
 import { info, error } from '@tauri-apps/plugin-log';
 
-export function AboutSection() {
+export default function AboutSection() {
   const { t } = useLocalization();
   const [orderedSupporters, setOrderedSupporters] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);

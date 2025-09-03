@@ -30,7 +30,7 @@ import { DeleteDataConfirmationDialog } from '@/app/listview/settings/components
 import { ExportPopup } from './components/popups/export';
 import { useSettingsPage } from './hook';
 
-export function SettingsPage() {
+export default function SettingsPage() {
   const {
     cardSize,
     language,
@@ -162,7 +162,7 @@ export function SettingsPage() {
               world={{
                 worldId: '1',
                 name: t('settings-page:preview-world'),
-                thumbnailUrl: 'icons/1.png',
+                thumbnailUrl: '/icons/1.png',
                 authorName: t('general:author'),
                 lastUpdated: '2025-02-28',
                 visits: 1911,

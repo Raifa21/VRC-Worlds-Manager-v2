@@ -532,7 +532,7 @@ const WelcomePage: React.FC = () => {
                       world={{
                         worldId: '1',
                         name: t('settings-page:preview-world'),
-                        thumbnailUrl: 'icons/1.png',
+                        thumbnailUrl: '/icons/1.png',
                         authorName: t('general:author'),
                         lastUpdated: '2017-03-09',
                         visits: 616,
