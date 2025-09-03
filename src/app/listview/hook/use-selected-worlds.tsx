@@ -1,79 +1,56 @@
 import { FolderType } from '@/types/folders';
-import { useState, useCallback } from 'react';
+import { create } from 'zustand';
 
-type SelectedWorldsMap = Map<FolderType, Set<string>>; // folder -> Set of world IDs
+type SelectedWorldsMap = Map<FolderType, Set<string>>;
 
-export const useSelectedWorlds = () => {
-  const [selectedWorldsMap, setSelectedWorldsMap] = useState<SelectedWorldsMap>(
-    new Map(),
-  );
+interface SelectedWorldsState {
+  selectedWorldsMap: SelectedWorldsMap;
+  toggleWorldSelection: (folderId: FolderType, worldId: string) => void;
+  selectAllWorlds: (folderId: FolderType, worldIds: string[]) => void;
+  clearFolderSelections: (folderId: FolderType) => void;
+  getSelectedWorlds: (folderId: FolderType) => Set<string>;
+  isWorldSelected: (folderId: FolderType, worldId: string) => boolean;
+}
 
-  const toggleWorldSelection = useCallback(
-    (folderId: FolderType, worldId: string) => {
-      setSelectedWorldsMap((prev) => {
-        const newMap = new Map(prev);
+export const useSelectedWorldsStore = create<SelectedWorldsState>(
+  (set, get) => ({
+    selectedWorldsMap: new Map(),
+    toggleWorldSelection: (folderId, worldId) => {
+      set((state) => {
+        const newMap = new Map(state.selectedWorldsMap);
         const folderSelections = new Set(newMap.get(folderId) || []);
-
         if (folderSelections.has(worldId)) {
           folderSelections.delete(worldId);
         } else {
           folderSelections.add(worldId);
         }
-
         if (folderSelections.size === 0) {
           newMap.delete(folderId);
         } else {
           newMap.set(folderId, folderSelections);
         }
-
-        return newMap;
+        return { selectedWorldsMap: newMap };
       });
     },
-    [],
-  );
-
-  const selectAllWorlds = useCallback(
-    (folderId: FolderType, worldIds: string[]) => {
-      setSelectedWorldsMap((prev) => {
-        const newMap = new Map(prev);
+    selectAllWorlds: (folderId, worldIds) => {
+      set((state) => {
+        const newMap = new Map(state.selectedWorldsMap);
         newMap.set(folderId, new Set(worldIds));
-        return newMap;
+        return { selectedWorldsMap: newMap };
       });
     },
-    [],
-  );
-
-  const clearFolderSelections = useCallback((folderId: FolderType) => {
-    setSelectedWorldsMap((prev) => {
-      const newMap = new Map(prev);
-      newMap.delete(folderId);
-      return newMap;
-    });
-  }, []);
-
-  const getSelectedWorlds = useCallback(
-    (folderId: FolderType): Set<string> => {
-      return selectedWorldsMap.get(folderId) || new Set();
+    clearFolderSelections: (folderId) => {
+      set((state) => {
+        const newMap = new Map(state.selectedWorldsMap);
+        newMap.delete(folderId);
+        return { selectedWorldsMap: newMap };
+      });
     },
-    [selectedWorldsMap],
-  );
-
-  const isWorldSelected = useCallback(
-    (folderId: FolderType, worldId: string): boolean => {
-      return selectedWorldsMap.get(folderId)?.has(worldId) || false;
+    getSelectedWorlds: (folderId) => {
+      return get().selectedWorldsMap.get(folderId) || new Set();
     },
-    [selectedWorldsMap],
-  );
-
-  return {
-    toggleWorldSelection,
-    selectAllWorlds,
-    clearFolderSelections,
-    getSelectedWorlds,
-    isWorldSelected,
-    selectedWorldsMap: selectedWorldsMap as ReadonlyMap<
-      FolderType,
-      ReadonlySet<string>
-    >,
-  };
-};
+    isWorldSelected: (folderId, worldId) => {
+      return get().selectedWorldsMap.get(folderId)?.has(worldId) || false;
+    },
+  }),
+);
