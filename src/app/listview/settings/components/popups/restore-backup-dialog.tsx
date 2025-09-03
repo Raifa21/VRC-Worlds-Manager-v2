@@ -6,7 +6,7 @@ import { FolderOpen } from 'lucide-react';
 import { Calendar, Info, AlertTriangle, Loader2, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { SaturnIcon } from '../../../../../../../components/icons/saturn-icon';
+import { SaturnIcon } from '../../../../../components/icons/saturn-icon';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../../../../../components/ui/alert-dialog';
+} from '../../../../../components/ui/alert-dialog';
 
 interface BackupMetadata {
   date: string;

@@ -5,14 +5,14 @@ import { GearIcon } from '../../../components/icons/gear-icon';
 import { Info, FileQuestion, History, Plus } from 'lucide-react';
 import { SpecialFolders } from '@/types/folders';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { commands, FolderData } from '@/lib/bindings';
+import { FolderData } from '@/lib/bindings';
 import { useState, useEffect, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 
 import { Separator } from '@/components/ui/separator';
 
 import { SidebarGroup } from '@/components/ui/sidebar';
-import { info, error } from '@tauri-apps/plugin-log';
+import { error } from '@tauri-apps/plugin-log';
 
 import {
   ContextMenu,
@@ -23,6 +23,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useFolders } from '@/app/listview/hook/use-folders';
+import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 const sidebarStyles = {
   container:
@@ -36,33 +38,13 @@ const sidebarStyles = {
 
 const SIDEBAR_CLASS = 'app-sidebar';
 
-interface AppSidebarProps {
-  onAddFolder: () => void;
-  onSelectFolder: (
-    type:
-      | SpecialFolders.All
-      | SpecialFolders.Find
-      | SpecialFolders.Unclassified
-      | 'folder',
-    folderName?: string,
-  ) => Promise<void>;
-  selectedFolder?: string;
-  onSelectAbout: () => void;
-  onSelectSettings: () => void;
-  onDeleteFolder: (folderName: string) => void;
-}
-
-export function AppSidebar({
-  onAddFolder,
-  onSelectFolder,
-  selectedFolder,
-  onSelectAbout,
-  onSelectSettings,
-  onDeleteFolder,
-}: AppSidebarProps) {
+export function AppSidebar() {
   const { t } = useLocalization();
-  const { renameFolder } = useFolders();
-  const { folders, moveFolder } = useFolders();
+  const { folders, moveFolder, createFolder, deleteFolder, renameFolder } =
+    useFolders();
+  const onAddFolder = () => {
+    //TODO usePopup
+  };
   const [localFolders, setLocalFolders] = useState<FolderData[]>(folders);
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
@@ -70,6 +52,9 @@ export function AppSidebar({
   const inputRef = useRef<HTMLInputElement>(null);
   const composingRef = useRef(false);
   const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Update local folders when prop changes
   useEffect(() => {
@@ -197,11 +182,11 @@ export function AppSidebar({
             className={`
               px-3 py-2 text-sm font-medium rounded-lg
               overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
-              ${selectedFolder === SpecialFolders.All ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
+              ${pathname === '/listview/folders/all' ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
             `}
             onClick={() => {
-              if (selectedFolder === SpecialFolders.All) return;
-              onSelectFolder(SpecialFolders.All);
+              if (pathname === '/listview/folders/all') return;
+              router.push('/listview/folders/all');
             }}
           >
             <SaturnIcon className="h-[18px] w-[18px]" />
@@ -216,11 +201,11 @@ export function AppSidebar({
             className={`
               px-3 py-2 text-sm font-medium rounded-lg
               overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
-              ${selectedFolder === SpecialFolders.Find ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
+              ${pathname === '/listview/folders/find' ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
             `}
             onClick={() => {
-              if (selectedFolder === SpecialFolders.Find) return;
-              onSelectFolder(SpecialFolders.Find);
+              if (pathname === '/listview/folders/find') return;
+              router.push('/listview/folders/find');
             }}
           >
             <History className="h-5 w-5" />
@@ -234,14 +219,14 @@ export function AppSidebar({
               px-3 py-2 text-sm font-medium rounded-lg
               overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
               ${
-                selectedFolder === SpecialFolders.Unclassified
+                pathname === '/listview/folders/unclassified'
                   ? sidebarStyles.activeLink
                   : 'hover:bg-accent/50 hover:text-accent-foreground'
               }
             `}
             onClick={() => {
-              if (selectedFolder === SpecialFolders.Unclassified) return;
-              onSelectFolder(SpecialFolders.Unclassified);
+              if (pathname === '/listview/folders/unclassified') return;
+              router.push('/listview/folders/unclassified');
             }}
           >
             <FileQuestion className="h-5 w-5" />
@@ -280,14 +265,19 @@ export function AppSidebar({
                                 w-[190px] px-3 py-2 text-sm font-medium rounded-lg
                                 overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
                                 ${
-                                  selectedFolder === folder.name
+                                  pathname ===
+                                  `/listview/folders/${folder.name}`
                                     ? sidebarStyles.activeLink
                                     : 'hover:bg-accent/50 hover:text-accent-foreground'
                                 }
                               `}
                               onClick={() => {
-                                if (selectedFolder === folder.name) return;
-                                onSelectFolder('folder', folder.name);
+                                if (
+                                  pathname ===
+                                  `/listview/folders/${folder.name}`
+                                )
+                                  return;
+                                router.push(`/listview/folders/${folder.name}`);
                               }}
                             >
                               {editingFolder === folder.name ? (
@@ -380,7 +370,7 @@ export function AppSidebar({
                             </ContextMenuItem>
                             <ContextMenuItem
                               className="text-destructive"
-                              onClick={() => onDeleteFolder(folder.name)}
+                              onClick={() => deleteFolder(folder.name)}
                             >
                               {t('general:delete')}
                             </ContextMenuItem>
@@ -410,15 +400,35 @@ export function AppSidebar({
       <footer className={sidebarStyles.footer}>
         <SidebarGroup>
           <div
-            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => onSelectAbout()}
+            className={`
+              px-3 py-2 cursor-pointer text-sm font-medium rounded-lg overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
+              ${
+                pathname === `/listview/about`
+                  ? sidebarStyles.activeLink
+                  : 'hover:bg-accent/50 hover:text-accent-foreground'
+              }
+            `}
+            onClick={() => {
+              if (pathname === `/listview/about`) return;
+              router.push('/listview/about');
+            }}
           >
             <Info className="h-5 w-5" />
             <span>{t('app-sidebar:about')}</span>
           </div>
           <div
-            className="px-3 py-2 cursor-pointer text-sm font-medium rounded-lg hover:bg-accent/50 hover:text-accent-foreground overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3"
-            onClick={() => onSelectSettings()}
+            className={`
+              px-3 py-2 cursor-pointer text-sm font-medium rounded-lg overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
+              ${
+                pathname === `/listview/settings`
+                  ? sidebarStyles.activeLink
+                  : 'hover:bg-accent/50 hover:text-accent-foreground'
+              }
+            `}
+            onClick={() => {
+              if (pathname === `/listview/settings`) return;
+              router.push('/listview/settings');
+            }}
           >
             <div className="h-5 w-5 flex items-center justify-center">
               <GearIcon className="h-[18px] w-[18px]" />

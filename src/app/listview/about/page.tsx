@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLocalization } from '@/hooks/use-localization';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import { UserProfile } from '@/app/listview/components/views/about/components/user-profile';
+import { UserProfile } from '@/app/listview/about/components/user-profile';
 import { ExternalLink, Heart } from 'lucide-react';
 import { SiGithub, SiDiscord } from '@icons-pack/react-simple-icons';
 import { toast } from 'sonner';

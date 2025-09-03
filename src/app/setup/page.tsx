@@ -32,7 +32,7 @@ import {
 import { info, error } from '@tauri-apps/plugin-log';
 import { SaturnIcon } from '@/components/icons/saturn-icon';
 import { FolderOpen, Info } from 'lucide-react';
-import { MigrationConfirmationPopup } from '@/app/listview/components/views/settings/components/popups/migration-confirmation-popup';
+import { MigrationConfirmationPopup } from '@/app/listview/settings/components/popups/migration-confirmation-popup';
 
 const WelcomePage: React.FC = () => {
   const router = useRouter();
