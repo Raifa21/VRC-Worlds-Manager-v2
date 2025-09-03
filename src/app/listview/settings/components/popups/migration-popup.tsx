@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { SaturnIcon } from './icons/saturn-icon';
+import { SaturnIcon } from '@/components/icons/saturn-icon';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +24,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from './ui/alert-dialog';
+} from '@/components/ui/alert-dialog';
 
 interface MigrationData {
   number_of_worlds: number;
