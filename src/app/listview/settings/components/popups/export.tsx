@@ -7,7 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '../../../../../../../components/ui/dialog';
+} from '../../../../../components/ui/dialog';
 import {
   Popover,
   PopoverContent,
@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
 import { commands, FolderData } from '@/lib/bindings';
-import { Checkbox } from '../../../../../../../components/ui/checkbox';
+import { Checkbox } from '../../../../../components/ui/checkbox';
 
 export enum ExportType {
   PLS = 'pls',

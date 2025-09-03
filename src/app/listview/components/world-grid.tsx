@@ -1,4 +1,4 @@
-import { WorldCardPreview } from './world-card';
+import { WorldCardPreview } from '@/components/world-card';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { SpecialFolders } from '@/types/folders';
 import { CardSize, WorldDisplayData } from '@/lib/bindings';
@@ -24,7 +24,7 @@ import {
 import * as Portal from '@radix-ui/react-portal';
 import { info, error } from '@tauri-apps/plugin-log';
 import { commands } from '@/lib/bindings';
-import { Badge } from './ui/badge';
+import { Badge } from '@/components/ui/badge';
 
 interface WorldGridProps {
   size: CardSize;
