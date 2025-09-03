@@ -6,11 +6,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from './ui/dialog';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { AlertCircle, Check, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from './ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { commands, WorldDetails, CardSize } from '@/lib/bindings';
 import {
   Card,
@@ -19,9 +19,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from './ui/card';
-import { Badge } from './ui/badge';
-import { WorldCardPreview } from './world-card';
+} from '@/components/ui/card';
+import { WorldCardPreview } from '@/components/world-card';
 import { useLocalization } from '@/hooks/use-localization';
 import { info, error as logError } from '@tauri-apps/plugin-log';
 
