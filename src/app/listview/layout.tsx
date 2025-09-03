@@ -9,7 +9,7 @@ export default function ListViewLayout({
     <div className="flex">
       <AppSidebar />
 
-      <main className="flex-1 p-4">{children}</main>
+      <main className="flex-1 h-screen overflow-y-auto">{children}</main>
     </div>
   );
 }
