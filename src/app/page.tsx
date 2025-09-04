@@ -33,7 +33,7 @@ export default function Home() {
 
           if (authResult.status === 'ok') {
             info('User is authenticated');
-            router.push('/listview/folders/all');
+            router.push('/listview/folders/special/all');
           } else {
             router.push('/login');
           }
