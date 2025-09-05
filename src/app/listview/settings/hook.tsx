@@ -139,20 +139,6 @@ export const useSettingsPage = () => {
 
   const { t } = useLocalization();
 
-  const loadCardSize = async () => {
-    try {
-      const result = await commands.getCardSize();
-      if (result.status === 'ok') {
-        setCardSize(result.data);
-      }
-    } catch (e) {
-      error(`Failed to load card size: ${e}`);
-      toast(t('general:error-title'), {
-        description: t('listview-page:error-load-card-size'),
-      });
-    }
-  };
-
   const handleBackup = async () => {
     try {
       info('Creating backup...');

@@ -16,13 +16,11 @@ import { useFolders } from '@/app/listview/hook/use-folders';
 interface CreateFolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onImportFolder?: (UUID: string) => Promise<void>;
 }
 
 export function CreateFolderDialog({
   open,
   onOpenChange,
-  onImportFolder,
 }: CreateFolderDialogProps) {
   const { t } = useLocalization();
   const { createFolder } = useFolders();
@@ -33,12 +31,14 @@ export function CreateFolderDialog({
   const importInputRef = useRef<HTMLInputElement>(null);
   const createInputRef = useRef<HTMLInputElement>(null);
 
+  const { importFolder } = useFolders();
+
   // Separate handlers for import vs create
   const handleImport = async () => {
-    if (!importUUID || !onImportFolder) return;
+    if (!importUUID || !importFolder) return;
     setIsLoading(true);
     try {
-      await onImportFolder(importUUID);
+      await importFolder(importUUID);
       setImportUUID('');
       onOpenChange(false);
     } catch (e) {

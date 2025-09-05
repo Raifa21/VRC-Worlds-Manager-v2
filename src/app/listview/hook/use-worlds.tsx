@@ -1,7 +1,9 @@
 import { useLocalization } from '@/hooks/use-localization';
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { FolderType, isUserFolder, SpecialFolders } from '@/types/folders';
-import { error } from 'console';
+import { error, info } from '@tauri-apps/plugin-log';
+import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 
@@ -13,6 +15,7 @@ const handleCommandResult = async <T,>(
   if (result.status === 'ok' && result.data) {
     return result.data;
   } else {
+    info(errorMessage + ': ' + result.error);
     throw new Error(result.error || errorMessage);
   }
 };
@@ -42,6 +45,13 @@ const fetchHiddenWorlds = async (): Promise<WorldDisplayData[]> => {
   return handleCommandResult(
     commands.getHiddenWorlds(),
     'Failed to fetch hidden worlds',
+  );
+};
+
+const getFavoriteWorlds = async () => {
+  return handleCommandResult(
+    commands.getFavoriteWorlds(),
+    'Failed to fetch favorite worlds',
   );
 };
 
@@ -81,8 +91,8 @@ export function useWorlds(folder: FolderType) {
       revalidateOnReconnect: true,
       errorRetryCount: 3,
       errorRetryInterval: 2000,
-      onError: (error) => {
-        console.error('Failed to fetch worlds:', error);
+      onError: (e) => {
+        info('Failed to fetch worlds:', e);
         toast.error(t('general:error-title'), {
           description: t('listview-page:error-fetch-worlds'),
         });
@@ -90,88 +100,38 @@ export function useWorlds(folder: FolderType) {
     },
   );
 
-  return {
-    worlds,
-    error,
-    isLoading,
-    refresh,
+  const getAllWorlds = () => {
+    return fetchAllWorlds();
   };
 
-  // const handleHideWorld = async (worldId: string[], worldName: string[]) => {
-  //   try {
-  //     // Store original folder information for each world before hiding
-  //     const worldFoldersMap = new Map<string, string[]>();
+  const addWorld = async (worldId: string) => {
+    try {
+      const world = await commands.getWorld(worldId, null);
+      if (world.status === 'error') {
+        throw new Error(world.error);
+      }
+      // if we are not in a special folder, add the world to the current folder
+      if (isUserFolder(folder) === true) {
+        await commands.addWorldToFolder(folder, worldId);
+      }
+      toast(t('listview-page:world-added-title'), {
+        description: t('listview-page:world-added-description'),
+      });
+      refresh();
+    } catch (e) {
+      error(`Failed to add world: ${e}`);
+      toast(t('general:error-title'), {
+        description: t('listview-page:error-add-world'),
+      });
+    }
+  };
 
-  //     // Get folder information for each world
-  //     for (const id of worldId) {
-  //       const world = worlds.find((w) => w.worldId === id);
-  //       if (world) {
-  //         worldFoldersMap.set(id, [...world.folders]);
-  //       }
-  //     }
-
-  //     // Hide worlds in parallel instead of one by one
-  //     await Promise.all(worldId.map((id) => commands.hideWorld(id)));
-
-  //     toast(t('listview-page:worlds-hidden-title'), {
-  //       description:
-  //         worldName.length > 1
-  //           ? t(
-  //               'listview-page:worlds-hidden-multiple',
-  //               worldName[0],
-  //               worldName.length - 1,
-  //             )
-  //           : t('listview-page:worlds-hidden-single', worldName[0]),
-  //       action: {
-  //         label: t('listview-page:undo-button'),
-  //         onClick: () => undoHideWorld(),
-  //       },
-  //     });
-
-  //     await refreshCurrentView();
-  //   } catch (e) {
-  //     error(`Failed to hide world: ${e}`);
-  //     toast({
-  //       title: t('general:error-title'),
-  //       description: t('listview-page:error-hide-world'),
-  //       variant: 'destructive',
-  //     });
-  //   }
-  // };
-
-  // const undoHideWorld = () => {
-  //   async () => {
-  //     try {
-  //       // Parallel unhide and folder restoration
-  //       await Promise.all(
-  //         worldId.map(async (id) => {
-  //           await commands.unhideWorld(id);
-
-  //           // Restore folders for this world
-  //           const originalFolders = worldFoldersMap.get(id);
-  //           if (originalFolders?.length) {
-  //             await Promise.all(
-  //               originalFolders.map((folder) =>
-  //                 commands.addWorldToFolder(folder, id),
-  //               ),
-  //             );
-  //           }
-  //         }),
-  //       );
-
-  //       await refreshCurrentView();
-  //       toast({
-  //         title: t('listview-page:restored-title'),
-  //         description: t('listview-page:worlds-restored'),
-  //       });
-  //     } catch (e) {
-  //       error(`Failed to restore worlds: ${e}`);
-  //       toast({
-  //         title: t('general:error-title'),
-  //         description: t('listview-page:error-restore-worlds'),
-  //         variant: 'destructive',
-  //       });
-  //     }
-  //   };
-  // };
+  return {
+    worlds,
+    isLoading,
+    getAllWorlds,
+    getFavoriteWorlds,
+    addWorld,
+    refresh,
+  };
 }
