@@ -1,4 +1,5 @@
 import { AppSidebar } from './components/app-sidebar';
+import { PopupManager } from './hook/usePopups/popup-manager';
 
 export default function ListViewLayout({
   children,
@@ -10,6 +11,8 @@ export default function ListViewLayout({
       <AppSidebar />
 
       <main className="flex-1 h-screen overflow-y-auto">{children}</main>
+
+      <PopupManager />
     </div>
   );
 }

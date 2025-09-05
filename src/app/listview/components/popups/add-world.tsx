@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, Check, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { commands, WorldDetails, CardSize } from '@/lib/bindings';
+import {
+  commands,
+  WorldDetails,
+  CardSize,
+  WorldDisplayData,
+} from '@/lib/bindings';
 import {
   Card,
   CardContent,
@@ -23,26 +28,37 @@ import {
 import { WorldCardPreview } from '@/components/world-card';
 import { useLocalization } from '@/hooks/use-localization';
 import { info, error as logError } from '@tauri-apps/plugin-log';
+import { useWorlds } from '../../hook/use-worlds';
 
 interface AddWorldPopupProps {
-  open: boolean;
   onClose: () => void;
-  onConfirm: (worldId: string) => void;
-  existingWorlds?: string[];
 }
 
-export function AddWorldPopup({
-  open,
-  onClose,
-  onConfirm,
-  existingWorlds = [],
-}: AddWorldPopupProps) {
+export async function AddWorldPopup({ onClose }: AddWorldPopupProps) {
   const { t } = useLocalization();
   const [worldInput, setWorldInput] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [previewWorld, setPreviewWorld] = useState<WorldDetails | null>(null);
   const [isDuplicate, setIsDuplicate] = useState<boolean>(false);
+  const [existingWorlds, setExistingWorlds] = useState<string[]>([]);
+
+  const { addWorld, getAllWorlds } = useWorlds();
+
+  useEffect(() => {
+    async function fetchWorlds() {
+      setIsLoading(true);
+      try {
+        const worlds = await getAllWorlds();
+        setExistingWorlds(worlds.map((world) => world.worldId));
+      } catch (e) {
+        // handle error if needed
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchWorlds();
+  }, [getAllWorlds]);
 
   // Parse input to extract world ID
   const parseWorldId = (input: string): string | null => {
@@ -125,7 +141,7 @@ export function AddWorldPopup({
   const handleConfirm = () => {
     // If we have a preview world, use its ID
     if (previewWorld) {
-      onConfirm(previewWorld.worldId);
+      addWorld(previewWorld.worldId);
       setWorldInput('');
       setPreviewWorld(null);
       onClose();
@@ -142,7 +158,7 @@ export function AddWorldPopup({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleCancel}>
+    <Dialog onOpenChange={handleCancel}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('add-world-dialog:add')}</DialogTitle>

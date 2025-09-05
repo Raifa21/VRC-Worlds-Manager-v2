@@ -35,6 +35,38 @@ export function ImportedFolderContainsHidden({
     }
   }, [open]);
 
+  const handleRestoreInImport = async (worlds: string[]) => {
+    try {
+      if (!containedHiddenWorlds || worlds.length === 0) {
+        toast({
+          title: t('general:error-title'),
+          description: t('listview-page:error-no-hidden-worlds'),
+        });
+        return;
+      }
+      for (const world of worlds) {
+        await commands.unhideWorld(world);
+        await commands.addWorldToFolder(currentFolder, world);
+      }
+      setContainedHiddenWorlds([]);
+      setShowImportedFolderContainsHidden(false);
+      await refreshCurrentView();
+      toast({
+        title: t('listview-page:restored-hidden-worlds-title'),
+        description: t(
+          'listview-page:restored-hidden-worlds-description',
+          containedHiddenWorlds.length,
+        ),
+      });
+    } catch (e) {
+      error(`Failed to restore hidden worlds: ${e}`);
+      toast({
+        title: t('general:error-title'),
+        description: t('listview-page:error-restore-hidden-worlds'),
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">

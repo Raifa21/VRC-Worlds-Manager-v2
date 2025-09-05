@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useFolders } from '@/app/listview/hook/use-folders';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
+import { usePopupStore } from '../hook/usePopups/store';
 
 const sidebarStyles = {
   container:
@@ -42,9 +43,8 @@ export function AppSidebar() {
   const { t } = useLocalization();
   const { folders, moveFolder, createFolder, deleteFolder, renameFolder } =
     useFolders();
-  const onAddFolder = () => {
-    //TODO usePopup
-  };
+  const setPopup = usePopupStore((state) => state.setPopup);
+
   const [localFolders, setLocalFolders] = useState<FolderData[]>(folders);
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
@@ -182,11 +182,11 @@ export function AppSidebar() {
             className={`
               px-3 py-2 text-sm font-medium rounded-lg
               overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
-              ${pathname === '/listview/folders/all' ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
+              ${pathname === '/listview/folders/special/all' ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
             `}
             onClick={() => {
-              if (pathname === '/listview/folders/all') return;
-              router.push('/listview/folders/all');
+              if (pathname === '/listview/folders/special/all') return;
+              router.push('/listview/folders/special/all');
             }}
           >
             <SaturnIcon className="h-[18px] w-[18px]" />
@@ -201,11 +201,11 @@ export function AppSidebar() {
             className={`
               px-3 py-2 text-sm font-medium rounded-lg
               overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
-              ${pathname === '/listview/folders/find' ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
+              ${pathname === '/listview/folders/special/find' ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
             `}
             onClick={() => {
-              if (pathname === '/listview/folders/find') return;
-              router.push('/listview/folders/find');
+              if (pathname === '/listview/folders/special/find') return;
+              router.push('/listview/folders/special/find');
             }}
           >
             <History className="h-5 w-5" />
@@ -219,14 +219,14 @@ export function AppSidebar() {
               px-3 py-2 text-sm font-medium rounded-lg
               overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
               ${
-                pathname === '/listview/folders/unclassified'
+                pathname === '/listview/folders/special/unclassified'
                   ? sidebarStyles.activeLink
                   : 'hover:bg-accent/50 hover:text-accent-foreground'
               }
             `}
             onClick={() => {
-              if (pathname === '/listview/folders/unclassified') return;
-              router.push('/listview/folders/unclassified');
+              if (pathname === '/listview/folders/special/unclassified') return;
+              router.push('/listview/folders/special/unclassified');
             }}
           >
             <FileQuestion className="h-5 w-5" />
@@ -266,7 +266,7 @@ export function AppSidebar() {
                                 overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
                                 ${
                                   pathname ===
-                                  `/listview/folders/${folder.name}`
+                                  `/listview/folders/userFolder?folderName=${folder.name}`
                                     ? sidebarStyles.activeLink
                                     : 'hover:bg-accent/50 hover:text-accent-foreground'
                                 }
@@ -274,10 +274,12 @@ export function AppSidebar() {
                               onClick={() => {
                                 if (
                                   pathname ===
-                                  `/listview/folders/${folder.name}`
+                                  `/listview/folders/userFolder?folderName=${folder.name}`
                                 )
                                   return;
-                                router.push(`/listview/folders/${folder.name}`);
+                                router.push(
+                                  `/listview/folders/userFolder?folderName=${folder.name}`,
+                                );
                               }}
                             >
                               {editingFolder === folder.name ? (
@@ -388,7 +390,7 @@ export function AppSidebar() {
           <div
             className={`${sidebarStyles.link} cursor-pointer`}
             onClick={() => {
-              onAddFolder();
+              setPopup('showCreateFolder', true);
             }}
           >
             <Plus className="h-5 w-5" />

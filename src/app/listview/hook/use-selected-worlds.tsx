@@ -10,6 +10,8 @@ interface SelectedWorldsState {
   clearFolderSelections: (folderId: FolderType) => void;
   getSelectedWorlds: (folderId: FolderType) => Set<string>;
   isWorldSelected: (folderId: FolderType, worldId: string) => boolean;
+  isSelectionMode: boolean;
+  toggleSelectionMode: () => void;
 }
 
 export const useSelectedWorldsStore = create<SelectedWorldsState>(
@@ -51,6 +53,10 @@ export const useSelectedWorldsStore = create<SelectedWorldsState>(
     },
     isWorldSelected: (folderId, worldId) => {
       return get().selectedWorldsMap.get(folderId)?.has(worldId) || false;
+    },
+    isSelectionMode: false,
+    toggleSelectionMode: () => {
+      set((state) => ({ isSelectionMode: !state.isSelectionMode }));
     },
   }),
 );

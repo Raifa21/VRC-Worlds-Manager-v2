@@ -25,48 +25,39 @@ import * as Portal from '@radix-ui/react-portal';
 import { info, error } from '@tauri-apps/plugin-log';
 import { commands } from '@/lib/bindings';
 import { Badge } from '@/components/ui/badge';
+import { useFolders } from '../../hook/use-folders';
+import { useWorldGrid } from './hook';
 
 interface WorldGridProps {
-  size: CardSize;
   worlds: WorldDisplayData[];
-  folderName: string | SpecialFolders;
-  initialSelectedWorlds: string[];
-  onRemoveFromFolder?: (worldId: string[]) => void;
-  onHideWorld?: (worldId: string[], worldName: string[]) => void;
-  onUnhideWorld?: (worldId: string[]) => void;
-  onOpenWorldDetails: (worldId: string) => void;
-  onShowFolderDialog?: (worlds: string[]) => void;
-  onSelectedWorldsChange: (worldIds: string[]) => void;
-  isSelectionMode: boolean;
-  selectAll?: boolean;
-  shouldClearSelection: boolean;
-  onClearSelectionComplete?: () => void;
-  worldsJustAdded?: string[];
-  onWorldsJustAddedProcessed?: () => void;
   // Used for virtualized scrolling
   containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function WorldGrid({
-  size,
-  worlds,
-  folderName,
-  initialSelectedWorlds,
-  onRemoveFromFolder,
-  onHideWorld,
-  onUnhideWorld,
-  onOpenWorldDetails,
-  onShowFolderDialog,
-  onSelectedWorldsChange,
-  selectAll,
-  isSelectionMode,
-  shouldClearSelection,
-  onClearSelectionComplete,
-  worldsJustAdded,
-  onWorldsJustAddedProcessed,
-  containerRef,
-}: WorldGridProps) {
+export function WorldGrid({ worlds, containerRef }: WorldGridProps) {
   const { t } = useLocalization();
+
+  const {
+    cardSize,
+    selectedWorlds,
+    selectAllWorlds,
+    toggleWorld,
+    clearSelection,
+    isSelectionMode,
+    selectAllFindPage,
+    handleOpenFolderDialog,
+    handleOpenWorldDetails,
+    handleDeleteWorld,
+    handleRemoveFromCurrentFolder,
+    removeWorldsFromFolder,
+    handleHideWorld,
+    handleRestoreWorld,
+    isFindPage,
+    isSpecialFolder,
+    isHiddenFolder,
+    existingWorldIds,
+  } = useWorldGrid();
+
   const gap = 16;
   const cardHeights: Record<CardSize, number> = {
     Compact: 128, // h-32 = 8rem = 128px
@@ -80,8 +71,8 @@ export function WorldGrid({
     Expanded: 256, // w-64 = 16rem = 256px
     Original: 256, // w-64 = 16rem = 256px
   };
-  const cardH = cardHeights[size];
-  const cardW = cardWidths[size];
+  const cardH = cardHeights[cardSize];
+  const cardW = cardWidths[cardSize];
 
   // 1) Keep a piece of state for the container’s width
   const [containerWidth, setContainerWidth] = useState<number>(() => {
@@ -109,7 +100,7 @@ export function WorldGrid({
     // account for the same “-10px” you use in the container width
     const effectiveWidth = containerWidth - 10;
     return Math.max(1, Math.floor((effectiveWidth + gap) / (cardW + gap)));
-  }, [size, containerWidth]);
+  }, [cardSize, containerWidth]);
 
   // 4) chunk worlds into rows
   const rows = useMemo(() => {
@@ -138,182 +129,18 @@ export function WorldGrid({
     worldName?: string;
     isOpen: boolean;
   } | null>(null);
-  const [selectedWorlds, setSelectedWorlds] = useState<string[]>(
-    initialSelectedWorlds,
-  );
-  const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
-    new Set(),
-  );
-
-  // Wrap clearSelection in useCallback to prevent stale closures
-  const clearSelection = useCallback(() => {
-    setSelectedWorlds([]);
-  }, []);
-
-  useEffect(() => {
-    if (shouldClearSelection) {
-      clearSelection();
-      info('Cleared selection');
-
-      onClearSelectionComplete?.();
-    }
-  }, [shouldClearSelection, onClearSelectionComplete, clearSelection]);
-
-  useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (
-        event.key === 'Escape' &&
-        (isSelectionMode || selectedWorlds.length > 0)
-      ) {
-        clearSelection();
-      }
-    };
-
-    window.addEventListener('keydown', handleEscKey);
-    return () => window.removeEventListener('keydown', handleEscKey);
-  }, [isSelectionMode, selectedWorlds, clearSelection]);
-
-  useEffect(() => {
-    // when folder changes, set selected worlds if selection mode is on
-    if (isSelectionMode) {
-      setSelectedWorlds(initialSelectedWorlds);
-    } else {
-      setSelectedWorlds([]);
-    }
-  }, [folderName]);
-
-  useEffect(() => {
-    onSelectedWorldsChange(selectedWorlds);
-  }, [selectedWorlds]);
-
-  const isFindPage = useMemo(() => {
-    return folderName === SpecialFolders.Find;
-  }, [folderName]);
-
-  useEffect(() => {
-    if (!isFindPage) return; // Only needed for find page
-
-    const checkWorldsExistence = async () => {
-      try {
-        // Get unique world IDs
-        const worldIds = worlds.map((world) => world.worldId);
-
-        // Check which worlds exist in the collection
-        const existingWorldsResult = await commands.getAllWorlds();
-        if (existingWorldsResult.status !== 'ok') {
-          error(`Error fetching worlds: ${existingWorldsResult.error}`);
-          throw new Error(existingWorldsResult.error);
-        }
-        const existingWorlds = existingWorldsResult.data;
-
-        const hiddenWorldsResult = await commands.getHiddenWorlds();
-        if (hiddenWorldsResult.status !== 'ok') {
-          error(`Error fetching hidden worlds: ${hiddenWorldsResult.error}`);
-          throw new Error(hiddenWorldsResult.error);
-        }
-        const hiddenWorlds = hiddenWorldsResult.data;
-
-        //check if the worldId exists in the collection
-        const existingIds = worldIds.filter(
-          (id) =>
-            existingWorlds.some((world) => world.worldId === id) ||
-            hiddenWorlds.some((world) => world.worldId === id),
-        );
-
-        setExistingWorldIds(new Set(existingIds));
-      } catch (err) {
-        error(`Error checking world existence: ${err}`);
-      }
-    };
-
-    checkWorldsExistence();
-  }, [worlds, isFindPage]);
 
   const handleDialogClose = () => {
     setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
     setTimeout(() => setDialogConfig(null), 150);
   };
 
-  // Also update handleSelect to ignore worlds that already exist in Find page
   const handleSelect = (worldId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
 
-    // Don't allow selecting existing worlds in Find page
-    if (isFindPage && existingWorldIds.has(worldId)) {
-      return;
-    }
-
-    setSelectedWorlds((prev) => {
-      const newSelection = new Set(prev);
-      if (event.shiftKey && prev.length > 0) {
-        // Keep existing shift+click range selection
-        const worldIds = worlds.map((w) => w.worldId);
-        const lastSelected = prev[prev.length - 1];
-        const lastIndex = worldIds.indexOf(lastSelected);
-        const currentIndex = worldIds.indexOf(worldId);
-        const [start, end] = [
-          Math.min(lastIndex, currentIndex),
-          Math.max(lastIndex, currentIndex),
-        ];
-
-        for (let i = start; i <= end; i++) {
-          newSelection.add(worldIds[i]);
-        }
-      } else if (event.ctrlKey || event.metaKey) {
-        // Keep existing ctrl/cmd+click toggle
-        if (newSelection.has(worldId)) {
-          newSelection.delete(worldId);
-        } else {
-          newSelection.add(worldId);
-        }
-      } else {
-        // Modified single click behavior - toggle selection
-        if (newSelection.has(worldId)) {
-          newSelection.delete(worldId);
-        } else {
-          newSelection.add(worldId);
-        }
-      }
-      return Array.from(newSelection);
-    });
+    toggleWorld(worldId);
   };
-
-  useEffect(() => {
-    if (!selectAll) return;
-
-    // Select all applicable worlds (filter out existing worlds in Find page)
-    const worldsToSelect = worlds
-      .filter((world) => !isFindPage || !existingWorldIds.has(world.worldId))
-      .map((world) => world.worldId);
-
-    setSelectedWorlds(worldsToSelect);
-
-    onSelectedWorldsChange(worldsToSelect);
-  }, [selectAll, worlds, isFindPage, existingWorldIds]);
-
-  useEffect(() => {
-    if (worldsJustAdded && worldsJustAdded.length > 0) {
-      setExistingWorldIds((prev) => {
-        const newWorldIds = new Set(prev);
-        worldsJustAdded.forEach((id) => newWorldIds.add(id));
-        return newWorldIds;
-      });
-
-      // Notify parent component that we've processed these
-      onWorldsJustAddedProcessed?.();
-    }
-  }, [worldsJustAdded, onWorldsJustAddedProcessed]);
-
-  // Check if current folder is a special folder
-  const isSpecialFolder = useMemo(() => {
-    return Object.values(SpecialFolders).includes(folderName as SpecialFolders);
-  }, [folderName]);
-
-  // Check if current folder is Hidden folder
-  const isHiddenFolder = useMemo(() => {
-    return folderName === SpecialFolders.Hidden;
-  }, [folderName]);
 
   return (
     <div
@@ -357,13 +184,13 @@ export function WorldGrid({
                       <ContextMenuTrigger asChild>
                         <div
                           id={world.worldId}
-                          onClick={() => onOpenWorldDetails(world.worldId)}
+                          onClick={() => handleOpenWorldDetails(world.worldId)}
                           className="group relative w-fit h-fit rounded-lg overflow-hidden"
                         >
                           {isSelected && (
                             <div className="absolute inset-0 rounded-lg border-2 border-primary pointer-events-none z-10" />
                           )}
-                          <WorldCardPreview size={size} world={world} />
+                          <WorldCardPreview size={cardSize} world={world} />
                           {isSelectionMode && (
                             <>
                               {!isFindPage ? (
@@ -437,36 +264,19 @@ export function WorldGrid({
                         <ContextMenuContent>
                           {!isHiddenFolder ? (
                             <>
-                              {onShowFolderDialog && (
-                                <ContextMenuItem
-                                  onSelect={(e) => {
-                                    const worldsToMove =
-                                      selectedWorlds.length > 0 &&
-                                      selectedWorlds.includes(world.worldId)
-                                        ? Array.from(selectedWorlds).map(
-                                            (id) =>
-                                              worlds.find(
-                                                (w) => w.worldId === id,
-                                              )!,
-                                          )
-                                        : [world];
-                                    onShowFolderDialog(
-                                      worldsToMove.map((w) => w.worldId),
-                                    );
-                                  }}
-                                >
-                                  {t('world-grid:move-title')}
-                                </ContextMenuItem>
-                              )}
+                              <ContextMenuItem
+                                onSelect={(e) => {
+                                  handleOpenFolderDialog(world.worldId);
+                                }}
+                              >
+                                {t('world-grid:move-title')}
+                              </ContextMenuItem>
                               {!isSpecialFolder && (
                                 <ContextMenuItem
                                   onSelect={(e) => {
-                                    const worldsToRemove =
-                                      selectedWorlds.length > 0 &&
-                                      selectedWorlds.includes(world.worldId)
-                                        ? Array.from(selectedWorlds)
-                                        : [world.worldId];
-                                    onRemoveFromFolder?.(worldsToRemove);
+                                    handleRemoveFromCurrentFolder(
+                                      world.worldId,
+                                    );
                                   }}
                                   className="text-destructive"
                                 >
@@ -487,7 +297,7 @@ export function WorldGrid({
                                           ?.name || '',
                                     )
                                     .filter(Boolean);
-                                  onHideWorld?.(worldsToHide, worldNames);
+                                  handleHideWorld?.(worldsToHide, worldNames);
                                 }}
                                 className="text-destructive"
                               >
@@ -502,7 +312,7 @@ export function WorldGrid({
                                   selectedWorlds.includes(world.worldId)
                                     ? Array.from(selectedWorlds)
                                     : [world.worldId];
-                                onUnhideWorld?.(worldsToRestore);
+                                handleRestoreWorld?.(worldsToRestore);
                               }}
                             >
                               {t('world-grid:restore-world')}
@@ -556,9 +366,9 @@ export function WorldGrid({
                   variant="destructive"
                   onClick={() => {
                     if (dialogConfig.type === 'remove') {
-                      onRemoveFromFolder?.([dialogConfig.worldId]);
+                      removeWorldsFromFolder([dialogConfig.worldId]);
                     } else if (dialogConfig.worldName) {
-                      onHideWorld?.(
+                      handleHideWorld?.(
                         [dialogConfig.worldId],
                         [dialogConfig.worldName],
                       );
@@ -592,7 +402,7 @@ export function WorldGrid({
               variant="default"
               size="lg"
               className="rounded-lg flex items-center gap-2 px-4 py-3 relative"
-              onClick={() => onShowFolderDialog?.(selectedWorlds)}
+              onClick={() => handleOpenFolderDialog(selectedWorlds[0])}
             >
               <Plus className="w-5 h-5" />
               <span className="text-md font-semibold">

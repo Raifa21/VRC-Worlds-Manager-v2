@@ -2,6 +2,8 @@ import useSWR, { mutate } from 'swr';
 import { commands, FolderData } from '@/lib/bindings';
 import { toast } from 'sonner';
 import { useLocalization } from '../../../hooks/use-localization';
+import { usePathname, useRouter } from 'next/navigation';
+import { usePopupStore } from './usePopups/store';
 
 const fetchFolders = async (): Promise<FolderData[]> => {
   const result = await commands.getFolders();
@@ -30,6 +32,10 @@ const moveFolderCommand = async (
 
 export function useFolders() {
   const { t } = useLocalization();
+
+  const router = useRouter();
+
+  const setPopup = usePopupStore((state) => state.setPopup);
 
   const {
     data: folders = [],
@@ -107,6 +113,36 @@ export function useFolders() {
     }
   };
 
+  const importFolder = async (UUID: string) => {
+    try {
+      const result = await commands.downloadFolder(UUID);
+      if (result.status === 'ok') {
+        const folderName = result.data[0];
+        const hiddenWorlds = result.data[1];
+        await refresh();
+        router.push(`/listview/folders/userFolder?folderName=${folderName}`);
+        if (hiddenWorlds.length > 0) {
+          setPopup('showImportedFolderContainsHidden', hiddenWorlds);
+        }
+        toast(t('listview-page:folder-imported-title'), {
+          description: t(
+            'listview-page:folder-imported-description',
+            result.data[0],
+          ),
+        });
+      } else {
+        toast(t('general:error-title'), {
+          description: t('listview-page:error-import-folder'),
+        });
+      }
+    } catch (e) {
+      error(`Failed to import folder: ${e}`);
+      toast(t('general:error-title'), {
+        description: t('listview-page:error-import-folder'),
+      });
+    }
+  };
+
   return {
     folders,
     error,
@@ -116,5 +152,6 @@ export function useFolders() {
     deleteFolder,
     renameFolder,
     moveFolder,
+    importFolder,
   };
 }
