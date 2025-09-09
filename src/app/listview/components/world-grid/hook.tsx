@@ -9,8 +9,9 @@ import { useFolders } from '../../hook/use-folders';
 import { useWorlds } from '../../hook/use-worlds';
 import { usePathname } from 'next/navigation';
 import path from 'path';
+import { FolderType } from '@/types/folders';
 
-export function useWorldGrid() {
+export function useWorldGrid(currentFolder: FolderType) {
   const { t } = useLocalization();
   const setPopup = usePopupStore((state) => state.setPopup);
 
@@ -23,9 +24,7 @@ export function useWorldGrid() {
     clearFolderSelections,
   } = useSelectedWorldsStore();
 
-  const { worlds } = useWorlds();
-
-  const { currentFolder } = useFolders();
+  const { worlds } = useWorlds(currentFolder);
 
   const [cardSize, setCardSize] = useState<CardSize>('Normal');
 

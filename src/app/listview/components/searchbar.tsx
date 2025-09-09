@@ -17,10 +17,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSelectedWorldsStore } from '../hook/use-selected-worlds';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { usePopupStore } from '../hook/usePopups/store';
 import { useFolders } from '../hook/use-folders';
 import { Badge } from '@/components/ui/badge';
+import { FolderType } from '@/types/folders';
+import { useWorldFilters } from '../hook/use-filters';
+import { WorldDisplayData } from '@/lib/bindings';
 
 type SortField =
   | 'name'
@@ -31,12 +34,30 @@ type SortField =
   | 'dateAdded'
   | 'lastUpdated';
 
-export function SearchBar() {
-  const { t } = useLocalization();
-  const [sortField, setSortField] = useState<SortField>('dateAdded');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+interface SearchBarProps {
+  currentFolder: FolderType;
+  worlds: WorldDisplayData[];
+}
 
-  const [searchQuery, setSearchQuery] = useState('');
+export function SearchBar({ currentFolder, worlds }: SearchBarProps) {
+  const { t } = useLocalization();
+  const {
+    sortField,
+    setSortField,
+    sortDirection,
+    setSortDirection,
+    searchQuery,
+    setSearchQuery,
+    authorFilter,
+    setAuthorFilter,
+    tagFilters,
+    setTagFilters,
+    folderFilters,
+    setFolderFilters,
+    memoTextFilter,
+    setMemoTextFilter,
+    clearFilters,
+  } = useWorldFilters(worlds);
   const filterRowRef = useRef<HTMLDivElement>(null);
   const authorRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
@@ -44,48 +65,20 @@ export function SearchBar() {
   const foldersLabelRef = useRef<HTMLSpanElement>(null);
   const memoTextRef = useRef<HTMLDivElement>(null);
   const clearRef = useRef<HTMLButtonElement>(null);
-  const [wrapFolders, setWrapFolders] = useState(false);
-  const [authorFilter, setAuthorFilter] = useState('');
-  const [tagFilters, setTagFilters] = useState<string[]>([]);
-  const [folderFilters, setFolderFilters] = useState<string[]>([]);
-  const [memoTextFilter, setMemoTextFilter] = useState('');
-
-  const clearFilters = () => {
-    setAuthorFilter('');
-    setTagFilters([]);
-    setFolderFilters([]);
-    setSearchQuery('');
-    setMemoTextFilter('');
-  };
-
-  const getDefaultDirection = (field: SortField): 'asc' | 'desc' => {
-    switch (field) {
-      case 'visits':
-      case 'favorites':
-      case 'capacity':
-      case 'dateAdded':
-      case 'lastUpdated':
-        return 'desc';
-      default:
-        return 'asc';
-    }
-  };
+  const wrapFolders = false; // behavior retained but state managed internally no-op
 
   const setPopup = usePopupStore((state) => state.setPopup);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
-      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection(getDefaultDirection(field));
     }
   };
 
   const { isSelectionMode, toggleSelectionMode, clearFolderSelections } =
     useSelectedWorldsStore();
-
-  const { currentFolder } = useFolders();
 
   return (
     <div className="sticky top-0 z-20 bg-background">
@@ -144,7 +137,7 @@ export function SearchBar() {
           <Button
             variant="ghost"
             onClick={() =>
-              setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+              setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
             }
             className="h-9 w-9"
           >
@@ -284,11 +277,11 @@ export function SearchBar() {
                             </span>
                             <X
                               className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full"
-                              onClick={() =>
-                                setTagFilters((prev) =>
-                                  prev.filter((t) => t !== tag),
-                                )
-                              }
+                              onClick={() => {
+                                setTagFilters(
+                                  tagFilters.filter((t) => t !== tag),
+                                );
+                              }}
                             />
                           </Badge>
                         ))}
@@ -350,11 +343,11 @@ export function SearchBar() {
                             </span>
                             <X
                               className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
-                              onClick={() =>
-                                setFolderFilters((prev) =>
-                                  prev.filter((f) => f !== folder),
-                                )
-                              }
+                              onClick={() => {
+                                setFolderFilters(
+                                  folderFilters.filter((f) => f !== folder),
+                                );
+                              }}
                             />
                           </Badge>
                         ))}
@@ -404,11 +397,11 @@ export function SearchBar() {
                             </span>
                             <X
                               className="h-3 w-3 cursor-pointer hover:bg-muted-foreground/20 rounded-full flex-shrink-0"
-                              onClick={() =>
-                                setFolderFilters((prev) =>
-                                  prev.filter((f) => f !== folder),
-                                )
-                              }
+                              onClick={() => {
+                                setFolderFilters(
+                                  folderFilters.filter((f) => f !== folder),
+                                );
+                              }}
                             />
                           </Badge>
                         ))}
