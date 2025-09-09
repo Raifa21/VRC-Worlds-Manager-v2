@@ -111,7 +111,7 @@ export default function UserFolder() {
         </div>
 
         <div>
-          <SearchBar />
+          <SearchBar currentFolder={folderName} worlds={worlds} />
           <div className="flex-1">
             {sortedAndFilteredWorlds.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
@@ -124,6 +124,7 @@ export default function UserFolder() {
             ) : (
               <WorldGrid
                 worlds={sortedAndFilteredWorlds}
+                currentFolder={folderName}
                 containerRef={gridScrollRef}
               />
             )}

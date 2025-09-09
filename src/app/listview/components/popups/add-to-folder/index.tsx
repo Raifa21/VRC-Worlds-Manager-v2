@@ -23,14 +23,17 @@ import { usePathname } from 'next/navigation';
 import { useSelectedWorldsStore } from '../../../hook/use-selected-worlds';
 import { useWorlds } from '../../../hook/use-worlds';
 import { useAddToFolderPopup } from './hook';
+import { FolderType } from '@/types/folders';
 
 interface AddToFolderDialogProps {
   selectedWorlds: WorldDisplayData[];
+  currentFolder: FolderType;
   onClose: () => void;
 }
 
 export function AddToFolderDialog({
   selectedWorlds,
+  currentFolder,
   onClose,
 }: AddToFolderDialogProps) {
   const { t } = useLocalization();
@@ -57,8 +60,7 @@ export function AddToFolderDialog({
     handleCancel,
     isFindPage,
     createdFolder,
-    currentFolder,
-  } = useAddToFolderPopup({ selectedWorlds, onClose });
+  } = useAddToFolderPopup({ selectedWorlds, currentFolder, onClose });
 
   return (
     <Dialog onOpenChange={handleCancel}>

@@ -1,0 +1,298 @@
+import { commands, WorldDisplayData } from '@/lib/bindings';
+import { create } from 'zustand';
+import { useEffect, useRef } from 'react';
+import { toRomaji } from 'wanakana';
+import { error } from '@tauri-apps/plugin-log';
+import { toast } from 'sonner';
+import { useLocalization } from '@/hooks/use-localization';
+
+type SortField =
+  | 'name'
+  | 'authorName'
+  | 'visits'
+  | 'favorites'
+  | 'capacity'
+  | 'dateAdded'
+  | 'lastUpdated';
+
+interface FilterState {
+  sortField: SortField;
+  sortDirection: 'asc' | 'desc';
+  authorFilter: string;
+  tagFilters: string[];
+  folderFilters: string[];
+  memoTextFilter: string;
+  searchQuery: string;
+  filteredWorlds: WorldDisplayData[];
+  availableAuthors: string[];
+  availableTags: string[];
+  setSortField: (field: SortField) => void;
+  setSortDirection: (dir: 'asc' | 'desc') => void;
+  setAuthorFilter: (author: string) => void;
+  setTagFilters: (tags: string[]) => void;
+  setFolderFilters: (folders: string[]) => void;
+  setMemoTextFilter: (memo: string) => void;
+  setSearchQuery: (query: string) => void;
+  setFilteredWorlds: (worlds: WorldDisplayData[]) => void;
+  setAvailableAuthors: (authors: string[]) => void;
+  setAvailableTags: (tags: string[]) => void;
+  clearFilters: () => void;
+}
+
+export const useWorldFiltersStore = create<FilterState>((set) => ({
+  sortField: 'dateAdded',
+  sortDirection: 'desc',
+  authorFilter: '',
+  tagFilters: [],
+  folderFilters: [],
+  memoTextFilter: '',
+  searchQuery: '',
+  filteredWorlds: [],
+  availableAuthors: [],
+  availableTags: [],
+  setSortField: (field) =>
+    set((state) => ({
+      sortField: field,
+      sortDirection: getDefaultDirection(field),
+    })),
+  setSortDirection: (dir) => set({ sortDirection: dir }),
+  setAuthorFilter: (author) => set({ authorFilter: author }),
+  setTagFilters: (tags) => set({ tagFilters: tags }),
+  setFolderFilters: (folders) => set({ folderFilters: folders }),
+  setMemoTextFilter: (memo) => set({ memoTextFilter: memo }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
+  setFilteredWorlds: (worlds) => set({ filteredWorlds: worlds }),
+  setAvailableAuthors: (authors) => set({ availableAuthors: authors }),
+  setAvailableTags: (tags) => set({ availableTags: tags }),
+  clearFilters: () =>
+    set({
+      authorFilter: '',
+      tagFilters: [],
+      folderFilters: [],
+      memoTextFilter: '',
+      searchQuery: '',
+    }),
+}));
+
+function getDefaultDirection(field: SortField): 'asc' | 'desc' {
+  switch (field) {
+    case 'visits':
+    case 'favorites':
+    case 'capacity':
+    case 'dateAdded':
+    case 'lastUpdated':
+      return 'desc';
+    default:
+      return 'asc';
+  }
+}
+
+// Hook to sync worlds and filters
+export function useWorldFilters(worlds: WorldDisplayData[]) {
+  const {
+    sortField,
+    setSortField,
+    sortDirection,
+    setSortDirection,
+    authorFilter,
+    setAuthorFilter,
+    tagFilters,
+    setTagFilters,
+    folderFilters,
+    setFolderFilters,
+    memoTextFilter,
+    setMemoTextFilter,
+    clearFilters,
+    filteredWorlds,
+    setFilteredWorlds,
+    searchQuery,
+    setSearchQuery,
+    availableAuthors,
+    availableTags,
+    setAvailableAuthors,
+    setAvailableTags,
+  } = useWorldFiltersStore();
+
+  const { t } = useLocalization();
+  const requestSeq = useRef(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const seq = ++requestSeq.current;
+
+    const normalize = (s: string) => s.toLowerCase();
+    const searchLower = searchQuery.trim().toLowerCase();
+    const activeAuthor = authorFilter.trim().toLowerCase();
+    const activeTagsLower = tagFilters.map((t) => t.toLowerCase());
+    const activeFoldersLower = folderFilters.map((f) => f.toLowerCase());
+    const hasMemoFilter = memoTextFilter.trim().length > 0;
+
+    function passesSyncFilters(world: WorldDisplayData): boolean {
+      // Text search (name / authorName + romaji variants)
+      const textOk =
+        !searchLower ||
+        normalize(world.name).includes(searchLower) ||
+        normalize(world.authorName).includes(searchLower) ||
+        normalize(toRomaji(world.name)).includes(searchLower) ||
+        normalize(toRomaji(world.authorName)).includes(searchLower);
+
+      if (!textOk) return false;
+
+      if (activeAuthor && normalize(world.authorName) !== activeAuthor)
+        return false;
+
+      if (activeTagsLower.length > 0) {
+        if (!world.tags || world.tags.length === 0) return false;
+        const worldTagsLower = world.tags.map((wt) => wt.toLowerCase());
+        const allTagsFound = activeTagsLower.every((tag) => {
+          const prefixed = `author_tag_${tag}`;
+          return worldTagsLower.some((wTag) => wTag === prefixed.toLowerCase());
+        });
+        if (!allTagsFound) return false;
+      }
+
+      if (activeFoldersLower.length > 0) {
+        const worldFoldersLower = world.folders.map((f) => f.toLowerCase());
+        const allFoldersFound = activeFoldersLower.every((folder) =>
+          worldFoldersLower.some((wf) => wf === folder),
+        );
+        if (!allFoldersFound) return false;
+      }
+
+      return true;
+    }
+
+    async function run() {
+      // 1. Apply synchronous filters
+      let intermediate = worlds.filter(passesSyncFilters);
+
+      // 2. Memo text filtering (async)
+      let memoIdSet: Set<string> | null = null;
+      if (hasMemoFilter) {
+        try {
+          const result = await commands.searchMemoText(memoTextFilter);
+          if (result.status === 'ok') {
+            memoIdSet = new Set(result.data);
+          } else {
+            toast(t('general:error-title'), { description: result.error });
+          }
+        } catch (e) {
+          error(`Error searching memo text: ${e}`);
+          toast(t('general:error-title'), {
+            description: t('listview-page:error-search-memo-text'),
+          });
+        }
+      }
+
+      let finalList = intermediate.filter(
+        (w) => !memoIdSet || memoIdSet.has(w.worldId),
+      );
+
+      // 3. Sorting
+      const dirFactor = sortDirection === 'asc' ? 1 : -1;
+      finalList = finalList.slice().sort((a, b) => {
+        const av = getSortValue(a, sortField);
+        const bv = getSortValue(b, sortField);
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        if (typeof av === 'number' && typeof bv === 'number') {
+          return (av - bv) * dirFactor;
+        }
+        return (
+          String(av).localeCompare(String(bv), undefined, {
+            sensitivity: 'base',
+          }) * dirFactor
+        );
+      });
+
+      // 4. Facets (authors & tags) based on finalList
+      const authorsSet = new Set<string>();
+      const tagsSet = new Set<string>();
+      for (const w of finalList) {
+        authorsSet.add(w.authorName);
+        if (w.tags) {
+          for (const tag of w.tags) {
+            if (tag.toLowerCase().startsWith('author_tag_')) {
+              tagsSet.add(tag.substring('author_tag_'.length));
+            }
+          }
+        }
+      }
+      const authorsArr = Array.from(authorsSet).sort((a, b) =>
+        a.localeCompare(b, undefined, { sensitivity: 'base' }),
+      );
+      const tagsArr = Array.from(tagsSet).sort((a, b) =>
+        a.localeCompare(b, undefined, { sensitivity: 'base' }),
+      );
+
+      // 5. Commit if still latest & not cancelled
+      if (!cancelled && seq === requestSeq.current) {
+        setFilteredWorlds(finalList);
+        setAvailableAuthors(authorsArr);
+        setAvailableTags(tagsArr);
+      }
+    }
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    worlds,
+    searchQuery,
+    authorFilter,
+    tagFilters,
+    folderFilters,
+    memoTextFilter,
+    sortField,
+    sortDirection,
+    setFilteredWorlds,
+    setAvailableAuthors,
+    setAvailableTags,
+    t,
+  ]);
+
+  return {
+    sortField,
+    setSortField,
+    sortDirection,
+    setSortDirection,
+    authorFilter,
+    setAuthorFilter,
+    tagFilters,
+    setTagFilters,
+    folderFilters,
+    setFolderFilters,
+    memoTextFilter,
+    setMemoTextFilter,
+    clearFilters,
+    filteredWorlds,
+    searchQuery,
+    setSearchQuery,
+    availableAuthors,
+    availableTags,
+  };
+}
+
+// Helper to extract value for sorting
+function getSortValue(world: WorldDisplayData, field: SortField): any {
+  switch (field) {
+    case 'name':
+      return world.name;
+    case 'authorName':
+      return world.authorName;
+    case 'visits':
+      return (world as any).visits;
+    case 'favorites':
+      return (world as any).favorites;
+    case 'capacity':
+      return (world as any).capacity;
+    case 'dateAdded':
+      return (world as any).dateAdded; // assume numeric timestamp or sortable string
+    case 'lastUpdated':
+      return (world as any).lastUpdated;
+    default:
+      return undefined;
+  }
+}

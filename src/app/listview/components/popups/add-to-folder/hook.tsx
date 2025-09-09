@@ -7,6 +7,7 @@ import {
   FolderRemovalPreference,
   WorldDisplayData,
 } from '@/lib/bindings';
+import { FolderType } from '@/types/folders';
 import { error, info } from '@tauri-apps/plugin-log';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -14,18 +15,20 @@ import { toast } from 'sonner';
 
 interface AddToFolderPopupProps {
   selectedWorlds: WorldDisplayData[];
+  currentFolder: FolderType;
   onClose: () => void;
 }
 
 export const useAddToFolderPopup = ({
   selectedWorlds,
+  currentFolder,
   onClose,
 }: AddToFolderPopupProps) => {
   const { t } = useLocalization();
 
-  const { folders, createFolder, currentFolder } = useFolders();
+  const { folders, createFolder } = useFolders();
 
-  const { worlds, refresh } = useWorlds();
+  const { worlds, refresh } = useWorlds(currentFolder);
 
   const pathname = usePathname();
 

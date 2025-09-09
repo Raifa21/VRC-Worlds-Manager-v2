@@ -1,6 +1,6 @@
 import { WorldCardPreview } from '@/components/world-card';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { SpecialFolders } from '@/types/folders';
+import { FolderType, SpecialFolders } from '@/types/folders';
 import { CardSize, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -32,9 +32,14 @@ interface WorldGridProps {
   worlds: WorldDisplayData[];
   // Used for virtualized scrolling
   containerRef: React.RefObject<HTMLDivElement | null>;
+  currentFolder: FolderType;
 }
 
-export function WorldGrid({ worlds, containerRef }: WorldGridProps) {
+export function WorldGrid({
+  worlds,
+  containerRef,
+  currentFolder,
+}: WorldGridProps) {
   const { t } = useLocalization();
 
   const {
@@ -56,7 +61,7 @@ export function WorldGrid({ worlds, containerRef }: WorldGridProps) {
     isSpecialFolder,
     isHiddenFolder,
     existingWorldIds,
-  } = useWorldGrid();
+  } = useWorldGrid(currentFolder);
 
   const gap = 16;
   const cardHeights: Record<CardSize, number> = {
