@@ -94,7 +94,7 @@ export default function UnclassifiedWorldsPage() {
       <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">
         <div className="p-4 flex justify-between items-center">
           <h1 className="text-xl font-bold truncate">
-            {t('general:unclassified')}
+            {t('general:unclassified-worlds')}
           </h1>
           <div className="flex items-center">
             <DropdownMenu>
