@@ -91,7 +91,9 @@ export default function AllWorldsPage() {
     <div className="flex h-screen">
       <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">
         <div className="p-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold truncate">{t('general:all')}</h1>
+          <h1 className="text-xl font-bold truncate">
+            {t('general:all-worlds')}
+          </h1>
           <div className="flex items-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
