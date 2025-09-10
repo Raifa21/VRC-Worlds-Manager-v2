@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useContext } from 'react';
+import { useRef, useEffect, useContext } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { useFolders } from '@/app/listview/hook/use-folders';
 import { WorldGrid } from '../../components/world-grid';
@@ -18,6 +18,8 @@ import { useWorlds } from '../../hook/use-worlds';
 import { usePopupStore } from '../../hook/usePopups/store';
 import { SearchBar } from '../../components/searchbar';
 import { useSearchParams } from 'next/navigation';
+import { info } from '@tauri-apps/plugin-log';
+import { useWorldFilters } from '../../hook/use-filters';
 
 export default function UserFolder() {
   // filter references for ui
@@ -28,6 +30,9 @@ export default function UserFolder() {
 
   // worlds
   const { worlds } = useWorlds(folderName);
+
+  info('Loaded worlds in folder: ' + folderName);
+  info('Number of worlds: ' + worlds.length);
 
   const { importFolder } = useFolders();
 
@@ -68,7 +73,12 @@ export default function UserFolder() {
     };
   }, []);
 
-  const [sortedAndFilteredWorlds] = useState(worlds); // TODO: change to useFilter(worlds)
+  // Initialize / update filtering for this folder's worlds
+  const { filteredWorlds } = useWorldFilters(worlds);
+  // Debug
+  info(
+    `[UserFolder] raw worlds: ${worlds.length}, filtered: ${filteredWorlds.length}`,
+  );
 
   return (
     <div className="flex h-screen">
@@ -111,9 +121,9 @@ export default function UserFolder() {
         </div>
 
         <div>
-          <SearchBar currentFolder={folderName} worlds={worlds} />
+          <SearchBar currentFolder={folderName} />
           <div className="flex-1">
-            {sortedAndFilteredWorlds.length === 0 ? (
+            {filteredWorlds.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 {worlds.length === 0
                   ? // no raw worlds in this folder / section
@@ -123,7 +133,7 @@ export default function UserFolder() {
               </div>
             ) : (
               <WorldGrid
-                worlds={sortedAndFilteredWorlds}
+                worlds={filteredWorlds}
                 currentFolder={folderName}
                 containerRef={gridScrollRef}
               />
