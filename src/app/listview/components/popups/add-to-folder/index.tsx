@@ -63,7 +63,7 @@ export function AddToFolderDialog({
   } = useAddToFolderPopup({ selectedWorlds, currentFolder, onClose });
 
   return (
-    <Dialog onOpenChange={handleCancel}>
+    <Dialog open={true} onOpenChange={handleCancel}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('add-to-folder-dialog:title')}</DialogTitle>
@@ -92,25 +92,34 @@ export function AddToFolderDialog({
               <div ref={listRef} className="space-y-2 px-2 pb-2">
                 {folders.map((folder) => {
                   const isNew = folder.name === createdFolder;
+                  const state = getFolderState(folder.name);
+                  const isAll = state === 'all';
+                  const isSome = state === 'some';
                   return (
                     <Button
                       key={folder.name}
                       data-folder={folder.name}
-                      variant="outline"
-                      className="w-full justify-between group"
+                      variant={isAll ? 'default' : 'outline'}
+                      className={`w-full justify-between group ${
+                        isAll ? '' : ''
+                      }`}
                       onClick={() => handleClick(folder.name)}
                     >
                       <span className="flex flex-row items-center w-full justify-start">
                         <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
                           {folder.world_count}
                         </span>
-                        <span className="truncate flex-1 pr-2 text-left max-w-[290px]">
+                        <span
+                          className={`truncate flex-1 pr-2 text-left max-w-[290px] ${
+                            isAll ? 'font-medium' : ''
+                          }`}
+                        >
                           {folder.name}
                         </span>
                       </span>
                       <span>
-                        {getFolderState(folder.name) === 'all' && <Check />}
-                        {getFolderState(folder.name) === 'some' && <Minus />}
+                        {isAll && <Check />}
+                        {isSome && <Minus />}
                       </span>
                     </Button>
                   );
