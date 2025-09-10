@@ -59,6 +59,7 @@ export default function FindWorldsPage() {
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const findGridRef = useRef<HTMLDivElement>(null);
+  const searchScrollRef = useRef<HTMLDivElement>(null); // scroller for search tab
   const { isSelectionMode, toggleSelectionMode, clearFolderSelections } =
     useSelectedWorldsStore();
 
@@ -92,6 +93,11 @@ export default function FindWorldsPage() {
 
   // Add this state variable to track if a search has been performed
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Backoff control for load-more errors
+  const [loadMoreBackoffUntil, setLoadMoreBackoffUntil] = useState<
+    number | null
+  >(null);
 
   const fetchRecentlyVisitedWorlds = async () => {
     try {
@@ -143,6 +149,11 @@ export default function FindWorldsPage() {
   }, [activeTab]);
 
   const handleSearch = async (loadMore = false) => {
+    // Respect backoff if trying to auto load more
+    if (loadMore && loadMoreBackoffUntil && Date.now() < loadMoreBackoffUntil) {
+      return;
+    }
+
     if (!loadMore) {
       // Only set this flag when performing a new search, not when loading more
       setHasSearched(true);
@@ -174,6 +185,7 @@ export default function FindWorldsPage() {
           // Append new results to existing ones
           setSearchResults((prev) => [...prev, ...result.data]);
           setCurrentPage(currentPage + 1);
+          setLoadMoreBackoffUntil(null); // reset backoff after success
         } else {
           // Replace results for new search
           setSearchResults(result.data);
@@ -196,6 +208,23 @@ export default function FindWorldsPage() {
       toast(t('find-page:search-error'), {
         description: String(err),
       });
+
+      // Apply a brief backoff and nudge scroll up so the sentinel isn't intersecting
+      if (loadMore) {
+        const backoffMs = 2500; // 2-3 seconds backoff
+        setLoadMoreBackoffUntil(Date.now() + backoffMs);
+        info(`Load-more backoff applied for ${backoffMs}ms; nudging scroll up`);
+        const scroller = searchScrollRef.current;
+        try {
+          if (scroller) {
+            scroller.scrollBy({ top: -100, behavior: 'smooth' });
+          } else if (typeof window !== 'undefined') {
+            window.scrollBy({ top: -100, behavior: 'smooth' });
+          }
+        } catch (_) {
+          // noop
+        }
+      }
     } finally {
       setIsLoadingMore(false);
       setIsSearching(false);
