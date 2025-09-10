@@ -1,123 +1,171 @@
-import { useLocalization } from '@/hooks/use-localization';
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { FolderType, isUserFolder, SpecialFolders } from '@/types/folders';
+import { create } from 'zustand';
 import { error, info } from '@tauri-apps/plugin-log';
-import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { useLocalization } from '@/hooks/use-localization';
 import { toast } from 'sonner';
-import useSWR from 'swr';
 
-const handleCommandResult = async <T,>(
-  commandPromise: Promise<{ status: string; data?: T; error?: string }>,
-  errorMessage: string,
-): Promise<T> => {
-  const result = await commandPromise;
-  if (result.status === 'ok' && result.data) {
-    return result.data;
-  } else {
-    info(errorMessage + ': ' + result.error);
-    throw new Error(result.error || errorMessage);
-  }
+type FolderKey = string;
+
+const folderKey = (folder: FolderType): FolderKey => String(folder);
+
+type FolderEntry = {
+  worlds: WorldDisplayData[];
+  isLoading: boolean;
+  error?: string;
 };
 
-const fetchUserFolder = async (folder: string): Promise<WorldDisplayData[]> => {
-  return handleCommandResult(
-    commands.getWorlds(folder),
-    `Failed to fetch worlds for folder: ${folder}`,
-  );
-};
+interface WorldsStoreState {
+  byKey: Record<FolderKey, FolderEntry>;
+  inflight: Record<FolderKey, Promise<void> | undefined>;
+  // actions
+  load: (folder: FolderType, opts?: { force?: boolean }) => Promise<void>;
+  setWorlds: (folder: FolderType, worlds: WorldDisplayData[]) => void;
+  addWorldToFolder: (folder: FolderType, worldId: string) => Promise<void>;
+  getAllWorlds: () => Promise<WorldDisplayData[]>;
+  getFavoriteWorlds: () => Promise<unknown>;
+}
 
-const fetchAllWorlds = async (): Promise<WorldDisplayData[]> => {
-  return handleCommandResult(
-    commands.getAllWorlds(),
-    'Failed to fetch all worlds',
-  );
-};
-
-const fetchUnclassifiedWorlds = async (): Promise<WorldDisplayData[]> => {
-  return handleCommandResult(
-    commands.getUnclassifiedWorlds(),
-    'Failed to fetch unclassified worlds',
-  );
-};
-
-const fetchHiddenWorlds = async (): Promise<WorldDisplayData[]> => {
-  return handleCommandResult(
-    commands.getHiddenWorlds(),
-    'Failed to fetch hidden worlds',
-  );
-};
-
-const getFavoriteWorlds = async () => {
-  return handleCommandResult(
-    commands.getFavoriteWorlds(),
-    'Failed to fetch favorite worlds',
-  );
-};
-
-const fetchWorlds = async (folder: FolderType): Promise<WorldDisplayData[]> => {
+async function fetchWorldsImpl(
+  folder: FolderType,
+): Promise<WorldDisplayData[]> {
   if (isUserFolder(folder)) {
-    const userFolderName: string = folder;
-    return fetchUserFolder(userFolderName);
+    const res = await commands.getWorlds(folder as string);
+    if (res.status === 'ok') return res.data;
+    throw new Error(res.error);
   }
-
   switch (folder) {
-    case SpecialFolders.All:
-      return fetchAllWorlds();
-    case SpecialFolders.Unclassified:
-      return fetchUnclassifiedWorlds();
-    case SpecialFolders.Hidden:
-      return fetchHiddenWorlds();
+    case SpecialFolders.All: {
+      const res = await commands.getAllWorlds();
+      if (res.status === 'ok') return res.data;
+      throw new Error(res.error);
+    }
+    case SpecialFolders.Unclassified: {
+      const res = await commands.getUnclassifiedWorlds();
+      if (res.status === 'ok') return res.data;
+      throw new Error(res.error);
+    }
+    case SpecialFolders.Hidden: {
+      const res = await commands.getHiddenWorlds();
+      if (res.status === 'ok') return res.data;
+      throw new Error(res.error);
+    }
     case SpecialFolders.Find:
-      return []; // or appropriate implementation
+      return [];
     default:
       throw new Error(`Unknown folder type: ${folder}`);
   }
-};
+}
 
+export const useWorldsStore = create<WorldsStoreState>((set, get) => ({
+  byKey: {},
+  inflight: {},
+  async load(folder, opts) {
+    const key = folderKey(folder);
+    const force = opts?.force === true;
+    const state = get();
+    if (!force && state.inflight[key]) {
+      return state.inflight[key]!;
+    }
+    // mark loading
+    set((s) => ({
+      byKey: {
+        ...s.byKey,
+        [key]: {
+          worlds: s.byKey[key]?.worlds ?? [],
+          isLoading: true,
+          error: undefined,
+        },
+      },
+    }));
+    const p = (async () => {
+      try {
+        const data = await fetchWorldsImpl(folder);
+        set((s) => ({
+          byKey: {
+            ...s.byKey,
+            [key]: { worlds: data, isLoading: false, error: undefined },
+          },
+        }));
+        info(`[useWorldsStore] Loaded ${data.length} worlds for key=${key}`);
+      } catch (e) {
+        const msg = String(e);
+        error(`[useWorldsStore] Failed to load worlds for key=${key}: ${msg}`);
+        set((s) => ({
+          byKey: {
+            ...s.byKey,
+            [key]: {
+              worlds: s.byKey[key]?.worlds ?? [],
+              isLoading: false,
+              error: msg,
+            },
+          },
+        }));
+      } finally {
+        set((s) => ({ inflight: { ...s.inflight, [key]: undefined } }));
+      }
+    })();
+    set((s) => ({ inflight: { ...s.inflight, [key]: p } }));
+    return p;
+  },
+  setWorlds(folder, worlds) {
+    const key = folderKey(folder);
+    set((s) => ({
+      byKey: { ...s.byKey, [key]: { worlds, isLoading: false } },
+    }));
+  },
+  async addWorldToFolder(folder, worldId) {
+    if (!isUserFolder(folder)) return;
+    const key = folderKey(folder);
+    const res = await commands.getWorld(worldId, null);
+    if (res.status === 'error') throw new Error(res.error);
+    await commands.addWorldToFolder(folder as string, worldId);
+    // optimistic update: append if not exists
+    set((s) => {
+      const entry = s.byKey[key] ?? { worlds: [], isLoading: false };
+      const exists = entry.worlds.some((w) => w.worldId === worldId);
+      const next = exists ? entry.worlds : [res.data, ...entry.worlds];
+      return {
+        byKey: { ...s.byKey, [key]: { ...entry, worlds: next } },
+      } as any;
+    });
+  },
+  async getAllWorlds() {
+    const res = await commands.getAllWorlds();
+    if (res.status === 'ok') return res.data;
+    throw new Error(res.error);
+  },
+  async getFavoriteWorlds() {
+    const res = await commands.getFavoriteWorlds();
+    if (res.status === 'ok') return res.data;
+    throw new Error(res.error);
+  },
+}));
+
+// Public hook API compatible with previous callers
 export function useWorlds(folder: FolderType) {
   const { t } = useLocalization();
+  const key = folderKey(folder);
+  const store = useWorldsStore();
+  const entry = store.byKey[key] ?? { worlds: [], isLoading: false };
 
-  const {
-    data: worlds = [],
-    error,
-    isLoading,
-    mutate: refresh,
-  } = useSWR<WorldDisplayData[]>(
-    ['worlds', folder],
-    () => fetchWorlds(folder),
-    {
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      errorRetryCount: 3,
-      errorRetryInterval: 2000,
-      onError: (e) => {
-        info('Failed to fetch worlds:', e);
-        toast.error(t('general:error-title'), {
-          description: t('listview-page:error-fetch-worlds'),
-        });
-      },
-    },
-  );
+  useEffect(() => {
+    store.load(folder).catch((e) => {
+      error(`[useWorlds] load failed: ${String(e)}`);
+      toast.error(t('general:error-title'), {
+        description: t('listview-page:error-fetch-worlds'),
+      });
+    });
+  }, [key]);
 
-  const getAllWorlds = () => {
-    return fetchAllWorlds();
-  };
-
+  const refresh = () => store.load(folder, { force: true });
   const addWorld = async (worldId: string) => {
     try {
-      const world = await commands.getWorld(worldId, null);
-      if (world.status === 'error') {
-        throw new Error(world.error);
-      }
-      // if we are not in a special folder, add the world to the current folder
-      if (isUserFolder(folder) === true) {
-        await commands.addWorldToFolder(folder, worldId);
-      }
+      await store.addWorldToFolder(folder, worldId);
       toast(t('listview-page:world-added-title'), {
         description: t('listview-page:world-added-description'),
       });
-      refresh();
     } catch (e) {
       error(`Failed to add world: ${e}`);
       toast(t('general:error-title'), {
@@ -127,10 +175,10 @@ export function useWorlds(folder: FolderType) {
   };
 
   return {
-    worlds,
-    isLoading,
-    getAllWorlds,
-    getFavoriteWorlds,
+    worlds: entry.worlds,
+    isLoading: entry.isLoading,
+    getAllWorlds: store.getAllWorlds,
+    getFavoriteWorlds: store.getFavoriteWorlds,
     addWorld,
     refresh,
   };
