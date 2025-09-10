@@ -9,9 +9,12 @@ import { useFolders } from '../../hook/use-folders';
 import { useWorlds } from '../../hook/use-worlds';
 import { usePathname } from 'next/navigation';
 import path from 'path';
-import { FolderType } from '@/types/folders';
+import { FolderType, SpecialFolders } from '@/types/folders';
 
-export function useWorldGrid(currentFolder: FolderType) {
+export function useWorldGrid(
+  currentFolder: FolderType,
+  worlds: WorldDisplayData[],
+) {
   const { t } = useLocalization();
   const setPopup = usePopupStore((state) => state.setPopup);
 
@@ -24,7 +27,7 @@ export function useWorldGrid(currentFolder: FolderType) {
     clearFolderSelections,
   } = useSelectedWorldsStore();
 
-  const { worlds, refresh } = useWorlds(currentFolder);
+  const { refresh } = useWorlds(currentFolder);
 
   const [cardSize, setCardSize] = useState<CardSize>('Normal');
 
@@ -70,23 +73,21 @@ export function useWorldGrid(currentFolder: FolderType) {
     return () => window.removeEventListener('keydown', handleEscKey);
   });
 
-  const pathname = usePathname();
+  const isFindPage = currentFolder === SpecialFolders.Find;
+  const isSpecialFolder = currentFolder in SpecialFolders;
+  const isHiddenFolder = currentFolder === SpecialFolders.Hidden;
 
-  const isFindPage = pathname.includes('/listview/special/find');
-  const isSpecialFolder = pathname.includes('/listview/special/');
-  const isHiddenFolder = pathname.includes('/listview/special/hidden');
-
-  //set existing world set for "Added" badge in find page
-  let existingWorldIds = new Set<string>();
+  // existing world set for "Added" badge in find page
+  const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   useEffect(() => {
     if (!isFindPage) return; // Only needed for find page
 
     const checkWorldsExistence = async () => {
       try {
-        // Get unique world IDs
         const worldIds = worlds.map((world) => world.worldId);
 
-        // Check which worlds exist in the collection
         const existingWorldsResult = await commands.getAllWorlds();
         if (existingWorldsResult.status !== 'ok') {
           error(`Error fetching worlds: ${existingWorldsResult.error}`);
@@ -101,30 +102,26 @@ export function useWorldGrid(currentFolder: FolderType) {
         }
         const hiddenWorlds = hiddenWorldsResult.data;
 
-        //check if the worldId exists in the collection
         const existingIds = worldIds.filter(
           (id) =>
             existingWorlds.some((world) => world.worldId === id) ||
             hiddenWorlds.some((world) => world.worldId === id),
         );
 
-        existingWorldIds = new Set(existingIds);
+        setExistingWorldIds(new Set(existingIds));
       } catch (err) {
         error(`Error checking world existence: ${err}`);
       }
     };
 
     checkWorldsExistence();
-  });
+  }, [isFindPage, worlds]);
 
   const selectAllFindPage = () => {
     const worldsToSelect = worlds
-      .filter((world) => !isFindPage || !existingWorldIds.has(world.worldId))
+      .filter((world) => !existingWorldIds.has(world.worldId))
       .map((world) => world.worldId);
-
-    for (const id of existingWorldIds) {
-      toggleWorldSelection(currentFolder, id);
-    }
+    selectAllWorlds(currentFolder, worldsToSelect);
   };
 
   const handleOpenWorldDetails = (worldId: string) => {

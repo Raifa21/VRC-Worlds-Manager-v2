@@ -61,7 +61,7 @@ export function WorldGrid({
     isSpecialFolder,
     isHiddenFolder,
     existingWorldIds,
-  } = useWorldGrid(currentFolder);
+  } = useWorldGrid(currentFolder, worlds);
 
   const gap = 16;
   const cardHeights: Record<CardSize, number> = {
@@ -189,79 +189,51 @@ export function WorldGrid({
                       <ContextMenuTrigger asChild>
                         <div
                           id={world.worldId}
-                          onClick={() => handleOpenWorldDetails(world.worldId)}
+                          onClick={() =>
+                            isFindPage
+                              ? handleOpenFolderDialog(world.worldId)
+                              : handleOpenWorldDetails(world.worldId)
+                          }
                           className="group relative w-fit h-fit rounded-lg overflow-hidden"
                         >
                           {isSelected && (
                             <div className="absolute inset-0 rounded-lg border-2 border-primary pointer-events-none z-10" />
                           )}
                           <WorldCardPreview size={cardSize} world={world} />
+                          <div className="absolute bottom-[70px] left-2 z-10">
+                            {isFindPage &&
+                              existingWorldIds.has(world.worldId) && (
+                                <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
+                                  {t('world-grid:exists-in-collection')}
+                                </Badge>
+                              )}
+                          </div>
                           {isSelectionMode && (
-                            <>
-                              {!isFindPage ? (
-                                <div className="absolute top-2 left-2 z-1">
-                                  {isSelected ? (
-                                    <div
-                                      className="absolute -top-2 -left-2 z-10 w-10 h-10 flex items-center justify-center cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSelect(world.worldId, e);
-                                      }}
-                                    >
-                                      <Square className="w-5 h-5 z-10 text-primary" />
-                                      <div className="absolute inset-[12px] bg-background rounded" />
-                                      <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
-                                    </div>
-                                  ) : (
-                                    <div
-                                      className="absolute -top-2 -left-2 z-10 w-10 h-10 flex items-center justify-center cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSelect(world.worldId, e);
-                                      }}
-                                    >
-                                      <Square className="w-5 h-5 text-muted-foreground" />
-                                    </div>
-                                  )}
+                            <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
+                              {isSelected ? (
+                                <div
+                                  className="relative w-10 h-10 flex items-center justify-center cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSelect(world.worldId, e);
+                                  }}
+                                >
+                                  <Square className="w-5 h-5 z-10 text-primary" />
+                                  <div className="absolute inset-[12px] bg-background rounded" />
+                                  <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
                                 </div>
                               ) : (
-                                <>
-                                  {!existingWorldIds.has(world.worldId) ? (
-                                    <div className="absolute top-2 left-2 z-1">
-                                      {isSelected ? (
-                                        <div
-                                          className="absolute -top-2 -left-2 z-10 w-10 h-10 flex items-center justify-center cursor-pointer"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleSelect(world.worldId, e);
-                                          }}
-                                        >
-                                          <Square className="w-5 h-5 z-10 text-primary" />
-                                          <div className="absolute inset-[12px] bg-background rounded" />
-                                          <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
-                                        </div>
-                                      ) : (
-                                        <div
-                                          className="absolute -top-2 -left-2 z-10 w-10 h-10 flex items-center justify-center cursor-pointer"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleSelect(world.worldId, e);
-                                          }}
-                                        >
-                                          <Square className="w-5 h-5 text-muted-foreground" />
-                                        </div>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="absolute top-2 left-2 z-1">
-                                      <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
-                                        {t('world-grid:exists-in-collection')}
-                                      </Badge>
-                                    </div>
-                                  )}
-                                </>
+                                <div
+                                  className="relative w-10 h-10 flex items-center justify-center cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSelect(world.worldId, e);
+                                  }}
+                                >
+                                  <Square className="w-5 h-5 text-muted-foreground" />
+                                </div>
                               )}
-                            </>
+                            </div>
                           )}
                         </div>
                       </ContextMenuTrigger>
