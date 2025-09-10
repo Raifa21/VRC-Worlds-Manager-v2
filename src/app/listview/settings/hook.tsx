@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { LocalizationContext } from '../../../components/localization-context';
 import { useFolders } from '../hook/use-folders';
 import { useTheme } from 'next-themes';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 
 export const useSettingsPage = () => {
   const [cardSize, setCardSize] = useState<CardSize>('Normal');
@@ -33,9 +34,35 @@ export const useSettingsPage = () => {
 
   const { setLanguage: changeLanguage } = useContext(LocalizationContext);
 
-  const { refresh: onDataChange } = useFolders();
+  const { refresh: onDataChange, importFolder } = useFolders();
 
   const { setTheme } = useTheme();
+
+  // subscribe to deep link events
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    (async () => {
+      unsubscribe = await onOpenUrl((urls) => {
+        console.log('deep link:', urls);
+        //vrc-worlds-manager://vrcwm.raifaworks.com/folder/import/${uuid}
+        //call handleImportFolder with the uuid
+        const importRegex =
+          /vrc-worlds-manager:\/\/vrcwm\.raifaworks\.com\/folder\/import\/([a-zA-Z0-9-]+)/;
+        const match = urls[0].match(importRegex);
+        if (match && match[1]) {
+          const uuid = match[1];
+          importFolder(uuid);
+        }
+      });
+    })();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   // Add missing export confirm handler
   const handleExportConfirm = async (
