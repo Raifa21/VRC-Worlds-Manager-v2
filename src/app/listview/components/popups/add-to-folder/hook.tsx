@@ -7,11 +7,12 @@ import {
   FolderRemovalPreference,
   WorldDisplayData,
 } from '@/lib/bindings';
-import { FolderType } from '@/types/folders';
+import { FolderType, isUserFolder, SpecialFolders } from '@/types/folders';
 import { error, info } from '@tauri-apps/plugin-log';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { usePopupStore } from '@/app/listview/hook/usePopups/store';
 
 interface AddToFolderPopupProps {
   selectedWorlds: WorldDisplayData[];
@@ -30,12 +31,11 @@ export const useAddToFolderPopup = ({
 
   const { worlds, refresh } = useWorlds(currentFolder);
 
-  const pathname = usePathname();
-
-  const isSpecialFolder = pathname.includes('/folders/special/');
-  const isFindPage = pathname.includes('/folders/special/find/');
+  const isSpecialFolder = !isUserFolder(currentFolder);
+  const isFindPage = currentFolder === SpecialFolders.Find;
 
   const { clearFolderSelections } = useSelectedWorldsStore();
+  const bumpMembershipVersion = usePopupStore((s) => s.bumpMembershipVersion);
 
   const [foldersToAdd, setFoldersToAdd] = useState<Set<string>>(new Set());
   const [foldersToRemove, setFoldersToRemove] = useState<Set<string>>(
@@ -607,6 +607,10 @@ export const useAddToFolderPopup = ({
         });
 
         await refresh();
+      }
+      // For Find page, membership has changed; bump version so grids recompute existence
+      if (isFindPage) {
+        bumpMembershipVersion();
       }
       info('[AddToFolder] handleAddToFolders completed successfully');
       // Closing is handled by caller paths (confirm/keep/remove) too; still close here to be safe.

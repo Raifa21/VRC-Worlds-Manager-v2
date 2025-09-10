@@ -243,66 +243,70 @@ export function WorldGrid({
                           )}
                         </div>
                       </ContextMenuTrigger>
-                      {!isFindPage && (
-                        <ContextMenuContent>
-                          {!isHiddenFolder ? (
-                            <>
+                      <ContextMenuContent>
+                        {isFindPage ? (
+                          <ContextMenuItem
+                            onSelect={(e) => {
+                              handleOpenFolderDialog(world.worldId);
+                            }}
+                          >
+                            {t('world-grid:add-title')}
+                          </ContextMenuItem>
+                        ) : !isHiddenFolder ? (
+                          <>
+                            <ContextMenuItem
+                              onSelect={(e) => {
+                                handleOpenFolderDialog(world.worldId);
+                              }}
+                            >
+                              {t('world-grid:move-title')}
+                            </ContextMenuItem>
+                            {!isSpecialFolder && (
                               <ContextMenuItem
                                 onSelect={(e) => {
-                                  handleOpenFolderDialog(world.worldId);
-                                }}
-                              >
-                                {t('world-grid:move-title')}
-                              </ContextMenuItem>
-                              {!isSpecialFolder && (
-                                <ContextMenuItem
-                                  onSelect={(e) => {
-                                    handleRemoveFromCurrentFolder(
-                                      world.worldId,
-                                    );
-                                  }}
-                                  className="text-destructive"
-                                >
-                                  {t('world-grid:remove-title')}
-                                </ContextMenuItem>
-                              )}
-                              <ContextMenuItem
-                                onSelect={(e) => {
-                                  const worldsToHide =
-                                    selectedWorlds.length > 0 &&
-                                    selectedWorlds.includes(world.worldId)
-                                      ? Array.from(selectedWorlds)
-                                      : [world.worldId];
-                                  const worldNames = worldsToHide
-                                    .map(
-                                      (id) =>
-                                        worlds.find((w) => w.worldId === id)
-                                          ?.name || '',
-                                    )
-                                    .filter(Boolean);
-                                  handleHideWorld?.(worldsToHide, worldNames);
+                                  handleRemoveFromCurrentFolder(world.worldId);
                                 }}
                                 className="text-destructive"
                               >
-                                {t('general:hide-title')}
+                                {t('world-grid:remove-title')}
                               </ContextMenuItem>
-                            </>
-                          ) : (
+                            )}
                             <ContextMenuItem
                               onSelect={(e) => {
-                                const worldsToRestore =
+                                const worldsToHide =
                                   selectedWorlds.length > 0 &&
                                   selectedWorlds.includes(world.worldId)
                                     ? Array.from(selectedWorlds)
                                     : [world.worldId];
-                                handleRestoreWorld?.(worldsToRestore);
+                                const worldNames = worldsToHide
+                                  .map(
+                                    (id) =>
+                                      worlds.find((w) => w.worldId === id)
+                                        ?.name || '',
+                                  )
+                                  .filter(Boolean);
+                                handleHideWorld?.(worldsToHide, worldNames);
                               }}
+                              className="text-destructive"
                             >
-                              {t('world-grid:restore-world')}
+                              {t('general:hide-title')}
                             </ContextMenuItem>
-                          )}
-                        </ContextMenuContent>
-                      )}
+                          </>
+                        ) : (
+                          <ContextMenuItem
+                            onSelect={(e) => {
+                              const worldsToRestore =
+                                selectedWorlds.length > 0 &&
+                                selectedWorlds.includes(world.worldId)
+                                  ? Array.from(selectedWorlds)
+                                  : [world.worldId];
+                              handleRestoreWorld?.(worldsToRestore);
+                            }}
+                          >
+                            {t('world-grid:restore-world')}
+                          </ContextMenuItem>
+                        )}
+                      </ContextMenuContent>
                     </ContextMenu>
                   );
                 })}
