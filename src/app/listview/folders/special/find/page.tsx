@@ -70,7 +70,7 @@ export default function FindWorldsPage() {
 
     (async () => {
       unsubscribe = await onOpenUrl((urls) => {
-        console.log('deep link:', urls);
+        info(`deep link: ${JSON.stringify(urls)}`);
         //vrc-worlds-manager://vrcwm.raifaworks.com/folder/import/${uuid}
         //call handleImportFolder with the uuid
         const importRegex =
@@ -234,7 +234,8 @@ export default function FindWorldsPage() {
   // no external select-all; handled by grid internally when needed
 
   return (
-    <div className="p-1 flex flex-col h-full">
+    <div className="p-1 flex flex-col h-full min-h-0">
+      {/* added min-h-0 */}
       {/* Header with title and reload button */}
       <div className="flex items-center justify-between p-4 bg-background">
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
@@ -295,140 +296,7 @@ export default function FindWorldsPage() {
         </Tabs>
       </div>
 
-      {/* Search and filter controls */}
-      {activeTab === 'search' && (
-        <div className="sticky top-0 z-30 bg-background border-b">
-          <Card className=" mx-4 border-0 shadow-none">
-            <CardContent className="pt-4 space-y-4">
-              {/* First row: Search input, Sort dropdown, and Search button */}
-              <div className="flex gap-4 items-end">
-                {/* Search text input */}
-                <div className="flex flex-col gap-2 w-3/5">
-                  <Label htmlFor="search-query">
-                    {t('find-page:search-query')}
-                  </Label>
-                  <Input
-                    id="search-query"
-                    placeholder={t('find-page:search-placeholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-
-                {/* Sort options */}
-                <div className="flex flex-col gap-2 w-2/5">
-                  <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
-                  <Select value={selectedSort} onValueChange={setSelectedSort}>
-                    <SelectTrigger id="sort">
-                      <SelectValue
-                        placeholder={t('find-page:sort-popularity')}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="popularity">
-                        {t('find-page:sort-popularity')}
-                      </SelectItem>
-                      <SelectItem value="heat">
-                        {t('find-page:sort-heat')}
-                      </SelectItem>
-                      <SelectItem value="random">
-                        {t('find-page:sort-random')}
-                      </SelectItem>
-                      <SelectItem value="favorites">
-                        {t('find-page:sort-favorites')}
-                      </SelectItem>
-                      <SelectItem value="publicationDate">
-                        {t('find-page:sort-publication-date')}
-                      </SelectItem>
-                      <SelectItem value="created">
-                        {t('find-page:sort-created')}
-                      </SelectItem>
-                      <SelectItem value="updated">
-                        {t('find-page:sort-updated')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Second row: Tag filters */}
-              <div className="flex gap-4 items-start">
-                {/* Tag combobox */}
-                <div className="flex-1 min-w-0 flex flex-col gap-2">
-                  <Label htmlFor="tag">{t('find-page:tag')}</Label>
-                  <MultiFilterItemSelector
-                    placeholder={t('find-page:tag-placeholder')}
-                    candidates={availableTags.map((tag) => ({
-                      value: tag,
-                      label: tag,
-                    }))}
-                    values={selectedTags}
-                    onValuesChange={setSelectedTags}
-                    allowCustomValues={true}
-                    maxItems={5}
-                    id="Tag"
-                  />
-                </div>
-
-                {/* Exclude Tag combobox */}
-                <div className="flex-1 min-w-0 flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="exclude-tag">
-                      {t('find-page:exclude-tag')}
-                    </Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <CircleHelpIcon className="w-3 h-3 m-0" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {t('find-page:exclude-tag-tooltip')}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <MultiFilterItemSelector
-                    placeholder={t('find-page:exclude-tag-placeholder')}
-                    candidates={[...availableTags].reverse().map((tag) => ({
-                      value: tag,
-                      label: tag,
-                    }))}
-                    values={selectedExcludedTags}
-                    onValuesChange={setSelectedExcludedTags}
-                    allowCustomValues={true}
-                    maxItems={5}
-                    id="ExcludeTag"
-                  />
-                </div>
-                {/* Search button */}
-                <div className="flex-1 min-w-0 flex flex-col gap-2">
-                  <Label className="invisible">
-                    Invisible Label to align the button!
-                    {/* <3 ciel-chan */}
-                  </Label>
-                  <Button
-                    className="flex-shrink-0"
-                    onClick={() => handleSearch(false)}
-                    disabled={isSearching}
-                  >
-                    {isSearching ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('find-page:searching')}
-                      </>
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-4 w-4" />
-                        {t('find-page:search-button')}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Search and filter controls - moved into the search tab content scroll container below */}
 
       {/* Main content area */}
       <div>
@@ -458,57 +326,197 @@ export default function FindWorldsPage() {
         )}
 
         {activeTab === 'search' && (
-          <div className="flex flex-col gap-4 p-4">
-            {/* Search results */}
-            {searchResults.length > 0 && (
-              <div className="flex-1">
-                <WorldGrid
-                  worlds={searchResults}
-                  currentFolder={SpecialFolders.Find}
-                  containerRef={findGridRef}
-                />
-
-                {/* Load more indicator */}
-                <div ref={loadMoreRef} className="p-4 flex justify-center">
-                  {isLoadingMore ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>{t('find-page:loading-more')}</span>
+          <div className="flex-1 min-h-0">
+            {/* new scroll container for search tab */}
+            <div className="sticky top-0 z-40 bg-background border-b">
+              {/* sticky header now inside scroller */}
+              <Card className=" mx-4 border-0 shadow-none">
+                <CardContent className="pt-4 space-y-4">
+                  {/* First row: Search input, Sort dropdown, and Search button */}
+                  <div className="flex gap-4 items-end">
+                    {/* Search text input */}
+                    <div className="flex flex-col gap-2 w-3/5">
+                      <Label htmlFor="search-query">
+                        {t('find-page:search-query')}
+                      </Label>
+                      <Input
+                        id="search-query"
+                        placeholder={t('find-page:search-placeholder')}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
                     </div>
-                  ) : hasMoreResults ? (
-                    <p className="text-sm text-muted-foreground">
-                      {t('find-page:scroll-for-more')}
-                    </p>
-                  ) : (
-                    searchResults.length > 0 && (
+
+                    {/* Sort options */}
+                    <div className="flex flex-col gap-2 w-2/5">
+                      <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
+                      <Select
+                        value={selectedSort}
+                        onValueChange={setSelectedSort}
+                      >
+                        <SelectTrigger id="sort">
+                          <SelectValue
+                            placeholder={t('find-page:sort-popularity')}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="popularity">
+                            {t('find-page:sort-popularity')}
+                          </SelectItem>
+                          <SelectItem value="heat">
+                            {t('find-page:sort-heat')}
+                          </SelectItem>
+                          <SelectItem value="random">
+                            {t('find-page:sort-random')}
+                          </SelectItem>
+                          <SelectItem value="favorites">
+                            {t('find-page:sort-favorites')}
+                          </SelectItem>
+                          <SelectItem value="publicationDate">
+                            {t('find-page:sort-publication-date')}
+                          </SelectItem>
+                          <SelectItem value="created">
+                            {t('find-page:sort-created')}
+                          </SelectItem>
+                          <SelectItem value="updated">
+                            {t('find-page:sort-updated')}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Second row: Tag filters */}
+                  <div className="flex gap-4 items-start">
+                    {/* Tag combobox */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-2">
+                      <Label htmlFor="tag">{t('find-page:tag')}</Label>
+                      <MultiFilterItemSelector
+                        placeholder={t('find-page:tag-placeholder')}
+                        candidates={availableTags.map((tag) => ({
+                          value: tag,
+                          label: tag,
+                        }))}
+                        values={selectedTags}
+                        onValuesChange={setSelectedTags}
+                        allowCustomValues={true}
+                        maxItems={5}
+                        id="Tag"
+                      />
+                    </div>
+
+                    {/* Exclude Tag combobox */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="exclude-tag">
+                          {t('find-page:exclude-tag')}
+                        </Label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <CircleHelpIcon className="w-3 h-3 m-0" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t('find-page:exclude-tag-tooltip')}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <MultiFilterItemSelector
+                        placeholder={t('find-page:exclude-tag-placeholder')}
+                        candidates={[...availableTags].reverse().map((tag) => ({
+                          value: tag,
+                          label: tag,
+                        }))}
+                        values={selectedExcludedTags}
+                        onValuesChange={setSelectedExcludedTags}
+                        allowCustomValues={true}
+                        maxItems={5}
+                        id="ExcludeTag"
+                      />
+                    </div>
+                    {/* Search button */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-2">
+                      <Label className="invisible">
+                        Invisible Label to align the button!
+                        {/* <3 ciel-chan */}
+                      </Label>
+                      <Button
+                        className="flex-shrink-0"
+                        onClick={() => handleSearch(false)}
+                        disabled={isSearching}
+                      >
+                        {isSearching ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {t('find-page:searching')}
+                          </>
+                        ) : (
+                          <>
+                            <Search className="mr-2 h-4 w-4" />
+                            {t('find-page:search-button')}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="flex flex-col gap-4 p-4">
+              {/* original search tab content */}
+              {/* Search results */}
+              {searchResults.length > 0 && (
+                <div className="flex-1">
+                  <WorldGrid
+                    worlds={searchResults}
+                    currentFolder={SpecialFolders.Find}
+                    containerRef={findGridRef}
+                  />
+
+                  {/* Load more indicator */}
+                  <div ref={loadMoreRef} className="p-4 flex justify-center">
+                    {isLoadingMore ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>{t('find-page:loading-more')}</span>
+                      </div>
+                    ) : hasMoreResults ? (
                       <p className="text-sm text-muted-foreground">
-                        {t('find-page:no-more-results')}
+                        {t('find-page:scroll-for-more')}
                       </p>
-                    )
-                  )}
+                    ) : (
+                      searchResults.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          {t('find-page:no-more-results')}
+                        </p>
+                      )
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* No results state - only show when a search has been performed */}
-            {!isSearching && searchResults.length === 0 && hasSearched && (
-              <div className="flex flex-col items-center justify-center h-64 text-center">
-                <Search className="h-12 w-12 text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">
-                  {t('find-page:no-search-results')}
-                </p>
-              </div>
-            )}
+              {/* No results state - only show when a search has been performed */}
+              {!isSearching && searchResults.length === 0 && hasSearched && (
+                <div className="flex flex-col items-center justify-center h-64 text-center">
+                  <Search className="h-12 w-12 text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">
+                    {t('find-page:no-search-results')}
+                  </p>
+                </div>
+              )}
 
-            {/* Initial state - show either when no search has been performed or when search query is empty */}
-            {!isSearching && searchResults.length === 0 && !hasSearched && (
-              <div className="flex flex-col items-center justify-center h-64 text-center">
-                <Search className="h-12 w-12 text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">
-                  {t('find-page:search-instructions')}
-                </p>
-              </div>
-            )}
+              {/* Initial state - show either when no search has been performed or when search query is empty */}
+              {!isSearching && searchResults.length === 0 && !hasSearched && (
+                <div className="flex flex-col items-center justify-center h-64 text-center">
+                  <Search className="h-12 w-12 text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">
+                    {t('find-page:search-instructions')}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
