@@ -57,7 +57,10 @@ export function PopupManager() {
         />
       )}
       {showAddWorld && (
-        <AddWorldPopup onClose={() => setPopup('showAddWorld', false)} />
+        <AddWorldPopup
+          currentFolder={currentFolder}
+          onClose={() => setPopup('showAddWorld', false)}
+        />
       )}
       {showAdvancedSearchPanel && (
         <AdvancedSearchPanel
