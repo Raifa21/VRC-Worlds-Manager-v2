@@ -22,8 +22,7 @@ import { usePopupStore } from '../hook/usePopups/store';
 import { useFolders } from '../hook/use-folders';
 import { Badge } from '@/components/ui/badge';
 import { FolderType } from '@/types/folders';
-import { useWorldFilters } from '../hook/use-filters';
-import { WorldDisplayData } from '@/lib/bindings';
+import { useWorldFiltersStore } from '../hook/use-filters';
 
 type SortField =
   | 'name'
@@ -36,10 +35,9 @@ type SortField =
 
 interface SearchBarProps {
   currentFolder: FolderType;
-  worlds: WorldDisplayData[];
 }
 
-export function SearchBar({ currentFolder, worlds }: SearchBarProps) {
+export function SearchBar({ currentFolder }: SearchBarProps) {
   const { t } = useLocalization();
   const {
     sortField,
@@ -57,7 +55,7 @@ export function SearchBar({ currentFolder, worlds }: SearchBarProps) {
     memoTextFilter,
     setMemoTextFilter,
     clearFilters,
-  } = useWorldFilters(worlds);
+  } = useWorldFiltersStore();
   const filterRowRef = useRef<HTMLDivElement>(null);
   const authorRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);

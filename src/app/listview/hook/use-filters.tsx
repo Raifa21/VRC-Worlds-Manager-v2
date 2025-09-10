@@ -2,7 +2,7 @@ import { commands, WorldDisplayData } from '@/lib/bindings';
 import { create } from 'zustand';
 import { useEffect, useRef } from 'react';
 import { toRomaji } from 'wanakana';
-import { error } from '@tauri-apps/plugin-log';
+import { error, info } from '@tauri-apps/plugin-log';
 import { toast } from 'sonner';
 import { useLocalization } from '@/hooks/use-localization';
 
@@ -115,10 +115,19 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
 
   const { t } = useLocalization();
   const requestSeq = useRef(0);
+  // Ensure we only attempt the backend tag fallback once per hook lifetime
+  const tagsFallbackTriedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     const seq = ++requestSeq.current;
+
+    // Snapshot current filter state at effect start
+    info(
+      `[useWorldFilters] run(seq=${seq}) worlds=${worlds.length} ` +
+        `search="${searchQuery}" author="${authorFilter}" tags=[${tagFilters.join(',')}] ` +
+        `folders=[${folderFilters.join(',')}] memo="${memoTextFilter}" sort=${sortField}:${sortDirection}`,
+    );
 
     const normalize = (s: string) => s.toLowerCase();
     const searchLower = searchQuery.trim().toLowerCase();
@@ -126,6 +135,8 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
     const activeTagsLower = tagFilters.map((t) => t.toLowerCase());
     const activeFoldersLower = folderFilters.map((f) => f.toLowerCase());
     const hasMemoFilter = memoTextFilter.trim().length > 0;
+
+    const rejectCounters = { text: 0, author: 0, tag: 0, folder: 0 };
 
     function passesSyncFilters(world: WorldDisplayData): boolean {
       // Text search (name / authorName + romaji variants)
@@ -136,19 +147,30 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
         normalize(toRomaji(world.name)).includes(searchLower) ||
         normalize(toRomaji(world.authorName)).includes(searchLower);
 
-      if (!textOk) return false;
-
-      if (activeAuthor && normalize(world.authorName) !== activeAuthor)
+      if (!textOk) {
+        rejectCounters.text++;
         return false;
+      }
+
+      if (activeAuthor && normalize(world.authorName) !== activeAuthor) {
+        rejectCounters.author++;
+        return false;
+      }
 
       if (activeTagsLower.length > 0) {
-        if (!world.tags || world.tags.length === 0) return false;
+        if (!world.tags || world.tags.length === 0) {
+          rejectCounters.tag++;
+          return false;
+        }
         const worldTagsLower = world.tags.map((wt) => wt.toLowerCase());
         const allTagsFound = activeTagsLower.every((tag) => {
           const prefixed = `author_tag_${tag}`;
           return worldTagsLower.some((wTag) => wTag === prefixed.toLowerCase());
         });
-        if (!allTagsFound) return false;
+        if (!allTagsFound) {
+          rejectCounters.tag++;
+          return false;
+        }
       }
 
       if (activeFoldersLower.length > 0) {
@@ -156,7 +178,10 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
         const allFoldersFound = activeFoldersLower.every((folder) =>
           worldFoldersLower.some((wf) => wf === folder),
         );
-        if (!allFoldersFound) return false;
+        if (!allFoldersFound) {
+          rejectCounters.folder++;
+          return false;
+        }
       }
 
       return true;
@@ -165,6 +190,23 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
     async function run() {
       // 1. Apply synchronous filters
       let intermediate = worlds.filter(passesSyncFilters);
+      info(
+        `[useWorldFilters] Example world format: ${JSON.stringify(worlds[0])}`,
+      );
+      info(
+        `[useWorldFilters] Sync filter pass intermediate=${intermediate.length} rejects(text=${rejectCounters.text},author=${rejectCounters.author},tag=${rejectCounters.tag},folder=${rejectCounters.folder})`,
+      );
+      if (
+        authorFilter === '' &&
+        tagFilters.length === 0 &&
+        folderFilters.length === 0 &&
+        memoTextFilter === '' &&
+        searchQuery === ''
+      ) {
+        info(
+          `[useWorldFilters] No filters active worlds=${worlds.length} intermediate=${intermediate.length}`,
+        );
+      }
 
       // 2. Memo text filtering (async)
       let memoIdSet: Set<string> | null = null;
@@ -187,6 +229,11 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
       let finalList = intermediate.filter(
         (w) => !memoIdSet || memoIdSet.has(w.worldId),
       );
+      if (hasMemoFilter) {
+        info(
+          `[useWorldFilters] Memo filter applied memoIds=${memoIdSet ? memoIdSet.size : 0} afterMemo=${finalList.length}`,
+        );
+      }
 
       // 3. Sorting
       const dirFactor = sortDirection === 'asc' ? 1 : -1;
@@ -205,6 +252,12 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
           }) * dirFactor
         );
       });
+      info(
+        `[useWorldFilters] After sorting count=${finalList.length} firstIds=${finalList
+          .slice(0, 3)
+          .map((w) => w.worldId)
+          .join(',')}`,
+      );
 
       // 4. Facets (authors & tags) based on finalList
       const authorsSet = new Set<string>();
@@ -212,9 +265,13 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
       for (const w of finalList) {
         authorsSet.add(w.authorName);
         if (w.tags) {
-          for (const tag of w.tags) {
-            if (tag.toLowerCase().startsWith('author_tag_')) {
-              tagsSet.add(tag.substring('author_tag_'.length));
+          for (const rawTag of w.tags) {
+            const lower = rawTag.toLowerCase();
+            if (lower.startsWith('author_tag_')) {
+              tagsSet.add(rawTag.substring('author_tag_'.length));
+            } else {
+              // Accept already-normalized tags too (avoid losing facets if backend changed format)
+              tagsSet.add(rawTag);
             }
           }
         }
@@ -222,15 +279,80 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
       const authorsArr = Array.from(authorsSet).sort((a, b) =>
         a.localeCompare(b, undefined, { sensitivity: 'base' }),
       );
-      const tagsArr = Array.from(tagsSet).sort((a, b) =>
+      let tagsArr = Array.from(tagsSet).sort((a, b) =>
         a.localeCompare(b, undefined, { sensitivity: 'base' }),
       );
+      info(
+        `[useWorldFilters] Facet pre-check authors=${authorsArr.length} tagsRaw=${tagsSet.size} sampleAuthors=${authorsArr
+          .slice(0, 5)
+          .join('|')}`,
+      );
+      if (tagsArr.length === 0 && finalList.length > 0) {
+        info(
+          `[useWorldFilters] No tags extracted from finalList (len=${finalList.length}). First world tags=${JSON.stringify(
+            finalList[0].tags,
+          )}`,
+        );
+        if (!tagsFallbackTriedRef.current) {
+          tagsFallbackTriedRef.current = true;
+          try {
+            info('[useWorldFilters] Attempting fallback getTagsByCount()');
+            const fallbackRes = await commands.getTagsByCount();
+            if (fallbackRes.status === 'ok') {
+              const fallbackTags = fallbackRes.data.map((raw) =>
+                raw.toLowerCase().startsWith('author_tag_')
+                  ? raw.substring('author_tag_'.length)
+                  : raw,
+              );
+              if (fallbackTags.length > 0) {
+                const merged = new Set<string>([...fallbackTags]);
+                tagsArr = Array.from(merged).sort((a, b) =>
+                  a.localeCompare(b, undefined, { sensitivity: 'base' }),
+                );
+                info(
+                  `[useWorldFilters] Fallback tags fetched count=${tagsArr.length}`,
+                );
+              } else {
+                info('[useWorldFilters] Fallback returned empty tag list');
+              }
+            } else {
+              error(
+                `[useWorldFilters] Fallback getTagsByCount error=${fallbackRes.error}`,
+              );
+            }
+          } catch (e) {
+            error(
+              `[useWorldFilters] Exception in fallback getTagsByCount: ${e}`,
+            );
+          }
+        }
+      }
+      info(
+        `[useWorldFilters] Facet final authors=${authorsArr.length} tags=${tagsArr.length}`,
+      );
 
-      // 5. Commit if still latest & not cancelled
+      // 5. Commit if still latest & not cancelled (avoid redundant updates)
       if (!cancelled && seq === requestSeq.current) {
-        setFilteredWorlds(finalList);
-        setAvailableAuthors(authorsArr);
-        setAvailableTags(tagsArr);
+        const state = useWorldFiltersStore.getState();
+        const arraysEqual = (a: any[], b: any[]) =>
+          a.length === b.length && a.every((v, i) => v === b[i]);
+        if (
+          !arraysEqual(
+            finalList.map((w) => w.worldId),
+            state.filteredWorlds.map((w) => w.worldId),
+          )
+        ) {
+          info(
+            `[useWorldFilters] Updating filteredWorlds newLength=${finalList.length}`,
+          );
+          setFilteredWorlds(finalList);
+        }
+        if (!arraysEqual(authorsArr, state.availableAuthors)) {
+          setAvailableAuthors(authorsArr);
+        }
+        if (!arraysEqual(tagsArr, state.availableTags)) {
+          setAvailableTags(tagsArr);
+        }
       }
     }
 
