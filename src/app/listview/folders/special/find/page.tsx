@@ -4,10 +4,17 @@ import { useEffect, useState, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { CircleHelpIcon, Loader2, RefreshCcw, Search } from 'lucide-react';
+import {
+  CircleHelpIcon,
+  Loader2,
+  RefreshCcw,
+  Search,
+  Square,
+  CheckSquare,
+} from 'lucide-react';
 import { commands, WorldDisplayData } from '@/lib/bindings';
 import { SpecialFolders } from '@/types/folders';
-import { info } from '@tauri-apps/plugin-log';
+import { info, error } from '@tauri-apps/plugin-log';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,8 +26,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { WorldGrid } from '@/app/listview/components/world-grid';
+import { WorldGrid } from '../../../components/world-grid';
 import MultiFilterItemSelector from '@/components/multi-filter-item-selector';
+import { useSelectedWorldsStore } from '../../../hook/use-selected-worlds';
 import {
   Tooltip,
   TooltipContent,
@@ -28,27 +36,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-interface FindPageProps {
-  onWorldsChange: (worlds: WorldDisplayData[]) => void;
-  onSelectWorld: (worldId: string) => void;
-  onShowFolderDialog: (worlds: string[]) => void;
-  onSelectedWorldsChange: (worlds: string[]) => void;
-  clearSelection: boolean; // Add this prop
-  onClearSelectionComplete: () => void; // Add this prop
-  worldsJustAdded: string[];
-  onWorldsJustAddedProcessed: () => void;
-}
-
-export function FindPage({
-  onWorldsChange,
-  onSelectWorld,
-  onShowFolderDialog,
-  onSelectedWorldsChange,
-  clearSelection,
-  onClearSelectionComplete,
-  worldsJustAdded,
-  onWorldsJustAddedProcessed,
-}: FindPageProps) {
+export default function FindWorldsPage() {
   const { t } = useLocalization();
   const [activeTab, setActiveTab] = useState('recently-visited');
   const [recentlyVisitedWorlds, setRecentlyVisitedWorlds] = useState<
@@ -69,9 +57,8 @@ export function FindPage({
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const findGridRef = useRef<HTMLDivElement>(null);
-
-  // Add this state to track when to trigger select all
-  const [triggerSelectAll, setTriggerSelectAll] = useState(false);
+  const { isSelectionMode, toggleSelectionMode, clearFolderSelections } =
+    useSelectedWorldsStore();
 
   // Add this state variable to track if a search has been performed
   const [hasSearched, setHasSearched] = useState(false);
@@ -93,8 +80,8 @@ export function FindPage({
         ),
         duration: 1000,
       });
-    } catch (error) {
-      console.error('Error fetching recently visited worlds:', error);
+    } catch (err) {
+      error(`Error fetching recently visited worlds: ${String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -107,16 +94,6 @@ export function FindPage({
     }
   }, []);
 
-  useEffect(() => {
-    const worlds = recentlyVisitedWorlds;
-    onWorldsChange(worlds);
-  }, [recentlyVisitedWorlds]);
-
-  useEffect(() => {
-    const worlds = searchResults;
-    onWorldsChange(worlds);
-  }, [searchResults]);
-
   // Load tags when the search tab is active
   useEffect(() => {
     const loadTags = async () => {
@@ -125,8 +102,8 @@ export function FindPage({
         if (result.status === 'ok') {
           setAvailableTags(result.data);
         }
-      } catch (error) {
-        console.error('Failed to load tags:', error);
+      } catch (err) {
+        error(`Failed to load tags: ${err}`);
       }
     };
 
@@ -184,10 +161,10 @@ export function FindPage({
       } else {
         throw new Error(result.error);
       }
-    } catch (error) {
-      console.error('Search error:', error);
+    } catch (err) {
+      error(`Search error: ${err}`);
       toast(t('find-page:search-error'), {
-        description: String(error),
+        description: String(err),
       });
     } finally {
       setIsLoadingMore(false);
@@ -224,17 +201,7 @@ export function FindPage({
     return () => observer.disconnect();
   }, [searchResults, hasMoreResults, isLoadingMore, isSearching]);
 
-  // Add this useEffect to reset the flag after a small delay
-  useEffect(() => {
-    if (triggerSelectAll) {
-      // Wait a moment for WorldGrid to process the selection
-      const timer = setTimeout(() => {
-        setTriggerSelectAll(false);
-      }, 100);
-
-      return () => clearTimeout(timer);
-    }
-  }, [triggerSelectAll]);
+  // no external select-all; handled by grid internally when needed
 
   return (
     <div className="p-1 flex flex-col h-full">
@@ -243,16 +210,6 @@ export function FindPage({
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
         <div className="flex items-center">
-          <Button
-            variant="outline"
-            onClick={() => setTriggerSelectAll(true)}
-            disabled={activeTab !== 'recently-visited'}
-            className={`ml-2 flex items-center gap-2 ${
-              activeTab !== 'recently-visited' ? 'invisible' : ''
-            }`}
-          >
-            {t('general:select-all')}
-          </Button>
           <Button
             variant="outline"
             onClick={fetchRecentlyVisitedWorlds}
@@ -264,6 +221,27 @@ export function FindPage({
             <RefreshCcw
               className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
             />
+          </Button>
+          <Button
+            variant={isSelectionMode ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={() => {
+              if (isSelectionMode) {
+                clearFolderSelections(SpecialFolders.Find);
+                toggleSelectionMode();
+              } else {
+                toggleSelectionMode();
+              }
+            }}
+            className={`ml-2 h-9 w-9 ${
+              activeTab !== 'recently-visited' ? 'invisible' : ''
+            }`}
+          >
+            {isSelectionMode ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -436,18 +414,7 @@ export function FindPage({
             ) : recentlyVisitedWorlds.length > 0 ? (
               <WorldGrid
                 worlds={recentlyVisitedWorlds}
-                folderName={SpecialFolders.Find}
-                initialSelectedWorlds={[]}
-                onShowFolderDialog={onShowFolderDialog}
-                size="Normal"
-                onOpenWorldDetails={onSelectWorld}
-                onSelectedWorldsChange={onSelectedWorldsChange}
-                shouldClearSelection={clearSelection}
-                onClearSelectionComplete={onClearSelectionComplete}
-                isSelectionMode={true}
-                selectAll={triggerSelectAll}
-                worldsJustAdded={worldsJustAdded}
-                onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
+                currentFolder={SpecialFolders.Find}
                 containerRef={findGridRef}
               />
             ) : (
@@ -467,18 +434,7 @@ export function FindPage({
               <div className="flex-1">
                 <WorldGrid
                   worlds={searchResults}
-                  folderName={SpecialFolders.Find}
-                  initialSelectedWorlds={[]}
-                  onShowFolderDialog={onShowFolderDialog}
-                  size="Normal"
-                  onOpenWorldDetails={onSelectWorld}
-                  onSelectedWorldsChange={onSelectedWorldsChange}
-                  isSelectionMode={true}
-                  selectAll={triggerSelectAll}
-                  shouldClearSelection={clearSelection}
-                  onClearSelectionComplete={onClearSelectionComplete}
-                  worldsJustAdded={worldsJustAdded}
-                  onWorldsJustAddedProcessed={onWorldsJustAddedProcessed}
+                  currentFolder={SpecialFolders.Find}
                   containerRef={findGridRef}
                 />
 
