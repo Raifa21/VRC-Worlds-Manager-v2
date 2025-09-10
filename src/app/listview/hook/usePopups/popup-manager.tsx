@@ -8,6 +8,13 @@ import { DeleteFolderDialog } from '../../components/popups/delete-folder-popup'
 import { ImportedFolderContainsHidden } from '../../components/popups/imported-folder-contains-hidden';
 import { WorldDetailPopup } from '../../components/popups/world-details';
 import { usePopupStore } from './store';
+import { useSearchParams, usePathname } from 'next/navigation';
+import { SpecialFolders, FolderType, isUserFolder } from '@/types/folders';
+import { useWorlds } from '../use-worlds';
+import { commands } from '@/lib/bindings';
+import { error, info } from '@tauri-apps/plugin-log';
+import { useLocalization } from '@/hooks/use-localization';
+import { toast } from 'sonner';
 
 export function PopupManager() {
   const {
@@ -21,11 +28,31 @@ export function PopupManager() {
     setPopup,
   } = usePopupStore();
 
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { t } = useLocalization();
+
+  const currentFolder: FolderType = (() => {
+    // Special folders by path
+    if (pathname?.includes('/folders/special/all')) return SpecialFolders.All;
+    if (pathname?.includes('/folders/special/unclassified'))
+      return SpecialFolders.Unclassified;
+    if (pathname?.includes('/folders/special/find')) return SpecialFolders.Find;
+    if (pathname?.includes('/folders/special/hidden'))
+      return SpecialFolders.Hidden;
+    // User folder from query param
+    const user = searchParams?.get('folderName');
+    return (user as FolderType) || SpecialFolders.All;
+  })();
+
+  const { refresh } = useWorlds(currentFolder);
+
   return (
     <>
       {showAddToFolder && (
         <AddToFolderDialog
           selectedWorlds={showAddToFolder}
+          currentFolder={currentFolder}
           onClose={() => setPopup('showAddToFolder', null)}
         />
       )}
@@ -37,26 +64,59 @@ export function PopupManager() {
           onClose={() => setPopup('showAdvancedSearchPanel', false)}
         />
       )}
-      {showCreateFolder && (
-        <CreateFolderDialog
-          onClose={() => setPopup('showCreateFolder', false)}
-        />
-      )}
-      {showDeleteFolder && (
-        <DeleteFolderDialog
-          folderId={showDeleteFolder}
-          onClose={() => setPopup('showDeleteFolder', null)}
-        />
-      )}
+      <CreateFolderDialog
+        open={!!showCreateFolder}
+        onOpenChange={(open) => setPopup('showCreateFolder', open)}
+      />
+      <DeleteFolderDialog
+        folderName={showDeleteFolder}
+        onOpenChange={(open) => !open && setPopup('showDeleteFolder', null)}
+      />
       {showImportedFolderContainsHidden && (
         <ImportedFolderContainsHidden
-          onClose={() => setPopup('showImportedFolderContainsHidden', false)}
+          open={!!showImportedFolderContainsHidden}
+          worlds={showImportedFolderContainsHidden}
+          onOpenChange={(open) =>
+            !open && setPopup('showImportedFolderContainsHidden', null)
+          }
+          onConfirm={async (selectedWorldIds) => {
+            try {
+              // Unhide all
+              await Promise.all(
+                selectedWorldIds.map((id) => commands.unhideWorld(id)),
+              );
+              // Optionally add to current user folder
+              if (isUserFolder(currentFolder)) {
+                await Promise.all(
+                  selectedWorldIds.map((id) =>
+                    commands.addWorldToFolder(currentFolder, id),
+                  ),
+                );
+              }
+              await refresh();
+              toast(t('listview-page:restored-hidden-worlds-title'), {
+                description: t(
+                  'listview-page:restored-hidden-worlds-description',
+                  selectedWorldIds.length,
+                ),
+              });
+              setPopup('showImportedFolderContainsHidden', null);
+            } catch (e) {
+              error(`[PopupManager] restore hidden during import failed: ${e}`);
+              toast(t('general:error-title'), {
+                description: t('listview-page:error-restore-hidden-worlds'),
+              });
+            }
+          }}
         />
       )}
       {showWorldDetails && (
         <WorldDetailPopup
+          open={!!showWorldDetails}
+          onOpenChange={(open) =>
+            setPopup('showWorldDetails', open ? showWorldDetails : null)
+          }
           worldId={showWorldDetails}
-          onClose={() => setPopup('showWorldDetails', null)}
         />
       )}
     </>

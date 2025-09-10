@@ -42,27 +42,7 @@ export interface WorldDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   worldId: string;
-  onCreateInstance: (
-    worldId: string,
-    instanceType: Exclude<InstanceType, 'group'>,
-    region: InstanceRegion,
-  ) => void;
-  onCreateGroupInstance: (
-    worldId: string,
-    region: InstanceRegion,
-    groupId: string,
-    instanceType: GroupInstanceType,
-    queueEnabled: boolean,
-    selectedRoles?: string[],
-  ) => void;
-  onGetGroups: () => Promise<UserGroup[]>;
-  onGetGroupPermissions: (
-    groupId: string,
-  ) => Promise<GroupInstancePermissionInfo>;
   dontSaveToLocal?: boolean;
-  onDeleteWorld: (worldId: string) => void;
-  onSelectAuthor?: (author: string) => void;
-  onSelectTag?: (tag: string) => void;
 }
 
 interface GroupInstance {
@@ -102,15 +82,17 @@ export function WorldDetailPopup({
   open,
   onOpenChange,
   worldId,
-  onCreateInstance,
-  onCreateGroupInstance,
-  onGetGroups,
-  onGetGroupPermissions,
   dontSaveToLocal,
-  onDeleteWorld,
-  onSelectAuthor,
-  onSelectTag,
 }: WorldDetailDialogProps) {
+  const {
+    createInstance,
+    createGroupInstance,
+    getGroups,
+    getGroupPermissions,
+    deleteWorld,
+    selectAuthor,
+    selectTag,
+  } = require('./hook');
   const { t } = useLocalization();
   const { folders } = useFolders();
   const [isLoading, setIsLoading] = useState(false);
@@ -278,7 +260,7 @@ export function WorldDetailPopup({
   const handleInstanceClick = () => {
     try {
       setInstanceCreationType('normal');
-      onCreateInstance(
+      createInstance(
         worldId,
         selectedInstanceType as Exclude<InstanceType, 'group'>,
         selectedRegion,
@@ -316,7 +298,7 @@ export function WorldDetailPopup({
         roles: [],
         isLoading: true,
       }));
-      const groups = await onGetGroups();
+      const groups = await getGroups();
       info(`Loaded ${groups.length} groups`);
       setGroupInstanceState((prev) => ({
         ...prev,
@@ -334,7 +316,7 @@ export function WorldDetailPopup({
   };
 
   const handleGroupSelect = async (groupId: string) => {
-    const permission = await onGetGroupPermissions(groupId);
+    const permission = await getGroupPermissions(groupId);
 
     setGroupInstanceState((prev) => ({
       ...prev,
@@ -351,7 +333,7 @@ export function WorldDetailPopup({
     queueEnabled: boolean,
     selectedRoles?: string[],
   ) => {
-    onCreateGroupInstance(
+    createGroupInstance(
       worldId,
       region,
       groupId,
@@ -365,8 +347,7 @@ export function WorldDetailPopup({
   };
 
   const handleDeleteWorld = (worldId: string) => {
-    onDeleteWorld(worldId);
-    onOpenChange(false); // Close dialog after deletion is initiated
+    deleteWorld(worldId);
   };
 
   // Add this effect to handle the countdown and auto-close
@@ -692,8 +673,9 @@ export function WorldDetailPopup({
                         <span
                           className="text-sm text-gray-500 cursor-pointer hover:underline"
                           onClick={() => {
-                            onSelectAuthor?.(worldDetails.authorName);
-                            onOpenChange(false);
+                            // set author filter and close via hook
+                            // selectAuthor handles closing
+                            selectAuthor(worldDetails.authorName);
                           }}
                         >
                           {worldDetails.authorName}
@@ -835,8 +817,8 @@ export function WorldDetailPopup({
                                   className="inline-block px-1.5 py-0.5 text-xs bg-gray-500 text-white rounded-full max-w-[250px] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-gray-600"
                                   title={label}
                                   onClick={() => {
-                                    onSelectTag?.(label);
-                                    onOpenChange(false);
+                                    // set tag filter and close via hook
+                                    selectTag(label);
                                   }}
                                 >
                                   {label}

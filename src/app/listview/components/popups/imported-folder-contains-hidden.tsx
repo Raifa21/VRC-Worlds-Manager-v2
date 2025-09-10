@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { WorldDisplayData } from '@/lib/bindings';
 import { WorldGrid } from '../world-grid';
 import { useLocalization } from '@/hooks/use-localization';
+import { useSelectedWorldsStore } from '../../hook/use-selected-worlds';
+import { SpecialFolders } from '@/types/folders';
 
 interface ImportedFolderContainsHiddenProps {
   open: boolean;
@@ -25,47 +27,17 @@ export function ImportedFolderContainsHidden({
   onConfirm,
 }: ImportedFolderContainsHiddenProps) {
   const { t } = useLocalization();
-  const [selectedWorlds, setSelectedWorlds] = useState<string[]>([]);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
+  // Use a synthetic folder key to track selection within the dialog without colliding with real folders
+  const dialogFolderKey = SpecialFolders.NotFolder;
+  const { getSelectedWorlds, clearFolderSelections } = useSelectedWorldsStore();
 
   // Clear selection when dialog closes
   useEffect(() => {
     if (!open) {
-      setSelectedWorlds([]);
+      clearFolderSelections(dialogFolderKey);
     }
-  }, [open]);
-
-  const handleRestoreInImport = async (worlds: string[]) => {
-    try {
-      if (!containedHiddenWorlds || worlds.length === 0) {
-        toast({
-          title: t('general:error-title'),
-          description: t('listview-page:error-no-hidden-worlds'),
-        });
-        return;
-      }
-      for (const world of worlds) {
-        await commands.unhideWorld(world);
-        await commands.addWorldToFolder(currentFolder, world);
-      }
-      setContainedHiddenWorlds([]);
-      setShowImportedFolderContainsHidden(false);
-      await refreshCurrentView();
-      toast({
-        title: t('listview-page:restored-hidden-worlds-title'),
-        description: t(
-          'listview-page:restored-hidden-worlds-description',
-          containedHiddenWorlds.length,
-        ),
-      });
-    } catch (e) {
-      error(`Failed to restore hidden worlds: ${e}`);
-      toast({
-        title: t('general:error-title'),
-        description: t('listview-page:error-restore-hidden-worlds'),
-      });
-    }
-  };
+  }, [open, clearFolderSelections]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -83,15 +55,11 @@ export function ImportedFolderContainsHidden({
 
         <div className="mt-4 max-h-[200px] overflow-y-auto" ref={containerRef}>
           <WorldGrid
-            size="Compact"
             worlds={worlds}
-            isSelectionMode={true}
-            initialSelectedWorlds={selectedWorlds}
             containerRef={containerRef}
-            folderName=""
-            onOpenWorldDetails={() => {}}
-            onSelectedWorldsChange={setSelectedWorlds}
-            shouldClearSelection={!open}
+            currentFolder={dialogFolderKey}
+            disableCardClick
+            alwaysShowSelection
           />
         </div>
 
@@ -101,10 +69,13 @@ export function ImportedFolderContainsHidden({
           </Button>
           <Button
             onClick={() => {
-              onConfirm(selectedWorlds);
+              const selected = Array.from(
+                getSelectedWorlds(dialogFolderKey) ?? new Set<string>(),
+              );
+              onConfirm(selected);
               onOpenChange(false);
             }}
-            disabled={selectedWorlds.length === 0}
+            disabled={getSelectedWorlds(dialogFolderKey).size === 0}
           >
             {t('imported-folder:restore')}
           </Button>
