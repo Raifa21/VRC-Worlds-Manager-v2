@@ -24,7 +24,7 @@ export function useWorldGrid(currentFolder: FolderType) {
     clearFolderSelections,
   } = useSelectedWorldsStore();
 
-  const { worlds } = useWorlds(currentFolder);
+  const { worlds, refresh } = useWorlds(currentFolder);
 
   const [cardSize, setCardSize] = useState<CardSize>('Normal');
 
@@ -155,7 +155,7 @@ export function useWorldGrid(currentFolder: FolderType) {
         return;
       }
 
-      await refreshCurrentView();
+      await refresh();
       toast(t('general:success-title'), {
         description: t('listview-page:world-deleted-success'),
       });
@@ -200,7 +200,7 @@ export function useWorldGrid(currentFolder: FolderType) {
                 ),
               );
 
-              await refreshCurrentView();
+              await refresh();
               toast(t('listview-page:restored-title'), {
                 description: t('listview-page:worlds-restored-to-folder'),
               });
@@ -214,7 +214,7 @@ export function useWorldGrid(currentFolder: FolderType) {
         },
       });
 
-      await refreshCurrentView();
+      await refresh();
     } catch (e) {
       error(`Failed to remove worlds from folder: ${e}`);
       toast(t('general:error-title'), {
@@ -269,7 +269,7 @@ export function useWorldGrid(currentFolder: FolderType) {
                 }),
               );
 
-              await refreshCurrentView();
+              await refresh();
               toast(t('listview-page:restored-title'), {
                 description: t('listview-page:worlds-restored'),
               });
@@ -283,7 +283,7 @@ export function useWorldGrid(currentFolder: FolderType) {
         },
       });
 
-      await refreshCurrentView();
+      await refresh();
     } catch (e) {
       error(`Failed to hide world: ${e}`);
       toast(t('general:error-title'), {
@@ -310,7 +310,7 @@ export function useWorldGrid(currentFolder: FolderType) {
                 restoredWorlds.map((id) => commands.hideWorld(id)),
               );
 
-              await refreshCurrentView();
+              await refresh();
               toast(t('listview-page:worlds-hidden-title'), {
                 description: t('listview-page:worlds-hidden-again'),
               });
@@ -324,7 +324,7 @@ export function useWorldGrid(currentFolder: FolderType) {
         },
       });
 
-      await refreshCurrentView();
+      await refresh();
     } catch (e) {
       error(`Failed to restore worlds: ${e}`);
       toast(t('general:error-title'), {
