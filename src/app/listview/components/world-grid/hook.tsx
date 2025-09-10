@@ -9,7 +9,7 @@ import { useFolders } from '../../hook/use-folders';
 import { useWorlds } from '../../hook/use-worlds';
 import { usePathname } from 'next/navigation';
 import path from 'path';
-import { FolderType, SpecialFolders } from '@/types/folders';
+import { FolderType, isUserFolder, SpecialFolders } from '@/types/folders';
 
 export function useWorldGrid(
   currentFolder: FolderType,
@@ -74,13 +74,15 @@ export function useWorldGrid(
   });
 
   const isFindPage = currentFolder === SpecialFolders.Find;
-  const isSpecialFolder = currentFolder in SpecialFolders;
+  const isSpecialFolder = !isUserFolder(currentFolder);
   const isHiddenFolder = currentFolder === SpecialFolders.Hidden;
 
   // existing world set for "Added" badge in find page
   const [existingWorldIds, setExistingWorldIds] = useState<Set<string>>(
     () => new Set(),
   );
+  // respond to membership changes triggered by dialogs
+  const membershipVersion = usePopupStore((s) => s.membershipVersion);
   useEffect(() => {
     if (!isFindPage) return; // Only needed for find page
 
@@ -115,7 +117,7 @@ export function useWorldGrid(
     };
 
     checkWorldsExistence();
-  }, [isFindPage, worlds]);
+  }, [isFindPage, worlds, membershipVersion]);
 
   const selectAllFindPage = () => {
     const worldsToSelect = worlds
