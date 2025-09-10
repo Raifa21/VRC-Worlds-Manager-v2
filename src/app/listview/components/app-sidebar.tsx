@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useFolders } from '@/app/listview/hook/use-folders';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { usePopupStore } from '../hook/usePopups/store';
 
 const sidebarStyles = {
@@ -55,6 +56,7 @@ export function AppSidebar() {
 
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Update local folders when prop changes
   useEffect(() => {
@@ -82,9 +84,21 @@ export function AppSidebar() {
   };
 
   const handleRename = async (folder: string) => {
-    renameFolder(folder, newFolderName).then(() => {
+    const oldName = folder;
+    const newName = newFolderName;
+    renameFolder(oldName, newName).then(() => {
       setEditingFolder(null);
       setNewFolderName('');
+      // If currently viewing this user folder, update the URL so the page title reflects the rename
+      const currentFolder = searchParams?.get('folderName');
+      if (
+        pathname === '/listview/folders/userFolder' &&
+        currentFolder === oldName
+      ) {
+        router.replace(
+          `/listview/folders/userFolder?folderName=${encodeURIComponent(newName)}`,
+        );
+      }
     });
   };
 
@@ -246,7 +260,7 @@ export function AppSidebar() {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="h-[calc(100vh-417px)] overflow-y-auto pl-8"
+                  className="h-[calc(100vh-417px)] overflow-y-auto overflow-x-hidden pl-8"
                 >
                   {localFolders.map((folder, index) => (
                     <Draggable
@@ -338,7 +352,7 @@ export function AppSidebar() {
                                       setIsComposing(false);
                                     }, 150);
                                   }}
-                                  className="h-6 py-0 folder-edit-container" // Added class for identifying container
+                                  className="h-6 py-0 w-full folder-edit-container" // Ensure no horizontal overflow
                                   autoFocus={true}
                                 />
                               ) : (
