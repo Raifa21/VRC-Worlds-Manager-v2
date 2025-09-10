@@ -29,12 +29,17 @@ import { WorldCardPreview } from '@/components/world-card';
 import { useLocalization } from '@/hooks/use-localization';
 import { info, error as logError } from '@tauri-apps/plugin-log';
 import { useWorlds } from '../../hook/use-worlds';
+import { FolderType } from '@/types/folders';
 
 interface AddWorldPopupProps {
+  currentFolder: FolderType;
   onClose: () => void;
 }
 
-export async function AddWorldPopup({ onClose }: AddWorldPopupProps) {
+export async function AddWorldPopup({
+  onClose,
+  currentFolder,
+}: AddWorldPopupProps) {
   const { t } = useLocalization();
   const [worldInput, setWorldInput] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +48,7 @@ export async function AddWorldPopup({ onClose }: AddWorldPopupProps) {
   const [isDuplicate, setIsDuplicate] = useState<boolean>(false);
   const [existingWorlds, setExistingWorlds] = useState<string[]>([]);
 
-  const { addWorld, getAllWorlds } = useWorlds();
+  const { addWorld, getAllWorlds } = useWorlds(currentFolder);
 
   useEffect(() => {
     async function fetchWorlds() {
