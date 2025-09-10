@@ -33,12 +33,17 @@ interface WorldGridProps {
   // Used for virtualized scrolling
   containerRef: React.RefObject<HTMLDivElement | null>;
   currentFolder: FolderType;
+  // Optional interaction flags for special embeds (e.g., selection-only dialog)
+  disableCardClick?: boolean;
+  alwaysShowSelection?: boolean;
 }
 
 export function WorldGrid({
   worlds,
   containerRef,
   currentFolder,
+  disableCardClick = false,
+  alwaysShowSelection = false,
 }: WorldGridProps) {
   const { t } = useLocalization();
 
@@ -189,11 +194,12 @@ export function WorldGrid({
                       <ContextMenuTrigger asChild>
                         <div
                           id={world.worldId}
-                          onClick={() =>
+                          onClick={() => {
+                            if (disableCardClick) return;
                             isFindPage
                               ? handleOpenFolderDialog(world.worldId)
-                              : handleOpenWorldDetails(world.worldId)
-                          }
+                              : handleOpenWorldDetails(world.worldId);
+                          }}
                           className="group relative w-fit h-fit rounded-lg overflow-hidden"
                         >
                           {isSelected && (
@@ -208,7 +214,7 @@ export function WorldGrid({
                                 </Badge>
                               )}
                           </div>
-                          {isSelectionMode && (
+                          {(isSelectionMode || alwaysShowSelection) && (
                             <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
                               {isSelected ? (
                                 <div
