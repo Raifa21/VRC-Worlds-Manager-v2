@@ -402,15 +402,15 @@ function getSortValue(world: WorldDisplayData, field: SortField): any {
     case 'authorName':
       return world.authorName;
     case 'visits':
-      return (world as any).visits;
+      return world.visits;
     case 'favorites':
-      return (world as any).favorites;
+      return world.favorites;
     case 'capacity':
-      return (world as any).capacity;
+      return world.capacity;
     case 'dateAdded':
-      return (world as any).dateAdded; // assume numeric timestamp or sortable string
+      return world.dateAdded;
     case 'lastUpdated':
-      return (world as any).lastUpdated;
+      return world.lastUpdated;
     default:
       return undefined;
   }
