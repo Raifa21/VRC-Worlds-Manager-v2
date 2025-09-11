@@ -7,9 +7,29 @@ use crate::{
 };
 
 #[derive(Serialize)]
-struct PLSWorld {
+struct PLSPlatform {
+    #[serde(rename = "PC")]
+    pc: bool,
+    #[serde(rename = "Android")]
+    android: bool,
+    #[serde(rename = "iOS")]
+    ios: bool,
+}
+
+#[derive(Serialize)]
+struct PLSWorlds {
     #[serde(rename = "ID")]
-    world_id: String,
+    id: String,
+    #[serde(rename = "Name")]
+    name: String,
+    #[serde(rename = "RecommendedCapacity")]
+    recommended_capacity: i32,
+    #[serde(rename = "Capacity")]
+    capacity: i32,
+    #[serde(rename = "Description")]
+    description: String,
+    #[serde(rename = "Platform")]
+    platform: PLSPlatform,
 }
 
 #[derive(Serialize)]
@@ -17,7 +37,7 @@ struct PLSCategory {
     #[serde(rename = "Category")]
     category: String,
     #[serde(rename = "Worlds")]
-    worlds: Vec<PLSWorld>,
+    worlds: Vec<PLSWorlds>,
 }
 
 #[derive(Serialize)]
@@ -65,35 +85,40 @@ impl ExportService {
 
     pub fn export_to_portal_library_system(
         folder_names: Vec<String>,
-        folders: &RwLock<Vec<FolderModel>>,
+        worlds: &RwLock<Vec<WorldModel>>,
     ) -> Result<(), String> {
-        let folders_lock = folders.read().map_err(|e| {
-            log::error!("Failed to acquire read lock for folders: {}", e);
-            "Failed to acquire read lock for folders".to_string()
-        })?;
+        let folders = Self::get_folders_with_worlds(folder_names, worlds)?;
+
         let mut categories: Vec<PLSCategory> = Vec::new();
 
-        for folder in folder_names {
-            log::info!("Processing folder: {}", folder);
-            let folder_worlds = folders_lock
-                .iter()
-                .filter(|f| f.folder_name == folder)
-                .cloned()
-                .collect::<Vec<FolderModel>>();
-            if !folder_worlds.is_empty() {
-                let worlds: Vec<PLSWorld> = folder_worlds
-                    .iter()
-                    .flat_map(|f| {
-                        f.world_ids.iter().map(|id| PLSWorld {
-                            world_id: id.clone(),
-                        })
-                    })
-                    .collect();
-                categories.push(PLSCategory {
-                    category: folder,
-                    worlds,
+        for folder in folders {
+            let mut worlds_list: Vec<PLSWorlds> = Vec::new();
+            for world in folder.worlds {
+                let platform = PLSPlatform {
+                    pc: world
+                        .api_data
+                        .platform
+                        .contains(&"standalonewindows".to_string()),
+                    android: world.api_data.platform.contains(&"android".to_string()),
+                    ios: false, // todo: add ios support
+                };
+
+                worlds_list.push(PLSWorlds {
+                    id: world.api_data.world_id.clone(),
+                    name: world.api_data.world_name.clone(),
+                    recommended_capacity: world
+                        .api_data
+                        .recommended_capacity
+                        .unwrap_or(world.api_data.capacity),
+                    capacity: world.api_data.capacity,
+                    description: world.api_data.description.clone(),
+                    platform,
                 });
             }
+            categories.push(PLSCategory {
+                category: folder.folder_name,
+                worlds: worlds_list,
+            });
         }
 
         let portal_library_system_json = PortalLibrarySystemJson {
