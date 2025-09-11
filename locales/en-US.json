@@ -135,6 +135,8 @@
   "listview-page:folders-updated-single": "Updated folders for \"{0}\"",
   "listview-page:folder-imported-title": "Folder imported",
   "listview-page:folder-imported-description": "Folder \"{0}\" was imported successfully",
+  "listview-page:folder-deleted-title": "Folder deleted",
+  "listview-page:folder-deleted-description": "Folder \"{0}\" was deleted successfully",
   "listview-page:error-import-folder": "Failed to import folder",
   "listview-page:error-no-hidden-worlds": "No hidden worlds in imported folder.",
   "listview-page:restored-hidden-worlds-title": "Restored Hidden Worlds",
