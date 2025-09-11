@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect } from 'react';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { info } from '@tauri-apps/plugin-log';
