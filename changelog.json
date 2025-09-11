@@ -1,5 +1,116 @@
 [
   {
+    "version": "1.2.0",
+    "features": [
+      {
+        "text": "Added export to PortalLibrarySystem",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "幻会興業様と連携し、PortalLibrarySystemへのエクスポートを追加"
+          }
+        ]
+      },
+      {
+        "text": "Added world count to folders",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "フォルダにワールド数を追加"
+          }
+        ]
+      },
+      {
+        "text": "Add capacity and visit sort options for worlds (by @Takadayoo)",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "並び替えに最大人数と訪問数を追加 (by @Takadayoo)"
+          }
+        ]
+      },
+      {
+        "text": "Added folder selection in world detail popup",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "ワールド詳細ポップアップからフォルダを選択できるように"
+          }
+        ]
+      },
+      {
+        "text": "Tag/Author suggestions in advanced search now only show relevant suggestions",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "詳細検索のタグ/著者候補が関連する提案のみを表示するようになりました"
+          }
+        ]
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Fixed folders not updating correctly on certain operations",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "特定の操作でフォルダが正しく更新されない問題を修正"
+          }
+        ]
+      },
+      {
+        "text": "Fixed size of items being different in advanced search",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "詳細検索におけるアイテムのサイズが異なる問題を修正"
+          }
+        ]
+      },
+      {
+        "text": "Fixed folder renaming not applying to starred folders",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "スター付きフォルダの名前変更が適用されない問題を修正"
+          }
+        ]
+      },
+      {
+        "text": "Fixed title not updating on folder rename",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "フォルダ名変更時にタイトルが更新されない問題を修正"
+          }
+        ]
+      },
+      {
+        "text": "Added missing translations",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "翻訳の追加漏れを修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.1.1",
+    "features": [
+      {
+        "text": "Fixed login not working for some users under a certain condition",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "特定の条件下で一部のユーザーがログインできない問題を修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.1.1-rc.3",
     "preRelease": true,
     "fixes": [
