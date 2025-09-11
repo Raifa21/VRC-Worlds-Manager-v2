@@ -38,11 +38,14 @@ import MemoRenderer from '@/components/memo-renderer';
 import { useFolders } from '@/app/listview/hook/use-folders';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useWorldDetailsActions } from './hook';
+import { useWorlds } from '@/app/listview/hook/use-worlds';
+import { FolderType } from '@/types/folders';
 
 export interface WorldDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   worldId: string;
+  currentFolder: FolderType;
   dontSaveToLocal?: boolean;
 }
 
@@ -83,6 +86,7 @@ export function WorldDetailPopup({
   open,
   onOpenChange,
   worldId,
+  currentFolder,
   dontSaveToLocal,
 }: WorldDetailDialogProps) {
   const {
@@ -125,6 +129,8 @@ export function WorldDetailPopup({
   const [countdownSeconds, setCountdownSeconds] = useState<number>(5);
   const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
   const [worldFolders, setWorldFolders] = useState<string[]>([]);
+
+  const { refresh } = useWorlds(currentFolder);
 
   useEffect(() => {
     const fetchWorldDetails = async () => {
@@ -401,6 +407,7 @@ export function WorldDetailPopup({
         updatedFolders = [...worldFolders, folder];
       }
       setWorldFolders(updatedFolders);
+      refresh();
     } catch (e) {
       error(`Error toggling world folder: ${e}`);
     }

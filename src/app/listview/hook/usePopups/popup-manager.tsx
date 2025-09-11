@@ -129,6 +129,7 @@ export function PopupManager() {
             setPopup('showWorldDetails', open ? showWorldDetails : null)
           }
           worldId={showWorldDetails}
+          currentFolder={currentFolder}
         />
       )}
     </>
