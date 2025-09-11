@@ -35,8 +35,6 @@ export default function UserFolder() {
   info('Loaded worlds in folder: ' + folderName);
   info('Number of worlds: ' + worlds.length);
 
-  const { importFolder } = useFolders();
-
   const setPopup = usePopupStore((state) => state.setPopup);
 
   const { t } = useLocalization();
@@ -46,32 +44,6 @@ export default function UserFolder() {
 
   useEffect(() => {
     checkForUpdate();
-  }, []);
-
-  // subscribe to deep link events
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-
-    (async () => {
-      unsubscribe = await onOpenUrl((urls) => {
-        info(`[UserFolder] deep link: ${JSON.stringify(urls)}`);
-        //vrc-worlds-manager://vrcwm.raifaworks.com/folder/import/${uuid}
-        //call handleImportFolder with the uuid
-        const importRegex =
-          /vrc-worlds-manager:\/\/vrcwm\.raifaworks\.com\/folder\/import\/([a-zA-Z0-9-]+)/;
-        const match = urls[0].match(importRegex);
-        if (match && match[1]) {
-          const uuid = match[1];
-          importFolder(uuid);
-        }
-      });
-    })();
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
   }, []);
 
   // Initialize / update filtering for this folder's worlds

@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/sonner';
 import '@/app/globals.css';
 import { LocalizationContextProvider } from '@/components/localization-context';
 import { UpdateDialogProvider } from '@/components/UpdateDialogContext';
+import { DeepLinkProvider } from '@/components/deep-link-provider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -30,19 +31,21 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <LocalizationContextProvider>
-            <UpdateDialogProvider>
-              <main>{children}</main>
-            </UpdateDialogProvider>
-          </LocalizationContextProvider>
-        </ThemeProvider>
-        <Toaster richColors />
+        <DeepLinkProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <LocalizationContextProvider>
+              <UpdateDialogProvider>
+                <main>{children}</main>
+              </UpdateDialogProvider>
+            </LocalizationContextProvider>
+          </ThemeProvider>
+          <Toaster richColors />
+        </DeepLinkProvider>
       </body>
     </html>
   );
