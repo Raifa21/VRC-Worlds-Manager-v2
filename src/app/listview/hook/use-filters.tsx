@@ -269,9 +269,6 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
             const lower = rawTag.toLowerCase();
             if (lower.startsWith('author_tag_')) {
               tagsSet.add(rawTag.substring('author_tag_'.length));
-            } else {
-              // Accept already-normalized tags too (avoid losing facets if backend changed format)
-              tagsSet.add(rawTag);
             }
           }
         }
