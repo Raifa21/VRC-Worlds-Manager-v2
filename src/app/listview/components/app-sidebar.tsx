@@ -194,7 +194,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <div
             className={`
-              px-3 py-2 text-sm font-medium rounded-lg
+              px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
               overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
               ${pathname === '/listview/folders/special/all' ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
             `}
@@ -213,7 +213,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <div
             className={`
-              px-3 py-2 text-sm font-medium rounded-lg
+              px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
               overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
               ${pathname === '/listview/folders/special/find' ? sidebarStyles.activeLink : 'hover:bg-accent/50 hover:text-accent-foreground'}
             `}
@@ -230,7 +230,7 @@ export function AppSidebar() {
 
           <div
             className={`
-              px-3 py-2 text-sm font-medium rounded-lg
+              px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
               overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
               ${
                 pathname === '/listview/folders/special/unclassified'
@@ -260,7 +260,7 @@ export function AppSidebar() {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="h-[calc(100vh-417px)] overflow-y-auto no-webview-scroll-bar pl-8"
+                  className="h-[calc(100vh-417px)] overflow-x-clip overflow-y-scroll no-webview-scroll-bar pl-8"
                 >
                   {localFolders.map((folder, index) => (
                     <Draggable
@@ -276,7 +276,7 @@ export function AppSidebar() {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               className={`
-                                w-[190px] px-3 py-2 text-sm font-medium rounded-lg
+                                w-[190px] px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
                                 overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
                                 ${
                                   pathname ===
@@ -360,7 +360,7 @@ export function AppSidebar() {
                                   <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
                                     ({folder.world_count})
                                   </span>
-                                  <span className="truncate flex-1 pl-1">
+                                  <span className="truncate flex-1 pl-1 cursor-default">
                                     {folder.name}
                                   </span>
                                 </span>
