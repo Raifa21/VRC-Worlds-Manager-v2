@@ -32,33 +32,7 @@ export default function UnclassifiedWorldsPage() {
   const { worlds, refresh, isLoading } = useWorlds(SpecialFolders.Unclassified);
   const { filteredWorlds } = useWorldFilters(worlds);
   const setPopup = usePopupStore((s) => s.setPopup);
-  const { refresh: refreshFolders, importFolder } = useFolders();
-
-  // subscribe to deep link events
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-
-    (async () => {
-      unsubscribe = await onOpenUrl((urls) => {
-        console.log('deep link:', urls);
-        //vrc-worlds-manager://vrcwm.raifaworks.com/folder/import/${uuid}
-        //call handleImportFolder with the uuid
-        const importRegex =
-          /vrc-worlds-manager:\/\/vrcwm\.raifaworks\.com\/folder\/import\/([a-zA-Z0-9-]+)/;
-        const match = urls[0].match(importRegex);
-        if (match && match[1]) {
-          const uuid = match[1];
-          importFolder(uuid);
-        }
-      });
-    })();
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, []);
+  const { refresh: refreshFolders } = useFolders();
 
   useEffect(() => {
     checkForUpdate();
