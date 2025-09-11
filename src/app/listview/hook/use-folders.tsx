@@ -115,6 +115,7 @@ export function useFolders() {
 
   const importFolder = async (UUID: string) => {
     try {
+      toast(t('listview-page:importing-folder'), { duration: 5000 });
       const result = await commands.downloadFolder(UUID);
       if (result.status === 'ok') {
         const folderName = result.data[0];
