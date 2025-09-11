@@ -189,7 +189,7 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
 
     async function run() {
       // 1. Apply synchronous filters
-      let intermediate = worlds.filter(passesSyncFilters);
+      const intermediate = worlds.filter(passesSyncFilters);
       info(
         `[useWorldFilters] Example world format: ${JSON.stringify(worlds[0])}`,
       );

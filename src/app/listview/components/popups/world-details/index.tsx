@@ -37,6 +37,7 @@ import { Textarea } from '@/components/ui/textarea';
 import MemoRenderer from '@/components/memo-renderer';
 import { useFolders } from '@/app/listview/hook/use-folders';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useWorldDetailsActions } from './hook';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -92,7 +93,7 @@ export function WorldDetailPopup({
     deleteWorld,
     selectAuthor,
     selectTag,
-  } = require('./hook');
+  } = useWorldDetailsActions(onOpenChange);
   const { t } = useLocalization();
   const { folders } = useFolders();
   const [isLoading, setIsLoading] = useState(false);

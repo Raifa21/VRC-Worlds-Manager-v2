@@ -36,10 +36,7 @@ interface AddWorldPopupProps {
   onClose: () => void;
 }
 
-export async function AddWorldPopup({
-  onClose,
-  currentFolder,
-}: AddWorldPopupProps) {
+export function AddWorldPopup({ onClose, currentFolder }: AddWorldPopupProps) {
   const { t } = useLocalization();
   const [worldInput, setWorldInput] = useState<string>('');
   const [error, setError] = useState<string | null>(null);

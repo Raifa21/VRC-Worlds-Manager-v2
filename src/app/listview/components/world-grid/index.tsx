@@ -196,9 +196,11 @@ export function WorldGrid({
                           id={world.worldId}
                           onClick={() => {
                             if (disableCardClick) return;
-                            isFindPage
-                              ? handleOpenFolderDialog(world.worldId)
-                              : handleOpenWorldDetails(world.worldId);
+                            if (isFindPage) {
+                              handleOpenFolderDialog(world.worldId);
+                            } else {
+                              handleOpenWorldDetails(world.worldId);
+                            }
                           }}
                           className="group relative w-fit h-fit rounded-lg overflow-hidden"
                         >
