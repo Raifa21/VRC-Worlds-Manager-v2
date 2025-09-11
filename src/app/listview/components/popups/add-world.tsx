@@ -160,7 +160,12 @@ export function AddWorldPopup({ onClose, currentFolder }: AddWorldPopupProps) {
   };
 
   return (
-    <Dialog onOpenChange={handleCancel}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) handleCancel();
+      }}
+    >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('add-world-dialog:add')}</DialogTitle>
