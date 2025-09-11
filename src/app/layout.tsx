@@ -42,7 +42,7 @@ export default function RootLayout({
             </UpdateDialogProvider>
           </LocalizationContextProvider>
         </ThemeProvider>
-        <Toaster richColors closeButton />
+        <Toaster richColors />
       </body>
     </html>
   );
