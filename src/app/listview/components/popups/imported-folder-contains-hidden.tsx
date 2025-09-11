@@ -53,7 +53,10 @@ export function ImportedFolderContainsHidden({
           {t('imported-folder:select-restore')}
         </p>
 
-        <div className="mt-4 max-h-[200px] overflow-y-auto" ref={containerRef}>
+        <div
+          className="mt-4 max-h-[200px] overflow-y-auto no-webview-scroll-bar"
+          ref={containerRef}
+        >
           <WorldGrid
             worlds={worlds}
             containerRef={containerRef}

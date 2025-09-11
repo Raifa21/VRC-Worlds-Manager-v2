@@ -61,7 +61,7 @@ export function ExportPopup({
         </DialogHeader>
         <div className="py-4 space-y-4">
           {/* Folder selection */}
-          <div className="space-y-2 max-h-[250px] overflow-y-auto">
+          <div className="space-y-2 max-h-[250px] overflow-y-auto no-webview-scroll-bar">
             {folders.map((folder) => (
               <label
                 key={folder.name}

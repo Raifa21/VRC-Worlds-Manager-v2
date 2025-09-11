@@ -255,7 +255,7 @@ export default function SingleFilterItemSelector({
             )}
           </CommandEmpty>
 
-          <CommandGroup className="overflow-y-auto max-h-[200px] scroll-container">
+          <CommandGroup className="overflow-y-auto no-webview-scroll-bar max-h-[200px] scroll-container">
             {filteredItems.map((item) => {
               const isStarred = starredItems.includes(item.value);
               return (
