@@ -446,7 +446,7 @@ export function GroupInstanceCreator({
         <h3 className="font-medium">
           {t('group-instance-creator:select-group')}
         </h3>
-        <div className="overflow-y-auto max-h-[35vh] grid grid-cols-2 gap-2">
+        <div className="overflow-y-auto no-webview-scroll-bar max-h-[35vh] grid grid-cols-2 gap-2">
           {groups.map((group) => (
             <Button
               key={group.groupId}

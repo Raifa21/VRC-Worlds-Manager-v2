@@ -214,7 +214,9 @@ export default function MultiFilterItemSelector({
             ref={badgesContainerRef}
             className={cn(
               'flex flex-wrap gap-1 flex-grow min-w-0',
-              isMultiRow ? 'py-1.5 max-h-[4.5rem] overflow-y-auto' : 'py-1.5',
+              isMultiRow
+                ? 'py-1.5 max-h-[4.5rem] overflow-y-auto no-webview-scroll-bar'
+                : 'py-1.5',
             )}
           >
             {selectedOptions.length > 0 ? (
@@ -333,7 +335,7 @@ export default function MultiFilterItemSelector({
                 t('filter-item-selector:no-results-found')
               )}
             </CommandEmpty>
-            <CommandGroup className="max-h-[200px] overflow-y-auto scroll-container">
+            <CommandGroup className="max-h-[200px] overflow-y-auto no-webview-scroll-bar scroll-container">
               {combinedItems.map((item) => {
                 const isStarred = starredItems.includes(item.value);
                 return (

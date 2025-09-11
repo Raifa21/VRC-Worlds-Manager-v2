@@ -260,7 +260,7 @@ export function AppSidebar() {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="h-[calc(100vh-417px)] overflow-y-auto overflow-x-hidden pl-8"
+                  className="h-[calc(100vh-417px)] overflow-y-auto no-webview-scroll-bar pl-8"
                 >
                   {localFolders.map((folder, index) => (
                     <Draggable

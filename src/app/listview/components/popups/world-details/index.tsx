@@ -427,7 +427,7 @@ export function WorldDetailPopup({
         onOpenChange(open);
       }}
     >
-      <DialogContent className="max-w-[800px] h-[70vh] overflow-y-auto">
+      <DialogContent className="max-w-[800px] h-[70vh] overflow-y-auto no-webview-scroll-bar">
         <DialogHeader>
           <DialogTitle>
             {isLoading
@@ -937,7 +937,7 @@ export function WorldDetailPopup({
                       <div className="text-sm font-semibold mb-2 flex items-center gap-2">
                         {t('general:folders')}
                       </div>
-                      <div className="flex flex-col gap-2 h-48 overflow-y-auto">
+                      <div className="flex flex-col gap-2 h-48 overflow-y-auto no-webview-scroll-bar">
                         {folders.length > 0 ? (
                           folders.map((folder) => (
                             <div

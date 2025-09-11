@@ -10,7 +10,9 @@ export default function ListViewLayout({
     <div className="flex">
       <AppSidebar />
 
-      <main className="flex-1 h-screen overflow-y-auto">{children}</main>
+      <main className="flex-1 h-screen overflow-y-auto no-webview-scroll-bar">
+        {children}
+      </main>
 
       <PopupManager />
     </div>
