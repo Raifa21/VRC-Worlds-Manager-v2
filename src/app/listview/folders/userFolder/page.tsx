@@ -4,9 +4,10 @@ import { useRef, useEffect, useContext } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { useFolders } from '@/app/listview/hook/use-folders';
 import { WorldGrid } from '../../components/world-grid';
+import { WorldGridSkeleton } from '../../components/world-grid/skeleton';
 import { Button } from '@/components/ui/button';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
-import { Menu, Plus, Share } from 'lucide-react'; // For the reload icon
+import { Menu, Plus, Share } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +30,7 @@ export default function UserFolder() {
   const folderName = searchParams.get('folderName') || '';
 
   // worlds
-  const { worlds } = useWorlds(folderName);
+  const { worlds, isLoading } = useWorlds(folderName);
 
   info('Loaded worlds in folder: ' + folderName);
   info('Number of worlds: ' + worlds.length);
@@ -53,7 +54,7 @@ export default function UserFolder() {
 
     (async () => {
       unsubscribe = await onOpenUrl((urls) => {
-        console.log('deep link:', urls);
+        info(`[UserFolder] deep link: ${JSON.stringify(urls)}`);
         //vrc-worlds-manager://vrcwm.raifaworks.com/folder/import/${uuid}
         //call handleImportFolder with the uuid
         const importRegex =
@@ -123,7 +124,9 @@ export default function UserFolder() {
         <div>
           <SearchBar currentFolder={folderName} />
           <div className="flex-1">
-            {filteredWorlds.length === 0 ? (
+            {isLoading && worlds.length === 0 ? (
+              <WorldGridSkeleton />
+            ) : filteredWorlds.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 {worlds.length === 0
                   ? // no raw worlds in this folder / section

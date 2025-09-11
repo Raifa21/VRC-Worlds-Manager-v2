@@ -6,6 +6,7 @@ import { useWorlds } from '../../../hook/use-worlds';
 import { useWorldFilters } from '../../../hook/use-filters';
 import { SearchBar } from '../../../components/searchbar';
 import { WorldGrid } from '../../../components/world-grid';
+import { WorldGridSkeleton } from '../../../components/world-grid/skeleton';
 import { useFolders } from '../../../hook/use-folders';
 import { usePopupStore } from '../../../hook/usePopups/store';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ export default function UnclassifiedWorldsPage() {
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const { t } = useLocalization();
   const { checkForUpdate } = useContext(UpdateDialogContext);
-  const { worlds, refresh } = useWorlds(SpecialFolders.Unclassified);
+  const { worlds, refresh, isLoading } = useWorlds(SpecialFolders.Unclassified);
   const { filteredWorlds } = useWorldFilters(worlds);
   const setPopup = usePopupStore((s) => s.setPopup);
   const { refresh: refreshFolders, importFolder } = useFolders();
@@ -130,7 +131,9 @@ export default function UnclassifiedWorldsPage() {
         <div>
           <SearchBar currentFolder={SpecialFolders.Unclassified} />
           <div className="flex-1">
-            {filteredWorlds.length === 0 ? (
+            {isLoading && worlds.length === 0 ? (
+              <WorldGridSkeleton />
+            ) : filteredWorlds.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 {worlds.length === 0
                   ? t('listview-page:no-worlds-unclassified')
