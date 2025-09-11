@@ -44,6 +44,7 @@ export default function AllWorldsPage() {
 
   const handleReload = async () => {
     try {
+      toast.info(t('listview-page:reloading-worlds'), { duration: 5000 });
       const favs = await commands.getFavoriteWorlds();
       if (favs.status === 'error') {
         toast(t('general:error-title'), { description: favs.error });
@@ -56,7 +57,7 @@ export default function AllWorldsPage() {
       });
     } catch (e) {
       error(`[AllWorlds] reload failed: ${e}`);
-      toast(t('general:error-title'), {
+      toast.error(t('general:error-title'), {
         description: t('listview-page:error-refresh-worlds'),
       });
     }
