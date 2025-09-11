@@ -98,6 +98,7 @@
   "setup-page:migration-exists-cancel": "既存データを保持する",
   "setup-page:migration-exists-continue": "新しいデータをインポートする",
 
+  "listview-page:importing-folder": "フォルダをインポート中...",
   "listview-page:share-folder": "フォルダを共有",
   "listview-page:add-world": "ワールドを追加",
   "listview-page:reload-worlds": "お気に入りを取得",
