@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { WorldGrid } from '../../../components/world-grid';
+import { WorldGridSkeleton } from '../../../components/world-grid/skeleton';
 import MultiFilterItemSelector from '@/components/multi-filter-item-selector';
 import { useSelectedWorldsStore } from '../../../hook/use-selected-worlds';
 import {
@@ -59,7 +60,6 @@ export default function FindWorldsPage() {
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const findGridRef = useRef<HTMLDivElement>(null);
-  const searchScrollRef = useRef<HTMLDivElement>(null); // scroller for search tab
   const { isSelectionMode, toggleSelectionMode, clearFolderSelections } =
     useSelectedWorldsStore();
 
@@ -214,7 +214,7 @@ export default function FindWorldsPage() {
         const backoffMs = 2500; // 2-3 seconds backoff
         setLoadMoreBackoffUntil(Date.now() + backoffMs);
         info(`Load-more backoff applied for ${backoffMs}ms; nudging scroll up`);
-        const scroller = searchScrollRef.current;
+        const scroller = findGridRef.current;
         try {
           if (scroller) {
             scroller.scrollBy({ top: -100, behavior: 'smooth' });
@@ -332,12 +332,7 @@ export default function FindWorldsPage() {
         {activeTab === 'recently-visited' && (
           <div className="flex flex-col gap-2">
             {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <p>{t('general:loading')}</p>
-                </div>
-              </div>
+              <WorldGridSkeleton />
             ) : recentlyVisitedWorlds.length > 0 ? (
               <WorldGrid
                 worlds={recentlyVisitedWorlds}
@@ -496,6 +491,10 @@ export default function FindWorldsPage() {
             <div className="flex flex-col gap-4 p-4">
               {/* original search tab content */}
               {/* Search results */}
+              {isSearching && searchResults.length === 0 && (
+                <WorldGridSkeleton />
+              )}
+
               {searchResults.length > 0 && (
                 <div className="flex-1">
                   <WorldGrid
@@ -507,9 +506,8 @@ export default function FindWorldsPage() {
                   {/* Load more indicator */}
                   <div ref={loadMoreRef} className="p-4 flex justify-center">
                     {isLoadingMore ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>{t('find-page:loading-more')}</span>
+                      <div className="w-full max-w-screen-lg">
+                        <WorldGridSkeleton count={6} />
                       </div>
                     ) : hasMoreResults ? (
                       <p className="text-sm text-muted-foreground">
