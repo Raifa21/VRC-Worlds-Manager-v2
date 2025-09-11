@@ -287,7 +287,7 @@ export function WorldGrid({
                                         ?.name || '',
                                   )
                                   .filter(Boolean);
-                                handleHideWorld?.(worldsToHide, worldNames);
+                                handleHideWorld(worldsToHide, worldNames);
                               }}
                               className="text-destructive"
                             >
