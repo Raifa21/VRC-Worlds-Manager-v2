@@ -135,6 +135,8 @@
   "listview-page:folder-changes-undone": "フォルダの変更が元に戻されました",
   "listview-page:folder-imported-title": "フォルダをインポートしました",
   "listview-page:folder-imported-description": "フォルダ「{0}」が正常にインポートされました",
+  "listview-page:folder-deleted-title": "フォルダが削除されました",
+  "listview-page:folder-deleted-description": "フォルダ「{0}」が正常に削除されました",
   "listview-page:error-import-folder": "フォルダのインポートに失敗しました",
   "listview-page:error-no-hidden-worlds": "インポートしたフォルダに非表示ワールドはありません。",
   "listview-page:restored-hidden-worlds-title": "非表示ワールドを復元しました",
