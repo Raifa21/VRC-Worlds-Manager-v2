@@ -122,13 +122,6 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
     let cancelled = false;
     const seq = ++requestSeq.current;
 
-    // Snapshot current filter state at effect start
-    info(
-      `[useWorldFilters] run(seq=${seq}) worlds=${worlds.length} ` +
-        `search="${searchQuery}" author="${authorFilter}" tags=[${tagFilters.join(',')}] ` +
-        `folders=[${folderFilters.join(',')}] memo="${memoTextFilter}" sort=${sortField}:${sortDirection}`,
-    );
-
     const normalize = (s: string) => s.toLowerCase();
     const searchLower = searchQuery.trim().toLowerCase();
     const activeAuthor = authorFilter.trim().toLowerCase();
@@ -190,12 +183,6 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
     async function run() {
       // 1. Apply synchronous filters
       const intermediate = worlds.filter(passesSyncFilters);
-      info(
-        `[useWorldFilters] Example world format: ${JSON.stringify(worlds[0])}`,
-      );
-      info(
-        `[useWorldFilters] Sync filter pass intermediate=${intermediate.length} rejects(text=${rejectCounters.text},author=${rejectCounters.author},tag=${rejectCounters.tag},folder=${rejectCounters.folder})`,
-      );
       if (
         authorFilter === '' &&
         tagFilters.length === 0 &&
@@ -252,12 +239,6 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
           }) * dirFactor
         );
       });
-      info(
-        `[useWorldFilters] After sorting count=${finalList.length} firstIds=${finalList
-          .slice(0, 3)
-          .map((w) => w.worldId)
-          .join(',')}`,
-      );
 
       // 4. Facets (authors & tags) based on finalList
       const authorsSet = new Set<string>();
@@ -279,21 +260,10 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
       let tagsArr = Array.from(tagsSet).sort((a, b) =>
         a.localeCompare(b, undefined, { sensitivity: 'base' }),
       );
-      info(
-        `[useWorldFilters] Facet pre-check authors=${authorsArr.length} tagsRaw=${tagsSet.size} sampleAuthors=${authorsArr
-          .slice(0, 5)
-          .join('|')}`,
-      );
       if (tagsArr.length === 0 && finalList.length > 0) {
-        info(
-          `[useWorldFilters] No tags extracted from finalList (len=${finalList.length}). First world tags=${JSON.stringify(
-            finalList[0].tags,
-          )}`,
-        );
         if (!tagsFallbackTriedRef.current) {
           tagsFallbackTriedRef.current = true;
           try {
-            info('[useWorldFilters] Attempting fallback getTagsByCount()');
             const fallbackRes = await commands.getTagsByCount();
             if (fallbackRes.status === 'ok') {
               const fallbackTags = fallbackRes.data.map((raw) =>
@@ -305,9 +275,6 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
                 const merged = new Set<string>([...fallbackTags]);
                 tagsArr = Array.from(merged).sort((a, b) =>
                   a.localeCompare(b, undefined, { sensitivity: 'base' }),
-                );
-                info(
-                  `[useWorldFilters] Fallback tags fetched count=${tagsArr.length}`,
                 );
               } else {
                 info('[useWorldFilters] Fallback returned empty tag list');

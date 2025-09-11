@@ -15,6 +15,7 @@ import { commands } from '@/lib/bindings';
 import { error, info } from '@tauri-apps/plugin-log';
 import { useLocalization } from '@/hooks/use-localization';
 import { toast } from 'sonner';
+import { ShareFolderPopup } from '../../components/popups/share-folder-popup';
 
 export function PopupManager() {
   const {
@@ -25,6 +26,7 @@ export function PopupManager() {
     showDeleteFolder,
     showImportedFolderContainsHidden,
     showWorldDetails,
+    showShareFolder,
     setPopup,
   } = usePopupStore();
 
@@ -113,6 +115,13 @@ export function PopupManager() {
           }}
         />
       )}
+      {showShareFolder && (
+        <ShareFolderPopup
+          open={!!showShareFolder}
+          onOpenChange={(open) => setPopup('showShareFolder', open)}
+          folderName={currentFolder}
+        />
+      )}
       {showWorldDetails && (
         <WorldDetailPopup
           open={!!showWorldDetails}
@@ -120,6 +129,7 @@ export function PopupManager() {
             setPopup('showWorldDetails', open ? showWorldDetails : null)
           }
           worldId={showWorldDetails}
+          currentFolder={currentFolder}
         />
       )}
     </>

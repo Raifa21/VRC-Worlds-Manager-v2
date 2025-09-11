@@ -71,26 +71,14 @@ export default function AllWorldsPage() {
             {t('general:all-worlds')}
           </h1>
           <div className="flex items-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-9 flex items-center gap-2 ml-2 mr-1"
-                >
-                  <Menu className="h-10 w-10" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className="flex items-center gap-2 cursor-pointer"
-                  onClick={() => setPopup('showAddWorld', true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>{t('listview-page:add-world')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              className="flex items-center gap-2 cursor-pointer"
+              variant="outline"
+              onClick={() => setPopup('showAddWorld', true)}
+            >
+              <Plus className="h-4 w-4" />
+              <span>{t('listview-page:add-world')}</span>
+            </Button>
             <Button
               variant="outline"
               size="icon"
