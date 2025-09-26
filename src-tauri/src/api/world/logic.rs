@@ -36,8 +36,10 @@ pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
         check_rate_limit(OPERATION)?;
 
         let result = client
-            .get(format!("{}/worlds/favorites", API_BASE_URL))
-            .query(&[("n", n), ("offset", offset)])
+            .get(format!(
+                "{}/worlds/favorites?offset={}&n={}",
+                API_BASE_URL, offset, n
+            ))
             .send()
             .await
             .map_err(|e| e.to_string())?;
@@ -219,9 +221,18 @@ pub async fn search_worlds<J: Into<Arc<Jar>>>(
 
     info!("search parameters: {:?}", search_parameters);
 
+    let search_parameters_string: &str = &search_parameters.to_query_string();
+
+    info!(
+        "URL: {}/worlds?offset={}&n=100&{}",
+        API_BASE_URL, offset, search_parameters_string
+    );
+
     let result = client
-        .get(format!("{}/worlds?offset={}&n=100", API_BASE_URL, offset))
-        .query(search_parameters)
+        .get(format!(
+            "{}/worlds?offset={}&n=100&{}",
+            API_BASE_URL, offset, search_parameters_string
+        ))
         .send()
         .await
         .expect("Failed to search worlds");
