@@ -94,6 +94,14 @@ export default function FindWorldsPage() {
   // Add this state variable to track if a search has been performed
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Keep selectedSort in sync: when a search query is present, force sort to 'relevance'
+  useEffect(() => {
+    if (searchQuery.trim() !== '') {
+      // Only update when it's not already 'relevance' to avoid unnecessary state updates
+      setSelectedSort((prev) => (prev === 'relevance' ? prev : 'relevance'));
+    }
+  }, [searchQuery]);
+
   // Backoff control for load-more errors
   const [loadMoreBackoffUntil, setLoadMoreBackoffUntil] = useState<
     number | null
@@ -373,10 +381,25 @@ export default function FindWorldsPage() {
 
                     {/* Sort options */}
                     <div className="flex flex-col gap-2 w-2/5">
-                      <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
+                        {searchQuery.trim() !== '' && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <CircleHelpIcon className="w-3 h-3 m-0" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t('find-page:sort-relevant-tooltip')}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                       <Select
                         value={selectedSort}
                         onValueChange={setSelectedSort}
+                        disabled={searchQuery.trim() !== ''}
                       >
                         <SelectTrigger id="sort">
                           <SelectValue
@@ -404,6 +427,9 @@ export default function FindWorldsPage() {
                           </SelectItem>
                           <SelectItem value="updated">
                             {t('find-page:sort-updated')}
+                          </SelectItem>
+                          <SelectItem value="relevance">
+                            {t('find-page:sort-relevant')}
                           </SelectItem>
                         </SelectContent>
                       </Select>

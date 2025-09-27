@@ -4,6 +4,7 @@ use specta::Type;
 
 use crate::definitions::{Platform, WorldApiData, WorldDisplayData};
 use std::collections::HashSet;
+use std::fmt::Display;
 
 #[derive(Debug, Eq, PartialEq, Hash, Deserialize, Serialize, Clone, Type)]
 #[serde(rename_all = "camelCase")]
@@ -328,6 +329,31 @@ pub struct WorldSearchParameters {
     pub search: Option<String>,
 }
 
+impl WorldSearchParameters {
+    pub fn to_query_string(&self) -> String {
+        let mut query = Vec::new();
+
+        if let Some(ref sort) = self.sort {
+            let sort_str = sort.to_string();
+            query.push(format!("sort={}", urlencoding::encode(&sort_str)));
+        }
+        if let Some(ref tag) = self.tag {
+            query.push(format!("tag={}", urlencoding::encode(tag)));
+        }
+        if let Some(ref notag) = self.notag {
+            query.push(format!("notag={}", urlencoding::encode(notag)));
+        }
+        if let Some(ref platform) = self.platform {
+            query.push(format!("platform={}", urlencoding::encode(platform)));
+        }
+        if let Some(ref search) = self.search {
+            query.push(format!("search={}", urlencoding::encode(search)));
+        }
+
+        query.join("&")
+    }
+}
+
 pub struct WorldSearchParametersBuilder {
     pub sort: Option<SearchWorldSort>,
     pub tag: Option<String>,
@@ -423,6 +449,32 @@ pub enum SearchWorldSort {
     Name,
 }
 
+impl std::fmt::Display for SearchWorldSort {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            SearchWorldSort::Popularity => "popularity",
+            SearchWorldSort::Heat => "heat",
+            SearchWorldSort::Trust => "trust",
+            SearchWorldSort::Shuffle => "shuffle",
+            SearchWorldSort::Random => "random",
+            SearchWorldSort::Favorites => "favorites",
+            SearchWorldSort::ReportScore => "reportScore",
+            SearchWorldSort::ReportCount => "reportCount",
+            SearchWorldSort::PublicationDate => "publicationDate",
+            SearchWorldSort::LabsPublicationDate => "labsPublicationDate",
+            SearchWorldSort::Created => "created",
+            SearchWorldSort::CreatedAt => "_created_at",
+            SearchWorldSort::Updated => "updated",
+            SearchWorldSort::UpdatedAt => "_updated_at",
+            SearchWorldSort::Order => "order",
+            SearchWorldSort::Relevance => "relevance",
+            SearchWorldSort::Magic => "magic",
+            SearchWorldSort::Name => "name",
+        };
+        write!(f, "{}", s)
+    }
+}
+
 impl SearchWorldSort {
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
@@ -433,6 +485,7 @@ impl SearchWorldSort {
             "publicationDate" => Some(Self::PublicationDate),
             "created" => Some(Self::Created),
             "updated" => Some(Self::Updated),
+            "relevance" => Some(Self::Relevance),
             _ => None,
         }
     }
