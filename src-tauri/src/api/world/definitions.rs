@@ -485,6 +485,7 @@ impl SearchWorldSort {
             "publicationDate" => Some(Self::PublicationDate),
             "created" => Some(Self::Created),
             "updated" => Some(Self::Updated),
+            "relevance" => Some(Self::Relevance),
             _ => None,
         }
     }

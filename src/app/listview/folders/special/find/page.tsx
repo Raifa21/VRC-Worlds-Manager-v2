@@ -373,10 +373,30 @@ export default function FindWorldsPage() {
 
                     {/* Sort options */}
                     <div className="flex flex-col gap-2 w-2/5">
-                      <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
+                        {searchQuery.trim() !== '' && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <CircleHelpIcon className="w-3 h-3 m-0" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t(
+                                  'find-page:sort-relevant-tooltip',
+                                  'Sort is locked to "Relevant" because VRChat API only supports keyword search with this sort.',
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                       <Select
-                        value={selectedSort}
+                        value={
+                          searchQuery.trim() !== '' ? 'relevant' : selectedSort
+                        }
                         onValueChange={setSelectedSort}
+                        disabled={searchQuery.trim() !== ''}
                       >
                         <SelectTrigger id="sort">
                           <SelectValue
@@ -404,6 +424,9 @@ export default function FindWorldsPage() {
                           </SelectItem>
                           <SelectItem value="updated">
                             {t('find-page:sort-updated')}
+                          </SelectItem>
+                          <SelectItem value="relevant">
+                            {t('find-page:sort-relevant')}
                           </SelectItem>
                         </SelectContent>
                       </Select>
