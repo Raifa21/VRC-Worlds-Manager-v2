@@ -94,6 +94,14 @@ export default function FindWorldsPage() {
   // Add this state variable to track if a search has been performed
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Keep selectedSort in sync: when a search query is present, force sort to 'relevance'
+  useEffect(() => {
+    if (searchQuery.trim() !== '') {
+      // Only update when it's not already 'relevance' to avoid unnecessary state updates
+      setSelectedSort((prev) => (prev === 'relevance' ? prev : 'relevance'));
+    }
+  }, [searchQuery]);
+
   // Backoff control for load-more errors
   const [loadMoreBackoffUntil, setLoadMoreBackoffUntil] = useState<
     number | null
@@ -382,19 +390,14 @@ export default function FindWorldsPage() {
                                 <CircleHelpIcon className="w-3 h-3 m-0" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                {t(
-                                  'find-page:sort-relevant-tooltip',
-                                  'Sort is locked to "Relevant" because VRChat API only supports keyword search with this sort.',
-                                )}
+                                {t('find-page:sort-relevant-tooltip')}
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         )}
                       </div>
                       <Select
-                        value={
-                          searchQuery.trim() !== '' ? 'relevant' : selectedSort
-                        }
+                        value={selectedSort}
                         onValueChange={setSelectedSort}
                         disabled={searchQuery.trim() !== ''}
                       >
@@ -425,7 +428,7 @@ export default function FindWorldsPage() {
                           <SelectItem value="updated">
                             {t('find-page:sort-updated')}
                           </SelectItem>
-                          <SelectItem value="relevant">
+                          <SelectItem value="relevance">
                             {t('find-page:sort-relevant')}
                           </SelectItem>
                         </SelectContent>
