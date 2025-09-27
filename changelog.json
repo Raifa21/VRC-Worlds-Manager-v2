@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.2.1",
+    "fixes": [
+      {
+        "text": "Added a relevance sort option to ensure search keywords are reflected in results",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "検索キーワードが結果に反映されるように、関連性順並び替えオプションを追加"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.2.0",
     "features": [
       {
