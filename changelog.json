@@ -1,6 +1,17 @@
 [
   {
     "version": "1.2.1",
+    "features": [
+      {
+        "text": "Added open instance details in VRChat functionality",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "インスタンス詳細をVRChatで開く機能を追加"
+          }
+        ]
+      }
+    ],
     "fixes": [
       {
         "text": "Added a relevance sort option to ensure search keywords are reflected in results",
