@@ -26,8 +26,26 @@ export function useWorldDetailsActions(onOpenChange: (open: boolean) => void) {
         toast(t('general:error-title'), { description: result.error });
         return;
       }
+      // result.data contains InstanceInfo with world_id, instance_id, short_name
+      const info = result.data;
       toast(t('general:success-title'), {
         description: t('listview-page:created-instance', instanceType),
+        action: {
+          label: t('listview-page:open-in-client'),
+          onClick: async () => {
+            try {
+              const openRes = await commands.openInstanceInClient(
+                info.world_id,
+                info.instance_id,
+              );
+              if (openRes.status === 'error') {
+                toast(t('general:error-title'), { description: openRes.error });
+              }
+            } catch (e) {
+              error(`Failed to open instance in client: ${e}`);
+            }
+          },
+        },
       });
     } catch (e) {
       error(`Failed to create instance: ${e}`);
@@ -58,8 +76,25 @@ export function useWorldDetailsActions(onOpenChange: (open: boolean) => void) {
         toast(t('general:error-title'), { description: result.error });
         return;
       }
+      const info = result.data;
       toast(t('general:success-title'), {
         description: t('listview-page:created-instance', instanceType),
+        action: {
+          label: t('listview-page:open-in-client'),
+          onClick: async () => {
+            try {
+              const openRes = await commands.openInstanceInClient(
+                info.world_id,
+                info.instance_id,
+              );
+              if (openRes.status === 'error') {
+                toast(t('general:error-title'), { description: openRes.error });
+              }
+            } catch (e) {
+              error(`Failed to open instance in client: ${e}`);
+            }
+          },
+        },
       });
     } catch (e) {
       error(`Failed to create group instance: ${e}`);

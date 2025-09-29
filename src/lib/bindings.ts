@@ -610,7 +610,7 @@ export const commands = {
     worldId: string,
     instanceTypeStr: string,
     regionStr: string,
-  ): Promise<Result<null, string>> {
+  ): Promise<Result<InstanceInfo, string>> {
     try {
       return {
         status: 'ok',
@@ -655,7 +655,7 @@ export const commands = {
     allowedRoles: string[] | null,
     regionStr: string,
     queueEnabled: boolean,
-  ): Promise<Result<null, string>> {
+  ): Promise<Result<InstanceInfo, string>> {
     try {
       return {
         status: 'ok',
@@ -666,6 +666,23 @@ export const commands = {
           allowedRoles,
           regionStr,
           queueEnabled,
+        }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async openInstanceInClient(
+    worldId: string,
+    instanceId: string,
+  ): Promise<Result<string, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('open_instance_in_client', {
+          worldId,
+          instanceId,
         }),
       };
     } catch (e) {
@@ -972,6 +989,11 @@ export type GroupRole = {
   name: string;
   permissions: GroupPermission[];
   isManagementRole: boolean;
+};
+export type InstanceInfo = {
+  world_id: string;
+  instance_id: string;
+  short_name: string | null;
 };
 export type InstanceRegion = 'us' | 'use' | 'eu' | 'jp';
 export type LocalizedChanges = {

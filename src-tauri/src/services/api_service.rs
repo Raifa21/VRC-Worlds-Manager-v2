@@ -17,6 +17,14 @@ use world::ReleaseStatus;
 
 pub struct ApiService;
 
+#[derive(Clone, Debug, serde::Serialize, specta::Type)]
+pub struct InstanceInfo {
+    pub world_id: String,
+    pub instance_id: String,
+    // only populated when frontend requests opening the client
+    pub short_name: Option<String>,
+}
+
 impl ApiService {
     /// Saves the cookie store to disk
     ///
@@ -540,7 +548,7 @@ impl ApiService {
         cookie_store: Arc<Jar>,
         user_id: String,
         app: AppHandle,
-    ) -> Result<(), String> {
+    ) -> Result<InstanceInfo, String> {
         log::info!(
             "Creating instance: {} {} {}",
             world_id,
@@ -558,10 +566,31 @@ impl ApiService {
         // Create instance type based on string and user_id
         let instance_type = match instance_type_str.as_str() {
             "public" => instance::InstanceType::Public,
-            "friends+" => instance::InstanceType::friends_plus(user_id),
-            "friends" => instance::InstanceType::friends_only(user_id),
-            "invite+" => instance::InstanceType::invite_plus(user_id),
-            "invite" => instance::InstanceType::invite_only(user_id),
+            // The following instance types require a valid user id. If we don't have one, fail early
+            "friends+" => {
+                if user_id.is_empty() {
+                    return Err("Not logged in: cannot create friends+ instance".to_string());
+                }
+                instance::InstanceType::friends_plus(user_id)
+            }
+            "friends" => {
+                if user_id.is_empty() {
+                    return Err("Not logged in: cannot create friends instance".to_string());
+                }
+                instance::InstanceType::friends_only(user_id)
+            }
+            "invite+" => {
+                if user_id.is_empty() {
+                    return Err("Not logged in: cannot create invite+ instance".to_string());
+                }
+                instance::InstanceType::invite_plus(user_id)
+            }
+            "invite" => {
+                if user_id.is_empty() {
+                    return Err("Not logged in: cannot create invite instance".to_string());
+                }
+                instance::InstanceType::invite_only(user_id)
+            }
             _ => return Err("Invalid instance type".to_string()),
         };
 
@@ -583,15 +612,12 @@ impl ApiService {
                 )
                 .await?;
 
-                Self::get_instance_short_name_and_open_client(
-                    cookie_store,
-                    &world_id,
-                    &instance_id,
-                    app,
-                )
-                .await?;
-
-                Ok(())
+                // Do NOT fetch the short name here. Frontend will request it when user chooses to open in client.
+                Ok(InstanceInfo {
+                    world_id,
+                    instance_id,
+                    short_name: None,
+                })
             }
             Err(e) => Err(format!("Failed to create world instance: {}", e)),
         }
@@ -667,7 +693,7 @@ impl ApiService {
         queue_enabled: bool,
         cookie_store: Arc<Jar>,
         app: AppHandle,
-    ) -> Result<(), String> {
+    ) -> Result<InstanceInfo, String> {
         log::info!(
             "Creating group instance: {} {} {} {} {:?}",
             world_id,
@@ -729,16 +755,24 @@ impl ApiService {
                 )
                 .await?;
 
-                Self::get_instance_short_name_and_open_client(
-                    cookie_store,
-                    &world_id,
-                    &instance_id,
-                    app,
-                )
-                .await?;
-                Ok(())
+                // Do NOT fetch the short name here. Frontend will request it when user chooses to open in client.
+                Ok(InstanceInfo {
+                    world_id,
+                    instance_id,
+                    short_name: None,
+                })
             }
             Err(e) => Err(format!("Failed to create group instance: {}", e)),
         }
+    }
+
+    /// Opens the given instance in the user's client. Returns the short_name on success.
+    pub async fn open_instance_in_client<J: Into<Arc<Jar>>>(
+        cookie: J,
+        world_id: &str,
+        instance_id: &str,
+        app: AppHandle,
+    ) -> Result<String, String> {
+        Self::get_instance_short_name_and_open_client(cookie, world_id, instance_id, app).await
     }
 }

@@ -11,7 +11,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps['theme']}
-      className="toaster group"
+      // Ensure the toasts render above popups and are clickable
+      className="toaster group z-[999999] pointer-events-auto"
       toastOptions={{
         classNames: {
           toast:
