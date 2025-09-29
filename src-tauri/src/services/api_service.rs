@@ -388,7 +388,7 @@ impl ApiService {
 
         // Open the instance in the user's client
         let url = format!(
-            "vrchat://launch?ref=vrchat.com&id={}:{}&shortName={}",
+            "vrchat://launch?ref=vrchat.com&id={}:{}&shortName={}&attach=1",
             world_id, instance_id, short_name
         );
         log::info!("Opening instance in client: {}", url);
