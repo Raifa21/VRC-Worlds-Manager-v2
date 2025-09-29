@@ -5,6 +5,7 @@ use crate::api::group::GroupInstancePermissionInfo;
 use crate::api::group::UserGroup;
 use crate::definitions::WorldDetails;
 use crate::definitions::WorldDisplayData;
+use crate::services::api_service::InstanceInfo;
 use crate::services::FolderManager;
 use crate::ApiService;
 use crate::AUTHENTICATOR;
@@ -209,7 +210,7 @@ pub async fn create_world_instance(
     instance_type_str: String,
     region_str: String,
     handle: State<'_, AppHandle>,
-) -> Result<(), String> {
+) -> Result<InstanceInfo, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
     let user_id = INITSTATE.get().read().await.user_id.clone();
 
@@ -224,7 +225,7 @@ pub async fn create_world_instance(
     .await;
 
     match result {
-        Ok(_) => Ok(()),
+        Ok(info) => Ok(info),
         Err(e) => {
             log::info!("Failed to create world instance: {}", e);
             Err(format!("Failed to create world instance: {}", e))
@@ -280,7 +281,7 @@ pub async fn create_group_instance(
     region_str: String,
     queue_enabled: bool,
     handle: State<'_, AppHandle>,
-) -> Result<(), String> {
+) -> Result<InstanceInfo, String> {
     let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
 
     let result = ApiService::create_group_instance(
@@ -296,10 +297,23 @@ pub async fn create_group_instance(
     .await;
 
     match result {
-        Ok(_) => Ok(()),
+        Ok(info) => Ok(info),
         Err(e) => {
             log::info!("Failed to create group instance: {}", e);
             Err(format!("Failed to create group instance: {}", e))
         }
     }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn open_instance_in_client(
+    world_id: String,
+    instance_id: String,
+    handle: State<'_, AppHandle>,
+) -> Result<String, String> {
+    let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
+
+    ApiService::open_instance_in_client(cookie_store, &world_id, &instance_id, (*handle).clone())
+        .await
 }

@@ -99,6 +99,7 @@
   "setup-page:migration-exists-cancel": "Keep existing data",
   "setup-page:migration-exists-continue": "Import new data",
 
+  "listview-page:open-in-client": "Open in VRChat",
   "listview-page:reloading-worlds": "Getting favorite worlds...",
   "listview-page:importing-folder": "Importing folder...",
   "listview-page:share-folder": "Share Folder",
