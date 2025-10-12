@@ -116,11 +116,15 @@ export const useWorldsStore = create<WorldsStoreState>((set, get) => ({
     }));
   },
   async addWorldToFolder(folder, worldId) {
-    if (!isUserFolder(folder)) return;
     const key = folderKey(folder);
     const res = await commands.getWorld(worldId, null);
     if (res.status === 'error') throw new Error(res.error);
-    await commands.addWorldToFolder(folder as string, worldId);
+    
+    // Only call addWorldToFolder command for user folders
+    if (isUserFolder(folder)) {
+      await commands.addWorldToFolder(folder as string, worldId);
+    }
+    
     // optimistic update: append if not exists
     set((s) => {
       const entry = s.byKey[key] ?? { worlds: [], isLoading: false };
