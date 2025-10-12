@@ -27,8 +27,7 @@ import { commands } from '@/lib/bindings';
 import { Badge } from '@/components/ui/badge';
 import { useFolders } from '../../hook/use-folders';
 import { useWorldGrid } from './hook';
-import { DndContext, useDraggable, DragOverlay } from '@dnd-kit/core';
-import { toast } from 'sonner';
+import { useDraggable } from '@dnd-kit/core';
 
 interface WorldGridProps {
   worlds: WorldDisplayData[];
@@ -85,6 +84,10 @@ function DraggableWorldCard({
   const { t } = useLocalization();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: world.worldId,
+    data: {
+      selectedWorlds: selectedWorlds,
+      world: world,
+    },
   });
 
   return (
@@ -315,8 +318,6 @@ export function WorldGrid({
     isOpen: boolean;
   } | null>(null);
 
-  const [activeWorldId, setActiveWorldId] = useState<string | null>(null);
-
   const handleDialogClose = () => {
     setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
     setTimeout(() => setDialogConfig(null), 150);
@@ -329,158 +330,75 @@ export function WorldGrid({
     toggleWorld(worldId);
   };
 
-  const handleDragStart = (event: any) => {
-    const worldId = event.active.id;
-    setActiveWorldId(worldId);
-  };
-
-  const handleDragEnd = (event: any) => {
-    setActiveWorldId(null);
-    const { active, over } = event;
-
-    if (!over) return;
-
-    // Check if dropped on a folder
-    if (over.id && over.id.startsWith('folder-')) {
-      const folderName = over.id.replace('folder-', '');
-      const worldId = active.id;
-
-      // Determine which worlds to add
-      const worldsToAdd =
-        selectedWorlds.length > 0 && selectedWorlds.includes(worldId)
-          ? Array.from(selectedWorlds)
-          : [worldId];
-
-      // Add worlds to folder
-      handleAddWorldsToFolder(folderName, worldsToAdd);
-    }
-  };
-
-  const handleAddWorldsToFolder = async (
-    folderName: string,
-    worldIds: string[],
-  ) => {
-    try {
-      await Promise.all(
-        worldIds.map((id) => commands.addWorldToFolder(folderName, id)),
-      );
-
-      toast(t('general:success-title'), {
-        description:
-          worldIds.length === 1
-            ? t('world-grid:world-added-to-folder', folderName)
-            : t(
-                'world-grid:worlds-added-to-folder',
-                worldIds.length,
-                folderName,
-              ),
-      });
-
-      clearSelection();
-    } catch (e) {
-      error(`Failed to add worlds to folder: ${e}`);
-      toast(t('general:error-title'), {
-        description: t('world-grid:error-add-to-folder'),
-      });
-    }
-  };
-
-  // Get the active world and count for drag overlay
-  const activeWorld = activeWorldId
-    ? worlds.find((w) => w.worldId === activeWorldId)
-    : null;
-  const draggedWorldsCount =
-    activeWorldId &&
-    selectedWorlds.length > 0 &&
-    selectedWorlds.includes(activeWorldId)
-      ? selectedWorlds.length
-      : 1;
-
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <div
+      ref={containerRef}
+      className="pt-2 flex-1 overflow-auto relative"
+      // ↑ debug: the scrollable full-width parent
+    >
       <div
-        ref={containerRef}
-        className="pt-2 flex-1 overflow-auto relative"
-        // ↑ debug: the scrollable full-width parent
+        className="mx-auto relative"
+        // ↑ debug: this fixed-width grid container
+        style={{
+          width: `${containerWidth - 10}px`,
+          height: `${totalHeight}px`,
+        }}
       >
-        <div
-          className="mx-auto relative"
-          // ↑ debug: this fixed-width grid container
-          style={{
-            width: `${containerWidth - 10}px`,
-            height: `${totalHeight}px`,
-          }}
-        >
-          {virtualRows.map((vr) => {
-            const row = rows[vr.index];
-            return (
+        {virtualRows.map((vr) => {
+          const row = rows[vr.index];
+          return (
+            <div
+              key={vr.index}
+              style={{
+                position: 'absolute',
+                top: vr.start,
+                left: 0,
+                width: '100%',
+                height: cardH + gap,
+              }}
+            >
               <div
-                key={vr.index}
+                className="justify-evenly"
                 style={{
-                  position: 'absolute',
-                  top: vr.start,
-                  left: 0,
-                  width: '100%',
-                  height: cardH + gap,
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${cols}, ${cardW}px)`,
+                  columnGap: `${gap}px`,
                 }}
               >
-                <div
-                  className="justify-evenly"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${cols}, ${cardW}px)`,
-                    columnGap: `${gap}px`,
-                  }}
-                >
-                  {row.map((world) => {
-                    const isSelected = selectedWorlds.includes(world.worldId);
-                    return (
-                      <DraggableWorldCard
-                        key={world.worldId}
-                        world={world}
-                        isSelected={isSelected}
-                        cardSize={cardSize}
-                        isFindPage={isFindPage}
-                        isHiddenFolder={isHiddenFolder}
-                        isSpecialFolder={isSpecialFolder}
-                        isSelectionMode={isSelectionMode}
-                        alwaysShowSelection={alwaysShowSelection}
-                        disableCardClick={disableCardClick}
-                        existingWorldIds={existingWorldIds}
-                        selectedWorlds={selectedWorlds}
-                        worlds={worlds}
-                        handleOpenFolderDialog={handleOpenFolderDialog}
-                        handleOpenWorldDetails={handleOpenWorldDetails}
-                        handleSelect={handleSelect}
-                        handleRemoveFromCurrentFolder={
-                          handleRemoveFromCurrentFolder
-                        }
-                        removeWorldsFromFolder={removeWorldsFromFolder}
-                        handleHideWorld={handleHideWorld}
-                        handleRestoreWorld={handleRestoreWorld}
-                      />
-                    );
-                  })}
-                </div>
+                {row.map((world) => {
+                  const isSelected = selectedWorlds.includes(world.worldId);
+                  return (
+                    <DraggableWorldCard
+                      key={world.worldId}
+                      world={world}
+                      isSelected={isSelected}
+                      cardSize={cardSize}
+                      isFindPage={isFindPage}
+                      isHiddenFolder={isHiddenFolder}
+                      isSpecialFolder={isSpecialFolder}
+                      isSelectionMode={isSelectionMode}
+                      alwaysShowSelection={alwaysShowSelection}
+                      disableCardClick={disableCardClick}
+                      existingWorldIds={existingWorldIds}
+                      selectedWorlds={selectedWorlds}
+                      worlds={worlds}
+                      handleOpenFolderDialog={handleOpenFolderDialog}
+                      handleOpenWorldDetails={handleOpenWorldDetails}
+                      handleSelect={handleSelect}
+                      handleRemoveFromCurrentFolder={
+                        handleRemoveFromCurrentFolder
+                      }
+                      removeWorldsFromFolder={removeWorldsFromFolder}
+                      handleHideWorld={handleHideWorld}
+                      handleRestoreWorld={handleRestoreWorld}
+                    />
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
-
-      {/* Drag Overlay */}
-      <DragOverlay>
-        {activeWorld && (
-          <div className="relative opacity-90">
-            <WorldCardPreview size={cardSize} world={activeWorld} />
-            {draggedWorldsCount > 1 && (
-              <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold z-20">
-                {draggedWorldsCount}
-              </div>
-            )}
-          </div>
-        )}
-      </DragOverlay>
 
       {/* Portaled AlertDialogs */}
       <Portal.Root>
@@ -565,6 +483,6 @@ export function WorldGrid({
           </div>
         </div>
       )}
-    </DndContext>
+    </div>
   );
 }
