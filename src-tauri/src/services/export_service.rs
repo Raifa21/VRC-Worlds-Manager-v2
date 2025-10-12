@@ -2,8 +2,9 @@ use serde::Serialize;
 use std::{sync::RwLock, vec};
 
 use crate::{
-    definitions::{FolderModel, WorldModel},
+    definitions::{FolderModel, PreferenceModel, WorldModel},
     services::FileService,
+    PREFERENCES,
 };
 
 #[derive(Serialize)]
@@ -54,8 +55,34 @@ struct FolderExport {
 pub struct ExportService;
 
 impl ExportService {
+    fn sort_worlds(mut worlds: Vec<WorldModel>, sort_field: &str, sort_direction: &str) -> Vec<WorldModel> {
+        let ascending = sort_direction == "asc";
+        
+        worlds.sort_by(|a, b| {
+            let ordering = match sort_field {
+                "name" => a.api_data.world_name.cmp(&b.api_data.world_name),
+                "authorName" => a.api_data.author_name.cmp(&b.api_data.author_name),
+                "visits" => a.api_data.visits.unwrap_or(0).cmp(&b.api_data.visits.unwrap_or(0)),
+                "favorites" => a.api_data.favorites.cmp(&b.api_data.favorites),
+                "capacity" => a.api_data.capacity.cmp(&b.api_data.capacity),
+                "dateAdded" => a.user_data.date_added.cmp(&b.user_data.date_added),
+                "lastUpdated" => a.api_data.last_update.cmp(&b.api_data.last_update),
+                _ => std::cmp::Ordering::Equal,
+            };
+            
+            if ascending {
+                ordering
+            } else {
+                ordering.reverse()
+            }
+        });
+        
+        worlds
+    }
+
     fn get_folders_with_worlds(
         folder_names: Vec<String>,
+        folders: &RwLock<Vec<FolderModel>>,
         worlds: &RwLock<Vec<WorldModel>>,
     ) -> Result<Vec<FolderExport>, String> {
         log::info!("Exporting to PortalLibrarySystem");
@@ -67,15 +94,38 @@ impl ExportService {
             "Failed to acquire read lock for worlds".to_string()
         })?;
 
-        for folder in folder_names {
-            log::info!("Processing folder: {}", folder);
-            let folder_worlds: Vec<WorldModel> = worlds_lock
+        let folders_lock = folders.read().map_err(|e| {
+            log::error!("Failed to acquire read lock for folders: {}", e);
+            "Failed to acquire read lock for folders".to_string()
+        })?;
+
+        // Get sort preferences
+        let preferences_lock = PREFERENCES.get().read().map_err(|e| {
+            log::error!("Failed to acquire read lock for preferences: {}", e);
+            "Failed to acquire read lock for preferences".to_string()
+        })?;
+        let preferences = preferences_lock.as_ref().ok_or("Preferences not initialized")?;
+        let sort_field = preferences.sort_field.clone();
+        let sort_direction = preferences.sort_direction.clone();
+        drop(preferences_lock);
+
+        log::info!("Applying sort: field={}, direction={}", sort_field, sort_direction);
+
+        for folder_name in folder_names {
+            log::info!("Processing folder: {}", folder_name);
+            
+            // Get all worlds in this folder
+            let mut folder_worlds: Vec<WorldModel> = worlds_lock
                 .iter()
-                .filter(|world| world.user_data.folders.contains(&folder))
+                .filter(|world| world.user_data.folders.contains(&folder_name))
                 .cloned()
                 .collect();
+
+            // Apply sorting based on preferences
+            folder_worlds = Self::sort_worlds(folder_worlds, &sort_field, &sort_direction);
+
             folders_to_export.push(FolderExport {
-                folder_name: folder.clone(),
+                folder_name: folder_name.clone(),
                 worlds: folder_worlds,
             });
         }
@@ -85,13 +135,16 @@ impl ExportService {
 
     pub fn export_to_portal_library_system(
         folder_names: Vec<String>,
+        folders: &RwLock<Vec<FolderModel>>,
         worlds: &RwLock<Vec<WorldModel>>,
     ) -> Result<(), String> {
-        let folders = Self::get_folders_with_worlds(folder_names, worlds)?;
+        let folders_with_worlds = Self::get_folders_with_worlds(folder_names, folders, worlds)?;
 
         let mut categories: Vec<PLSCategory> = Vec::new();
+        
+        log::info!("Exporting worlds in the order they appear in folder.world_ids");
 
-        for folder in folders {
+        for folder in folders_with_worlds {
             let mut worlds_list: Vec<PLSWorlds> = Vec::new();
             for world in folder.worlds {
                 let platform = PLSPlatform {

@@ -57,6 +57,8 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         preferences_commands::set_folder_removal_preference,
         preferences_commands::get_update_channel,
         preferences_commands::set_update_channel,
+        preferences_commands::get_sort_preferences,
+        preferences_commands::set_sort_preferences,
         api_commands::try_login,
         api_commands::login_with_credentials,
         api_commands::login_with_2fa,

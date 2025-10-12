@@ -279,6 +279,10 @@ pub struct PreferenceModel {
     pub dont_show_remove_from_folder: FolderRemovalPreference,
     #[serde(rename = "updateChannel", default = "default_update_channel")]
     pub update_channel: UpdateChannel,
+    #[serde(rename = "sortField", default = "default_sort_field")]
+    pub sort_field: String,
+    #[serde(rename = "sortDirection", default = "default_sort_direction")]
+    pub sort_direction: String,
 }
 
 fn default_region() -> InstanceRegion {
@@ -293,6 +297,14 @@ fn default_update_channel() -> UpdateChannel {
     UpdateChannel::Stable
 }
 
+fn default_sort_field() -> String {
+    "dateAdded".to_string()
+}
+
+fn default_sort_direction() -> String {
+    "desc".to_string()
+}
+
 impl PreferenceModel {
     pub fn new() -> Self {
         Self {
@@ -304,6 +316,8 @@ impl PreferenceModel {
             filter_item_selector_starred: None,
             dont_show_remove_from_folder: FolderRemovalPreference::Ask,
             update_channel: UpdateChannel::Stable,
+            sort_field: "dateAdded".to_string(),
+            sort_direction: "desc".to_string(),
         }
     }
 }

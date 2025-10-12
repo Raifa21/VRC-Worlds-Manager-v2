@@ -204,3 +204,25 @@ pub fn set_update_channel(channel: UpdateChannel) -> Result<(), String> {
     })?;
     Ok(())
 }
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_sort_preferences() -> Result<(String, String), String> {
+    let preferences_lock = PREFERENCES.get().read();
+    let preferences = preferences_lock.as_ref().unwrap();
+    Ok((preferences.sort_field.clone(), preferences.sort_direction.clone()))
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_sort_preferences(sort_field: String, sort_direction: String) -> Result<(), String> {
+    let mut preferences_lock = PREFERENCES.get().write();
+    let preferences = preferences_lock.as_mut().unwrap();
+    preferences.sort_field = sort_field;
+    preferences.sort_direction = sort_direction;
+    FileService::write_preferences(preferences).map_err(|e| {
+        log::error!("Error writing preferences: {}", e);
+        e.to_string()
+    })?;
+    Ok(())
+}
