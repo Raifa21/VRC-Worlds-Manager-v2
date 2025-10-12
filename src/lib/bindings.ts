@@ -490,6 +490,31 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getSortPreferences(): Promise<Result<[string, string], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_sort_preferences') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setSortPreferences(
+    sortField: string,
+    sortDirection: string,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_sort_preferences', {
+          sortField,
+          sortDirection,
+        }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async tryLogin(): Promise<Result<null, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('try_login') };
