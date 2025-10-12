@@ -8,6 +8,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { FolderData } from '@/lib/bindings';
 import { useState, useEffect, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
+import { useDroppable } from '@dnd-kit/core';
 
 import { Separator } from '@/components/ui/separator';
 
@@ -39,6 +40,26 @@ const sidebarStyles = {
 };
 
 const SIDEBAR_CLASS = 'app-sidebar';
+
+interface DroppableFolderProps {
+  folderName: string;
+  children: React.ReactNode;
+}
+
+function DroppableFolder({ folderName, children }: DroppableFolderProps) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `folder-${folderName}`,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`relative ${isOver ? 'bg-accent/30 rounded-lg' : ''}`}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function AppSidebar() {
   const { t } = useLocalization();
@@ -269,129 +290,131 @@ export function AppSidebar() {
                       index={index}
                     >
                       {(provided) => (
-                        <ContextMenu>
-                          <ContextMenuTrigger>
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`
-                                w-[190px] px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
-                                overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
-                                ${
-                                  pathname ===
-                                  `/listview/folders/userFolder?folderName=${folder.name}`
-                                    ? sidebarStyles.activeLink
-                                    : 'hover:bg-accent/50 hover:text-accent-foreground'
-                                }
-                              `}
-                              onClick={() => {
-                                if (
-                                  pathname ===
-                                  `/listview/folders/userFolder?folderName=${folder.name}`
-                                )
-                                  return;
-                                router.push(
-                                  `/listview/folders/userFolder?folderName=${folder.name}`,
-                                );
-                              }}
-                            >
-                              {editingFolder === folder.name ? (
-                                <Input
-                                  ref={inputRef}
-                                  value={newFolderName}
-                                  onChange={(e) =>
-                                    setNewFolderName(e.target.value)
+                        <DroppableFolder folderName={folder.name}>
+                          <ContextMenu>
+                            <ContextMenuTrigger>
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`
+                                  w-[190px] px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
+                                  overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
+                                  ${
+                                    pathname ===
+                                    `/listview/folders/userFolder?folderName=${folder.name}`
+                                      ? sidebarStyles.activeLink
+                                      : 'hover:bg-accent/50 hover:text-accent-foreground'
                                   }
-                                  onFocus={() => {
-                                    // Clear any pending blur actions
-                                    if (blurTimeoutRef.current) {
-                                      clearTimeout(blurTimeoutRef.current);
-                                      blurTimeoutRef.current = null;
+                                `}
+                                onClick={() => {
+                                  if (
+                                    pathname ===
+                                    `/listview/folders/userFolder?folderName=${folder.name}`
+                                  )
+                                    return;
+                                  router.push(
+                                    `/listview/folders/userFolder?folderName=${folder.name}`,
+                                  );
+                                }}
+                              >
+                                {editingFolder === folder.name ? (
+                                  <Input
+                                    ref={inputRef}
+                                    value={newFolderName}
+                                    onChange={(e) =>
+                                      setNewFolderName(e.target.value)
                                     }
-                                  }}
-                                  onKeyDown={(e) => {
-                                    // Prevent event bubbling when typing
-                                    e.stopPropagation();
-
-                                    if (
-                                      e.key === 'Enter' &&
-                                      !composingRef.current
-                                    ) {
-                                      e.preventDefault();
-                                      handleRename(folder.name);
-                                    } else if (e.key === 'Escape') {
-                                      e.preventDefault();
-                                      setEditingFolder(null);
-                                      setNewFolderName('');
-                                    }
-                                  }}
-                                  onClick={(e) => {
-                                    // Prevent click from bubbling to parent
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                  }}
-                                  onCompositionStart={() => {
-                                    composingRef.current = true;
-                                    setIsComposing(true);
-                                  }}
-                                  onCompositionEnd={() => {
-                                    composingRef.current = false;
-
-                                    // Use a longer timeout for IME operations
-                                    setTimeout(() => {
-                                      if (inputRef.current) {
-                                        const textLength =
-                                          inputRef.current.value.length;
-                                        inputRef.current.focus();
-                                        inputRef.current.setSelectionRange(
-                                          textLength,
-                                          textLength,
-                                        );
+                                    onFocus={() => {
+                                      // Clear any pending blur actions
+                                      if (blurTimeoutRef.current) {
+                                        clearTimeout(blurTimeoutRef.current);
+                                        blurTimeoutRef.current = null;
                                       }
-                                      setIsComposing(false);
-                                    }, 150);
-                                  }}
-                                  className="h-6 py-0 w-full folder-edit-container" // Ensure no horizontal overflow
-                                  autoFocus={true}
-                                />
-                              ) : (
-                                <span className="flex items-center w-full">
-                                  <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
-                                    ({folder.world_count})
+                                    }}
+                                    onKeyDown={(e) => {
+                                      // Prevent event bubbling when typing
+                                      e.stopPropagation();
+
+                                      if (
+                                        e.key === 'Enter' &&
+                                        !composingRef.current
+                                      ) {
+                                        e.preventDefault();
+                                        handleRename(folder.name);
+                                      } else if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        setEditingFolder(null);
+                                        setNewFolderName('');
+                                      }
+                                    }}
+                                    onClick={(e) => {
+                                      // Prevent click from bubbling to parent
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }}
+                                    onCompositionStart={() => {
+                                      composingRef.current = true;
+                                      setIsComposing(true);
+                                    }}
+                                    onCompositionEnd={() => {
+                                      composingRef.current = false;
+
+                                      // Use a longer timeout for IME operations
+                                      setTimeout(() => {
+                                        if (inputRef.current) {
+                                          const textLength =
+                                            inputRef.current.value.length;
+                                          inputRef.current.focus();
+                                          inputRef.current.setSelectionRange(
+                                            textLength,
+                                            textLength,
+                                          );
+                                        }
+                                        setIsComposing(false);
+                                      }, 150);
+                                    }}
+                                    className="h-6 py-0 w-full folder-edit-container" // Ensure no horizontal overflow
+                                    autoFocus={true}
+                                  />
+                                ) : (
+                                  <span className="flex items-center w-full">
+                                    <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
+                                      ({folder.world_count})
+                                    </span>
+                                    <span className="truncate flex-1 pl-1 cursor-default">
+                                      {folder.name}
+                                    </span>
                                   </span>
-                                  <span className="truncate flex-1 pl-1 cursor-default">
-                                    {folder.name}
-                                  </span>
-                                </span>
-                              )}
-                            </div>
-                          </ContextMenuTrigger>
-                          <ContextMenuContent>
-                            <ContextMenuItem
-                              onClick={() => {
-                                // First set the editing state
-                                setEditingFolder(folder.name);
-                                setNewFolderName(folder.name);
-                                // Use double RAF to ensure DOM has updated and context menu has closed
-                                requestAnimationFrame(() => {
+                                )}
+                              </div>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                              <ContextMenuItem
+                                onClick={() => {
+                                  // First set the editing state
+                                  setEditingFolder(folder.name);
+                                  setNewFolderName(folder.name);
+                                  // Use double RAF to ensure DOM has updated and context menu has closed
                                   requestAnimationFrame(() => {
-                                    inputRef.current?.focus();
-                                    inputRef.current?.select(); // Also select the text for convenience
+                                    requestAnimationFrame(() => {
+                                      inputRef.current?.focus();
+                                      inputRef.current?.select(); // Also select the text for convenience
+                                    });
                                   });
-                                });
-                              }}
-                            >
-                              {t('app-sidebar:rename')}
-                            </ContextMenuItem>
-                            <ContextMenuItem
-                              className="text-destructive"
-                              onClick={() => deleteFolder(folder.name)}
-                            >
-                              {t('general:delete')}
-                            </ContextMenuItem>
-                          </ContextMenuContent>
-                        </ContextMenu>
+                                }}
+                              >
+                                {t('app-sidebar:rename')}
+                              </ContextMenuItem>
+                              <ContextMenuItem
+                                className="text-destructive"
+                                onClick={() => deleteFolder(folder.name)}
+                              >
+                                {t('general:delete')}
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
+                        </DroppableFolder>
                       )}
                     </Draggable>
                   ))}
