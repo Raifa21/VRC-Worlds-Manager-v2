@@ -70,8 +70,12 @@ export function ListViewClientShell({
     };
   }, [isResizing, sidebarWidth]);
 
-  const handleResizeStart = () => {
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent text selection
     setIsResizing(true);
+    // Immediately disable text selection
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'ew-resize';
   };
 
   return (
@@ -86,9 +90,10 @@ export function ListViewClientShell({
           {/* Resize handle */}
           <div
             onMouseDown={handleResizeStart}
-            className="absolute top-0 right-0 w-1 h-full cursor-ew-resize hover:bg-border transition-colors z-50"
+            className="absolute top-0 right-0 w-1 h-full cursor-ew-resize hover:bg-border transition-colors z-50 select-none"
             style={{
               background: isResizing ? 'hsl(var(--border))' : 'transparent',
+              userSelect: 'none',
             }}
           >
             <div className="absolute inset-y-0 -left-1 -right-1" />
