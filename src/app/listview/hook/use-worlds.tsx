@@ -167,6 +167,10 @@ export function useWorlds(folder: FolderType) {
   const addWorld = async (worldId: string) => {
     try {
       await store.addWorldToFolder(folder, worldId);
+      // For special folders, refresh to get the updated data from backend
+      if (!isUserFolder(folder)) {
+        await refresh();
+      }
       toast(t('listview-page:world-added-title'), {
         description: t('listview-page:world-added-description'),
       });
