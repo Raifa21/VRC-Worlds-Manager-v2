@@ -291,6 +291,8 @@
   "settings-page:update-channel-description": "Select the update channel for VRC Worlds Manager v2",
   "settings-page:update-channel-stable": "Stable",
   "settings-page:update-channel-prerelease": "Pre-Release",
+  "settings-page:streamer-mode-title": "Streamer Mode",
+  "settings-page:streamer-mode-description": "Hide your username when streaming or recording",
   "settings-page:error-load-preferences": "Failed to load preferences",
   "settings-page:error-save-preferences": "Failed to save preferences",
   "settings-page:select-backup-directory": "Select Backup Location",

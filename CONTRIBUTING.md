@@ -33,6 +33,7 @@ If you lack permission to self-assign, leave a comment to indicate your intent.
 ### Pull Requests
 
 When creating a Pull Request, please follow these guidelines:
+
 1. Ensure there is a related Issue or Security Advisory (create one if necessary).
 2. Keep changes minimal to facilitate review.
 3. (If possible) Use a prefix for branch names (e.g., `feat/`, `fix/`, `perf/`, `docs/`).
@@ -45,6 +46,7 @@ After creating a PR, you can request translation contributions from others.
 
 If you discover a vulnerability or security-related bug, report it through [GitHub Security Advisories](https://github.com/Raifa21/VRC-Worlds-Manager-v2/security/advisories/new).  
 If you plan to commit a fix yourself, follow these guidelines based on the severity:
+
 - If revealing a PoC (Proof of Concept) before the fix is released is risky:
   - Create the fix in a [Private Fork](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/collaborating-in-a-temporary-private-fork-to-resolve-a-repository-security-vulnerability) and share it with contributors.
 - If revealing a PoC before the fix is acceptable for minor vulnerabilities:
@@ -94,9 +96,10 @@ Backend code changes will trigger an automatic restart.
 
 Sometimes after merging a PR on GitHub, the remote branch is deleted, but the local branch still remains.
 To avoid clutter, you can clean up your local branches that:
- - Were already merged and deleted on GitHub
- - 	Were previously pushed, but are now gone on origin
- - Are not your private local-only branches
+
+- Were already merged and deleted on GitHub
+-     Were previously pushed, but are now gone on origin
+- Are not your private local-only branches
 
 ```
 git fetch --prune
@@ -106,10 +109,11 @@ git branch -vv | grep ': gone]' | awk '{print $1}' | xargs -n 1 git branch -d
 ## Code Formatting
 
 Use the following commands to format the code:
+
 ```
 npx prettier --write "src/**/*.{ts,tsx}"
 
-(cd src-tauri && cargo fmt)  
+(cd src-tauri && cargo fmt)
 ```
 
 ---

@@ -4,6 +4,7 @@ import React from 'react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -36,6 +37,7 @@ export default function SettingsPage() {
     language,
     folderRemovalPreference,
     updateChannel,
+    streamerMode,
     showDeleteConfirm,
     setShowDeleteConfirm,
     showMigrateDialog,
@@ -56,6 +58,7 @@ export default function SettingsPage() {
     handleCardSizeChange,
     handleFolderRemovalPreferenceChange,
     handleUpdateChannelChange,
+    handleStreamerModeChange,
     openHiddenFolder,
     t,
   } = useSettingsPage();
@@ -369,6 +372,21 @@ export default function SettingsPage() {
                 </SelectItem>
               </SelectContent>
             </Select>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:streamer-mode-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:streamer-mode-description')}
+              </div>
+            </div>
+            <Switch
+              checked={streamerMode}
+              onCheckedChange={handleStreamerModeChange}
+            />
           </Card>
 
           <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">

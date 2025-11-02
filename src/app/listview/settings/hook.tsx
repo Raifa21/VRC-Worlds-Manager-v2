@@ -24,6 +24,7 @@ export const useSettingsPage = () => {
   const [updateChannel, setUpdateChannel] = useState<UpdateChannel | null>(
     null,
   );
+  const [streamerMode, setStreamerModeState] = useState<boolean>(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMigrateDialog, setShowMigrateDialog] = useState(false);
@@ -85,6 +86,7 @@ export const useSettingsPage = () => {
         const updateChannelResult = await commands.getUpdateChannel();
         const folderRemovalPreferenceResult =
           await commands.getFolderRemovalPreference();
+        const streamerModeResult = await commands.getStreamerMode();
         const theme = themeResult.status === 'ok' ? themeResult.data : 'system';
         const language =
           languageResult.status === 'ok' ? languageResult.data : 'en-US';
@@ -99,18 +101,22 @@ export const useSettingsPage = () => {
           folderRemovalPreferenceResult.status === 'ok'
             ? folderRemovalPreferenceResult.data
             : 'ask';
+        const streamerModeValue =
+          streamerModeResult.status === 'ok' ? streamerModeResult.data : false;
         setTheme(theme);
         setLanguage(language);
         setCardSize(cardSize);
         setFolderRemovalPreference(folderRemovalPreference);
         setUpdateChannel(updateChannel);
+        setStreamerModeState(streamerModeValue);
         // put a toast if commands fail
         if (
           themeResult.status === 'error' ||
           languageResult.status === 'error' ||
           cardSizeResult.status === 'error' ||
           updateChannelResult.status === 'error' ||
-          folderRemovalPreferenceResult.status === 'error'
+          folderRemovalPreferenceResult.status === 'error' ||
+          streamerModeResult.status === 'error'
         ) {
           toast(t('general:error-title'), {
             description:
@@ -124,6 +130,9 @@ export const useSettingsPage = () => {
                 : '') +
               (folderRemovalPreferenceResult.status === 'error'
                 ? folderRemovalPreferenceResult.error
+                : '') +
+              (streamerModeResult.status === 'error'
+                ? streamerModeResult.error
                 : ''),
           });
         }
@@ -418,6 +427,28 @@ export const useSettingsPage = () => {
     }
   };
 
+  const handleStreamerModeChange = async (value: boolean) => {
+    try {
+      info(`Setting streamer mode to: ${value}`);
+      const result = await commands.setStreamerMode(value);
+      if (result.status === 'ok') {
+        setStreamerModeState(value);
+        info(`Streamer mode set to: ${value}`);
+      } else {
+        error(`Failed to set streamer mode: ${result.error}`);
+        toast(t('general:error-title'), {
+          description:
+            t('settings-page:error-save-preferences') + ': ' + result.error,
+        });
+      }
+    } catch (e) {
+      error(`Failed to save streamer mode: ${e}`);
+      toast(t('general:error-title'), {
+        description: t('settings-page:error-save-preferences'),
+      });
+    }
+  };
+
   const openHiddenFolder = () => {
     router.push('/listview/folders/hidden');
   };
@@ -427,6 +458,7 @@ export const useSettingsPage = () => {
     language,
     folderRemovalPreference,
     updateChannel,
+    streamerMode,
     showDeleteConfirm,
     setShowDeleteConfirm,
     showMigrateDialog,
@@ -447,6 +479,7 @@ export const useSettingsPage = () => {
     handleCardSizeChange,
     handleFolderRemovalPreferenceChange,
     handleUpdateChannelChange,
+    handleStreamerModeChange,
     openHiddenFolder,
     t,
   };

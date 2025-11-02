@@ -279,6 +279,8 @@ pub struct PreferenceModel {
     pub dont_show_remove_from_folder: FolderRemovalPreference,
     #[serde(rename = "updateChannel", default = "default_update_channel")]
     pub update_channel: UpdateChannel,
+    #[serde(rename = "streamerMode", default = "default_streamer_mode")]
+    pub streamer_mode: bool,
 }
 
 fn default_region() -> InstanceRegion {
@@ -293,6 +295,10 @@ fn default_update_channel() -> UpdateChannel {
     UpdateChannel::Stable
 }
 
+fn default_streamer_mode() -> bool {
+    false
+}
+
 impl PreferenceModel {
     pub fn new() -> Self {
         Self {
@@ -304,6 +310,7 @@ impl PreferenceModel {
             filter_item_selector_starred: None,
             dont_show_remove_from_folder: FolderRemovalPreference::Ask,
             update_channel: UpdateChannel::Stable,
+            streamer_mode: false,
         }
     }
 }

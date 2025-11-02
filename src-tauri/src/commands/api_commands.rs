@@ -12,6 +12,12 @@ use crate::AUTHENTICATOR;
 use crate::INITSTATE;
 use crate::WORLDS;
 
+#[derive(serde::Serialize, specta::Type)]
+pub struct CurrentUserInfo {
+    pub username: String,
+    pub user_id: String,
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn try_login() -> Result<(), String> {
@@ -316,4 +322,16 @@ pub async fn open_instance_in_client(
 
     ApiService::open_instance_in_client(cookie_store, &world_id, &instance_id, (*handle).clone())
         .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_current_user() -> Result<CurrentUserInfo, String> {
+    let init_state = INITSTATE.get().read().await;
+    let authenticator = AUTHENTICATOR.get().read().await;
+
+    Ok(CurrentUserInfo {
+        user_id: init_state.user_id.clone(),
+        username: authenticator.get_username(),
+    })
 }
