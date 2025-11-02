@@ -65,6 +65,30 @@ export default function FindWorldsPage() {
 
   const { importFolder } = useFolders();
 
+  const fetchRecentlyVisitedWorlds = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const worlds = await commands.getRecentlyVisitedWorlds();
+      if (worlds.status !== 'ok') {
+        throw new Error(worlds.error);
+      } else {
+        info(`Fetched recently visited worlds: ${worlds.data.length}`);
+        setRecentlyVisitedWorlds(worlds.data);
+      }
+      toast(t('find-page:fetch-recently-visited-worlds'), {
+        description: t(
+          'find-page:fetch-recently-visited-worlds-success',
+          worlds.data.length,
+        ),
+        duration: 1000,
+      });
+    } catch (err) {
+      error(`Error fetching recently visited worlds: ${String(err)}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [t]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -120,30 +144,6 @@ export default function FindWorldsPage() {
   const [loadMoreBackoffUntil, setLoadMoreBackoffUntil] = useState<
     number | null
   >(null);
-
-  const fetchRecentlyVisitedWorlds = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const worlds = await commands.getRecentlyVisitedWorlds();
-      if (worlds.status !== 'ok') {
-        throw new Error(worlds.error);
-      } else {
-        info(`Fetched recently visited worlds: ${worlds.data.length}`);
-        setRecentlyVisitedWorlds(worlds.data);
-      }
-      toast(t('find-page:fetch-recently-visited-worlds'), {
-        description: t(
-          'find-page:fetch-recently-visited-worlds-success',
-          worlds.data.length,
-        ),
-        duration: 1000,
-      });
-    } catch (err) {
-      error(`Error fetching recently visited worlds: ${String(err)}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [t]);
 
   // Fetch recently visited worlds on initial load
   useEffect(() => {
