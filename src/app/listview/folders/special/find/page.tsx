@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -77,7 +77,7 @@ export default function FindWorldsPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab]);
+  }, [activeTab, fetchRecentlyVisitedWorlds]);
 
   // subscribe to deep link events
   useEffect(() => {
@@ -121,7 +121,7 @@ export default function FindWorldsPage() {
     number | null
   >(null);
 
-  const fetchRecentlyVisitedWorlds = async () => {
+  const fetchRecentlyVisitedWorlds = useCallback(async () => {
     try {
       setIsLoading(true);
       const worlds = await commands.getRecentlyVisitedWorlds();
@@ -143,14 +143,14 @@ export default function FindWorldsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [t]);
 
   // Fetch recently visited worlds on initial load
   useEffect(() => {
     if (recentlyVisitedWorlds.length === 0 && !isLoading) {
       fetchRecentlyVisitedWorlds();
     }
-  }, []);
+  }, [recentlyVisitedWorlds.length, isLoading, fetchRecentlyVisitedWorlds]);
 
   // Load tags when the search tab is active
   useEffect(() => {
