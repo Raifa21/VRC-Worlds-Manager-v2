@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -65,6 +65,44 @@ export default function FindWorldsPage() {
 
   const { importFolder } = useFolders();
 
+  const fetchRecentlyVisitedWorlds = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const worlds = await commands.getRecentlyVisitedWorlds();
+      if (worlds.status !== 'ok') {
+        throw new Error(worlds.error);
+      } else {
+        info(`Fetched recently visited worlds: ${worlds.data.length}`);
+        setRecentlyVisitedWorlds(worlds.data);
+      }
+      toast(t('find-page:fetch-recently-visited-worlds'), {
+        description: t(
+          'find-page:fetch-recently-visited-worlds-success',
+          worlds.data.length,
+        ),
+        duration: 1000,
+      });
+    } catch (err) {
+      error(`Error fetching recently visited worlds: ${String(err)}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [t]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CTRL + R - Reload worlds (only in recently-visited tab)
+      if (e.ctrlKey && e.key === 'r' && activeTab === 'recently-visited') {
+        e.preventDefault();
+        fetchRecentlyVisitedWorlds();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, fetchRecentlyVisitedWorlds]);
+
   // subscribe to deep link events
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -94,41 +132,25 @@ export default function FindWorldsPage() {
   // Add this state variable to track if a search has been performed
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Keep selectedSort in sync: when a search query is present, force sort to 'relevance'
+  useEffect(() => {
+    if (searchQuery.trim() !== '') {
+      // Only update when it's not already 'relevance' to avoid unnecessary state updates
+      setSelectedSort((prev) => (prev === 'relevance' ? prev : 'relevance'));
+    }
+  }, [searchQuery]);
+
   // Backoff control for load-more errors
   const [loadMoreBackoffUntil, setLoadMoreBackoffUntil] = useState<
     number | null
   >(null);
-
-  const fetchRecentlyVisitedWorlds = async () => {
-    try {
-      setIsLoading(true);
-      const worlds = await commands.getRecentlyVisitedWorlds();
-      if (worlds.status !== 'ok') {
-        throw new Error(worlds.error);
-      } else {
-        info(`Fetched recently visited worlds: ${worlds.data.length}`);
-        setRecentlyVisitedWorlds(worlds.data);
-      }
-      toast(t('find-page:fetch-recently-visited-worlds'), {
-        description: t(
-          'find-page:fetch-recently-visited-worlds-success',
-          worlds.data.length,
-        ),
-        duration: 1000,
-      });
-    } catch (err) {
-      error(`Error fetching recently visited worlds: ${String(err)}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Fetch recently visited worlds on initial load
   useEffect(() => {
     if (recentlyVisitedWorlds.length === 0 && !isLoading) {
       fetchRecentlyVisitedWorlds();
     }
-  }, []);
+  }, [recentlyVisitedWorlds.length, isLoading, fetchRecentlyVisitedWorlds]);
 
   // Load tags when the search tab is active
   useEffect(() => {
@@ -373,10 +395,25 @@ export default function FindWorldsPage() {
 
                     {/* Sort options */}
                     <div className="flex flex-col gap-2 w-2/5">
-                      <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="sort">{t('find-page:sort-by')}</Label>
+                        {searchQuery.trim() !== '' && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <CircleHelpIcon className="w-3 h-3 m-0" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t('find-page:sort-relevant-tooltip')}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                       <Select
                         value={selectedSort}
                         onValueChange={setSelectedSort}
+                        disabled={searchQuery.trim() !== ''}
                       >
                         <SelectTrigger id="sort">
                           <SelectValue
@@ -404,6 +441,9 @@ export default function FindWorldsPage() {
                           </SelectItem>
                           <SelectItem value="updated">
                             {t('find-page:sort-updated')}
+                          </SelectItem>
+                          <SelectItem value="relevance">
+                            {t('find-page:sort-relevant')}
                           </SelectItem>
                         </SelectContent>
                       </Select>

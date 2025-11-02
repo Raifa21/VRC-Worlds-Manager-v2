@@ -70,6 +70,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         api_commands::get_user_groups,
         api_commands::get_permission_for_create_group_instance,
         api_commands::create_group_instance,
+        api_commands::open_instance_in_client,
         open_folder_commands::open_logs_directory,
         open_folder_commands::open_folder_directory,
         data::read_data_commands::require_initial_setup,

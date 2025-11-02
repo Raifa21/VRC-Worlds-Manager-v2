@@ -27,7 +27,7 @@ export const useAddToFolderPopup = ({
 }: AddToFolderPopupProps) => {
   const { t } = useLocalization();
 
-  const { folders, createFolder } = useFolders();
+  const { folders, createFolder, refresh: refreshFolders } = useFolders();
 
   const { worlds, refresh } = useWorlds(currentFolder);
 
@@ -593,6 +593,8 @@ export const useAddToFolderPopup = ({
                   }
                 }
                 await refresh();
+                // Refresh folders list to update world counts in sidebar
+                await refreshFolders();
                 toast(t('listview-page:restored-title'), {
                   description: t('listview-page:folder-changes-undone'),
                 });
@@ -612,6 +614,8 @@ export const useAddToFolderPopup = ({
       if (isFindPage) {
         bumpMembershipVersion();
       }
+      // Refresh folders list to update world counts in sidebar
+      await refreshFolders();
       info('[AddToFolder] handleAddToFolders completed successfully');
       // Closing is handled by caller paths (confirm/keep/remove) too; still close here to be safe.
       onClose();
