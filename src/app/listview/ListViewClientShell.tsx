@@ -35,10 +35,12 @@ export function ListViewClientShell({
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
 
-      const newWidth = e.clientX;
-      if (newWidth >= MIN_SIDEBAR_WIDTH && newWidth <= MAX_SIDEBAR_WIDTH) {
-        setSidebarWidth(newWidth);
-      }
+      // Clamp the width to min/max boundaries to prevent sticking
+      const newWidth = Math.max(
+        MIN_SIDEBAR_WIDTH,
+        Math.min(MAX_SIDEBAR_WIDTH, e.clientX),
+      );
+      setSidebarWidth(newWidth);
     };
 
     const handleMouseUp = () => {
