@@ -4,7 +4,7 @@ import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { AppSidebar } from './components/app-sidebar';
 import { PopupManager } from './hook/usePopups/popup-manager';
 
-const MIN_SIDEBAR_WIDTH = 200;
+const MIN_SIDEBAR_WIDTH = 250;
 const MAX_SIDEBAR_WIDTH = 600;
 const DEFAULT_SIDEBAR_WIDTH = 250;
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';

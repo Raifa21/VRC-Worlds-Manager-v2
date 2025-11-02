@@ -92,17 +92,30 @@ export function WorldGrid({
     return containerRef.current?.clientWidth ?? window.innerWidth - 250;
   });
 
-  // 2) Observe that div and update width on resize
+  // 2) Observe that div and update width on resize with debouncing to prevent lag
   useEffect(() => {
     const el = containerRef?.current;
     if (!el) return;
     // set initial
     setContainerWidth(el.clientWidth);
+
+    let timeoutId: NodeJS.Timeout | null = null;
     const ro = new ResizeObserver(([entry]) => {
-      setContainerWidth(entry.contentRect.width);
+      // Debounce the resize updates to prevent lag during sidebar drag
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(() => {
+        setContainerWidth(entry.contentRect.width);
+      }, 100); // 100ms debounce
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      ro.disconnect();
+    };
   }, [containerRef]);
 
   // 3) Recompute cols whenever size or containerWidth changes
