@@ -53,6 +53,20 @@ export default function UserFolder() {
     `[UserFolder] raw worlds: ${worlds.length}, filtered: ${filteredWorlds.length}`,
   );
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CTRL + A - Open add world popup
+      if (e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        setPopup('showAddWorld', true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setPopup]);
+
   return (
     <div className="flex h-screen">
       <div ref={gridScrollRef} className="flex-1 flex flex-col overflow-auto">

@@ -44,6 +44,20 @@ export default function UnclassifiedWorldsPage() {
     );
   }, [worlds, filteredWorlds]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CTRL + A - Open add world popup
+      if (e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        setPopup('showAddWorld', true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setPopup]);
+
   const handleReload = async () => {
     try {
       const favs = await commands.getFavoriteWorlds();
