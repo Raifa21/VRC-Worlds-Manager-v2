@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { commands, PatreonData } from '@/lib/bindings';
+import { commands } from '@/lib/bindings';
 import { error } from '@tauri-apps/plugin-log';
 
 /**
