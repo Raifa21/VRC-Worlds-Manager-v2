@@ -190,6 +190,9 @@
   "world-grid:hide-note": "元に戻すには、設定内の「非表示フォルダ」でワールドを見つけてください。",
   "world-grid:remove-button": "削除",
   "world-grid:exists-in-collection": "追加済み",
+  "world-grid:world-added-to-folder": "ワールドが{0}に追加されました",
+  "world-grid:worlds-added-to-folder": "{0}個のワールドが{1}に追加されました",
+  "world-grid:error-add-to-folder": "ワールドをフォルダに追加できませんでした",
 
   "world-detail:create-group-instance": "グループインスタンスを作成",
   "world-detail:world-details": "ワールド詳細",

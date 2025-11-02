@@ -191,6 +191,9 @@
   "world-grid:hide-note": "You can find the world in the \"Hidden Folder\" in settings to revert.",
   "world-grid:remove-button": "Remove",
   "world-grid:exists-in-collection": "Added",
+  "world-grid:world-added-to-folder": "World added to {0}",
+  "world-grid:worlds-added-to-folder": "{0} worlds added to {1}",
+  "world-grid:error-add-to-folder": "Failed to add world(s) to folder",
 
   "world-detail:create-group-instance": "Create Group Instance",
   "world-detail:world-details": "World Details",
