@@ -65,6 +65,20 @@ export default function FindWorldsPage() {
 
   const { importFolder } = useFolders();
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CTRL + R - Reload worlds (only in recently-visited tab)
+      if (e.ctrlKey && e.key === 'r' && activeTab === 'recently-visited') {
+        e.preventDefault();
+        fetchRecentlyVisitedWorlds();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab]);
+
   // subscribe to deep link events
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;

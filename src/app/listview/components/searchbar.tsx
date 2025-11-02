@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSelectedWorldsStore } from '../hook/use-selected-worlds';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { usePopupStore } from '../hook/usePopups/store';
 import { useFolders } from '../hook/use-folders';
 import { Badge } from '@/components/ui/badge';
@@ -64,8 +64,28 @@ export function SearchBar({ currentFolder }: SearchBarProps) {
   const memoTextRef = useRef<HTMLDivElement>(null);
   const clearRef = useRef<HTMLButtonElement>(null);
   const wrapFolders = false; // behavior retained but state managed internally no-op
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const setPopup = usePopupStore((state) => state.setPopup);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CTRL + F - Focus search bar
+      if (e.ctrlKey && e.key === 'f' && !e.shiftKey) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      // CTRL + SHIFT + F - Open advanced search
+      else if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        setPopup('showAdvancedSearchPanel', true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setPopup]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
@@ -85,6 +105,7 @@ export function SearchBar({ currentFolder }: SearchBarProps) {
           <div className="relative flex-1">
             <div className="relative">
               <Input
+                ref={searchInputRef}
                 type="text"
                 placeholder={t('world-grid:search-placeholder')}
                 value={searchQuery}
