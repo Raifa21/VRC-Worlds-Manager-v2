@@ -95,8 +95,6 @@ function DraggableWorldCard({
       <ContextMenuTrigger asChild>
         <div
           ref={setNodeRef}
-          {...listeners}
-          {...attributes}
           id={world.worldId}
           onClick={() => {
             if (disableCardClick) return;
@@ -109,12 +107,40 @@ function DraggableWorldCard({
           className="group relative w-fit h-fit rounded-lg overflow-hidden"
           style={{
             opacity: isDragging ? 0.5 : 1,
-            cursor: isDragging ? 'grabbing' : 'grab',
           }}
         >
           {isSelected && (
             <div className="absolute inset-0 rounded-lg border-2 border-primary pointer-events-none z-10" />
           )}
+          {/* Drag Handle - positioned at top center */}
+          <div
+            {...listeners}
+            {...attributes}
+            className="absolute top-1 left-1/2 -translate-x-1/2 z-20 cursor-grab active:cursor-grabbing bg-background/80 hover:bg-background rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-muted-foreground"
+            >
+              <circle cx="9" cy="5" r="1" />
+              <circle cx="9" cy="12" r="1" />
+              <circle cx="9" cy="19" r="1" />
+              <circle cx="15" cy="5" r="1" />
+              <circle cx="15" cy="12" r="1" />
+              <circle cx="15" cy="19" r="1" />
+            </svg>
+          </div>
           <WorldCardPreview size={cardSize} world={world} />
           <div className="absolute bottom-[70px] left-2 z-10">
             {isFindPage && existingWorldIds.has(world.worldId) && (

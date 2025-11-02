@@ -115,7 +115,13 @@ export function ListViewClientShell({
         {/* Drag Overlay */}
         <DragOverlay>
           {activeWorld && (
-            <div className="relative opacity-90 cursor-grabbing">
+            <div
+              className="relative opacity-90 cursor-grabbing"
+              style={{
+                transform: 'scale(0.5)',
+                transformOrigin: 'top left',
+              }}
+            >
               <WorldCardPreview size={cardSize} world={activeWorld} />
               {draggedCount > 1 && (
                 <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold z-20">

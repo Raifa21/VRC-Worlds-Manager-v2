@@ -54,7 +54,7 @@ function DroppableFolder({ folderName, children }: DroppableFolderProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`relative transition-colors ${isOver ? 'bg-accent/30 rounded-lg' : ''}`}
+      className={`relative transition-all ${isOver ? 'bg-primary/20 border-2 border-primary rounded-lg shadow-lg' : ''}`}
     >
       {children}
     </div>
