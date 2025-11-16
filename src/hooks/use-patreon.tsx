@@ -3,17 +3,17 @@ import { commands } from '@/lib/bindings';
 import { error } from '@tauri-apps/plugin-log';
 
 /**
- * Hook to fetch and provide patreon supporter data
- * Returns a set of all supporter user IDs for efficient lookup
+ * Hook to fetch and provide patreon supporter VRChat display names
+ * Returns a set of all supporter VRChat names for efficient lookup
  */
 export function usePatreon() {
   const [supporters, setSupporters] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchPatreonData() {
+    async function fetchPatreonVRChatNames() {
       try {
-        const result = await commands.fetchPatreonData();
+        const result = await commands.fetchPatreonVrchatNames();
         if (result.status === 'ok') {
           const allSupporters = new Set<string>([
             ...result.data.platinumSupporter,
@@ -27,25 +27,25 @@ export function usePatreon() {
           throw new Error(result.error);
         }
       } catch (e) {
-        error(`Failed to fetch Patreon data: ${e}`);
+        error(`Failed to fetch Patreon VRChat names: ${e}`);
         // Don't show toast here - fail silently for world cards
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchPatreonData();
+    fetchPatreonVRChatNames();
   }, []);
 
   return { supporters, isLoading };
 }
 
 /**
- * Helper function to check if a user ID is a patreon supporter
+ * Helper function to check if a VRChat display name is a patreon supporter
  */
 export function isPatreonSupporter(
-  userId: string,
+  name: string,
   supporters: Set<string>,
 ): boolean {
-  return supporters.has(userId);
+  return supporters.has(name);
 }

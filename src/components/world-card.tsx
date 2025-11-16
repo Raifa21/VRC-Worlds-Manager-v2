@@ -18,7 +18,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
   const { size, world } = props;
   const { t } = useLocalization();
   const { supporters } = usePatreon();
-  const isSupporter = supporters.has(world.authorId);
+  const isSupporter = supporters.has(world.authorName);
   const sizeClasses: Record<CardSize, string> = {
     Compact: 'w-48 h-32',
     Normal: 'w-52 h-48',
