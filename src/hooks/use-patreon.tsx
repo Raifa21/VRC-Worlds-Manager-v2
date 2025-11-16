@@ -4,7 +4,7 @@ import { error } from '@tauri-apps/plugin-log';
 
 /**
  * Hook to fetch and provide patreon supporter data
- * Returns a set of all supporter names for efficient lookup
+ * Returns a set of all supporter user IDs for efficient lookup
  */
 export function usePatreon() {
   const [supporters, setSupporters] = useState<Set<string>>(new Set());
@@ -41,11 +41,11 @@ export function usePatreon() {
 }
 
 /**
- * Helper function to check if a name is a patreon supporter
+ * Helper function to check if a user ID is a patreon supporter
  */
 export function isPatreonSupporter(
-  name: string,
+  userId: string,
   supporters: Set<string>,
 ): boolean {
-  return supporters.has(name);
+  return supporters.has(userId);
 }

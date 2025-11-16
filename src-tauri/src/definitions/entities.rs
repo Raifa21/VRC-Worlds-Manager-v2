@@ -112,6 +112,7 @@ impl WorldModel {
             name: self.api_data.world_name.clone(),
             thumbnail_url: self.api_data.image_url.clone(),
             author_name: self.api_data.author_name.clone(),
+            author_id: self.api_data.author_id.clone(),
             favorites: self.api_data.favorites,
             last_updated: self.api_data.last_update.format("%Y-%m-%d").to_string(),
             visits: self.api_data.visits.unwrap_or(0),
@@ -157,6 +158,8 @@ pub struct WorldDisplayData {
     pub thumbnail_url: String,
     #[serde(rename = "authorName")]
     pub author_name: String,
+    #[serde(rename = "authorId")]
+    pub author_id: String,
     pub favorites: i32,
     #[serde(rename = "lastUpdated")]
     pub last_updated: String,
