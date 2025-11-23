@@ -21,12 +21,10 @@ impl PatreonCache {
     pub fn is_expired(&self) -> bool {
         match self.last_fetched {
             None => true,
-            Some(last_fetched) => {
-                SystemTime::now()
-                    .duration_since(last_fetched)
-                    .map(|elapsed| elapsed >= self.cache_duration)
-                    .unwrap_or(true)
-            }
+            Some(last_fetched) => SystemTime::now()
+                .duration_since(last_fetched)
+                .map(|elapsed| elapsed >= self.cache_duration)
+                .unwrap_or(true),
         }
     }
 
@@ -62,7 +60,7 @@ pub async fn fetch_patreon_vrchat_names() -> Result<PatreonVRChatNames, String> 
 
         if let Some(cached_data) = cache.get_cached_data() {
             log::info!("Returning cached Patreon VRChat names");
-            return Ok(cached_data.clone());
+            return Ok((*cached_data).clone());
         }
     }
 

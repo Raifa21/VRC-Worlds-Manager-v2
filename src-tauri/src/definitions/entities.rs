@@ -413,7 +413,7 @@ pub struct PatreonData {
     pub basic_supporter: Vec<String>,
 }
 
-#[derive(Debug, Type, Serialize, Deserialize)]
+#[derive(Debug, Type, Serialize, Deserialize, Clone)]
 pub struct PatreonVRChatNames {
     #[serde(rename = "platinumSupporter")]
     pub platinum_supporter: Vec<String>,
