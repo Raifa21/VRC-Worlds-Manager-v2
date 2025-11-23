@@ -412,3 +412,17 @@ pub struct PatreonData {
     #[serde(rename = "basicSupporter")]
     pub basic_supporter: Vec<String>,
 }
+
+#[derive(Debug, Type, Serialize, Deserialize, Clone)]
+pub struct PatreonVRChatNames {
+    #[serde(rename = "platinumSupporter")]
+    pub platinum_supporter: Vec<String>,
+    #[serde(rename = "goldSupporter")]
+    pub gold_supporter: Vec<String>,
+    #[serde(rename = "silverSupporter")]
+    pub silver_supporter: Vec<String>,
+    #[serde(rename = "bronzeSupporter")]
+    pub bronze_supporter: Vec<String>,
+    #[serde(rename = "basicSupporter")]
+    pub basic_supporter: Vec<String>,
+}
