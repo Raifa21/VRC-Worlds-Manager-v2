@@ -1,14 +1,13 @@
 'use client';
 
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState } from 'react';
 import { AppSidebar } from './components/app-sidebar';
 import { PopupManager } from './hook/usePopups/popup-manager';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
-import { commands, WorldDisplayData, CardSize } from '@/lib/bindings';
+import { commands, WorldDisplayData } from '@/lib/bindings';
 import { toast } from 'sonner';
 import { useLocalization } from '@/hooks/use-localization';
 import { error } from '@tauri-apps/plugin-log';
-import { WorldCardPreview } from '@/components/world-card';
 
 // Central client shell so hooks like useSearchParams live fully inside a client boundary
 export function ListViewClientShell({
@@ -19,22 +18,6 @@ export function ListViewClientShell({
   const { t } = useLocalization();
   const [activeWorld, setActiveWorld] = useState<WorldDisplayData | null>(null);
   const [draggedCount, setDraggedCount] = useState(1);
-  const [cardSize, setCardSize] = useState<CardSize>('Normal');
-
-  // Load card size
-  useEffect(() => {
-    const loadCardSize = async () => {
-      try {
-        const result = await commands.getCardSize();
-        if (result.status === 'ok') {
-          setCardSize(result.data);
-        }
-      } catch (e) {
-        error(`Failed to load card size: ${e}`);
-      }
-    };
-    loadCardSize();
-  }, []);
 
   const handleDragStart = (event: any) => {
     const worldId = event.active.id;
@@ -91,6 +74,28 @@ export function ListViewClientShell({
                   worldsToAdd.length,
                   folderName,
                 ),
+          action: {
+            label: t('listview-page:undo-button'),
+            onClick: async () => {
+              try {
+                // Remove all worlds from folder in parallel
+                await Promise.all(
+                  worldsToAdd.map((id: string) =>
+                    commands.removeWorldFromFolder(folderName, id),
+                  ),
+                );
+
+                toast(t('listview-page:restored-title'), {
+                  description: t('listview-page:worlds-restored-to-folder'),
+                });
+              } catch (e) {
+                error(`Failed to undo add to folder: ${e}`);
+                toast(t('general:error-title'), {
+                  description: t('listview-page:error-restore-worlds'),
+                });
+              }
+            },
+          },
         });
       } catch (e) {
         error(`Failed to add worlds to folder: ${e}`);
@@ -115,19 +120,21 @@ export function ListViewClientShell({
         {/* Drag Overlay */}
         <DragOverlay>
           {activeWorld && (
-            <div
-              className="relative opacity-90 cursor-grabbing"
-              style={{
-                transform: 'scale(0.5)',
-                transformOrigin: 'top left',
-              }}
-            >
-              <WorldCardPreview size={cardSize} world={activeWorld} />
-              {draggedCount > 1 && (
-                <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold z-20">
-                  {draggedCount}
-                </div>
-              )}
+            <div className="relative cursor-grabbing">
+              {/* Thumbnail only with consistent size */}
+              <div className="relative w-52 h-32 rounded-lg overflow-hidden shadow-2xl border-2 border-primary">
+                <img
+                  src={activeWorld.thumbnailUrl}
+                  alt={activeWorld.name}
+                  className="w-full h-full object-cover"
+                  draggable="false"
+                />
+                {draggedCount > 1 && (
+                  <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full w-10 h-10 flex items-center justify-center text-base font-bold shadow-lg">
+                    {draggedCount}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </DragOverlay>

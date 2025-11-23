@@ -112,11 +112,11 @@ function DraggableWorldCard({
           {isSelected && (
             <div className="absolute inset-0 rounded-lg border-2 border-primary pointer-events-none z-10" />
           )}
-          {/* Drag Handle - positioned at top center */}
+          {/* Drag Handle - positioned at top left */}
           <div
             {...listeners}
             {...attributes}
-            className="absolute top-1 left-1/2 -translate-x-1/2 z-20 cursor-grab active:cursor-grabbing bg-background/80 hover:bg-background rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-1 left-1 z-20 cursor-grab active:cursor-grabbing bg-background/80 hover:bg-background rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={(e) => {
               e.stopPropagation();
             }}
