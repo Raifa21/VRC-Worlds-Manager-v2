@@ -35,7 +35,7 @@ export function ShareWorldPopup({
 
   const tweetText = t('share-world:twitter-text', worldName, worldUrl);
 
-  const tweetIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+  const tweetIntentUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
   // Handler to copy the world URL to clipboard
   const handleCopyUrl = async () => {
@@ -85,7 +85,7 @@ export function ShareWorldPopup({
                 {showCopied === 'url' && (
                   <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-10">
                     <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg">
-                      Copied!
+                      {t('general:copied')}
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                     </div>
                   </div>
@@ -112,7 +112,7 @@ export function ShareWorldPopup({
                 {showCopied === 'text' && (
                   <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-10">
                     <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg">
-                      Copied!
+                      {t('general:copied')}
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                     </div>
                   </div>

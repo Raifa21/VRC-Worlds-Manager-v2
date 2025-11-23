@@ -473,5 +473,6 @@
   "share-world:share-twitter": "Share on Twitter",
   "share-world:twitter-text": "Check out \"{0}\" in VRChat! 🌍\n{1}\n\n#VRChat",
   "share-world:share-text": "Check out \"{0}\" in VRChat!\n{1}",
-  "world-grid:share-world": "Share World"
+  "world-grid:share-world": "Share World",
+  "general:copied": "Copied!"
 }

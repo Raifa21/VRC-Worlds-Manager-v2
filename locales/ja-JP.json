@@ -472,5 +472,6 @@
   "share-world:share-twitter": "Twitterで共有",
   "share-world:twitter-text": "VRChatの\"{0}\"をチェック！🌍\n{1}\n\n#VRChat",
   "share-world:share-text": "VRChatの\"{0}\"をチェック！\n{1}",
-  "world-grid:share-world": "ワールドを共有"
+  "world-grid:share-world": "ワールドを共有",
+  "general:copied": "コピーしました！"
 }
