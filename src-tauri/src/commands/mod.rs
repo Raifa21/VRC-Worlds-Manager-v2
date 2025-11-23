@@ -5,6 +5,7 @@ pub mod data_commands;
 pub mod folder_commands;
 pub mod memo_commands;
 pub mod open_folder_commands;
+pub mod patreon_cache;
 pub mod preferences_commands;
 pub mod task;
 pub mod update;
@@ -14,7 +15,7 @@ use tauri_specta::{collect_commands, Builder};
 pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
         data_commands::fetch_patreon_data,
-        data_commands::fetch_patreon_vrchat_names,
+        patreon_cache::fetch_patreon_vrchat_names,
         data_commands::fetch_blacklist,
         changelog::get_changelog,
         task::get_task_status,
