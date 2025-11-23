@@ -25,7 +25,7 @@ pub async fn fetch_patreon_data() -> Result<PatreonData, String> {
 pub async fn fetch_patreon_vrchat_names() -> Result<PatreonVRChatNames, String> {
     let client = Client::new();
     let response = client
-        .get("https://data.raifaworks.com/data/patreon-vrchat-names.json")
+        .get("https://data.raifaworks.com/data/patreons-vrchat-usernames.json")
         .send()
         .await
         .map_err(|e| e.to_string())?;
