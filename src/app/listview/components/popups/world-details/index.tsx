@@ -40,6 +40,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useWorldDetailsActions } from './hook';
 import { useWorlds } from '@/app/listview/hook/use-worlds';
 import { FolderType } from '@/types/folders';
+import { usePatreon } from '@/hooks/use-patreon';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -100,6 +101,7 @@ export function WorldDetailPopup({
   } = useWorldDetailsActions(onOpenChange);
   const { t } = useLocalization();
   const { folders } = useFolders();
+  const { supporters } = usePatreon();
   const [isLoading, setIsLoading] = useState(false);
   const [worldDetails, setWorldDetails] = useState<WorldDetails | null>(null);
   const [errorState, setErrorState] = useState<string | null>(null);
@@ -530,7 +532,9 @@ export function WorldDetailPopup({
                               <div className="text-gray-500">
                                 {t('general:author')}:
                               </div>
-                              <div className="truncate">
+                              <div
+                                className={`truncate ${supporters.has(cachedWorldData.authorName) ? 'text-pink-500 dark:text-pink-400' : ''}`}
+                              >
                                 {cachedWorldData.authorName}
                               </div>
 
@@ -679,7 +683,7 @@ export function WorldDetailPopup({
                       <div className="text-sm text-gray-500">
                         {t('world-detail:by')}{' '}
                         <span
-                          className="text-sm text-gray-500 cursor-pointer hover:underline"
+                          className={`text-sm cursor-pointer hover:underline ${supporters.has(worldDetails.authorName) ? 'text-pink-500 dark:text-pink-400' : 'text-gray-500'}`}
                           onClick={() => {
                             // set author filter and close via hook
                             // selectAuthor handles closing
