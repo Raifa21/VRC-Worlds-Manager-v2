@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use log::info;
 use reqwest::cookie::Jar;
+use semver::Op;
 use serde::Deserialize;
 
 use crate::api::common::{
@@ -15,6 +16,7 @@ use super::definitions::{
 
 pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
     cookie: J,
+    tag: Option<&str>,
 ) -> Result<Vec<FavoriteWorld>, String> {
     const OPERATION: &str = "get_favorite_worlds";
 
@@ -35,14 +37,20 @@ pub async fn get_favorite_worlds<J: Into<Arc<Jar>>>(
 
         check_rate_limit(OPERATION)?;
 
-        let result = client
-            .get(format!(
-                "{}/worlds/favorites?offset={}&n={}",
-                API_BASE_URL, offset, n
-            ))
-            .send()
-            .await
+        let mut url = reqwest::Url::parse(&format!("{}/worlds/favorites", API_BASE_URL))
             .map_err(|e| e.to_string())?;
+        let offset_str = offset.to_string();
+        let n_str = n.to_string();
+        {
+            let mut query_pairs = url.query_pairs_mut();
+            query_pairs.append_pair("offset", &offset_str);
+            query_pairs.append_pair("n", &n_str);
+            if let Some(tag) = tag {
+                query_pairs.append_pair("tag", tag);
+            }
+        }
+
+        let result = client.get(url).send().await.map_err(|e| e.to_string())?;
 
         let result = match handle_api_response(result, OPERATION).await {
             Ok(response) => response,

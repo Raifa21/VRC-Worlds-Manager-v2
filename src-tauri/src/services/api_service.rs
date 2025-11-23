@@ -1,6 +1,7 @@
 use crate::api::auth::VRChatAPIClientAuthenticator;
+use crate::api::favorite::FavoriteWorldGroup;
 use crate::api::world::{SearchWorldSort, VRChatWorld, WorldSearchParametersBuilder};
-use crate::api::{auth, group, instance, invite, world};
+use crate::api::{auth, favorite, group, instance, invite, world};
 use crate::definitions::{AuthCookies, WorldApiData, WorldDisplayData, WorldModel};
 use crate::services::api_service::world::WorldSearchParameters;
 use crate::services::file_service::FileService;
@@ -299,7 +300,7 @@ impl ApiService {
     ) -> Result<Vec<WorldApiData>, String> {
         let mut worlds = vec![];
 
-        let result = world::get_favorite_worlds(cookie_store).await;
+        let result = world::get_favorite_worlds(cookie_store, None).await;
 
         let favorite_worlds = match result {
             Ok(worlds) => worlds,
@@ -774,5 +775,58 @@ impl ApiService {
         app: AppHandle,
     ) -> Result<String, String> {
         Self::get_instance_short_name_and_open_client(cookie, world_id, instance_id, app).await
+    }
+
+    /// Fetches all favorite world groups for the user
+    ///
+    /// # Arguments
+    /// * `cookie_store` - The cookie store to use for the API
+    /// # Returns
+    /// Returns a Result containing a vector of FavoriteWorldGroup if the request was successful
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn get_favorite_world_groups(
+        cookie_store: Arc<Jar>,
+    ) -> Result<Vec<FavoriteWorldGroup>, String> {
+        match favorite::get_favorite_world_groups(cookie_store).await {
+            Ok(groups) => Ok(groups),
+            Err(e) => Err(format!("Failed to fetch favorite world groups: {}", e)),
+        }
+    }
+
+    /// Fetches the favorite worlds in a specific favorite world group
+    ///
+    /// # Arguments
+    /// * `cookie_store` - The cookie store to use for the API
+    /// * `group_id` - The ID of the favorite world group to fetch the worlds for
+    /// # Returns
+    /// Returns a Result containing a vector of WorldApiData if the request was successful
+    /// # Errors
+    /// Returns a string error message if the request fails
+    #[must_use]
+    pub async fn get_favorite_worlds_in_group(
+        cookie_store: Arc<Jar>,
+        group_id: String,
+    ) -> Result<Vec<WorldApiData>, String> {
+        let mut worlds = vec![];
+        let result = world::get_favorite_worlds(cookie_store, Some(&group_id)).await;
+        let favorite_worlds = match result {
+            Ok(worlds) => worlds,
+            Err(e) => {
+                return Err(format!(
+                    "Failed to parse favorite worlds: {}",
+                    e.to_string()
+                ))
+            }
+        };
+        for world in favorite_worlds {
+            match world.try_into() {
+                Ok(world_data) => worlds.push(world_data),
+                Err(e) => return Err(format!("Failed to parse world: {}", e)),
+            }
+        }
+
+        Ok(worlds)
     }
 }
