@@ -9,10 +9,10 @@ use crate::api::common::{
     API_BASE_URL,
 };
 
-pub async fn get_favourite_world_groups<J: Into<Arc<Jar>>>(
+pub async fn get_favorite_world_groups<J: Into<Arc<Jar>>>(
     cookie: J,
 ) -> Result<Vec<FavoriteWorldGroup>, String> {
-    const OPERATION: &str = "get_favourite_world_groups";
+    const OPERATION: &str = "get_favorite_world_groups";
 
     check_rate_limit(OPERATION)?;
 
