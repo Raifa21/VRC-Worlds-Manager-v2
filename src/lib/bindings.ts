@@ -690,6 +690,32 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getFavoriteWorldGroups(): Promise<
+    Result<FavoriteWorldGroup[], string>
+  > {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_favorite_world_groups'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getFavoriteWorldsInGroup(
+    groupId: string,
+  ): Promise<Result<WorldDisplayData[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_favorite_worlds_in_group', { groupId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async openLogsDirectory(): Promise<Result<null, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('open_logs_directory') };
@@ -937,6 +963,16 @@ export type BackupMetaData = {
   app_version: string;
 };
 export type CardSize = 'Compact' | 'Normal' | 'Expanded' | 'Original';
+export type FavoriteWorldGroup = {
+  display_name: string;
+  id: string;
+  name: string;
+  owner_display_name: string;
+  owner_id: string;
+  tags: string[];
+  type: string;
+  visibility: string;
+};
 export type FilterItemSelectorStarredType =
   | 'Author'
   | 'Tag'

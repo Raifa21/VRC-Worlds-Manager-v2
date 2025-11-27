@@ -1,6 +1,7 @@
 use tauri::AppHandle;
 use tauri::State;
 
+use crate::api::favorite::FavoriteWorldGroup;
 use crate::api::group::GroupInstancePermissionInfo;
 use crate::api::group::UserGroup;
 use crate::definitions::WorldDetails;
@@ -316,4 +317,38 @@ pub async fn open_instance_in_client(
 
     ApiService::open_instance_in_client(cookie_store, &world_id, &instance_id, (*handle).clone())
         .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_favorite_world_groups() -> Result<Vec<FavoriteWorldGroup>, String> {
+    let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
+
+    let groups = match ApiService::get_favorite_world_groups(cookie_store).await {
+        Ok(groups) => groups,
+        Err(e) => {
+            log::info!("Failed to fetch favorite world groups: {}", e);
+            return Err(format!("Failed to fetch favorite world groups: {}", e));
+        }
+    };
+
+    Ok(groups)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_favorite_worlds_in_group(
+    group_id: String,
+) -> Result<Vec<WorldDisplayData>, String> {
+    let cookie_store = AUTHENTICATOR.get().read().await.get_cookies();
+
+    let worlds = match ApiService::get_favorite_worlds_in_group(cookie_store, group_id).await {
+        Ok(worlds) => worlds,
+        Err(e) => {
+            log::info!("Failed to fetch favorite worlds in group: {}", e);
+            return Err(format!("Failed to fetch favorite worlds in group: {}", e));
+        }
+    };
+
+    Ok(worlds)
 }

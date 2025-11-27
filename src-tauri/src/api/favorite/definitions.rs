@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Type)]
 pub struct FavoriteWorldGroup {
     pub display_name: String,
     pub id: String,
