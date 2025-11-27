@@ -808,7 +808,7 @@ impl ApiService {
     pub async fn get_favorite_worlds_in_group(
         cookie_store: Arc<Jar>,
         group_id: String,
-    ) -> Result<Vec<WorldApiData>, String> {
+    ) -> Result<Vec<WorldDisplayData>, String> {
         let mut worlds = vec![];
         let result = world::get_favorite_worlds(cookie_store, Some(&group_id)).await;
         let favorite_worlds = match result {

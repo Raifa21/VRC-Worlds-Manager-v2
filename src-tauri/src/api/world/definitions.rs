@@ -122,6 +122,44 @@ impl TryInto<WorldApiData> for FavoriteWorld {
     }
 }
 
+impl TryInto<WorldDisplayData> for FavoriteWorld {
+    type Error = chrono::ParseError;
+
+    fn try_into(self) -> Result<WorldDisplayData, Self::Error> {
+        let platform: Vec<String> = {
+            let mut seen = HashSet::new();
+            self.unity_packages
+                .iter()
+                .map(|package| package.platform.clone())
+                .filter(|p| seen.insert(p.clone()))
+                .collect()
+        };
+
+        Ok(WorldDisplayData {
+            world_id: self.id.clone(),
+            name: self.name.clone(),
+            thumbnail_url: self.image_url.clone(),
+            author_name: self.author_name.clone(),
+            favorites: self.favorites,
+            last_updated: self.updated_at,
+            visits: self.visits.unwrap_or(0),
+            date_added: "".to_string(),
+            platform: if platform.contains(&"standalonewindows".to_string())
+                && platform.contains(&"android".to_string())
+            {
+                Platform::CrossPlatform
+            } else if platform.contains(&"android".to_string()) {
+                Platform::Quest
+            } else {
+                Platform::PC
+            },
+            folders: Vec::new(),
+            tags: self.tags.clone(),
+            capacity: self.capacity,
+        })
+    }
+}
+
 #[derive(Default, Debug, PartialEq, Deserialize)]
 pub struct HiddenWorld {
     #[serde(rename = "authorName")]
