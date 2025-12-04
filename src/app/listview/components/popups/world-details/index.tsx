@@ -40,7 +40,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useWorldDetailsActions } from './hook';
 import { useWorlds } from '@/app/listview/hook/use-worlds';
 import { FolderType } from '@/types/folders';
-import { usePatreon } from '@/hooks/use-patreon';
+import { usePatreonContext } from '@/contexts/patreon-context';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -101,7 +101,7 @@ export function WorldDetailPopup({
   } = useWorldDetailsActions(onOpenChange);
   const { t } = useLocalization();
   const { folders } = useFolders();
-  const { supporters } = usePatreon();
+  const { supporters } = usePatreonContext();
   const [isLoading, setIsLoading] = useState(false);
   const [worldDetails, setWorldDetails] = useState<WorldDetails | null>(null);
   const [errorState, setErrorState] = useState<string | null>(null);

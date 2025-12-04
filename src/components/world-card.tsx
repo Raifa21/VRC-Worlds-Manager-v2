@@ -7,7 +7,7 @@ import QQ from '@/../public/icons/VennColorQQ.svg';
 import { Platform } from '@/types/worlds';
 import { CardSize, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
-import { usePatreon } from '@/hooks/use-patreon';
+import { usePatreonContext } from '@/contexts/patreon-context';
 
 interface WorldCardPreviewProps {
   size: CardSize;
@@ -17,7 +17,7 @@ interface WorldCardPreviewProps {
 export function WorldCardPreview(props: WorldCardPreviewProps) {
   const { size, world } = props;
   const { t } = useLocalization();
-  const { supporters } = usePatreon();
+  const { supporters } = usePatreonContext();
   const isSupporter = supporters.has(world.authorName);
   const sizeClasses: Record<CardSize, string> = {
     Compact: 'w-48 h-32',
