@@ -13,6 +13,17 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async fetchPatreonVrchatNames(): Promise<Result<PatreonVRChatNames, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('fetch_patreon_vrchat_names'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async fetchBlacklist(): Promise<Result<WorldBlacklist, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('fetch_blacklist') };
@@ -1004,6 +1015,13 @@ export type LocalizedChanges = {
   others: string[];
 };
 export type PatreonData = {
+  platinumSupporter: string[];
+  goldSupporter: string[];
+  silverSupporter: string[];
+  bronzeSupporter: string[];
+  basicSupporter: string[];
+};
+export type PatreonVRChatNames = {
   platinumSupporter: string[];
   goldSupporter: string[];
   silverSupporter: string[];

@@ -59,7 +59,6 @@ pub async fn fetch_patreon_vrchat_names() -> Result<PatreonVRChatNames, String> 
             .map_err(|e| format!("Failed to acquire cache read lock: {}", e))?;
 
         if let Some(cached_data) = cache.get_cached_data() {
-            log::info!("Returning cached Patreon VRChat names");
             return Ok((*cached_data).clone());
         }
     }
