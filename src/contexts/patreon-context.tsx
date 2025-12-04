@@ -34,13 +34,3 @@ export function usePatreonContext() {
   }
   return context;
 }
-
-/**
- * Helper function to check if a VRChat display name is a patreon supporter
- */
-export function isPatreonSupporter(
-  name: string,
-  supporters: Set<string>,
-): boolean {
-  return supporters.has(name);
-}
