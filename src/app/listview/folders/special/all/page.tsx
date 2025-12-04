@@ -38,10 +38,6 @@ export default function AllWorldsPage() {
     checkForUpdate();
   }, [checkForUpdate]);
 
-  useEffect(() => {
-    info(`[AllWorlds] raw=${worlds.length} filtered=${filteredWorlds.length}`);
-  }, [worlds, filteredWorlds]);
-
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
