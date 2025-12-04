@@ -3,6 +3,7 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { AppSidebar } from './components/app-sidebar';
 import { PopupManager } from './hook/usePopups/popup-manager';
+import { PatreonProvider } from '@/contexts/patreon-context';
 
 const MIN_SIDEBAR_WIDTH = 250;
 const MAX_SIDEBAR_WIDTH = 600;
@@ -80,30 +81,32 @@ export function ListViewClientShell({
 
   return (
     <Suspense fallback={null}>
-      <div className="flex">
-        <div
-          ref={sidebarRef}
-          style={{ width: `${sidebarWidth}px` }}
-          className="relative flex-shrink-0"
-        >
-          <AppSidebar sidebarWidth={sidebarWidth} />
-          {/* Resize handle */}
+      <PatreonProvider>
+        <div className="flex">
           <div
-            onMouseDown={handleResizeStart}
-            className="absolute top-0 right-0 w-1 h-full cursor-ew-resize hover:bg-border transition-colors z-50 select-none"
-            style={{
-              background: isResizing ? 'hsl(var(--border))' : 'transparent',
-              userSelect: 'none',
-            }}
+            ref={sidebarRef}
+            style={{ width: `${sidebarWidth}px` }}
+            className="relative flex-shrink-0"
           >
-            <div className="absolute inset-y-0 -left-1 -right-1" />
+            <AppSidebar sidebarWidth={sidebarWidth} />
+            {/* Resize handle */}
+            <div
+              onMouseDown={handleResizeStart}
+              className="absolute top-0 right-0 w-1 h-full cursor-ew-resize hover:bg-border transition-colors z-50 select-none"
+              style={{
+                background: isResizing ? 'hsl(var(--border))' : 'transparent',
+                userSelect: 'none',
+              }}
+            >
+              <div className="absolute inset-y-0 -left-1 -right-1" />
+            </div>
           </div>
+          <main className="flex-1 h-screen overflow-y-auto no-webview-scroll-bar">
+            {children}
+          </main>
+          <PopupManager />
         </div>
-        <main className="flex-1 h-screen overflow-y-auto no-webview-scroll-bar">
-          {children}
-        </main>
-        <PopupManager />
-      </div>
+      </PatreonProvider>
     </Suspense>
   );
 }

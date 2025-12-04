@@ -38,12 +38,6 @@ export default function UnclassifiedWorldsPage() {
     checkForUpdate();
   }, [checkForUpdate]);
 
-  useEffect(() => {
-    info(
-      `[UnclassifiedWorlds] raw=${worlds.length} filtered=${filteredWorlds.length}`,
-    );
-  }, [worlds, filteredWorlds]);
-
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

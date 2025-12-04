@@ -190,9 +190,6 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
         memoTextFilter === '' &&
         searchQuery === ''
       ) {
-        info(
-          `[useWorldFilters] No filters active worlds=${worlds.length} intermediate=${intermediate.length}`,
-        );
       }
 
       // 2. Memo text filtering (async)
@@ -291,9 +288,9 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
           }
         }
       }
-      info(
-        `[useWorldFilters] Facet final authors=${authorsArr.length} tags=${tagsArr.length}`,
-      );
+      // info(
+      //   `[useWorldFilters] Facet final authors=${authorsArr.length} tags=${tagsArr.length}`,
+      // );
 
       // 5. Commit if still latest & not cancelled (avoid redundant updates)
       if (!cancelled && seq === requestSeq.current) {
