@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.2.2",
+    "others": [
+      {
+        "text": "Security update",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "セキュリティアップデート"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.2.1",
     "features": [
       {
