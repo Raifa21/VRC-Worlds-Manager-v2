@@ -18,7 +18,7 @@ export function PatreonProvider({ children }: PatreonProviderProps) {
 
   useEffect(() => {
     fetchSupporters();
-  }, [fetchSupporters]);
+  }, []);
 
   return (
     <PatreonContext.Provider value={{ supporters, isLoading }}>
