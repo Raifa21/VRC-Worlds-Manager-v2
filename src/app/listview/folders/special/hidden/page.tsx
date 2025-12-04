@@ -38,12 +38,6 @@ export default function HiddenWorldsPage() {
     checkForUpdate();
   }, [checkForUpdate]);
 
-  useEffect(() => {
-    info(
-      `[HiddenWorlds] raw=${worlds.length} filtered=${filteredWorlds.length}`,
-    );
-  }, [worlds, filteredWorlds]);
-
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -32,9 +32,6 @@ export default function UserFolder() {
   // worlds
   const { worlds, isLoading } = useWorlds(folderName);
 
-  info('Loaded worlds in folder: ' + folderName);
-  info('Number of worlds: ' + worlds.length);
-
   const setPopup = usePopupStore((state) => state.setPopup);
 
   const { t } = useLocalization();
@@ -48,10 +45,6 @@ export default function UserFolder() {
 
   // Initialize / update filtering for this folder's worlds
   const { filteredWorlds } = useWorldFilters(worlds);
-  // Debug
-  info(
-    `[UserFolder] raw worlds: ${worlds.length}, filtered: ${filteredWorlds.length}`,
-  );
 
   // Keyboard shortcuts
   useEffect(() => {

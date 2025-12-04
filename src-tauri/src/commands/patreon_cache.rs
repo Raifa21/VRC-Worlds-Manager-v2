@@ -70,6 +70,8 @@ pub async fn fetch_patreon_vrchat_names() -> Result<PatreonVRChatNames, String> 
         .get("https://data.raifaworks.com/data/patreons-vrchat-usernames.json")
         .send()
         .await
+        .map_err(|e| e.to_string())?
+        .error_for_status()
         .map_err(|e| e.to_string())?;
 
     let data = response
