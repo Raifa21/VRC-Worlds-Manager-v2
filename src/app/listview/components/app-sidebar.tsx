@@ -8,6 +8,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { FolderData } from '@/lib/bindings';
 import { useState, useEffect, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
+import { UserProfile } from '@/components/user-profile';
 
 import { Separator } from '@/components/ui/separator';
 
@@ -42,9 +43,10 @@ const SIDEBAR_CLASS = 'app-sidebar';
 
 interface AppSidebarProps {
   sidebarWidth: number;
+  streamerMode: boolean;
 }
 
-export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
+export function AppSidebar({ sidebarWidth, streamerMode }: AppSidebarProps) {
   const { t } = useLocalization();
   const { folders, moveFolder, createFolder, deleteFolder, renameFolder } =
     useFolders();
@@ -419,6 +421,7 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
           </div>
         </SidebarGroup>
       </nav>
+      <UserProfile streamerMode={streamerMode} />
       <Separator />
       <footer className={sidebarStyles.footer}>
         <SidebarGroup>

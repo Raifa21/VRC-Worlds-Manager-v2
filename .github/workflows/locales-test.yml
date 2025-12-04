@@ -2,20 +2,20 @@ name: Locales Test
 on:
   push:
     paths:
-      - "locales/**"
-      - ".github/workflows/locales-test.yml"
+      - 'locales/**'
+      - '.github/workflows/locales-test.yml'
     branches:
-      - "main"
-      - "pre-release"
-      - "develop"
+      - 'main'
+      - 'pre-release'
+      - 'develop'
   pull_request:
     types:
       - reopened
       - opened
       - synchronize
     paths:
-      - "locales/**"
-      - ".github/workflows/locales-test.yml"
+      - 'locales/**'
+      - '.github/workflows/locales-test.yml'
 
 permissions:
   contents: read

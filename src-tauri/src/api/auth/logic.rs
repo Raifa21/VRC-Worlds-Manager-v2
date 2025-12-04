@@ -52,6 +52,10 @@ impl VRChatAPIClientAuthenticator {
         self.username = username;
     }
 
+    pub fn get_username(&self) -> String {
+        self.username.clone()
+    }
+
     pub fn get_cookies(&self) -> Arc<Jar> {
         self.cookie.clone()
     }

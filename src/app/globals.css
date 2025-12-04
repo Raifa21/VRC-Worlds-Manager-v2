@@ -3,14 +3,11 @@
 @tailwind utilities;
 
 ::-webkit-scrollbar {
-    display: none; /* Hides the scrollbar entirely */
+  display: none; /* Hides the scrollbar entirely */
 }
-
-
 
 @layer base {
   :root {
-
     --background: 0 0% 100%;
 
     --foreground: 0 0% 3.9%;
@@ -80,7 +77,6 @@
     --theme-icon-invert: 0;
   }
   .dark {
-
     --background: 0 0% 3.9%;
 
     --foreground: 0 0% 98%;

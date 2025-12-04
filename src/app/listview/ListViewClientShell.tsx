@@ -3,6 +3,7 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { AppSidebar } from './components/app-sidebar';
 import { PopupManager } from './hook/usePopups/popup-manager';
+import { commands } from '@/lib/bindings';
 
 const MIN_SIDEBAR_WIDTH = 250;
 const MAX_SIDEBAR_WIDTH = 600;
@@ -17,6 +18,7 @@ export function ListViewClientShell({
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
+  const [streamerMode, setStreamerMode] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   // Load saved width from localStorage on mount
@@ -28,6 +30,15 @@ export function ListViewClientShell({
         setSidebarWidth(width);
       }
     }
+
+    // Load streamer mode setting
+    const loadStreamerMode = async () => {
+      const result = await commands.getStreamerMode();
+      if (result.status === 'ok') {
+        setStreamerMode(result.data);
+      }
+    };
+    loadStreamerMode();
   }, []);
 
   // Handle mouse move during resize
@@ -86,7 +97,7 @@ export function ListViewClientShell({
           style={{ width: `${sidebarWidth}px` }}
           className="relative flex-shrink-0"
         >
-          <AppSidebar sidebarWidth={sidebarWidth} />
+          <AppSidebar sidebarWidth={sidebarWidth} streamerMode={streamerMode} />
           {/* Resize handle */}
           <div
             onMouseDown={handleResizeStart}

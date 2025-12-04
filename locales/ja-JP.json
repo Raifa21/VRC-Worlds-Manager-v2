@@ -290,6 +290,8 @@
   "settings-page:update-channel-description": "アプリのアップデートチャンネルを選択してください",
   "settings-page:channel-stable": "Stable (安定版)",
   "settings-page:channel-prerelease": "Pre-Release (非安定版)",
+  "settings-page:streamer-mode-title": "ストリーマーモード",
+  "settings-page:streamer-mode-description": "ストリーミングや録画時にユーザー名を非表示にします",
   "settings-page:error-load-preferences": "設定の読み込みに失敗しました",
   "settings-page:error-save-preferences": "設定の保存に失敗しました",
   "settings-page:select-backup-directory": "バックアップ場所を選択",

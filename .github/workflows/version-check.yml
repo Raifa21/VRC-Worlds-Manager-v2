@@ -2,24 +2,24 @@ name: Version Consistency Check
 on:
   push:
     paths:
-      - "package.json"
-      - "src-tauri/Cargo.toml"
-      - "src-tauri/tauri.conf.json"
-      - ".github/workflows/version-check.yml"
+      - 'package.json'
+      - 'src-tauri/Cargo.toml'
+      - 'src-tauri/tauri.conf.json'
+      - '.github/workflows/version-check.yml'
     branches:
-      - "main"
-      - "pre-release"
-      - "develop"
+      - 'main'
+      - 'pre-release'
+      - 'develop'
   pull_request:
     types:
       - reopened
       - opened
       - synchronize
     paths:
-      - "package.json"
-      - "src-tauri/Cargo.toml"
-      - "src-tauri/tauri.conf.json"
-      - ".github/workflows/version-check.yml"
+      - 'package.json'
+      - 'src-tauri/Cargo.toml'
+      - 'src-tauri/tauri.conf.json'
+      - '.github/workflows/version-check.yml'
 
 permissions:
   contents: read

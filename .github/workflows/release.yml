@@ -1,4 +1,4 @@
-name: "Release"
+name: 'Release'
 on:
   push:
     branches:
@@ -21,8 +21,8 @@ jobs:
           #   args: "--target x86_64-apple-darwin"
           # - platform: "ubuntu-22.04" # for Tauri v1 you could replace this with ubuntu-20.04.
           #   args: ""
-          - platform: "windows-latest"
-            args: ""
+          - platform: 'windows-latest'
+            args: ''
     runs-on: ${{ matrix.platform }}
     environment:
       name: release
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: ./.github/workflows/composite/release
         with:
-          releaseChannel: "stable"
+          releaseChannel: 'stable'
           args: ${{ matrix.args }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
@@ -62,8 +62,8 @@ jobs:
           #   args: "--target x86_64-apple-darwin"
           # - platform: "ubuntu-22.04" # for Tauri v1 you could replace this with ubuntu-20.04.
           #   args: ""
-          - platform: "windows-latest"
-            args: ""
+          - platform: 'windows-latest'
+            args: ''
     runs-on: ${{ matrix.platform }}
     environment:
       name: release
@@ -71,7 +71,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: ./.github/workflows/composite/release
         with:
-          releaseChannel: "pre-release"
+          releaseChannel: 'pre-release'
           args: ${{ matrix.args }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}

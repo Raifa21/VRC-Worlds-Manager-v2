@@ -501,6 +501,25 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getStreamerMode(): Promise<Result<boolean, string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_streamer_mode') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setStreamerMode(streamerMode: boolean): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_streamer_mode', { streamerMode }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async tryLogin(): Promise<Result<null, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('try_login') };
@@ -695,6 +714,17 @@ export const commands = {
           worldId,
           instanceId,
         }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async getCurrentUser(): Promise<Result<CurrentUserInfo, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_current_user'),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -1000,6 +1030,10 @@ export type GroupRole = {
   name: string;
   permissions: GroupPermission[];
   isManagementRole: boolean;
+};
+export type CurrentUserInfo = {
+  username: string;
+  user_id: string;
 };
 export type InstanceInfo = {
   world_id: string;

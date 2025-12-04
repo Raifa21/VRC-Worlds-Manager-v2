@@ -204,3 +204,24 @@ pub fn set_update_channel(channel: UpdateChannel) -> Result<(), String> {
     })?;
     Ok(())
 }
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_streamer_mode() -> Result<bool, String> {
+    let preferences_lock = PREFERENCES.get().read();
+    let preferences = preferences_lock.as_ref().unwrap();
+    Ok(preferences.streamer_mode)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_streamer_mode(streamer_mode: bool) -> Result<(), String> {
+    let mut preferences_lock = PREFERENCES.get().write();
+    let preferences = preferences_lock.as_mut().unwrap();
+    preferences.streamer_mode = streamer_mode;
+    FileService::write_preferences(preferences).map_err(|e| {
+        log::error!("Error writing preferences: {}", e);
+        e.to_string()
+    })?;
+    Ok(())
+}
