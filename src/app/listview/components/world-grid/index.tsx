@@ -8,8 +8,9 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
+  ContextMenuSeparator,
 } from '@/components/ui/context-menu';
-import { Square, Check, Plus } from 'lucide-react';
+import { Square, Check, Plus, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -26,6 +27,7 @@ import { commands } from '@/lib/bindings';
 import { Badge } from '@/components/ui/badge';
 import { useFolders } from '../../hook/use-folders';
 import { useWorldGrid } from './hook';
+import { ShareWorldPopup } from '../popups/share-world-popup';
 
 interface WorldGridProps {
   worlds: WorldDisplayData[];
@@ -85,9 +87,28 @@ export function WorldGrid({
     isOpen: boolean;
   } | null>(null);
 
+  const [shareDialogConfig, setShareDialogConfig] = useState<{
+    worldId: string;
+    worldName: string;
+    isOpen: boolean;
+  } | null>(null);
+
   const handleDialogClose = () => {
     setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
     setTimeout(() => setDialogConfig(null), 150);
+  };
+
+  const handleShareDialogClose = () => {
+    setShareDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
+    setTimeout(() => setShareDialogConfig(null), 150);
+  };
+
+  const handleShareWorld = (worldId: string, worldName: string) => {
+    setShareDialogConfig({
+      worldId,
+      worldName,
+      isOpen: true,
+    });
   };
 
   const handleSelect = (worldId: string, event: React.MouseEvent) => {
@@ -167,13 +188,24 @@ export function WorldGrid({
             </ContextMenuTrigger>
             <ContextMenuContent>
               {isFindPage ? (
-                <ContextMenuItem
-                  onSelect={(e) => {
-                    handleOpenFolderDialog(world.worldId);
-                  }}
-                >
-                  {t('world-grid:add-title')}
-                </ContextMenuItem>
+                <>
+                  <ContextMenuItem
+                    onSelect={(e) => {
+                      handleOpenFolderDialog(world.worldId);
+                    }}
+                  >
+                    {t('world-grid:add-title')}
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem
+                    onSelect={(e) => {
+                      handleShareWorld(world.worldId, world.name);
+                    }}
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    {t('world-grid:share-world')}
+                  </ContextMenuItem>
+                </>
               ) : !isHiddenFolder ? (
                 <>
                   <ContextMenuItem
@@ -212,20 +244,40 @@ export function WorldGrid({
                   >
                     {t('general:hide-title')}
                   </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem
+                    onSelect={(e) => {
+                      handleShareWorld(world.worldId, world.name);
+                    }}
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    {t('world-grid:share-world')}
+                  </ContextMenuItem>
                 </>
               ) : (
-                <ContextMenuItem
-                  onSelect={(e) => {
-                    const worldsToRestore =
-                      selectedWorlds.length > 0 &&
-                      selectedWorlds.includes(world.worldId)
-                        ? Array.from(selectedWorlds)
-                        : [world.worldId];
-                    handleRestoreWorld?.(worldsToRestore);
-                  }}
-                >
-                  {t('world-grid:restore-world')}
-                </ContextMenuItem>
+                <>
+                  <ContextMenuItem
+                    onSelect={(e) => {
+                      const worldsToRestore =
+                        selectedWorlds.length > 0 &&
+                        selectedWorlds.includes(world.worldId)
+                          ? Array.from(selectedWorlds)
+                          : [world.worldId];
+                      handleRestoreWorld?.(worldsToRestore);
+                    }}
+                  >
+                    {t('world-grid:restore-world')}
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem
+                    onSelect={(e) => {
+                      handleShareWorld(world.worldId, world.name);
+                    }}
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    {t('world-grid:share-world')}
+                  </ContextMenuItem>
+                </>
               )}
             </ContextMenuContent>
           </ContextMenu>
@@ -286,6 +338,18 @@ export function WorldGrid({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        )}
+
+        {/* Share World Dialog */}
+        {shareDialogConfig && (
+          <ShareWorldPopup
+            open={shareDialogConfig.isOpen}
+            onOpenChange={(open) => {
+              if (!open) handleShareDialogClose();
+            }}
+            worldId={shareDialogConfig.worldId}
+            worldName={shareDialogConfig.worldName}
+          />
         )}
       </Portal.Root>
 
