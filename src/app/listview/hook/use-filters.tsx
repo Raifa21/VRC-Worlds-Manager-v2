@@ -51,11 +51,26 @@ export const useWorldFiltersStore = create<FilterState>((set) => ({
   availableAuthors: [],
   availableTags: [],
   setSortField: (field) =>
-    set((state) => ({
-      sortField: field,
-      sortDirection: getDefaultDirection(field),
-    })),
-  setSortDirection: (dir) => set({ sortDirection: dir }),
+    set((state) => {
+      const newDirection = getDefaultDirection(field);
+      // Save to backend
+      commands.setSortPreferences(field, newDirection).catch((e) => {
+        error(`Failed to save sort preferences: ${e}`);
+      });
+      return {
+        sortField: field,
+        sortDirection: newDirection,
+      };
+    }),
+  setSortDirection: (dir) => {
+    set((state) => {
+      // Save to backend
+      commands.setSortPreferences(state.sortField, dir).catch((e) => {
+        error(`Failed to save sort preferences: ${e}`);
+      });
+      return { sortDirection: dir };
+    });
+  },
   setAuthorFilter: (author) => set({ authorFilter: author }),
   setTagFilters: (tags) => set({ tagFilters: tags }),
   setFolderFilters: (folders) => set({ folderFilters: folders }),
@@ -117,6 +132,31 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
   const requestSeq = useRef(0);
   // Ensure we only attempt the backend tag fallback once per hook lifetime
   const tagsFallbackTriedRef = useRef(false);
+  const sortPreferencesLoadedRef = useRef(false);
+
+  // Load sort preferences from backend on mount
+  useEffect(() => {
+    if (!sortPreferencesLoadedRef.current) {
+      sortPreferencesLoadedRef.current = true;
+      commands
+        .getSortPreferences()
+        .then((result) => {
+          if (result.status === 'ok') {
+            const [field, direction] = result.data;
+            useWorldFiltersStore.setState({
+              sortField: field as SortField,
+              sortDirection: direction as 'asc' | 'desc',
+            });
+            info(
+              `[useWorldFilters] Loaded sort preferences: field=${field} direction=${direction}`,
+            );
+          }
+        })
+        .catch((e) => {
+          error(`Failed to load sort preferences: ${e}`);
+        });
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
