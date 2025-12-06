@@ -100,7 +100,10 @@ export default function AllWorldsPage() {
           </div>
         </div>
         <div>
-          <SearchBar currentFolder={SpecialFolders.All} />
+          <SearchBar
+            currentFolder={SpecialFolders.All}
+            filteredWorlds={filteredWorlds}
+          />
           <div className="flex-1">
             {isLoading && worlds.length === 0 ? (
               <WorldGridSkeleton />

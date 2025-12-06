@@ -101,7 +101,10 @@ export default function UserFolder() {
         </div>
 
         <div>
-          <SearchBar currentFolder={folderName} />
+          <SearchBar
+            currentFolder={folderName}
+            filteredWorlds={filteredWorlds}
+          />
           <div className="flex-1">
             {isLoading && worlds.length === 0 ? (
               <WorldGridSkeleton />

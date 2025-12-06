@@ -111,7 +111,10 @@ export default function HiddenWorldsPage() {
           </div>
         </div>
         <div>
-          <SearchBar currentFolder={SpecialFolders.Hidden} />
+          <SearchBar
+            currentFolder={SpecialFolders.Hidden}
+            filteredWorlds={filteredWorlds}
+          />
           <div className="flex-1">
             {isLoading && worlds.length === 0 ? (
               <WorldGridSkeleton />

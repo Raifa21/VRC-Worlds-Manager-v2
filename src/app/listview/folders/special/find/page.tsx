@@ -60,8 +60,12 @@ export default function FindWorldsPage() {
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const findGridRef = useRef<HTMLDivElement>(null);
-  const { isSelectionMode, toggleSelectionMode, clearFolderSelections } =
-    useSelectedWorldsStore();
+  const {
+    isSelectionMode,
+    toggleSelectionMode,
+    clearFolderSelections,
+    selectAllWorlds,
+  } = useSelectedWorldsStore();
 
   const { importFolder } = useFolders();
 
@@ -292,6 +296,22 @@ export default function FindWorldsPage() {
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
         <div className="flex items-center">
+          {isSelectionMode &&
+            activeTab === 'recently-visited' &&
+            recentlyVisitedWorlds.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const worldIds = recentlyVisitedWorlds.map(
+                    (world) => world.worldId,
+                  );
+                  selectAllWorlds(SpecialFolders.Find, worldIds);
+                }}
+                className="mr-2"
+              >
+                {t('general:select-all')}
+              </Button>
+            )}
           <Button
             variant="outline"
             onClick={fetchRecentlyVisitedWorlds}

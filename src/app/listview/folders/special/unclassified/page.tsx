@@ -99,7 +99,10 @@ export default function UnclassifiedWorldsPage() {
           </div>
         </div>
         <div>
-          <SearchBar currentFolder={SpecialFolders.Unclassified} />
+          <SearchBar
+            currentFolder={SpecialFolders.Unclassified}
+            filteredWorlds={filteredWorlds}
+          />
           <div className="flex-1">
             {isLoading && worlds.length === 0 ? (
               <WorldGridSkeleton />
