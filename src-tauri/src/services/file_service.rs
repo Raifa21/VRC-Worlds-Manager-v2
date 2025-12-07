@@ -624,7 +624,7 @@ mod tests {
     fn test_atomic_write_creates_backup() {
         let temp = setup_test_dir();
         let test_path = temp.path().join("test.json");
-        let backup_path = temp.path().join("test.json.bak");
+        let backup_path = FileService::get_backup_path(&test_path);
 
         // Write initial data
         let initial_data = r#"{"version": 1}"#;
@@ -649,7 +649,7 @@ mod tests {
     fn test_read_file_recovers_from_backup_on_null_bytes() {
         let temp = setup_test_dir();
         let test_path = temp.path().join("test.json");
-        let backup_path = temp.path().join("test.json.bak");
+        let backup_path = FileService::get_backup_path(&test_path);
 
         // Create a valid backup
         let backup_data = r#"["item1", "item2"]"#;
@@ -674,7 +674,7 @@ mod tests {
     fn test_read_file_recovers_from_backup_on_invalid_json() {
         let temp = setup_test_dir();
         let test_path = temp.path().join("test.json");
-        let backup_path = temp.path().join("test.json.bak");
+        let backup_path = FileService::get_backup_path(&test_path);
 
         // Create a valid backup
         let backup_data = r#"{"key": "value"}"#;
@@ -712,7 +712,7 @@ mod tests {
     fn test_read_auth_file_recovers_from_backup_on_null_bytes() {
         let temp = setup_test_dir();
         let test_path = temp.path().join("auth.json");
-        let backup_path = temp.path().join("auth.json.bak");
+        let backup_path = FileService::get_backup_path(&test_path);
 
         // Create a valid backup
         let backup_data = r#"{"auth_token": null, "two_factor_auth": null, "version": 1}"#;
@@ -743,7 +743,7 @@ mod tests {
         }
         
         // Backup should have the second-to-last iteration
-        let backup_path = temp.path().join("test.json.bak");
+        let backup_path = FileService::get_backup_path(&test_path);
         assert!(backup_path.exists());
         let backup_content = fs::read_to_string(&backup_path).unwrap();
         assert_eq!(backup_content, r#"{"iteration": 3}"#);
