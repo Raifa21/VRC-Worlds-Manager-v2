@@ -9,7 +9,7 @@ use crate::RATE_LIMIT_STORE;
 
 pub const API_BASE_URL: &str = "https://api.vrchat.cloud/api/1";
 
-const USER_AGENT: &str = "VRC Worlds Manager v2 (tauri)/1.2.2 discord:raifa";
+const USER_AGENT: &str = "VRC Worlds Manager v2 (tauri)/1.2.3 discord:raifa";
 
 pub fn get_reqwest_client(cookies: &Arc<Jar>) -> reqwest::Client {
     reqwest::ClientBuilder::new()
