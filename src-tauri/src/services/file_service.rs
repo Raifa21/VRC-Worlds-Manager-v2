@@ -136,7 +136,7 @@ impl FileService {
             })
             .and_then(|data| {
                 // Check if the file contains only null bytes (corrupted)
-                if data.chars().all(|c| c == '\0') {
+                if data.as_bytes().iter().all(|&b| b == 0) {
                     log::warn!("File {:?} contains only null bytes, attempting backup recovery", path);
                     Err(FileError::InvalidFile)
                 } else {
@@ -179,7 +179,7 @@ impl FileService {
         let content = match content_result {
             Ok(c) => {
                 // Check if the file contains only null bytes (corrupted)
-                if c.chars().all(|ch| ch == '\0') {
+                if c.as_bytes().iter().all(|&b| b == 0) {
                     log::warn!("Auth file {:?} contains only null bytes, attempting backup recovery", path);
                     // Try backup
                     let backup_path = PathBuf::from(format!("{}.bak", path.display()));
@@ -405,6 +405,9 @@ impl FileService {
 
     /// Creates an empty authentication file if it doesn't exist
     ///
+    /// Note: This uses fs::write instead of atomic_write because it's only called
+    /// during initialization when there's no existing data to protect.
+    ///
     /// # Returns
     /// Ok(()) if the file was created successfully or already exists
     ///
@@ -419,6 +422,9 @@ impl FileService {
     }
 
     /// Creates an empty worlds file if it doesn't exist
+    ///
+    /// Note: This uses fs::write instead of atomic_write because it's only called
+    /// during initialization when there's no existing data to protect.
     ///
     /// # Returns
     /// Ok(()) if the file was created successfully or already exists
@@ -435,6 +441,9 @@ impl FileService {
 
     /// Creates an empty folders file if it doesn't exist
     ///
+    /// Note: This uses fs::write instead of atomic_write because it's only called
+    /// during initialization when there's no existing data to protect.
+    ///
     /// # Returns
     /// Ok(()) if the file was created successfully or already exists
     ///
@@ -450,6 +459,9 @@ impl FileService {
 
     /// Deletes data from the worlds and folders files
     /// Overwrites the files with empty data
+    ///
+    /// Note: This uses fs::write instead of atomic_write because it's intentionally
+    /// clearing/deleting data, so there's no existing data to protect.
     ///
     /// # Returns
     /// Ok(()) if the data was deleted successfully
@@ -508,7 +520,7 @@ impl FileService {
         }
 
         let file_path = exports_dir.join(file_name);
-        fs::write(file_path, data).map_err(|_| FileError::FileWriteError)?;
+        Self::atomic_write(&file_path, data)?;
 
         // Open the exports directory after writing the file
         Self::open_path(exports_dir).map_err(|e| {
