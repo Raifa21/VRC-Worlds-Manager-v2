@@ -8,6 +8,7 @@ import { Platform } from '@/types/worlds';
 import { CardSize, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { usePatreonContext } from '@/contexts/patreon-context';
+import { useCachedImage } from '@/hooks/use-cached-image';
 
 interface WorldCardPreviewProps {
   size: CardSize;
@@ -19,6 +20,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
   const { t } = useLocalization();
   const { supporters } = usePatreonContext();
   const isSupporter = supporters.has(world.authorName);
+  const cachedImagePath = useCachedImage(world.thumbnailUrl);
   const sizeClasses: Record<CardSize, string> = {
     Compact: 'w-48 h-32',
     Normal: 'w-52 h-48',
@@ -60,7 +62,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
         </div>
       </div>
       <img
-        src={world.thumbnailUrl}
+        src={cachedImagePath || world.thumbnailUrl}
         alt={world.name}
         className={`w-full h-2/3 object-cover rounded-t-lg`}
         draggable="false"

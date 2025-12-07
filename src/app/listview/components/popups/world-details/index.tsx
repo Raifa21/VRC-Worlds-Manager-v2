@@ -41,6 +41,7 @@ import { useWorldDetailsActions } from './hook';
 import { useWorlds } from '@/app/listview/hook/use-worlds';
 import { FolderType } from '@/types/folders';
 import { usePatreonContext } from '@/contexts/patreon-context';
+import { useCachedImage } from '@/hooks/use-cached-image';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -133,6 +134,7 @@ export function WorldDetailPopup({
   const [worldFolders, setWorldFolders] = useState<string[]>([]);
 
   const { refresh } = useWorlds(currentFolder);
+  const cachedImagePath = useCachedImage(worldDetails?.thumbnailUrl);
 
   useEffect(() => {
     const fetchWorldDetails = async () => {
@@ -667,7 +669,7 @@ export function WorldDetailPopup({
                             )}
                           </div>
                           <img
-                            src={worldDetails.thumbnailUrl}
+                            src={cachedImagePath || worldDetails.thumbnailUrl}
                             alt={worldDetails.name}
                             className="object-cover w-full h-full"
                             style={{
