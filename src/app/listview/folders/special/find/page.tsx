@@ -65,7 +65,27 @@ export default function FindWorldsPage() {
     toggleSelectionMode,
     clearFolderSelections,
     selectAllWorlds,
+    getSelectedWorlds,
   } = useSelectedWorldsStore();
+
+  const selectedWorlds = Array.from(getSelectedWorlds(SpecialFolders.Find));
+
+  // Check if all recently visited worlds are selected
+  const allSelected =
+    recentlyVisitedWorlds.length > 0 &&
+    selectedWorlds.length === recentlyVisitedWorlds.length &&
+    recentlyVisitedWorlds.every((world) =>
+      selectedWorlds.includes(world.worldId),
+    );
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      clearFolderSelections(SpecialFolders.Find);
+    } else {
+      const worldIds = recentlyVisitedWorlds.map((world) => world.worldId);
+      selectAllWorlds(SpecialFolders.Find, worldIds);
+    }
+  };
 
   const { importFolder } = useFolders();
 
@@ -301,15 +321,10 @@ export default function FindWorldsPage() {
             recentlyVisitedWorlds.length > 0 && (
               <Button
                 variant="outline"
-                onClick={() => {
-                  const worldIds = recentlyVisitedWorlds.map(
-                    (world) => world.worldId,
-                  );
-                  selectAllWorlds(SpecialFolders.Find, worldIds);
-                }}
+                onClick={handleSelectAll}
                 className="mr-2"
               >
-                {t('general:select-all')}
+                {allSelected ? t('general:clear-all') : t('general:select-all')}
               </Button>
             )}
           <Button

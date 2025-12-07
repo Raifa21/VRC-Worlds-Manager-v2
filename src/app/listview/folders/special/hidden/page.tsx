@@ -23,6 +23,7 @@ import { UpdateDialogContext } from '@/components/UpdateDialogContext';
 import { SpecialFolders } from '@/types/folders';
 import { commands } from '@/lib/bindings';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
+import { useSelectedWorldsStore } from '../../../hook/use-selected-worlds';
 
 // Hidden worlds page using shared hooks (only hidden worlds)
 export default function HiddenWorldsPage() {
@@ -33,6 +34,29 @@ export default function HiddenWorldsPage() {
   const { filteredWorlds } = useWorldFilters(worlds);
   const setPopup = usePopupStore((s) => s.setPopup);
   const { refresh: refreshFolders } = useFolders();
+  const {
+    getSelectedWorlds,
+    isSelectionMode,
+    selectAllWorlds,
+    clearFolderSelections,
+  } = useSelectedWorldsStore();
+
+  const selectedWorlds = Array.from(getSelectedWorlds(SpecialFolders.Hidden));
+
+  // Check if all filtered worlds are selected
+  const allSelected =
+    filteredWorlds.length > 0 &&
+    selectedWorlds.length === filteredWorlds.length &&
+    filteredWorlds.every((world) => selectedWorlds.includes(world.worldId));
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      clearFolderSelections(SpecialFolders.Hidden);
+    } else {
+      const worldIds = filteredWorlds.map((world) => world.worldId);
+      selectAllWorlds(SpecialFolders.Hidden, worldIds);
+    }
+  };
 
   useEffect(() => {
     checkForUpdate();
@@ -80,6 +104,19 @@ export default function HiddenWorldsPage() {
             {t('general:hidden-worlds')}
           </h1>
           <div className="flex items-center">
+            {isSelectionMode && filteredWorlds.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleSelectAll}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <span>
+                  {allSelected
+                    ? t('general:clear-all')
+                    : t('general:select-all')}
+                </span>
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -111,10 +148,7 @@ export default function HiddenWorldsPage() {
           </div>
         </div>
         <div>
-          <SearchBar
-            currentFolder={SpecialFolders.Hidden}
-            filteredWorlds={filteredWorlds}
-          />
+          <SearchBar currentFolder={SpecialFolders.Hidden} />
           <div className="flex-1">
             {isLoading && worlds.length === 0 ? (
               <WorldGridSkeleton />
@@ -133,6 +167,38 @@ export default function HiddenWorldsPage() {
             )}
           </div>
         </div>
+
+        {/* Floating action button when worlds are selected */}
+        {selectedWorlds.length > 0 && (
+          <div
+            className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-center pointer-events-none w-full"
+            style={{ left: 'calc(50% + 125px)' }}
+          >
+            <div className="pointer-events-auto relative inline-block">
+              <div
+                className="absolute inset-0 rounded-lg bg-background"
+                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                aria-hidden="true"
+              />
+              <Button
+                variant="default"
+                size="lg"
+                className="rounded-lg flex items-center gap-2 px-4 py-3 relative"
+                onClick={() =>
+                  setPopup(
+                    'showAddToFolder',
+                    worlds.filter((w) => selectedWorlds.includes(w.worldId)),
+                  )
+                }
+              >
+                <Plus className="w-5 h-5" />
+                <span className="text-md font-semibold">
+                  {t('world-grid:move-title')}
+                </span>
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

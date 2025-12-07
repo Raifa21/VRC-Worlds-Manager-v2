@@ -23,7 +23,6 @@ import { useFolders } from '../hook/use-folders';
 import { Badge } from '@/components/ui/badge';
 import { FolderType } from '@/types/folders';
 import { useWorldFiltersStore } from '../hook/use-filters';
-import { WorldDisplayData } from '@/lib/bindings';
 
 type SortField =
   | 'name'
@@ -36,13 +35,9 @@ type SortField =
 
 interface SearchBarProps {
   currentFolder: FolderType;
-  filteredWorlds?: WorldDisplayData[];
 }
 
-export function SearchBar({
-  currentFolder,
-  filteredWorlds = [],
-}: SearchBarProps) {
+export function SearchBar({ currentFolder }: SearchBarProps) {
   const { t } = useLocalization();
   const {
     sortField,
@@ -100,17 +95,8 @@ export function SearchBar({
     }
   };
 
-  const {
-    isSelectionMode,
-    toggleSelectionMode,
-    clearFolderSelections,
-    selectAllWorlds,
-  } = useSelectedWorldsStore();
-
-  const handleSelectAll = () => {
-    const worldIds = filteredWorlds.map((world) => world.worldId);
-    selectAllWorlds(currentFolder, worldIds);
-  };
+  const { isSelectionMode, toggleSelectionMode, clearFolderSelections } =
+    useSelectedWorldsStore();
 
   return (
     <div className="sticky top-0 z-20 bg-background">
@@ -140,15 +126,6 @@ export function SearchBar({
         </div>
 
         <div className="flex">
-          {isSelectionMode && filteredWorlds.length > 0 && (
-            <Button
-              variant="outline"
-              onClick={handleSelectAll}
-              className="h-9 mr-2"
-            >
-              {t('general:select-all')}
-            </Button>
-          )}
           <Select
             value={sortField}
             onValueChange={(value) => handleSort(value as SortField)}

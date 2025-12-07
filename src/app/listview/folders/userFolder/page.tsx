@@ -21,6 +21,7 @@ import { SearchBar } from '../../components/searchbar';
 import { useSearchParams } from 'next/navigation';
 import { info } from '@tauri-apps/plugin-log';
 import { useWorldFilters } from '../../hook/use-filters';
+import { useSelectedWorldsStore } from '../../hook/use-selected-worlds';
 
 export default function UserFolder() {
   // filter references for ui
@@ -46,6 +47,30 @@ export default function UserFolder() {
   // Initialize / update filtering for this folder's worlds
   const { filteredWorlds } = useWorldFilters(worlds);
 
+  const {
+    getSelectedWorlds,
+    isSelectionMode,
+    selectAllWorlds,
+    clearFolderSelections,
+  } = useSelectedWorldsStore();
+
+  const selectedWorlds = Array.from(getSelectedWorlds(folderName));
+
+  // Check if all filtered worlds are selected
+  const allSelected =
+    filteredWorlds.length > 0 &&
+    selectedWorlds.length === filteredWorlds.length &&
+    filteredWorlds.every((world) => selectedWorlds.includes(world.worldId));
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      clearFolderSelections(folderName);
+    } else {
+      const worldIds = filteredWorlds.map((world) => world.worldId);
+      selectAllWorlds(folderName, worldIds);
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -66,13 +91,26 @@ export default function UserFolder() {
         <div className="p-4 flex justify-between items-center">
           <h1 className="text-xl font-bold truncate">{folderName}</h1>
           <div className="flex items-center">
-            <div className="flex items-center">
+            {isSelectionMode && filteredWorlds.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleSelectAll}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <span>
+                  {allSelected
+                    ? t('general:clear-all')
+                    : t('general:select-all')}
+                </span>
+              </Button>
+            )}
+            <div className="flex items-center ml-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-9 flex items-center gap-2 ml-2 mr-1"
+                    className="h-9 flex items-center gap-2 mr-1"
                   >
                     <Menu className="h-10 w-10" />
                   </Button>
@@ -101,10 +139,7 @@ export default function UserFolder() {
         </div>
 
         <div>
-          <SearchBar
-            currentFolder={folderName}
-            filteredWorlds={filteredWorlds}
-          />
+          <SearchBar currentFolder={folderName} />
           <div className="flex-1">
             {isLoading && worlds.length === 0 ? (
               <WorldGridSkeleton />
@@ -125,6 +160,38 @@ export default function UserFolder() {
             )}
           </div>
         </div>
+
+        {/* Floating action button when worlds are selected */}
+        {selectedWorlds.length > 0 && (
+          <div
+            className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-center pointer-events-none w-full"
+            style={{ left: 'calc(50% + 125px)' }}
+          >
+            <div className="pointer-events-auto relative inline-block">
+              <div
+                className="absolute inset-0 rounded-lg bg-background"
+                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                aria-hidden="true"
+              />
+              <Button
+                variant="default"
+                size="lg"
+                className="rounded-lg flex items-center gap-2 px-4 py-3 relative"
+                onClick={() =>
+                  setPopup(
+                    'showAddToFolder',
+                    worlds.filter((w) => selectedWorlds.includes(w.worldId)),
+                  )
+                }
+              >
+                <Plus className="w-5 h-5" />
+                <span className="text-md font-semibold">
+                  {t('world-grid:move-title')}
+                </span>
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
