@@ -27,7 +27,6 @@ import { commands } from '@/lib/bindings';
 import { Badge } from '@/components/ui/badge';
 import { useFolders } from '../../hook/use-folders';
 import { useWorldGrid } from './hook';
-import { ShareWorldPopup } from '../popups/share-world-popup';
 
 interface WorldGridProps {
   worlds: WorldDisplayData[];
@@ -58,6 +57,7 @@ export function WorldGrid({
     selectAllFindPage,
     handleOpenFolderDialog,
     handleOpenWorldDetails,
+    handleShareWorld,
     handleDeleteWorld,
     handleRemoveFromCurrentFolder,
     removeWorldsFromFolder,
@@ -87,28 +87,9 @@ export function WorldGrid({
     isOpen: boolean;
   } | null>(null);
 
-  const [shareDialogConfig, setShareDialogConfig] = useState<{
-    worldId: string;
-    worldName: string;
-    isOpen: boolean;
-  } | null>(null);
-
   const handleDialogClose = () => {
     setDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
     setTimeout(() => setDialogConfig(null), 150);
-  };
-
-  const handleShareDialogClose = () => {
-    setShareDialogConfig((prev) => (prev ? { ...prev, isOpen: false } : null));
-    setTimeout(() => setShareDialogConfig(null), 150);
-  };
-
-  const handleShareWorld = (worldId: string, worldName: string) => {
-    setShareDialogConfig({
-      worldId,
-      worldName,
-      isOpen: true,
-    });
   };
 
   const handleSelect = (worldId: string, event: React.MouseEvent) => {
@@ -338,18 +319,6 @@ export function WorldGrid({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        )}
-
-        {/* Share World Dialog */}
-        {shareDialogConfig && (
-          <ShareWorldPopup
-            open={shareDialogConfig.isOpen}
-            onOpenChange={(open) => {
-              if (!open) handleShareDialogClose();
-            }}
-            worldId={shareDialogConfig.worldId}
-            worldName={shareDialogConfig.worldName}
-          />
         )}
       </Portal.Root>
 
