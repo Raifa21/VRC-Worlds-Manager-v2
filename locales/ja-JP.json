@@ -470,8 +470,8 @@
   "share-world:share-options": "共有オプション",
   "share-world:copy-share-text": "共有テキストをコピー",
   "share-world:share-twitter": "Twitterで共有",
-  "share-world:twitter-text": "VRChatの\"{0}\"をチェック！🌍\n{1}\n\n#VRChat",
-  "share-world:share-text": "VRChatの\"{0}\"をチェック！\n{1}",
+  "share-world:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！🌟\nワールドはこちら👇\n{1}\n\n#VRCWMワールド共有",
+  "share-world:share-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールドはこちら👇\n{1}",
   "world-grid:share-world": "ワールドを共有",
   "general:copied": "コピーしました！"
 }

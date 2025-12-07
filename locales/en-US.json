@@ -471,8 +471,8 @@
   "share-world:share-options": "Share Options",
   "share-world:copy-share-text": "Copy Share Text",
   "share-world:share-twitter": "Share on Twitter",
-  "share-world:twitter-text": "Check out \"{0}\" in VRChat! 🌍\n{1}\n\n#VRChat",
-  "share-world:share-text": "Check out \"{0}\" in VRChat!\n{1}",
+  "share-world:twitter-text": "I just shared “{0}” with VRC Worlds Manager v2! Check it out! 🌍\n{1}\n\n#VRCWMWorldShare",
+  "share-world:share-text": "I just shared “{0}” with VRC Worlds Manager v2! Check it out!\n{1}",
   "world-grid:share-world": "Share World",
   "general:copied": "Copied!"
 }
