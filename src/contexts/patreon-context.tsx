@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, ReactNode } from 'react';
 import { usePatreonStore } from '@/stores/patreon-store';
 import { useEffect } from 'react';
