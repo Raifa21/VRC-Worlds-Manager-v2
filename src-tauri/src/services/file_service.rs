@@ -58,6 +58,17 @@ impl FileService {
         !preferences_path.exists()
     }
 
+    /// Gets the backup path for a given file path
+    ///
+    /// # Arguments
+    /// * `path` - The original file path
+    ///
+    /// # Returns
+    /// Returns the backup file path with .bak appended
+    fn get_backup_path(path: &PathBuf) -> PathBuf {
+        PathBuf::from(format!("{}.bak", path.display()))
+    }
+
     /// Atomically writes data to a file with a backup
     ///
     /// This function ensures that data is written atomically by:
@@ -78,7 +89,7 @@ impl FileService {
     fn atomic_write(path: &PathBuf, data: &str) -> Result<(), FileError> {
         // If the file exists, create a backup first
         if path.exists() {
-            let backup_path = PathBuf::from(format!("{}.bak", path.display()));
+            let backup_path = Self::get_backup_path(path);
             if let Err(e) = fs::copy(path, &backup_path) {
                 log::warn!("Failed to create backup at {:?}: {}", backup_path, e);
                 // Continue anyway - we still want to write the new data
@@ -136,7 +147,9 @@ impl FileService {
             })
             .and_then(|data| {
                 // Check if the file contains only null bytes (corrupted)
-                if data.as_bytes().iter().all(|&b| b == 0) {
+                // Only check first 1KB for performance
+                let check_len = data.len().min(1024);
+                if data.as_bytes()[..check_len].iter().all(|&b| b == 0) {
                     log::warn!("File {:?} contains only null bytes, attempting backup recovery", path);
                     Err(FileError::InvalidFile)
                 } else {
@@ -146,7 +159,7 @@ impl FileService {
 
         // If the primary file failed, try the backup
         if result.is_err() {
-            let backup_path = PathBuf::from(format!("{}.bak", path.display()));
+            let backup_path = Self::get_backup_path(path);
             if backup_path.exists() {
                 log::info!("Attempting to recover from backup: {:?}", backup_path);
                 return fs::read_to_string(&backup_path)
@@ -179,10 +192,12 @@ impl FileService {
         let content = match content_result {
             Ok(c) => {
                 // Check if the file contains only null bytes (corrupted)
-                if c.as_bytes().iter().all(|&b| b == 0) {
+                // Only check first 1KB for performance
+                let check_len = c.len().min(1024);
+                if c.as_bytes()[..check_len].iter().all(|&b| b == 0) {
                     log::warn!("Auth file {:?} contains only null bytes, attempting backup recovery", path);
                     // Try backup
-                    let backup_path = PathBuf::from(format!("{}.bak", path.display()));
+                    let backup_path = Self::get_backup_path(path);
                     if backup_path.exists() {
                         log::info!("Attempting to recover auth from backup: {:?}", backup_path);
                         let backup_content = fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
@@ -205,7 +220,7 @@ impl FileService {
             }
             Err(e) => {
                 // Primary file failed, try backup
-                let backup_path = PathBuf::from(format!("{}.bak", path.display()));
+                let backup_path = Self::get_backup_path(path);
                 if backup_path.exists() {
                     log::info!("Auth file not found, attempting to recover from backup: {:?}", backup_path);
                     let backup_content = fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
