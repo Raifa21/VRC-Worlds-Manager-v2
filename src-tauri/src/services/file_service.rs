@@ -78,7 +78,7 @@ impl FileService {
     fn atomic_write(path: &PathBuf, data: &str) -> Result<(), FileError> {
         // If the file exists, create a backup first
         if path.exists() {
-            let backup_path = path.with_extension("json.bak");
+            let backup_path = PathBuf::from(format!("{}.bak", path.display()));
             if let Err(e) = fs::copy(path, &backup_path) {
                 log::warn!("Failed to create backup at {:?}: {}", backup_path, e);
                 // Continue anyway - we still want to write the new data
@@ -146,7 +146,7 @@ impl FileService {
 
         // If the primary file failed, try the backup
         if result.is_err() {
-            let backup_path = path.with_extension("json.bak");
+            let backup_path = PathBuf::from(format!("{}.bak", path.display()));
             if backup_path.exists() {
                 log::info!("Attempting to recover from backup: {:?}", backup_path);
                 return fs::read_to_string(&backup_path)
@@ -182,7 +182,7 @@ impl FileService {
                 if c.chars().all(|ch| ch == '\0') {
                     log::warn!("Auth file {:?} contains only null bytes, attempting backup recovery", path);
                     // Try backup
-                    let backup_path = path.with_extension("json.bak");
+                    let backup_path = PathBuf::from(format!("{}.bak", path.display()));
                     if backup_path.exists() {
                         log::info!("Attempting to recover auth from backup: {:?}", backup_path);
                         let backup_content = fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
@@ -205,7 +205,7 @@ impl FileService {
             }
             Err(e) => {
                 // Primary file failed, try backup
-                let backup_path = path.with_extension("json.bak");
+                let backup_path = PathBuf::from(format!("{}.bak", path.display()));
                 if backup_path.exists() {
                     log::info!("Auth file not found, attempting to recover from backup: {:?}", backup_path);
                     let backup_content = fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
