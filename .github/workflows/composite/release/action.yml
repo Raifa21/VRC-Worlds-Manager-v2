@@ -1,47 +1,47 @@
-name: "Release"
-description: "Release"
+name: 'Release'
+description: 'Release'
 
 inputs:
   releaseChannel:
     required: false
     description: "The release channel to use for the release. 'stable' or 'pre-release'"
-    default: "pre-release"
+    default: 'pre-release'
   args:
     required: false
-    description: "Additional arguments to pass to Tauri"
+    description: 'Additional arguments to pass to Tauri'
   HMAC_KEY:
     required: true
-    description: "The HMAC key to use for signing folders for upload"
+    description: 'The HMAC key to use for signing folders for upload'
   GITHUB_TOKEN:
     required: true
-    description: "The GitHub token to use for the release"
+    description: 'The GitHub token to use for the release'
   TAURI_PRIVATE_KEY:
     required: true
-    description: "The private key to use for signing the release"
+    description: 'The private key to use for signing the release'
   TAURI_PRIVATE_KEY_PASSWORD:
     required: true
-    description: "The password for the private key"
+    description: 'The password for the private key'
   R2_ACCOUNT_ID:
     required: true
-    description: "The account ID for the Cloudflare account"
+    description: 'The account ID for the Cloudflare account'
   R2_ACCESS_KEY_ID:
     required: true
-    description: "The access key ID for the R2 bucket"
+    description: 'The access key ID for the R2 bucket'
   R2_SECRET_ACCESS_KEY:
     required: true
-    description: "The secret access key for the R2 bucket"
+    description: 'The secret access key for the R2 bucket'
   R2_BUCKET:
     required: true
-    description: "The R2 bucket to upload the release to"
+    description: 'The R2 bucket to upload the release to'
   ENCRYPTION_KEY:
     required: true
-    description: "The encryption key for the application"
+    description: 'The encryption key for the application'
   ENCRYPTION_IV:
     required: true
-    description: "The encryption IV for the application"
+    description: 'The encryption IV for the application'
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
       with:
@@ -60,7 +60,7 @@ runs:
     - uses: dtolnay/rust-toolchain@stable
     - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2
       with:
-        workspaces: "./src-tauri -> target"
+        workspaces: './src-tauri -> target'
 
     - name: Build and Create Release
       uses: tauri-apps/tauri-action@42e9df6c59070d114bf90dcd3943a1b8f138b113 # v0
@@ -72,8 +72,8 @@ runs:
         ENCRYPTION_IV: ${{ inputs.ENCRYPTION_IV }}
         HMAC_KEY: ${{ inputs.HMAC_KEY }}
       with:
-        tagName: "vrc-world-manager-v__VERSION__"
-        releaseName: "vrc-world-manager v__VERSION__"
+        tagName: 'vrc-world-manager-v__VERSION__'
+        releaseName: 'vrc-world-manager v__VERSION__'
         includeUpdaterJson: true
         updaterJsonPreferNsis: true
         prerelease: ${{ inputs.releaseChannel == 'pre-release' }}
@@ -92,7 +92,7 @@ runs:
           const url = latestJson['platforms']['windows-x86_64']['url'];
           const filename = path.basename(url);
           const newUrl = `https://releases.raifaworks.com/installer/${filename}`;
-          
+
 
           latestJson['platforms']['windows-x86_64']['url'] = newUrl;
 

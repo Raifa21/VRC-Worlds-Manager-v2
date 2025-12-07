@@ -3,6 +3,7 @@ pub mod changelog;
 pub mod data;
 pub mod data_commands;
 pub mod folder_commands;
+pub mod image_cache_commands;
 pub mod memo_commands;
 pub mod open_folder_commands;
 pub mod patreon_cache;
@@ -92,5 +93,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         memo_commands::get_memo,
         memo_commands::set_memo_and_save,
         memo_commands::search_memo_text,
+        image_cache_commands::get_image_cache_path,
+        image_cache_commands::clear_unused_cached_images,
     ])
 }

@@ -49,6 +49,7 @@ export default function SettingsPage() {
     handleRestoreConfirm,
     handleMigrationConfirm,
     handleDeleteConfirm,
+    handleClearImageCache,
     handleLogout,
     handleOpenLogs,
     handleThemeChange,
@@ -245,6 +246,27 @@ export default function SettingsPage() {
             >
               <FolderUp className="h-4 w-4" />
               <span className="text-sm">{t('settings-page:export-data')}</span>
+            </Button>
+          </Card>
+
+          <Card className="flex flex-row items-center justify-between p-4 rounded-lg border">
+            <div className="flex flex-col space-y-1.5">
+              <Label className="text-base font-medium">
+                {t('settings-page:image-cache-title')}
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                {t('settings-page:image-cache-description')}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleClearImageCache}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="text-sm">
+                {t('settings-page:clear-image-cache')}
+              </span>
             </Button>
           </Card>
 
