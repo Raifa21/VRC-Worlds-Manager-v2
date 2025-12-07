@@ -491,5 +491,6 @@
   "update-dialog:execute": "アップデートを実行",
 
   "export-popup:title": "フォルダをエクスポート",
-  "export-popup:export": "エクスポート先: "
+  "export-popup:export": "エクスポート先: ",
+  "export-popup:sort-order": "並び順"
 }
