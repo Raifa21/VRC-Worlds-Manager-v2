@@ -69,6 +69,37 @@ impl FileService {
         PathBuf::from(format!("{}.bak", path.display()))
     }
 
+    /// Checks if file content contains only null bytes (corrupted)
+    ///
+    /// # Arguments
+    /// * `data` - The file content to check
+    ///
+    /// # Returns
+    /// Returns true if the file is empty or contains only null bytes
+    fn is_file_corrupted_with_null_bytes(data: &str) -> bool {
+        const CHECK_BYTES_LIMIT: usize = 1024;
+        
+        if data.is_empty() {
+            return true;
+        }
+        
+        let check_len = data.len().min(CHECK_BYTES_LIMIT);
+        data.as_bytes()[..check_len].iter().all(|&b| b == 0)
+    }
+
+    /// Restores a backup file to the primary location
+    ///
+    /// # Arguments
+    /// * `backup_path` - Path to the backup file
+    /// * `primary_path` - Path to restore the backup to
+    fn restore_backup_to_primary(backup_path: &PathBuf, primary_path: &PathBuf) {
+        if let Err(e) = fs::copy(backup_path, primary_path) {
+            log::warn!("Failed to restore backup to primary file: {}", e);
+        } else {
+            log::info!("Successfully restored from backup: {:?}", backup_path);
+        }
+    }
+
     /// Atomically writes data to a file with a backup
     ///
     /// This function ensures that data is written atomically by:
@@ -146,11 +177,9 @@ impl FileService {
                 _ => FileError::FileNotFound,
             })
             .and_then(|data| {
-                // Check if the file contains only null bytes (corrupted)
-                // Only check first 1KB for performance
-                let check_len = data.len().min(1024);
-                if data.as_bytes()[..check_len].iter().all(|&b| b == 0) {
-                    log::warn!("File {:?} contains only null bytes, attempting backup recovery", path);
+                // Check if the file is corrupted (empty or contains only null bytes)
+                if Self::is_file_corrupted_with_null_bytes(&data) {
+                    log::warn!("File {:?} is empty or contains only null bytes, attempting backup recovery", path);
                     Err(FileError::InvalidFile)
                 } else {
                     serde_json::from_str(&data).map_err(|_| FileError::InvalidFile)
@@ -170,11 +199,7 @@ impl FileService {
                     .and_then(|data| {
                         let parsed = serde_json::from_str(&data).map_err(|_| FileError::InvalidFile)?;
                         // Restore the backup to the primary file
-                        if let Err(e) = fs::copy(&backup_path, path) {
-                            log::warn!("Failed to restore backup to primary file: {}", e);
-                        } else {
-                            log::info!("Successfully restored from backup: {:?}", backup_path);
-                        }
+                        Self::restore_backup_to_primary(&backup_path, path);
                         Ok(parsed)
                     });
             }
@@ -191,11 +216,9 @@ impl FileService {
 
         let content = match content_result {
             Ok(c) => {
-                // Check if the file contains only null bytes (corrupted)
-                // Only check first 1KB for performance
-                let check_len = c.len().min(1024);
-                if c.as_bytes()[..check_len].iter().all(|&b| b == 0) {
-                    log::warn!("Auth file {:?} contains only null bytes, attempting backup recovery", path);
+                // Check if the file is corrupted (empty or contains only null bytes)
+                if Self::is_file_corrupted_with_null_bytes(&c) {
+                    log::warn!("Auth file {:?} is empty or contains only null bytes, attempting backup recovery", path);
                     // Try backup
                     let backup_path = Self::get_backup_path(path);
                     if backup_path.exists() {
@@ -205,11 +228,7 @@ impl FileService {
                             _ => FileError::FileNotFound,
                         })?;
                         // Restore the backup to the primary file
-                        if let Err(e) = fs::copy(&backup_path, path) {
-                            log::warn!("Failed to restore auth backup to primary file: {}", e);
-                        } else {
-                            log::info!("Successfully restored auth from backup: {:?}", backup_path);
-                        }
+                        Self::restore_backup_to_primary(&backup_path, path);
                         backup_content
                     } else {
                         return Err(FileError::InvalidFile);
@@ -228,11 +247,7 @@ impl FileService {
                         _ => FileError::FileNotFound,
                     })?;
                     // Restore the backup to the primary file
-                    if let Err(e) = fs::copy(&backup_path, path) {
-                        log::warn!("Failed to restore auth backup to primary file: {}", e);
-                    } else {
-                        log::info!("Successfully restored auth from backup: {:?}", backup_path);
-                    }
+                    Self::restore_backup_to_primary(&backup_path, path);
                     backup_content
                 } else {
                     return Err(e);
