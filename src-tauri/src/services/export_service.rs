@@ -54,28 +54,36 @@ struct FolderExport {
 pub struct ExportService;
 
 impl ExportService {
-    fn sort_worlds(mut worlds: Vec<WorldModel>, sort_field: &str, sort_direction: &str) -> Vec<WorldModel> {
+    fn sort_worlds(
+        mut worlds: Vec<WorldModel>,
+        sort_field: &str,
+        sort_direction: &str,
+    ) -> Vec<WorldModel> {
         let ascending = sort_direction == "asc";
-        
+
         worlds.sort_by(|a, b| {
             let ordering = match sort_field {
                 "name" => a.api_data.world_name.cmp(&b.api_data.world_name),
                 "authorName" => a.api_data.author_name.cmp(&b.api_data.author_name),
-                "visits" => a.api_data.visits.unwrap_or(0).cmp(&b.api_data.visits.unwrap_or(0)),
+                "visits" => a
+                    .api_data
+                    .visits
+                    .unwrap_or(0)
+                    .cmp(&b.api_data.visits.unwrap_or(0)),
                 "favorites" => a.api_data.favorites.cmp(&b.api_data.favorites),
                 "capacity" => a.api_data.capacity.cmp(&b.api_data.capacity),
                 "dateAdded" => a.user_data.date_added.cmp(&b.user_data.date_added),
                 "lastUpdated" => a.api_data.last_update.cmp(&b.api_data.last_update),
                 _ => std::cmp::Ordering::Equal,
             };
-            
+
             if ascending {
                 ordering
             } else {
                 ordering.reverse()
             }
         });
-        
+
         worlds
     }
 
@@ -100,11 +108,25 @@ impl ExportService {
             "Failed to acquire read lock for folders".to_string()
         })?;
 
-        log::info!("Applying sort: field={}, direction={}", sort_field, sort_direction);
+        // Get sort preferences
+        let preferences_lock = PREFERENCES.get().read().map_err(|e| {
+            log::error!("Failed to acquire read lock for preferences: {}", e);
+            "Failed to acquire read lock for preferences".to_string()
+        })?;
+        let preferences = &*preferences_lock;
+        let sort_field = preferences.sort_field.clone();
+        let sort_direction = preferences.sort_direction.clone();
+        drop(preferences_lock);
+
+        log::info!(
+            "Applying sort: field={}, direction={}",
+            sort_field,
+            sort_direction
+        );
 
         for folder_name in folder_names {
             log::info!("Processing folder: {}", folder_name);
-            
+
             // Get all worlds in this folder
             let mut folder_worlds: Vec<WorldModel> = worlds_lock
                 .iter()
@@ -131,11 +153,16 @@ impl ExportService {
         sort_field: String,
         sort_direction: String,
     ) -> Result<(), String> {
-        let folders_with_worlds =
-            Self::get_folders_with_worlds(folder_names, folders, worlds, sort_field, sort_direction)?;
+        let folders_with_worlds = Self::get_folders_with_worlds(
+            folder_names,
+            folders,
+            worlds,
+            sort_field,
+            sort_direction,
+        )?;
 
         let mut categories: Vec<PLSCategory> = Vec::new();
-        
+
         log::info!("Exporting worlds in the order they appear in folder.world_ids");
 
         for folder in folders_with_worlds {

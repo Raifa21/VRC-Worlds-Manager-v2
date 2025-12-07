@@ -210,7 +210,10 @@ pub fn set_update_channel(channel: UpdateChannel) -> Result<(), String> {
 pub fn get_sort_preferences() -> Result<(String, String), String> {
     let preferences_lock = PREFERENCES.get().read();
     let preferences = preferences_lock.as_ref().unwrap();
-    Ok((preferences.sort_field.clone(), preferences.sort_direction.clone()))
+    Ok((
+        preferences.sort_field.clone(),
+        preferences.sort_direction.clone(),
+    ))
 }
 
 #[tauri::command]
