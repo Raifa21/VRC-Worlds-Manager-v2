@@ -60,8 +60,32 @@ export default function FindWorldsPage() {
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const findGridRef = useRef<HTMLDivElement>(null);
-  const { isSelectionMode, toggleSelectionMode, clearFolderSelections } =
-    useSelectedWorldsStore();
+  const {
+    isSelectionMode,
+    toggleSelectionMode,
+    clearFolderSelections,
+    selectAllWorlds,
+    getSelectedWorlds,
+  } = useSelectedWorldsStore();
+
+  const selectedWorlds = Array.from(getSelectedWorlds(SpecialFolders.Find));
+
+  // Check if all recently visited worlds are selected
+  const allSelected =
+    recentlyVisitedWorlds.length > 0 &&
+    selectedWorlds.length === recentlyVisitedWorlds.length &&
+    recentlyVisitedWorlds.every((world) =>
+      selectedWorlds.includes(world.worldId),
+    );
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      clearFolderSelections(SpecialFolders.Find);
+    } else {
+      const worldIds = recentlyVisitedWorlds.map((world) => world.worldId);
+      selectAllWorlds(SpecialFolders.Find, worldIds);
+    }
+  };
 
   const { importFolder } = useFolders();
 
@@ -292,6 +316,17 @@ export default function FindWorldsPage() {
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
         <div className="flex items-center">
+          {isSelectionMode &&
+            activeTab === 'recently-visited' &&
+            recentlyVisitedWorlds.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleSelectAll}
+                className="mr-2"
+              >
+                {allSelected ? t('general:clear-all') : t('general:select-all')}
+              </Button>
+            )}
           <Button
             variant="outline"
             onClick={fetchRecentlyVisitedWorlds}
