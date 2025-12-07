@@ -2,9 +2,8 @@ use serde::Serialize;
 use std::{sync::RwLock, vec};
 
 use crate::{
-    definitions::{FolderModel, PreferenceModel, WorldModel},
+    definitions::{FolderModel, WorldModel},
     services::FileService,
-    PREFERENCES,
 };
 
 #[derive(Serialize)]
@@ -84,6 +83,8 @@ impl ExportService {
         folder_names: Vec<String>,
         folders: &RwLock<Vec<FolderModel>>,
         worlds: &RwLock<Vec<WorldModel>>,
+        sort_field: String,
+        sort_direction: String,
     ) -> Result<Vec<FolderExport>, String> {
         log::info!("Exporting to PortalLibrarySystem");
 
@@ -99,16 +100,6 @@ impl ExportService {
             "Failed to acquire read lock for folders".to_string()
         })?;
 
-        // Get sort preferences
-        let preferences_lock = PREFERENCES.get().read().map_err(|e| {
-            log::error!("Failed to acquire read lock for preferences: {}", e);
-            "Failed to acquire read lock for preferences".to_string()
-        })?;
-        let preferences = preferences_lock.as_ref().ok_or("Preferences not initialized")?;
-        let sort_field = preferences.sort_field.clone();
-        let sort_direction = preferences.sort_direction.clone();
-        drop(preferences_lock);
-
         log::info!("Applying sort: field={}, direction={}", sort_field, sort_direction);
 
         for folder_name in folder_names {
@@ -121,7 +112,7 @@ impl ExportService {
                 .cloned()
                 .collect();
 
-            // Apply sorting based on preferences
+            // Apply sorting based on provided parameters
             folder_worlds = Self::sort_worlds(folder_worlds, &sort_field, &sort_direction);
 
             folders_to_export.push(FolderExport {
@@ -137,8 +128,11 @@ impl ExportService {
         folder_names: Vec<String>,
         folders: &RwLock<Vec<FolderModel>>,
         worlds: &RwLock<Vec<WorldModel>>,
+        sort_field: String,
+        sort_direction: String,
     ) -> Result<(), String> {
-        let folders_with_worlds = Self::get_folders_with_worlds(folder_names, folders, worlds)?;
+        let folders_with_worlds =
+            Self::get_folders_with_worlds(folder_names, folders, worlds, sort_field, sort_direction)?;
 
         let mut categories: Vec<PLSCategory> = Vec::new();
         

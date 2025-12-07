@@ -865,12 +865,16 @@ export const commands = {
   },
   async exportToPortalLibrarySystem(
     folders: string[],
+    sortField: string,
+    sortDirection: string,
   ): Promise<Result<null, string>> {
     try {
       return {
         status: 'ok',
         data: await TAURI_INVOKE('export_to_portal_library_system', {
           folders,
+          sortField,
+          sortDirection,
         }),
       };
     } catch (e) {
