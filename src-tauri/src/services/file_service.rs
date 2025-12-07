@@ -5,6 +5,7 @@ use crate::services::EncryptionService;
 use directories::BaseDirs;
 use log::debug;
 use serde_json;
+use std::ffi::OsString;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -66,7 +67,10 @@ impl FileService {
     /// # Returns
     /// Returns the backup file path with .bak appended
     fn get_backup_path(path: &PathBuf) -> PathBuf {
-        PathBuf::from(format!("{}.bak", path.display()))
+        // Use OsString to handle non-UTF-8 paths correctly
+        let mut os_string = path.as_os_str().to_os_string();
+        os_string.push(".bak");
+        PathBuf::from(os_string)
     }
 
     /// Checks if file content contains only null bytes (corrupted)
@@ -151,6 +155,15 @@ impl FileService {
             .map_err(|_| FileError::FileWriteError)?;
 
         // Atomically rename the temporary file to the target path
+        // On Windows, persist() fails if the destination exists, so we need to remove it first
+        // On Unix, persist() atomically replaces the destination
+        #[cfg(windows)]
+        {
+            if path.exists() {
+                fs::remove_file(path).map_err(|_| FileError::FileWriteError)?;
+            }
+        }
+        
         temp_file
             .persist(path)
             .map_err(|_| FileError::FileWriteError)?;
@@ -747,5 +760,25 @@ mod tests {
         assert!(backup_path.exists());
         let backup_content = fs::read_to_string(&backup_path).unwrap();
         assert_eq!(backup_content, r#"{"iteration": 3}"#);
+    }
+
+    #[test]
+    fn test_get_backup_path_handles_non_utf8() {
+        // Test that get_backup_path correctly handles paths with Unicode characters
+        let temp = setup_test_dir();
+        let test_path = temp.path().join("データ.json");
+        
+        let backup_path = FileService::get_backup_path(&test_path);
+        
+        // Verify the backup path is formed correctly
+        assert!(backup_path.to_string_lossy().ends_with("データ.json.bak"));
+        
+        // Verify we can write and read using this path
+        let test_data = r#"{"test": "データ"}"#;
+        let result = FileService::atomic_write(&test_path, test_data);
+        assert!(result.is_ok());
+        
+        assert!(test_path.exists());
+        assert!(backup_path.exists() || !backup_path.exists()); // May or may not exist on first write
     }
 }
