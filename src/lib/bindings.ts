@@ -925,6 +925,36 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  /**
+   * Get the cached image path for a given URL.
+   * If the image is not cached, it will be downloaded, processed, and cached.
+   */
+  async getImageCachePath(url: string): Promise<Result<string, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_image_cache_path', { url }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  /**
+   * Clear all unused cached images.
+   * This removes all cached images that are not referenced by any world in the database.
+   */
+  async clearUnusedCachedImages(): Promise<Result<number, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('clear_unused_cached_images'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
 };
 
 /** user-defined events **/
