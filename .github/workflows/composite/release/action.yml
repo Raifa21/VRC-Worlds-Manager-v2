@@ -2,10 +2,6 @@ name: 'Release'
 description: 'Release'
 
 inputs:
-  releaseChannel:
-    required: false
-    description: "The release channel to use for the release. 'stable' or 'pre-release'"
-    default: 'pre-release'
   args:
     required: false
     description: 'Additional arguments to pass to Tauri'
@@ -64,5 +60,5 @@ runs:
         releaseName: 'vrc-world-manager v__VERSION__'
         includeUpdaterJson: true
         updaterJsonPreferNsis: true
-        prerelease: ${{ inputs.releaseChannel == 'pre-release' }}
+        prerelease: false
         args: ${{ inputs.args }}
