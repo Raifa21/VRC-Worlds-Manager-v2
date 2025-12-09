@@ -3,7 +3,6 @@ use crate::definitions::{FolderModel, PreferenceModel, WorldModel};
 use crate::errors::FileError;
 use crate::services::EncryptionService;
 use directories::BaseDirs;
-use log::debug;
 use serde_json;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -68,18 +67,31 @@ impl FileService {
     /// Returns a FileError if access is denied, the file is not found, or the file is invalid
     #[must_use]
     fn read_file<T: serde::de::DeserializeOwned>(path: &PathBuf) -> Result<T, FileError> {
+        log::debug!("Reading file at {}", path.display());
         fs::read_to_string(path)
-            .map_err(|e| match e.kind() {
-                std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
-                _ => FileError::FileNotFound,
+            .map_err(|e| {
+                log::error!("Failed to read {}: {}", path.display(), e);
+                match e.kind() {
+                    std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
+                    _ => FileError::FileNotFound,
+                }
             })
-            .and_then(|data| serde_json::from_str(&data).map_err(|_| FileError::InvalidFile))
+            .and_then(|data| {
+                serde_json::from_str(&data).map_err(|err| {
+                    log::error!("Invalid JSON format in {}: {}", path.display(), err);
+                    FileError::InvalidFile
+                })
+            })
     }
 
     fn read_auth_file(path: &PathBuf) -> Result<AuthCookies, FileError> {
-        let content = fs::read_to_string(path).map_err(|e| match e.kind() {
-            std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
-            _ => FileError::FileNotFound,
+        log::debug!("Reading auth file at {}", path.display());
+        let content = fs::read_to_string(path).map_err(|e| {
+            log::error!("Failed to read auth file {}: {}", path.display(), e);
+            match e.kind() {
+                std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
+                _ => FileError::FileNotFound,
+            }
         })?;
         match serde_json::from_str::<AuthCookies>(&content) {
             Ok(mut cookies) => {
@@ -118,7 +130,8 @@ impl FileService {
     /// Returns the preferences, folders, and worlds
     ///
     /// # Errors
-    /// Returns a FileError if any file is not found, cannot be decrypted, or is invalid
+    /// Returns a descriptive string (including the file path) if any file cannot
+    /// be read, decrypted, or parsed
     #[must_use]
     pub fn load_data() -> Result<
         (
@@ -127,15 +140,23 @@ impl FileService {
             Vec<WorldModel>,
             AuthCookies,
         ),
-        FileError,
+        String,
     > {
         let (config_path, folders_path, worlds_path, cookies_path) = Self::get_paths();
 
-        log::info!("Reading files");
-        let preferences = Self::read_file(&config_path)?;
-        let folders: Vec<FolderModel> = Self::read_file(&folders_path)?;
-        let mut worlds: Vec<WorldModel> = Self::read_file(&worlds_path)?;
-        let cookies = Self::read_auth_file(&cookies_path)?;
+        log::info!("Reading persisted data files");
+        log::debug!("preferences path: {}", config_path.display());
+        log::debug!("folders path: {}", folders_path.display());
+        log::debug!("worlds path: {}", worlds_path.display());
+        log::debug!("auth path: {}", cookies_path.display());
+        let preferences = Self::read_file(&config_path)
+            .map_err(|err| format!("{}: {}", config_path.display(), err))?;
+        let folders: Vec<FolderModel> = Self::read_file(&folders_path)
+            .map_err(|err| format!("{}: {}", folders_path.display(), err))?;
+        let mut worlds: Vec<WorldModel> = Self::read_file(&worlds_path)
+            .map_err(|err| format!("{}: {}", worlds_path.display(), err))?;
+        let cookies = Self::read_auth_file(&cookies_path)
+            .map_err(|err| format!("{}: {}", cookies_path.display(), err))?;
 
         // populate per-world folder list
         for world in worlds.iter_mut() {

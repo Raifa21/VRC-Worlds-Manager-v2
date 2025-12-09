@@ -36,7 +36,7 @@ pub fn initialize_app() -> Result<
         Ok((preferences, folders, worlds, cookies)) => {
             Ok((preferences, folders, worlds, cookies, InitState::success()))
         }
-        Err(e) => Err(e.to_string()),
+        Err(e) => Err(e),
     }
 }
 
