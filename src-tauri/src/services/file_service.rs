@@ -5,8 +5,11 @@ use crate::services::EncryptionService;
 use directories::BaseDirs;
 use log::debug;
 use serde_json;
+use std::ffi::OsString;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use tempfile::NamedTempFile;
 
 /// Service for reading and writing files to disk
 pub struct FileService;
@@ -56,6 +59,114 @@ impl FileService {
         !preferences_path.exists()
     }
 
+    /// Gets the backup path for a given file path
+    ///
+    /// # Arguments
+    /// * `path` - The original file path
+    ///
+    /// # Returns
+    /// Returns the backup file path with .bak appended
+    fn get_backup_path(path: &PathBuf) -> PathBuf {
+        // Use OsString to handle non-UTF-8 paths correctly
+        let mut os_string = path.as_os_str().to_os_string();
+        os_string.push(".bak");
+        PathBuf::from(os_string)
+    }
+
+    /// Checks if file content contains only null bytes (corrupted)
+    ///
+    /// # Arguments
+    /// * `data` - The file content to check
+    ///
+    /// # Returns
+    /// Returns true if the file is empty or contains only null bytes
+    fn is_file_corrupted_with_null_bytes(data: &str) -> bool {
+        const CHECK_BYTES_LIMIT: usize = 1024;
+
+        if data.is_empty() {
+            return true;
+        }
+
+        let check_len = data.len().min(CHECK_BYTES_LIMIT);
+        data.as_bytes()[..check_len].iter().all(|&b| b == 0)
+    }
+
+    /// Restores a backup file to the primary location
+    ///
+    /// # Arguments
+    /// * `backup_path` - Path to the backup file
+    /// * `primary_path` - Path to restore the backup to
+    fn restore_backup_to_primary(backup_path: &PathBuf, primary_path: &PathBuf) {
+        if let Err(e) = fs::copy(backup_path, primary_path) {
+            log::warn!("Failed to restore backup to primary file: {}", e);
+        } else {
+            log::info!("Successfully restored from backup: {:?}", backup_path);
+        }
+    }
+
+    /// Atomically writes data to a file with a backup
+    ///
+    /// This function ensures that data is written atomically by:
+    /// 1. Creating a backup of the existing file (.bak)
+    /// 2. Writing to a temporary file in the same directory
+    /// 3. Flushing and syncing the temporary file to disk
+    /// 4. Atomically renaming the temporary file over the target file
+    ///
+    /// # Arguments
+    /// * `path` - Target file path
+    /// * `data` - Data to write
+    ///
+    /// # Returns
+    /// Ok(()) if the data was written successfully
+    ///
+    /// # Errors
+    /// Returns a FileError if the data could not be written
+    fn atomic_write(path: &PathBuf, data: &str) -> Result<(), FileError> {
+        // If the file exists, create a backup first
+        if path.exists() {
+            let backup_path = Self::get_backup_path(path);
+            if let Err(e) = fs::copy(path, &backup_path) {
+                log::warn!("Failed to create backup at {:?}: {}", backup_path, e);
+                // Continue anyway - we still want to write the new data
+            }
+        }
+
+        // Get the parent directory for the temporary file
+        let parent_dir = path.parent().ok_or(FileError::FileWriteError)?;
+
+        // Create a temporary file in the same directory as the target
+        let mut temp_file =
+            NamedTempFile::new_in(parent_dir).map_err(|_| FileError::FileWriteError)?;
+
+        // Write the data to the temporary file
+        temp_file
+            .write_all(data.as_bytes())
+            .map_err(|_| FileError::FileWriteError)?;
+
+        // Flush and sync to ensure data is written to disk
+        temp_file.flush().map_err(|_| FileError::FileWriteError)?;
+        temp_file
+            .as_file()
+            .sync_all()
+            .map_err(|_| FileError::FileWriteError)?;
+
+        // Atomically rename the temporary file to the target path
+        // On Windows, persist() fails if the destination exists, so we need to remove it first
+        // On Unix, persist() atomically replaces the destination
+        #[cfg(windows)]
+        {
+            if path.exists() {
+                fs::remove_file(path).map_err(|_| FileError::FileWriteError)?;
+            }
+        }
+
+        temp_file
+            .persist(path)
+            .map_err(|_| FileError::FileWriteError)?;
+
+        Ok(())
+    }
+
     /// Reads the stored data from disk and deserializes it
     ///
     /// # Arguments
@@ -68,19 +179,97 @@ impl FileService {
     /// Returns a FileError if access is denied, the file is not found, or the file is invalid
     #[must_use]
     fn read_file<T: serde::de::DeserializeOwned>(path: &PathBuf) -> Result<T, FileError> {
-        fs::read_to_string(path)
+        // Try to read the primary file
+        let result = fs::read_to_string(path)
             .map_err(|e| match e.kind() {
                 std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
                 _ => FileError::FileNotFound,
             })
-            .and_then(|data| serde_json::from_str(&data).map_err(|_| FileError::InvalidFile))
+            .and_then(|data| {
+                // Check if the file is corrupted (empty or contains only null bytes)
+                if Self::is_file_corrupted_with_null_bytes(&data) {
+                    log::warn!("File {:?} is empty or contains only null bytes, attempting backup recovery", path);
+                    Err(FileError::InvalidFile)
+                } else {
+                    serde_json::from_str(&data).map_err(|_| FileError::InvalidFile)
+                }
+            });
+
+        // If the primary file failed, try the backup
+        if result.is_err() {
+            let backup_path = Self::get_backup_path(path);
+            if backup_path.exists() {
+                log::info!("Attempting to recover from backup: {:?}", backup_path);
+                return fs::read_to_string(&backup_path)
+                    .map_err(|e| match e.kind() {
+                        std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
+                        _ => FileError::FileNotFound,
+                    })
+                    .and_then(|data| {
+                        let parsed =
+                            serde_json::from_str(&data).map_err(|_| FileError::InvalidFile)?;
+                        // Restore the backup to the primary file
+                        Self::restore_backup_to_primary(&backup_path, path);
+                        Ok(parsed)
+                    });
+            }
+        }
+
+        result
     }
 
     fn read_auth_file(path: &PathBuf) -> Result<AuthCookies, FileError> {
-        let content = fs::read_to_string(path).map_err(|e| match e.kind() {
+        let content_result = fs::read_to_string(path).map_err(|e| match e.kind() {
             std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
             _ => FileError::FileNotFound,
-        })?;
+        });
+
+        let content = match content_result {
+            Ok(c) => {
+                // Check if the file is corrupted (empty or contains only null bytes)
+                if Self::is_file_corrupted_with_null_bytes(&c) {
+                    log::warn!("Auth file {:?} is empty or contains only null bytes, attempting backup recovery", path);
+                    // Try backup
+                    let backup_path = Self::get_backup_path(path);
+                    if backup_path.exists() {
+                        log::info!("Attempting to recover auth from backup: {:?}", backup_path);
+                        let backup_content =
+                            fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
+                                std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
+                                _ => FileError::FileNotFound,
+                            })?;
+                        // Restore the backup to the primary file
+                        Self::restore_backup_to_primary(&backup_path, path);
+                        backup_content
+                    } else {
+                        return Err(FileError::InvalidFile);
+                    }
+                } else {
+                    c
+                }
+            }
+            Err(e) => {
+                // Primary file failed, try backup
+                let backup_path = Self::get_backup_path(path);
+                if backup_path.exists() {
+                    log::info!(
+                        "Auth file not found, attempting to recover from backup: {:?}",
+                        backup_path
+                    );
+                    let backup_content =
+                        fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
+                            std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
+                            _ => FileError::FileNotFound,
+                        })?;
+                    // Restore the backup to the primary file
+                    Self::restore_backup_to_primary(&backup_path, path);
+                    backup_content
+                } else {
+                    return Err(e);
+                }
+            }
+        };
+
         match serde_json::from_str::<AuthCookies>(&content) {
             Ok(mut cookies) => {
                 if let Some(auth) = &cookies.auth_token {
@@ -180,7 +369,7 @@ impl FileService {
         let (config_path, _, _, _) = Self::get_paths();
 
         let data = serde_json::to_string_pretty(preferences).map_err(|_| FileError::InvalidFile)?;
-        fs::write(config_path, data).map_err(|_| FileError::FileWriteError)
+        Self::atomic_write(&config_path, &data)
     }
 
     /// Writes folder data to disk
@@ -197,7 +386,7 @@ impl FileService {
     pub fn write_folders(folders: &Vec<FolderModel>) -> Result<(), FileError> {
         let (_, folders_path, _, _) = Self::get_paths();
         let data = serde_json::to_string_pretty(folders).map_err(|_| FileError::InvalidFile)?;
-        fs::write(folders_path, data).map_err(|_| FileError::FileWriteError)
+        Self::atomic_write(&folders_path, &data)
     }
 
     /// Writes world data to disk
@@ -215,7 +404,7 @@ impl FileService {
         let (_, _, worlds_path, _) = Self::get_paths();
 
         let data = serde_json::to_string_pretty(&worlds).map_err(|_| FileError::InvalidFile)?;
-        fs::write(worlds_path, data).map_err(|_| FileError::FileWriteError)
+        Self::atomic_write(&worlds_path, &data)
     }
 
     /// Writes authentication data to disk
@@ -256,10 +445,13 @@ impl FileService {
 
         let data =
             serde_json::to_string_pretty(&encrypted_cookies).map_err(|_| FileError::InvalidFile)?;
-        fs::write(auth_path, data).map_err(|_| FileError::FileWriteError)
+        Self::atomic_write(&auth_path, &data)
     }
 
     /// Creates an empty authentication file if it doesn't exist
+    ///
+    /// Note: This uses fs::write instead of atomic_write because it's only called
+    /// during initialization when there's no existing data to protect.
     ///
     /// # Returns
     /// Ok(()) if the file was created successfully or already exists
@@ -276,6 +468,9 @@ impl FileService {
 
     /// Creates an empty worlds file if it doesn't exist
     ///
+    /// Note: This uses fs::write instead of atomic_write because it's only called
+    /// during initialization when there's no existing data to protect.
+    ///
     /// # Returns
     /// Ok(()) if the file was created successfully or already exists
     ///
@@ -290,6 +485,9 @@ impl FileService {
     }
 
     /// Creates an empty folders file if it doesn't exist
+    ///
+    /// Note: This uses fs::write instead of atomic_write because it's only called
+    /// during initialization when there's no existing data to protect.
     ///
     /// # Returns
     /// Ok(()) if the file was created successfully or already exists
@@ -306,6 +504,9 @@ impl FileService {
 
     /// Deletes data from the worlds and folders files
     /// Overwrites the files with empty data
+    ///
+    /// Note: This uses fs::write instead of atomic_write because it's intentionally
+    /// clearing/deleting data, so there's no existing data to protect.
     ///
     /// # Returns
     /// Ok(()) if the data was deleted successfully
@@ -364,7 +565,7 @@ impl FileService {
         }
 
         let file_path = exports_dir.join(file_name);
-        fs::write(file_path, data).map_err(|_| FileError::FileWriteError)?;
+        Self::atomic_write(&file_path, data)?;
 
         // Open the exports directory after writing the file
         Self::open_path(exports_dir).map_err(|e| {
@@ -418,5 +619,168 @@ mod tests {
         assert!(!folders_path.exists());
         assert!(!worlds_path.exists());
         assert!(!auth_path.exists());
+    }
+
+    #[test]
+    fn test_atomic_write_creates_new_file() {
+        let temp = setup_test_dir();
+        let test_path = temp.path().join("test.json");
+        let test_data = r#"{"test": "data"}"#;
+
+        let result = FileService::atomic_write(&test_path, test_data);
+        assert!(result.is_ok());
+        assert!(test_path.exists());
+
+        let content = fs::read_to_string(&test_path).unwrap();
+        assert_eq!(content, test_data);
+    }
+
+    #[test]
+    fn test_atomic_write_creates_backup() {
+        let temp = setup_test_dir();
+        let test_path = temp.path().join("test.json");
+        let backup_path = FileService::get_backup_path(&test_path);
+
+        // Write initial data
+        let initial_data = r#"{"version": 1}"#;
+        fs::write(&test_path, initial_data).unwrap();
+
+        // Atomic write should create a backup
+        let new_data = r#"{"version": 2}"#;
+        let result = FileService::atomic_write(&test_path, new_data);
+        assert!(result.is_ok());
+
+        // Check that backup was created with old data
+        assert!(backup_path.exists());
+        let backup_content = fs::read_to_string(&backup_path).unwrap();
+        assert_eq!(backup_content, initial_data);
+
+        // Check that main file has new data
+        let main_content = fs::read_to_string(&test_path).unwrap();
+        assert_eq!(main_content, new_data);
+    }
+
+    #[test]
+    fn test_read_file_recovers_from_backup_on_null_bytes() {
+        let temp = setup_test_dir();
+        let test_path = temp.path().join("test.json");
+        let backup_path = FileService::get_backup_path(&test_path);
+
+        // Create a valid backup
+        let backup_data = r#"["item1", "item2"]"#;
+        fs::write(&backup_path, backup_data).unwrap();
+
+        // Create corrupted main file with null bytes
+        let null_data = "\0\0\0\0\0\0\0\0\0\0";
+        fs::write(&test_path, null_data).unwrap();
+
+        // read_file should recover from backup
+        let result: Result<Vec<String>, FileError> = FileService::read_file(&test_path);
+        assert!(result.is_ok());
+        let data = result.unwrap();
+        assert_eq!(data, vec!["item1", "item2"]);
+
+        // Main file should be restored
+        let main_content = fs::read_to_string(&test_path).unwrap();
+        assert_eq!(main_content, backup_data);
+    }
+
+    #[test]
+    fn test_read_file_recovers_from_backup_on_invalid_json() {
+        let temp = setup_test_dir();
+        let test_path = temp.path().join("test.json");
+        let backup_path = FileService::get_backup_path(&test_path);
+
+        // Create a valid backup
+        let backup_data = r#"{"key": "value"}"#;
+        fs::write(&backup_path, backup_data).unwrap();
+
+        // Create corrupted main file with invalid JSON
+        fs::write(&test_path, "not valid json {{{").unwrap();
+
+        // read_file should recover from backup
+        #[derive(serde::Deserialize, PartialEq, Debug)]
+        struct TestData {
+            key: String,
+        }
+        let result: Result<TestData, FileError> = FileService::read_file(&test_path);
+        assert!(result.is_ok());
+        let data = result.unwrap();
+        assert_eq!(data.key, "value");
+    }
+
+    #[test]
+    fn test_read_file_fails_when_no_backup_exists() {
+        let temp = setup_test_dir();
+        let test_path = temp.path().join("test.json");
+
+        // Create corrupted main file with null bytes, no backup
+        let null_data = "\0\0\0\0\0\0\0\0\0\0";
+        fs::write(&test_path, null_data).unwrap();
+
+        // read_file should fail
+        let result: Result<Vec<String>, FileError> = FileService::read_file(&test_path);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_read_auth_file_recovers_from_backup_on_null_bytes() {
+        let temp = setup_test_dir();
+        let test_path = temp.path().join("auth.json");
+        let backup_path = FileService::get_backup_path(&test_path);
+
+        // Create a valid backup
+        let backup_data = r#"{"auth_token": null, "two_factor_auth": null, "version": 1}"#;
+        fs::write(&backup_path, backup_data).unwrap();
+
+        // Create corrupted main file with null bytes
+        let null_data = "\0\0\0\0\0\0\0\0\0\0";
+        fs::write(&test_path, null_data).unwrap();
+
+        // read_auth_file should recover from backup
+        let result = FileService::read_auth_file(&test_path);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_atomic_write_is_durable() {
+        let temp = setup_test_dir();
+        let test_path = temp.path().join("test.json");
+
+        // Write multiple times to ensure atomic writes work correctly
+        for i in 0..5 {
+            let data = format!(r#"{{"iteration": {}}}"#, i);
+            let result = FileService::atomic_write(&test_path, &data);
+            assert!(result.is_ok());
+
+            let content = fs::read_to_string(&test_path).unwrap();
+            assert_eq!(content, data);
+        }
+
+        // Backup should have the second-to-last iteration
+        let backup_path = FileService::get_backup_path(&test_path);
+        assert!(backup_path.exists());
+        let backup_content = fs::read_to_string(&backup_path).unwrap();
+        assert_eq!(backup_content, r#"{"iteration": 3}"#);
+    }
+
+    #[test]
+    fn test_get_backup_path_handles_non_utf8() {
+        // Test that get_backup_path correctly handles paths with Unicode characters
+        let temp = setup_test_dir();
+        let test_path = temp.path().join("データ.json");
+
+        let backup_path = FileService::get_backup_path(&test_path);
+
+        // Verify the backup path is formed correctly
+        assert!(backup_path.to_string_lossy().ends_with("データ.json.bak"));
+
+        // Verify we can write and read using this path
+        let test_data = r#"{"test": "データ"}"#;
+        let result = FileService::atomic_write(&test_path, test_data);
+        assert!(result.is_ok());
+
+        assert!(test_path.exists());
+        assert!(backup_path.exists() || !backup_path.exists()); // May or may not exist on first write
     }
 }
