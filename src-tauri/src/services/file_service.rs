@@ -82,11 +82,11 @@ impl FileService {
     /// Returns true if the file is empty or contains only null bytes
     fn is_file_corrupted_with_null_bytes(data: &str) -> bool {
         const CHECK_BYTES_LIMIT: usize = 1024;
-        
+
         if data.is_empty() {
             return true;
         }
-        
+
         let check_len = data.len().min(CHECK_BYTES_LIMIT);
         data.as_bytes()[..check_len].iter().all(|&b| b == 0)
     }
@@ -132,13 +132,11 @@ impl FileService {
         }
 
         // Get the parent directory for the temporary file
-        let parent_dir = path
-            .parent()
-            .ok_or(FileError::FileWriteError)?;
+        let parent_dir = path.parent().ok_or(FileError::FileWriteError)?;
 
         // Create a temporary file in the same directory as the target
-        let mut temp_file = NamedTempFile::new_in(parent_dir)
-            .map_err(|_| FileError::FileWriteError)?;
+        let mut temp_file =
+            NamedTempFile::new_in(parent_dir).map_err(|_| FileError::FileWriteError)?;
 
         // Write the data to the temporary file
         temp_file
@@ -146,9 +144,7 @@ impl FileService {
             .map_err(|_| FileError::FileWriteError)?;
 
         // Flush and sync to ensure data is written to disk
-        temp_file
-            .flush()
-            .map_err(|_| FileError::FileWriteError)?;
+        temp_file.flush().map_err(|_| FileError::FileWriteError)?;
         temp_file
             .as_file()
             .sync_all()
@@ -163,7 +159,7 @@ impl FileService {
                 fs::remove_file(path).map_err(|_| FileError::FileWriteError)?;
             }
         }
-        
+
         temp_file
             .persist(path)
             .map_err(|_| FileError::FileWriteError)?;
@@ -210,7 +206,8 @@ impl FileService {
                         _ => FileError::FileNotFound,
                     })
                     .and_then(|data| {
-                        let parsed = serde_json::from_str(&data).map_err(|_| FileError::InvalidFile)?;
+                        let parsed =
+                            serde_json::from_str(&data).map_err(|_| FileError::InvalidFile)?;
                         // Restore the backup to the primary file
                         Self::restore_backup_to_primary(&backup_path, path);
                         Ok(parsed)
@@ -236,10 +233,11 @@ impl FileService {
                     let backup_path = Self::get_backup_path(path);
                     if backup_path.exists() {
                         log::info!("Attempting to recover auth from backup: {:?}", backup_path);
-                        let backup_content = fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
-                            std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
-                            _ => FileError::FileNotFound,
-                        })?;
+                        let backup_content =
+                            fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
+                                std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
+                                _ => FileError::FileNotFound,
+                            })?;
                         // Restore the backup to the primary file
                         Self::restore_backup_to_primary(&backup_path, path);
                         backup_content
@@ -254,11 +252,15 @@ impl FileService {
                 // Primary file failed, try backup
                 let backup_path = Self::get_backup_path(path);
                 if backup_path.exists() {
-                    log::info!("Auth file not found, attempting to recover from backup: {:?}", backup_path);
-                    let backup_content = fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
-                        std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
-                        _ => FileError::FileNotFound,
-                    })?;
+                    log::info!(
+                        "Auth file not found, attempting to recover from backup: {:?}",
+                        backup_path
+                    );
+                    let backup_content =
+                        fs::read_to_string(&backup_path).map_err(|e| match e.kind() {
+                            std::io::ErrorKind::PermissionDenied => FileError::AccessDenied,
+                            _ => FileError::FileNotFound,
+                        })?;
                     // Restore the backup to the primary file
                     Self::restore_backup_to_primary(&backup_path, path);
                     backup_content
@@ -744,17 +746,17 @@ mod tests {
     fn test_atomic_write_is_durable() {
         let temp = setup_test_dir();
         let test_path = temp.path().join("test.json");
-        
+
         // Write multiple times to ensure atomic writes work correctly
         for i in 0..5 {
             let data = format!(r#"{{"iteration": {}}}"#, i);
             let result = FileService::atomic_write(&test_path, &data);
             assert!(result.is_ok());
-            
+
             let content = fs::read_to_string(&test_path).unwrap();
             assert_eq!(content, data);
         }
-        
+
         // Backup should have the second-to-last iteration
         let backup_path = FileService::get_backup_path(&test_path);
         assert!(backup_path.exists());
@@ -767,17 +769,17 @@ mod tests {
         // Test that get_backup_path correctly handles paths with Unicode characters
         let temp = setup_test_dir();
         let test_path = temp.path().join("データ.json");
-        
+
         let backup_path = FileService::get_backup_path(&test_path);
-        
+
         // Verify the backup path is formed correctly
         assert!(backup_path.to_string_lossy().ends_with("データ.json.bak"));
-        
+
         // Verify we can write and read using this path
         let test_data = r#"{"test": "データ"}"#;
         let result = FileService::atomic_write(&test_path, test_data);
         assert!(result.is_ok());
-        
+
         assert!(test_path.exists());
         assert!(backup_path.exists() || !backup_path.exists()); // May or may not exist on first write
     }

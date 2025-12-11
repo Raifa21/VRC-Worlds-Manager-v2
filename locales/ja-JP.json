@@ -60,7 +60,7 @@
   "login-page:notice-title": "注意:",
   "login-page:notice-text": "ログイン情報がそのまま保存されることはありません。認証情報は、VRChat API との通信にのみ使用され、ワールド情報へのアクセスに利用されます",
   "login-page:terms-text": "ログインすることで、VRChat の利用規約およびコミュニティガイドラインに同意したものとみなされます。",
-  "login-page:2fa-title": "二要素認証",
+  "login-page:2fa-title": "二段階認証",
   "login-page:2fa-placeholder": "2FAコードを入力",
   "login-page:2fa-button": "確認",
   "login-page:error-invalid-credentials": "認証情報が無効です",
