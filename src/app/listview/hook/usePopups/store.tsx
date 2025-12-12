@@ -10,6 +10,7 @@ interface PopupState {
   showImportedFolderContainsHidden: WorldDisplayData[] | null;
   showWorldDetails: string | null;
   showShareFolder: boolean;
+  showShareWorld: { worldId: string; worldName: string } | null;
   // Version bump to signal membership changes across components (e.g., Find badge refresh)
   membershipVersion: number;
   bumpMembershipVersion: () => void;
@@ -26,6 +27,7 @@ export const usePopupStore = create<PopupState>((set) => ({
   showImportedFolderContainsHidden: null,
   showWorldDetails: null,
   showShareFolder: false,
+  showShareWorld: null,
   membershipVersion: 0,
   bumpMembershipVersion: () =>
     set((state) => ({ membershipVersion: state.membershipVersion + 1 })),
@@ -39,6 +41,7 @@ export const usePopupStore = create<PopupState>((set) => ({
       showDeleteFolder: null,
       showImportedFolderContainsHidden: null,
       showShareFolder: false,
+      showShareWorld: null,
       // do not reset membershipVersion here to preserve monotonicity
     }),
 }));

@@ -130,6 +130,10 @@ export function useWorldGrid(
     setPopup('showWorldDetails', worldId);
   };
 
+  const handleShareWorld = (worldId: string, worldName: string) => {
+    setPopup('showShareWorld', { worldId, worldName });
+  };
+
   // pass the worldId of the world that was selected. This only gets used if
   const handleOpenFolderDialog = (worldId: string) => {
     const idsToAdd =
@@ -342,6 +346,7 @@ export function useWorldGrid(
     selectAllFindPage,
     handleOpenFolderDialog,
     handleOpenWorldDetails,
+    handleShareWorld,
     handleDeleteWorld,
     handleRemoveFromCurrentFolder,
     removeWorldsFromFolder,
