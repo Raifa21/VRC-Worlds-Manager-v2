@@ -117,8 +117,11 @@ export function WorldGrid({
                 id={world.worldId}
                 onClick={() => {
                   if (disableCardClick) return;
-                  if (!existingWorldIds.has(world.worldId)) {
-                    handleOpenWorldDetails(world.worldId, true);
+                  if (isFindPage) {
+                    handleOpenWorldDetails(
+                      world.worldId,
+                      !existingWorldIds.has(world.worldId),
+                    );
                   } else {
                     handleOpenWorldDetails(world.worldId);
                   }
