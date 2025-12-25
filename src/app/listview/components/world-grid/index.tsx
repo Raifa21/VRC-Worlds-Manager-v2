@@ -118,7 +118,7 @@ export function WorldGrid({
                 onClick={() => {
                   if (disableCardClick) return;
                   if (isFindPage) {
-                    handleOpenFolderDialog(world.worldId);
+                    handleOpenWorldDetails(world.worldId, true);
                   } else {
                     handleOpenWorldDetails(world.worldId);
                   }

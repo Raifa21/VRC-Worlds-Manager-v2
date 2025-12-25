@@ -235,8 +235,10 @@ export function WorldDetailPopup({
     };
 
     fetchWorldDetails();
-    fetchMemo();
-    fetchWorldFolders();
+    if (!dontSaveToLocal) {
+      fetchMemo();
+      fetchWorldFolders();
+    }
   }, [open, worldId]);
 
   useEffect(() => {
@@ -894,90 +896,95 @@ export function WorldDetailPopup({
                       </div>
                     </div>
                   </div>
-                  <Separator className="my-2" />
-                  <div className="flex gap-4">
-                    <div className="w-2/3">
-                      <div className="text-sm font-semibold mb-2 flex flex-row items-center gap-2">
-                        {t('general:memo')}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="p-0 size-8 [&_svg]:size-4"
-                          onClick={() => setIsEditingMemo(true)}
-                        >
-                          <Pencil />
-                        </Button>
-                      </div>
-                      <div className="flex flex-row">
-                        {!isEditingMemo && (
-                          <div className="pr-4">
-                            <MemoRenderer value={memo ?? ''} />
-                          </div>
-                        )}
-                        {isEditingMemo && (
-                          <div className="space-y-2 w-full">
-                            <Textarea
-                              value={memoInput}
-                              onChange={(e) => setMemoInput(e.target.value)}
-                              className="h-32"
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                variant="secondary"
-                                className="w-full"
-                                onClick={() => {
-                                  setIsEditingMemo(false);
-                                  setMemoInput(memo ?? '');
-                                }}
-                              >
-                                {t('general:cancel')}
-                              </Button>
-                              <Button
-                                variant="default"
-                                className="w-full"
-                                onClick={handleSaveMemo}
-                              >
-                                {t('general:save')}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Separator orientation="vertical" />
-                    <div className="w-1/3">
-                      <div className="text-sm font-semibold mb-2 flex items-center gap-2">
-                        {t('general:folders')}
-                      </div>
-                      <div className="flex flex-col gap-2 h-48 overflow-y-auto no-webview-scroll-bar">
-                        {folders.length > 0 ? (
-                          folders.map((folder) => (
-                            <div
-                              className="flex items-center space-x-2"
-                              key={folder.name}
+
+                  {!dontSaveToLocal && (
+                    <>
+                      <Separator className="my-2" />
+                      <div className="flex gap-4">
+                        <div className="w-2/3">
+                          <div className="text-sm font-semibold mb-2 flex flex-row items-center gap-2">
+                            {t('general:memo')}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="p-0 size-8 [&_svg]:size-4"
+                              onClick={() => setIsEditingMemo(true)}
                             >
-                              <Checkbox
-                                checked={worldFolders.includes(folder.name)}
-                                onCheckedChange={() =>
-                                  toggleWorldFolder(folder.name)
-                                }
-                              />
-                              <span className="text-sm text-muted-foreground">
-                                {folder.world_count}
+                              <Pencil />
+                            </Button>
+                          </div>
+                          <div className="flex flex-row">
+                            {!isEditingMemo && (
+                              <div className="pr-4">
+                                <MemoRenderer value={memo ?? ''} />
+                              </div>
+                            )}
+                            {isEditingMemo && (
+                              <div className="space-y-2 w-full">
+                                <Textarea
+                                  value={memoInput}
+                                  onChange={(e) => setMemoInput(e.target.value)}
+                                  className="h-32"
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="secondary"
+                                    className="w-full"
+                                    onClick={() => {
+                                      setIsEditingMemo(false);
+                                      setMemoInput(memo ?? '');
+                                    }}
+                                  >
+                                    {t('general:cancel')}
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    className="w-full"
+                                    onClick={handleSaveMemo}
+                                  >
+                                    {t('general:save')}
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <Separator orientation="vertical" />
+                        <div className="w-1/3">
+                          <div className="text-sm font-semibold mb-2 flex items-center gap-2">
+                            {t('general:folders')}
+                          </div>
+                          <div className="flex flex-col gap-2 h-48 overflow-y-auto no-webview-scroll-bar">
+                            {folders.length > 0 ? (
+                              folders.map((folder) => (
+                                <div
+                                  className="flex items-center space-x-2"
+                                  key={folder.name}
+                                >
+                                  <Checkbox
+                                    checked={worldFolders.includes(folder.name)}
+                                    onCheckedChange={() =>
+                                      toggleWorldFolder(folder.name)
+                                    }
+                                  />
+                                  <span className="text-sm text-muted-foreground">
+                                    {folder.world_count}
+                                  </span>
+                                  <span className="truncate max-w-[200px] text-sm">
+                                    {folder.name}
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                {t('general:no-folders')}
                               </span>
-                              <span className="truncate max-w-[200px] text-sm">
-                                {folder.name}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            {t('general:no-folders')}
-                          </span>
-                        )}
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
               )
             )}
