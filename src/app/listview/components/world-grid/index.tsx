@@ -118,11 +118,13 @@ export function WorldGrid({
                 onClick={() => {
                   if (disableCardClick) return;
                   if (isFindPage) {
+                    // Only set dontSaveToLocal on worlds not already in collection
                     handleOpenWorldDetails(
                       world.worldId,
                       !existingWorldIds.has(world.worldId),
                     );
                   } else {
+                    // null == !dontSaveToLocal
                     handleOpenWorldDetails(world.worldId);
                   }
                 }}
