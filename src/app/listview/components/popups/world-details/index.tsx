@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { info, error } from '@tauri-apps/plugin-log';
 import Image from 'next/image';
+import { mutate as mutateFoldersCache } from 'swr';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ import {
   GroupInstancePermissionInfo,
   GroupRole,
   commands,
+  FolderData,
 } from '@/lib/bindings';
 import { WorldDisplayData } from '@/lib/bindings';
 import { WorldDetails } from '@/lib/bindings';
@@ -388,8 +390,9 @@ export function WorldDetailPopup({
 
   async function toggleWorldFolder(folder: string): Promise<void> {
     try {
+      const isRemoving = worldFolders.includes(folder);
       let updatedFolders: string[];
-      if (worldFolders.includes(folder)) {
+      if (isRemoving) {
         // Remove folder
         const result = await commands.removeWorldFromFolder(folder, worldId);
         if (result.status !== 'ok') {
@@ -411,6 +414,23 @@ export function WorldDetailPopup({
         updatedFolders = [...worldFolders, folder];
       }
       setWorldFolders(updatedFolders);
+      // Optimistically bump cached folder count so sidebar updates immediately
+      const delta = isRemoving ? -1 : 1;
+      await mutateFoldersCache<FolderData[]>(
+        'folders',
+        (current) => {
+          if (!current) return current;
+          return current.map((f) => {
+            if (f.name !== folder) return f;
+            const nextCount = Math.max(0, f.world_count + delta);
+            return { ...f, world_count: nextCount };
+          });
+        },
+        { revalidate: true },
+      );
+      info(
+        `[WorldDetails] Optimistic folder count delta applied: ${folder}:${delta}`,
+      );
       refresh();
     } catch (e) {
       error(`Error toggling world folder: ${e}`);
