@@ -42,7 +42,7 @@ export function WorldFolderPage(props: WorldFolderPageProps) {
     worlds,
     filteredWorlds,
     isLoading,
-    selectedWorlds,
+    visibleSelectedWorlds,
     allSelected,
     handleSelectAll,
     handleReload,
@@ -102,7 +102,7 @@ export function WorldFolderPage(props: WorldFolderPageProps) {
           </div>
         </div>
 
-        {selectedWorlds.length > 0 && (
+        {visibleSelectedWorlds.length > 0 && (
           <div
             className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-center pointer-events-none w-full"
             style={{ left: 'calc(50% + 125px)' }}
@@ -121,7 +121,7 @@ export function WorldFolderPage(props: WorldFolderPageProps) {
               >
                 <Plus className="w-5 h-5" />
                 <span className="text-md font-semibold">
-                  {t('world-grid:move-multiple', selectedWorlds.length)}
+                  {t('world-grid:move-multiple', visibleSelectedWorlds.length)}
                 </span>
               </Button>
             </div>

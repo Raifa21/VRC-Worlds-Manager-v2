@@ -24,6 +24,7 @@ export type UseWorldFolderPageResult = {
   filteredWorlds: WorldDisplayData[];
   isLoading: boolean;
   selectedWorlds: string[];
+  visibleSelectedWorlds: string[];
   allSelected: boolean;
   handleSelectAll: () => void;
   handleReload: () => Promise<void>;
@@ -52,47 +53,28 @@ export const useWorldFolderPage = (
     getSelectedWorlds,
     isSelectionMode,
     selectAllWorlds,
+    setSelection,
     clearFolderSelections,
   } = useSelectedWorldsStore();
 
   const selectedWorlds = Array.from(getSelectedWorlds(folderId));
   const selectedWorldIdSet = new Set(selectedWorlds);
+  const filteredWorldIds = filteredWorlds.map((w) => w.worldId);
+  const visibleSelectedWorlds = filteredWorldIds.filter((id) =>
+    selectedWorldIdSet.has(id),
+  );
+  const visibleSelectedWorldIdSet = new Set(visibleSelectedWorlds);
 
   const allSelected =
     filteredWorlds.length > 0 &&
-    selectedWorlds.length === filteredWorlds.length &&
-    filteredWorlds.every((world) => selectedWorldIdSet.has(world.worldId));
-
-  // Keep selections in sync with current filter results
-  useEffect(() => {
-    if (selectedWorlds.length === 0) {
-      return;
-    }
-
-    const allowedIds = new Set(filteredWorlds.map((w) => w.worldId));
-    const nextSelected = selectedWorlds.filter((id) => allowedIds.has(id));
-
-    if (nextSelected.length !== selectedWorlds.length) {
-      if (nextSelected.length === 0) {
-        clearFolderSelections(folderId);
-      } else {
-        selectAllWorlds(folderId, nextSelected);
-      }
-    }
-  }, [
-    filteredWorlds,
-    selectedWorlds,
-    clearFolderSelections,
-    selectAllWorlds,
-    folderId,
-  ]);
+    visibleSelectedWorlds.length === filteredWorlds.length;
 
   const handleSelectAll = () => {
     if (allSelected) {
       clearFolderSelections(folderId);
     } else {
       const worldIds = filteredWorlds.map((world) => world.worldId);
-      selectAllWorlds(folderId, worldIds);
+      setSelection(folderId, worldIds);
     }
   };
 
@@ -141,7 +123,7 @@ export const useWorldFolderPage = (
   const openMoveSelected = () =>
     setPopup(
       'showAddToFolder',
-      worlds.filter((w) => selectedWorlds.includes(w.worldId)),
+      worlds.filter((w) => visibleSelectedWorldIdSet.has(w.worldId)),
     );
 
   return {
@@ -151,6 +133,7 @@ export const useWorldFolderPage = (
     filteredWorlds,
     isLoading,
     selectedWorlds,
+    visibleSelectedWorlds,
     allSelected,
     handleSelectAll,
     handleReload,
