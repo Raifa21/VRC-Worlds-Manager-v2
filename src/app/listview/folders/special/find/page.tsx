@@ -69,13 +69,14 @@ export default function FindWorldsPage() {
   } = useSelectedWorldsStore();
 
   const selectedWorlds = Array.from(getSelectedWorlds(SpecialFolders.Find));
+  const selectedWorldIdSet = new Set(selectedWorlds);
 
   // Check if all recently visited worlds are selected
   const allSelected =
     recentlyVisitedWorlds.length > 0 &&
     selectedWorlds.length === recentlyVisitedWorlds.length &&
     recentlyVisitedWorlds.every((world) =>
-      selectedWorlds.includes(world.worldId),
+      selectedWorldIdSet.has(world.worldId),
     );
 
   const handleSelectAll = () => {
