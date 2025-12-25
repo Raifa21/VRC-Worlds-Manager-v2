@@ -138,12 +138,12 @@ export default function HiddenWorldsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
+              className="flex items-center gap-2 cursor-pointer ml-2"
               variant="outline"
-              size="icon"
-              className="ml-2"
               onClick={handleReload}
             >
               <RefreshCw className="h-4 w-4" />
+              <span>{t('general:fetch-refresh')}</span>
             </Button>
           </div>
         </div>

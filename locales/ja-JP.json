@@ -45,6 +45,7 @@
   "general:open-folder": "フォルダを開く",
   "general:cancelled": "キャンセルされました",
   "general:failed": "失敗しました",
+  "general:fetch-refresh": "最新の情報に更新",
 
   "error-page:title": "アプリケーションエラー",
   "error-page:try-again": "再試行",

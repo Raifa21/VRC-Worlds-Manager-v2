@@ -46,6 +46,7 @@
   "general:open-folder": "Open Folder",
   "general:cancelled": "Cancelled",
   "general:failed": "Failed",
+  "general:fetch-refresh": "Refresh",
 
   "error-page:title": "Error Loading Application",
   "error-page:try-again": "Retry",

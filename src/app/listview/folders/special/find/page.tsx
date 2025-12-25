@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
   CircleHelpIcon,
   Loader2,
-  RefreshCcw,
+  RefreshCw,
   Search,
   Square,
   CheckSquare,
@@ -335,9 +335,10 @@ export default function FindWorldsPage() {
               activeTab !== 'recently-visited' ? 'invisible' : ''
             }`}
           >
-            <RefreshCcw
+            <RefreshCw
               className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
             />
+            <span>{t('general:fetch-refresh')}</span>
           </Button>
           <Button
             variant={isSelectionMode ? 'secondary' : 'ghost'}
