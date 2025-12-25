@@ -322,9 +322,13 @@ export default function FindWorldsPage() {
               <Button
                 variant="outline"
                 onClick={handleSelectAll}
-                className="mr-2"
+                className="mr-2 flex items-center gap-2 cursor-pointer"
               >
-                {allSelected ? t('general:clear-all') : t('general:select-all')}
+                <span>
+                  {allSelected
+                    ? t('general:clear-all')
+                    : t('general:select-all')}
+                </span>
               </Button>
             )}
           <Button
