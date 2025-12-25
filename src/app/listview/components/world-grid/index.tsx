@@ -124,7 +124,7 @@ export function WorldGrid({
                       !existingWorldIds.has(world.worldId),
                     );
                   } else {
-                    // null == !dontSaveToLocal
+                    // dontSaveToLocal defaults to false when omitted
                     handleOpenWorldDetails(world.worldId);
                   }
                 }}
