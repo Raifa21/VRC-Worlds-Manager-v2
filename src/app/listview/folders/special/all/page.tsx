@@ -10,12 +10,7 @@ import { WorldGridSkeleton } from '../../../components/world-grid/skeleton';
 import { useFolders } from '../../../hook/use-folders';
 import { usePopupStore } from '../../../hook/usePopups/store';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useSelectedWorldsStore } from '@/app/listview/hook/use-selected-worlds';
 import { Menu, Plus, RefreshCw } from 'lucide-react';
 import { info, error } from '@tauri-apps/plugin-log';
 import { toast } from 'sonner';
