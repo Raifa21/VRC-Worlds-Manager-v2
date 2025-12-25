@@ -63,6 +63,30 @@ export const useWorldFolderPage = (
     selectedWorlds.length === filteredWorlds.length &&
     filteredWorlds.every((world) => selectedWorldIdSet.has(world.worldId));
 
+  // Keep selections in sync with current filter results
+  useEffect(() => {
+    if (selectedWorlds.length === 0) {
+      return;
+    }
+
+    const allowedIds = new Set(filteredWorlds.map((w) => w.worldId));
+    const nextSelected = selectedWorlds.filter((id) => allowedIds.has(id));
+
+    if (nextSelected.length !== selectedWorlds.length) {
+      if (nextSelected.length === 0) {
+        clearFolderSelections(folderId);
+      } else {
+        selectAllWorlds(folderId, nextSelected);
+      }
+    }
+  }, [
+    filteredWorlds,
+    selectedWorlds,
+    clearFolderSelections,
+    selectAllWorlds,
+    folderId,
+  ]);
+
   const handleSelectAll = () => {
     if (allSelected) {
       clearFolderSelections(folderId);
