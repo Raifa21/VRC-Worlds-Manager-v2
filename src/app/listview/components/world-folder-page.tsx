@@ -105,7 +105,7 @@ export function WorldFolderPage(props: WorldFolderPageProps) {
         {visibleSelectedWorlds.length > 0 && (
           <div
             className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-center pointer-events-none w-full"
-            style={{ left: 'calc(50% + 125px)' }}
+            style={{ left: 'calc(50% + var(--sidebar-offset, 0px))' }}
           >
             <div className="pointer-events-auto relative inline-block">
               <div
