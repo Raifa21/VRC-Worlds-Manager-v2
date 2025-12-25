@@ -121,7 +121,7 @@ export function WorldFolderPage(props: WorldFolderPageProps) {
               >
                 <Plus className="w-5 h-5" />
                 <span className="text-md font-semibold">
-                  {t('world-grid:move-title')}
+                  {t('world-grid:move-multiple', selectedWorlds.length)}
                 </span>
               </Button>
             </div>

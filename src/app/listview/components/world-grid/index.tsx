@@ -314,7 +314,7 @@ export function WorldGrid({
             >
               <Plus className="w-5 h-5" />
               <span className="text-md font-semibold">
-                {t('world-grid:add-title')}
+                {t('world-grid:add-multiple', selectedWorlds.length)}
               </span>
             </Button>
           </div>
