@@ -56,11 +56,12 @@ export const useWorldFolderPage = (
   } = useSelectedWorldsStore();
 
   const selectedWorlds = Array.from(getSelectedWorlds(folderId));
+  const selectedWorldIdSet = new Set(selectedWorlds);
 
   const allSelected =
     filteredWorlds.length > 0 &&
     selectedWorlds.length === filteredWorlds.length &&
-    filteredWorlds.every((world) => selectedWorlds.includes(world.worldId));
+    filteredWorlds.every((world) => selectedWorldIdSet.has(world.worldId));
 
   const handleSelectAll = () => {
     if (allSelected) {
