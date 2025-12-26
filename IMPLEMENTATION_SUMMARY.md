@@ -49,11 +49,11 @@ These commands follow the same pattern as other preference commands in the app.
 Enhanced the export service with:
 - `sort_worlds()` - A helper function that sorts worlds based on field and direction
 - Updated `get_folders_with_worlds()` to:
-  - Read current sort preferences from PREFERENCES
-  - Apply sorting to worlds before exporting
-  - Log the sort settings being applied
+  - Accept `sort_field` and `sort_direction` parameters from the frontend (export popup)
+  - Apply sorting to worlds based on these parameters before exporting
+  - Log the sort settings provided by the export popup
 
-This ensures exported data matches the UI display order.
+This ensures exported data is sorted according to the options selected in the export popup, making export sorting independent of any stored UI sort preferences.
 
 #### 4. Frontend: Filter Store
 **File**: `src/app/listview/hook/use-filters.tsx`
