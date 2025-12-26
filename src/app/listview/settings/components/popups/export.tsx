@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { getDefaultDirection } from '@/app/listview/hook/use-filters';
 
 export enum ExportType {
   PLS = 'pls',
@@ -77,6 +78,25 @@ export function ExportPopup({
     }
     fetchFolders();
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    commands
+      .getSortPreferences()
+      .then((result) => {
+        if (result.status === 'ok') {
+          const [field, direction] = result.data;
+          const coercedField = (field as SortField) ?? 'dateAdded';
+          const coercedDir =
+            (direction as 'asc' | 'desc') ?? getDefaultDirection(coercedField);
+          setSortField(coercedField);
+          setSortDirection(coercedDir);
+        }
+      })
+      .catch((e) => {
+        console.error('Failed to load sort preferences for export:', e);
+      });
+  }, [open]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -92,14 +112,22 @@ export function ExportPopup({
             <div className="flex items-center gap-2">
               <Select
                 value={sortField}
-                onValueChange={(value) => setSortField(value as SortField)}
+                onValueChange={(value) => {
+                  const field = value as SortField;
+                  setSortField(field);
+                  setSortDirection(getDefaultDirection(field));
+                }}
               >
                 <SelectTrigger className="flex-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="name">{t('world-grid:sort-name')}</SelectItem>
-                  <SelectItem value="authorName">{t('general:author')}</SelectItem>
+                  <SelectItem value="name">
+                    {t('world-grid:sort-name')}
+                  </SelectItem>
+                  <SelectItem value="authorName">
+                    {t('general:author')}
+                  </SelectItem>
                   <SelectItem value="visits">
                     {t('world-grid:sort-visits')}
                   </SelectItem>

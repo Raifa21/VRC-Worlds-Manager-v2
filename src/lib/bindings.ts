@@ -943,6 +943,25 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async sortWorldsDisplay(
+    worlds: WorldDisplayData[],
+    sortField: string,
+    sortDirection: string,
+  ): Promise<Result<WorldDisplayData[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('sort_worlds_display', {
+          worlds,
+          sortField,
+          sortDirection,
+        }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
 };
 
 /** user-defined events **/

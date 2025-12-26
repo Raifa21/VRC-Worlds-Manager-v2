@@ -7,6 +7,7 @@ pub mod folder_manager;
 pub mod initialize_service;
 pub mod memo_manager;
 pub mod share_service;
+pub mod sorting_service;
 
 pub use api_service::ApiService;
 pub use delete_data::delete_data;
@@ -16,3 +17,4 @@ pub use file_service::FileService;
 pub use folder_manager::FolderManager;
 pub use initialize_service::{initialize_app, set_preferences};
 pub use share_service::{download_folder, share_folder};
+pub use sorting_service::SortingService;

@@ -89,7 +89,7 @@ export const useWorldFiltersStore = create<FilterState>((set) => ({
     }),
 }));
 
-function getDefaultDirection(field: SortField): 'asc' | 'desc' {
+export function getDefaultDirection(field: SortField): 'asc' | 'desc' {
   switch (field) {
     case 'visits':
     case 'favorites':
@@ -262,23 +262,44 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
         );
       }
 
-      // 3. Sorting
-      const dirFactor = sortDirection === 'asc' ? 1 : -1;
-      finalList = finalList.slice().sort((a, b) => {
-        const av = getSortValue(a, sortField);
-        const bv = getSortValue(b, sortField);
-        if (av == null && bv == null) return 0;
-        if (av == null) return 1;
-        if (bv == null) return -1;
-        if (typeof av === 'number' && typeof bv === 'number') {
-          return (av - bv) * dirFactor;
-        }
-        return (
-          String(av).localeCompare(String(bv), undefined, {
-            sensitivity: 'base',
-          }) * dirFactor
+      // 3. Sorting (delegated to backend for consistency)
+      const fallbackSort = () => {
+        const dirFactor = sortDirection === 'asc' ? 1 : -1;
+        return finalList.slice().sort((a, b) => {
+          const av = getSortValue(a, sortField);
+          const bv = getSortValue(b, sortField);
+          if (av == null && bv == null) return 0;
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          if (typeof av === 'number' && typeof bv === 'number') {
+            return (av - bv) * dirFactor;
+          }
+          return (
+            String(av).localeCompare(String(bv), undefined, {
+              sensitivity: 'base',
+            }) * dirFactor
+          );
+        });
+      };
+
+      let sortedList = finalList;
+      try {
+        const sortRes = await commands.sortWorldsDisplay(
+          finalList,
+          sortField,
+          sortDirection,
         );
-      });
+        if (sortRes.status === 'ok') {
+          sortedList = sortRes.data;
+        } else {
+          error(`[useWorldFilters] Backend sort failed: ${sortRes.error}`);
+          sortedList = fallbackSort();
+        }
+      } catch (e) {
+        error(`[useWorldFilters] Exception during backend sort: ${e}`);
+        sortedList = fallbackSort();
+      }
+      finalList = sortedList;
 
       // 4. Facets (authors & tags) based on finalList
       const authorsSet = new Set<string>();
