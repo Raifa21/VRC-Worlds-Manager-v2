@@ -8,7 +8,7 @@ interface PopupState {
   showCreateFolder: boolean;
   showDeleteFolder: string | null;
   showImportedFolderContainsHidden: WorldDisplayData[] | null;
-  showWorldDetails: string | null;
+  showWorldDetails: { id: string; dontSaveToLocal: boolean } | null;
   showShareFolder: boolean;
   // Version bump to signal membership changes across components (e.g., Find badge refresh)
   membershipVersion: number;

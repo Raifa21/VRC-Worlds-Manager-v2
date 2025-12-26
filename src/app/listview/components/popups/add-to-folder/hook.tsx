@@ -4,11 +4,13 @@ import { useWorlds } from '@/app/listview/hook/use-worlds';
 import { useLocalization } from '@/hooks/use-localization';
 import {
   commands,
+  FolderData,
   FolderRemovalPreference,
   WorldDisplayData,
 } from '@/lib/bindings';
 import { FolderType, isUserFolder, SpecialFolders } from '@/types/folders';
 import { error, info } from '@tauri-apps/plugin-log';
+import { mutate as mutateFoldersCache } from 'swr';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -27,7 +29,7 @@ export const useAddToFolderPopup = ({
 }: AddToFolderPopupProps) => {
   const { t } = useLocalization();
 
-  const { folders, createFolder } = useFolders();
+  const { folders, createFolder, refresh: refreshFolders } = useFolders();
 
   const { worlds, refresh } = useWorlds(currentFolder);
 
@@ -160,27 +162,17 @@ export const useAddToFolderPopup = ({
         : worldsInFolder === selectedWorlds?.length
           ? 'all'
           : 'some';
-    info(
-      `[AddToFolder] getInitialState(folder="${folder}") -> ${initialState} (inFolder=${worldsInFolder}/${selectedWorlds?.length})`,
-    );
     return initialState;
   };
 
   const getFolderState = (folder: string) => {
     if (foldersToAdd.has(folder)) {
-      info(
-        `[AddToFolder] getFolderState(folder="${folder}") overridden -> all (queued add)`,
-      );
       return 'all';
     }
     if (foldersToRemove.has(folder)) {
-      info(
-        `[AddToFolder] getFolderState(folder="${folder}") overridden -> none (queued remove)`,
-      );
       return 'none';
     }
     const s = getInitialState(folder);
-    info(`[AddToFolder] getFolderState(folder="${folder}") -> ${s}`);
     return s;
   };
 
@@ -388,8 +380,8 @@ export const useAddToFolderPopup = ({
       setDialogPage('folders');
       info('[AddToFolder] remove done. Closing dialog');
       onClose();
-    } catch (error) {
-      console.error('Error during folder operations:', error);
+    } catch (e) {
+      error(`[AddToFolder] Error during folder operations: ${e}`);
     } finally {
       setIsLoading(false);
     }
@@ -416,8 +408,8 @@ export const useAddToFolderPopup = ({
       setDialogPage('folders');
       info('[AddToFolder] keep done. Closing dialog');
       onClose();
-    } catch (error) {
-      console.error('Error during folder operations:', error);
+    } catch (e) {
+      error(`[AddToFolder] Error during folder operations: ${e}`);
     } finally {
       setIsLoading(false);
     }
@@ -440,8 +432,8 @@ export const useAddToFolderPopup = ({
       setFoldersToRemove(new Set());
       info('[AddToFolder] confirm done. Closing dialog');
       onClose();
-    } catch (error) {
-      console.error('Error during confirmation:', error);
+    } catch (e) {
+      error(`[AddToFolder] Error during confirmation: ${e}`);
     } finally {
       setIsLoading(false);
     }
@@ -483,8 +475,6 @@ export const useAddToFolderPopup = ({
         // Wait for all promises to resolve in parallel
         const worldResults = await Promise.all(worldPromises);
 
-        const worldIds = selectedWorlds.map((world) => world.worldId);
-
         // Check if any of the results have errors
         const errorResult = worldResults.find(
           (result) => result.status === 'error',
@@ -503,17 +493,20 @@ export const useAddToFolderPopup = ({
               : t('listview-page:worlds-added-description-single'),
         });
       }
-      // Store original state for each world-folder combination
-      const originalStates = selectedWorlds.map((world) => ({
-        worldId: world.worldId,
-        worldName: world.name,
-        addedTo: foldersToAdd.filter(
-          (folder) => !world.folders.includes(folder),
-        ),
-        removedFrom: foldersToRemove.filter((folder) =>
-          world.folders.includes(folder),
-        ),
-      }));
+      // Store original state for each world-folder combination (prefer authoritative membership)
+      const originalStates = selectedWorlds.map((world) => {
+        const membership =
+          membershipByWorld.get(world.worldId) ?? new Set(world.folders ?? []);
+
+        return {
+          worldId: world.worldId,
+          worldName: world.name,
+          addedTo: foldersToAdd.filter((folder) => !membership.has(folder)),
+          removedFrom: foldersToRemove.filter((folder) =>
+            membership.has(folder),
+          ),
+        };
+      });
       info(
         `[AddToFolder] OriginalStates prepared for ${originalStates.length} worlds`,
       );
@@ -537,8 +530,12 @@ export const useAddToFolderPopup = ({
 
         for (const folder of validFoldersToRemove) {
           for (const world of selectedWorlds) {
-            // Only remove if the world is actually in this folder
-            if (world.folders.includes(folder)) {
+            // Only remove if the world is actually in this folder (authoritative membership first)
+            const membership =
+              membershipByWorld.get(world.worldId) ??
+              new Set(world.folders ?? []);
+
+            if (membership.has(folder)) {
               removePromises.push(
                 commands.removeWorldFromFolder(folder, world.worldId),
               );
@@ -557,6 +554,41 @@ export const useAddToFolderPopup = ({
         info(
           `[AddToFolder] Folder ops completed: add=${addPromises.length} remove=${removePromises.length}`,
         );
+
+        // Optimistically bump cached folder counts so sidebar updates immediately (deduped revalidate can lag)
+        const folderDelta = new Map<string, number>();
+        for (const state of originalStates) {
+          state.addedTo.forEach((folder) => {
+            folderDelta.set(folder, (folderDelta.get(folder) ?? 0) + 1);
+          });
+          state.removedFrom.forEach((folder) => {
+            folderDelta.set(folder, (folderDelta.get(folder) ?? 0) - 1);
+          });
+        }
+
+        if (folderDelta.size > 0) {
+          await mutateFoldersCache<FolderData[]>(
+            'folders',
+            (current) => {
+              if (!current) return current;
+              return current.map((f) => {
+                const delta = folderDelta.get(f.name) ?? 0;
+                if (delta === 0) return f;
+                const nextCount = Math.max(0, f.world_count + delta);
+                return { ...f, world_count: nextCount };
+              });
+            },
+            { revalidate: true },
+          );
+
+          info(
+            `[AddToFolder] Optimistic folder count delta applied: ${Array.from(
+              folderDelta.entries(),
+            )
+              .map(([name, delta]) => `${name}:${delta}`)
+              .join(', ')}`,
+          );
+        }
       } catch (e) {
         error(`Failed during folder operations: ${e}`);
         throw e; // Re-throw to be caught by the outer try/catch
@@ -593,6 +625,8 @@ export const useAddToFolderPopup = ({
                   }
                 }
                 await refresh();
+                // Refresh folders list to update world counts in sidebar
+                await refreshFolders();
                 toast(t('listview-page:restored-title'), {
                   description: t('listview-page:folder-changes-undone'),
                 });
@@ -612,6 +646,8 @@ export const useAddToFolderPopup = ({
       if (isFindPage) {
         bumpMembershipVersion();
       }
+      // Refresh folders list to update world counts in sidebar
+      await refreshFolders();
       info('[AddToFolder] handleAddToFolders completed successfully');
       // Closing is handled by caller paths (confirm/keep/remove) too; still close here to be safe.
       onClose();

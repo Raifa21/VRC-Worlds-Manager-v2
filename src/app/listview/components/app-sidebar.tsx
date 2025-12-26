@@ -30,7 +30,7 @@ import { usePopupStore } from '../hook/usePopups/store';
 
 const sidebarStyles = {
   container:
-    'flex flex-col h-screen w-[250px] border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
+    'flex flex-col h-screen w-full border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
   header: 'flex h-14 items-center px-6',
   nav: 'flex-1 space-y-0.5 p-1 pb-0',
   link: 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-accent/50 hover:text-accent-foreground',
@@ -40,7 +40,11 @@ const sidebarStyles = {
 
 const SIDEBAR_CLASS = 'app-sidebar';
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  sidebarWidth: number;
+}
+
+export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
   const { t } = useLocalization();
   const { folders, moveFolder, createFolder, deleteFolder, renameFolder } =
     useFolders();
@@ -275,8 +279,11 @@ export function AppSidebar() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
+                              style={{
+                                width: `${sidebarWidth - 60}px`,
+                              }}
                               className={`
-                                w-[190px] px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
+                                px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
                                 overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-3
                                 ${
                                   pathname ===

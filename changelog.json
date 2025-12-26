@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.2.4",
+    "fixes": [
+      {
+        "text": "Fixed issue where preference data could be lost when PC crashes",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "PCがクラッシュした際に設定データが失われる可能性がある問題を修正"
+          }
+        ]
+      },
+      {
+        "text": "Fixed minor localization mistakes",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "一部の日本語の誤りを修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.2.4",
+    "fixes": [
+      {
+        "text": "Fixed issue where setup page crashes under certain conditions",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "セットアップページが特定の条件下でクラッシュする問題を修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.2.2",
+    "others": [
+      {
+        "text": "Security update",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "セキュリティアップデート"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.2.1",
     "features": [
       {
@@ -10,9 +61,54 @@
             "text": "インスタンス詳細をVRChatで開く機能を追加"
           }
         ]
+      },
+      {
+        "text": "Added ability to resize sidebar",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "サイドバーのサイズを変更する機能を追加"
+          }
+        ]
+      },
+      {
+        "text": "Added keyboard shortcuts for searching (Ctrl+F), advanced search (Ctrl+Shift+F), adding worlds (Ctrl+A), and refreshing search (Ctrl+R)",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "検索 (Ctrl+F)、詳細検索 (Ctrl+Shift+F)、ワールド追加 (Ctrl+A)、検索の更新 (Ctrl+R) のためのキーボードショートカットを追加"
+          }
+        ]
       }
     ],
     "fixes": [
+      {
+        "text": "Fixed issue where world add did not work in All worlds page",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "「すべてのワールド」でワールド追加が正しく動作しない問題を修正"
+          }
+        ]
+      },
+      {
+        "text": "Fixed issue where world count in the sidebar did not update correctly",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "サイドバーのワールド数が正しく更新されない問題を修正"
+          }
+        ]
+      },
+      {
+        "text": "Fixed issue where adding a world to a folder did not work correctly",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "ワールドをフォルダに追加する際に正しく動作しない問題を修正"
+          }
+        ]
+      },
       {
         "text": "Added a relevance sort option to ensure search keywords are reflected in results",
         "langs": [

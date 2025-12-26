@@ -3,7 +3,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { FolderType, SpecialFolders } from '@/types/folders';
 import { CardSize, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -69,69 +68,15 @@ export function WorldGrid({
   } = useWorldGrid(currentFolder, worlds);
 
   const gap = 16;
-  const cardHeights: Record<CardSize, number> = {
-    Compact: 128, // h-32 = 8rem = 128px
-    Normal: 192, // h-48 = 12rem = 192px
-    Expanded: 256, // h-64 = 16rem = 256px
-    Original: 176, // h-44 = 11rem = 176px
-  };
   const cardWidths: Record<CardSize, number> = {
     Compact: 192, // w-48 = 12rem = 192px
     Normal: 208, // w-52 = 13rem = 208px
     Expanded: 256, // w-64 = 16rem = 256px
     Original: 256, // w-64 = 16rem = 256px
   };
-  const cardH = cardHeights[cardSize];
   const cardW = cardWidths[cardSize];
 
-  // 1) Keep a piece of state for the container’s width
-  const [containerWidth, setContainerWidth] = useState<number>(() => {
-    // don’t read window on the server
-    if (typeof window === 'undefined') return 0;
-    // if ref is ready use it, otherwise fallback to window.innerWidth minus sidebar width (250px)
-    return containerRef.current?.clientWidth ?? window.innerWidth - 250;
-  });
-
-  // 2) Observe that div and update width on resize
-  useEffect(() => {
-    const el = containerRef?.current;
-    if (!el) return;
-    // set initial
-    setContainerWidth(el.clientWidth);
-    const ro = new ResizeObserver(([entry]) => {
-      setContainerWidth(entry.contentRect.width);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [containerRef]);
-
-  // 3) Recompute cols whenever size or containerWidth changes
-  const cols = useMemo(() => {
-    // account for the same “-10px” you use in the container width
-    const effectiveWidth = containerWidth - 10;
-    return Math.max(1, Math.floor((effectiveWidth + gap) / (cardW + gap)));
-  }, [cardSize, containerWidth]);
-
-  // 4) chunk worlds into rows
-  const rows = useMemo(() => {
-    const out = [];
-    for (let i = 0; i < worlds.length; i += cols) {
-      out.push(worlds.slice(i, i + cols));
-    }
-    return out;
-  }, [worlds, cols]);
-
-  // 5) virtualize rows
-  const rowHeight = cardH + gap;
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => containerRef?.current ?? null,
-    estimateSize: () => rowHeight,
-    overscan: 5,
-  });
-
-  const totalHeight = rowVirtualizer.getTotalSize();
-  const virtualRows = rowVirtualizer.getVirtualItems();
+  // Use CSS Grid auto-fill for responsive layout - no manual calculation needed
 
   const [dialogConfig, setDialogConfig] = useState<{
     type: 'remove' | 'hide';
@@ -155,168 +100,142 @@ export function WorldGrid({
   return (
     <div
       ref={containerRef}
-      className="pt-2 flex-1 overflow-auto relative"
-      // ↑ debug: the scrollable full-width parent
+      className="pt-2 flex-1 overflow-auto p-4"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(auto-fill, minmax(${cardW}px, 1fr))`,
+        gap: `${gap}px`,
+        justifyContent: 'center',
+      }}
     >
-      <div
-        className="mx-auto relative"
-        // ↑ debug: this fixed-width grid container
-        style={{
-          width: `${containerWidth - 10}px`,
-          height: `${totalHeight}px`,
-        }}
-      >
-        {virtualRows.map((vr) => {
-          const row = rows[vr.index];
-          return (
-            <div
-              key={vr.index}
-              style={{
-                position: 'absolute',
-                top: vr.start,
-                left: 0,
-                width: '100%',
-                height: cardH + gap,
-              }}
-            >
+      {worlds.map((world) => {
+        const isSelected = selectedWorlds.includes(world.worldId);
+        return (
+          <ContextMenu key={world.worldId}>
+            <ContextMenuTrigger asChild>
               <div
-                className="justify-evenly"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${cols}, ${cardW}px)`,
-                  columnGap: `${gap}px`,
+                id={world.worldId}
+                onClick={() => {
+                  if (disableCardClick) return;
+                  if (isFindPage) {
+                    // Only set dontSaveToLocal on worlds not already in collection
+                    handleOpenWorldDetails(
+                      world.worldId,
+                      !existingWorldIds.has(world.worldId),
+                    );
+                  } else {
+                    // dontSaveToLocal defaults to false when omitted
+                    handleOpenWorldDetails(world.worldId);
+                  }
                 }}
+                className="group relative w-fit h-fit rounded-lg overflow-hidden"
               >
-                {row.map((world) => {
-                  const isSelected = selectedWorlds.includes(world.worldId);
-                  return (
-                    <ContextMenu key={world.worldId}>
-                      <ContextMenuTrigger asChild>
-                        <div
-                          id={world.worldId}
-                          onClick={() => {
-                            if (disableCardClick) return;
-                            if (isFindPage) {
-                              handleOpenFolderDialog(world.worldId);
-                            } else {
-                              handleOpenWorldDetails(world.worldId);
-                            }
-                          }}
-                          className="group relative w-fit h-fit rounded-lg overflow-hidden"
-                        >
-                          {isSelected && (
-                            <div className="absolute inset-0 rounded-lg border-2 border-primary pointer-events-none z-10" />
-                          )}
-                          <WorldCardPreview size={cardSize} world={world} />
-                          <div className="absolute bottom-[70px] left-2 z-10">
-                            {isFindPage &&
-                              existingWorldIds.has(world.worldId) && (
-                                <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
-                                  {t('world-grid:exists-in-collection')}
-                                </Badge>
-                              )}
-                          </div>
-                          {(isSelectionMode || alwaysShowSelection) && (
-                            <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
-                              {isSelected ? (
-                                <div
-                                  className="relative w-10 h-10 flex items-center justify-center cursor-pointer"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSelect(world.worldId, e);
-                                  }}
-                                >
-                                  <Square className="w-5 h-5 z-10 text-primary" />
-                                  <div className="absolute inset-[12px] bg-background rounded" />
-                                  <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
-                                </div>
-                              ) : (
-                                <div
-                                  className="relative w-10 h-10 flex items-center justify-center cursor-pointer"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSelect(world.worldId, e);
-                                  }}
-                                >
-                                  <Square className="w-5 h-5 text-muted-foreground" />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </ContextMenuTrigger>
-                      <ContextMenuContent>
-                        {isFindPage ? (
-                          <ContextMenuItem
-                            onSelect={(e) => {
-                              handleOpenFolderDialog(world.worldId);
-                            }}
-                          >
-                            {t('world-grid:add-title')}
-                          </ContextMenuItem>
-                        ) : !isHiddenFolder ? (
-                          <>
-                            <ContextMenuItem
-                              onSelect={(e) => {
-                                handleOpenFolderDialog(world.worldId);
-                              }}
-                            >
-                              {t('world-grid:move-title')}
-                            </ContextMenuItem>
-                            {!isSpecialFolder && (
-                              <ContextMenuItem
-                                onSelect={(e) => {
-                                  handleRemoveFromCurrentFolder(world.worldId);
-                                }}
-                                className="text-destructive"
-                              >
-                                {t('world-grid:remove-title')}
-                              </ContextMenuItem>
-                            )}
-                            <ContextMenuItem
-                              onSelect={(e) => {
-                                const worldsToHide =
-                                  selectedWorlds.length > 0 &&
-                                  selectedWorlds.includes(world.worldId)
-                                    ? Array.from(selectedWorlds)
-                                    : [world.worldId];
-                                const worldNames = worldsToHide
-                                  .map(
-                                    (id) =>
-                                      worlds.find((w) => w.worldId === id)
-                                        ?.name || '',
-                                  )
-                                  .filter(Boolean);
-                                handleHideWorld(worldsToHide, worldNames);
-                              }}
-                              className="text-destructive"
-                            >
-                              {t('general:hide-title')}
-                            </ContextMenuItem>
-                          </>
-                        ) : (
-                          <ContextMenuItem
-                            onSelect={(e) => {
-                              const worldsToRestore =
-                                selectedWorlds.length > 0 &&
-                                selectedWorlds.includes(world.worldId)
-                                  ? Array.from(selectedWorlds)
-                                  : [world.worldId];
-                              handleRestoreWorld?.(worldsToRestore);
-                            }}
-                          >
-                            {t('world-grid:restore-world')}
-                          </ContextMenuItem>
-                        )}
-                      </ContextMenuContent>
-                    </ContextMenu>
-                  );
-                })}
+                {isSelected && (
+                  <div className="absolute inset-0 rounded-lg border-2 border-primary pointer-events-none z-10" />
+                )}
+                <WorldCardPreview size={cardSize} world={world} />
+                <div className="absolute bottom-[70px] left-2 z-10">
+                  {isFindPage && existingWorldIds.has(world.worldId) && (
+                    <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
+                      {t('world-grid:exists-in-collection')}
+                    </Badge>
+                  )}
+                </div>
+                {(isSelectionMode || alwaysShowSelection) && (
+                  <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
+                    {isSelected ? (
+                      <div
+                        className="relative w-10 h-10 flex items-center justify-center cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelect(world.worldId, e);
+                        }}
+                      >
+                        <Square className="w-5 h-5 z-10 text-primary" />
+                        <div className="absolute inset-[12px] bg-background rounded" />
+                        <Check className="absolute inset-0 m-auto w-3 h-3 text-primary" />
+                      </div>
+                    ) : (
+                      <div
+                        className="relative w-10 h-10 flex items-center justify-center cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelect(world.worldId, e);
+                        }}
+                      >
+                        <Square className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              {isFindPage ? (
+                <ContextMenuItem
+                  onSelect={(e) => {
+                    handleOpenFolderDialog(world.worldId);
+                  }}
+                >
+                  {t('world-grid:add-title')}
+                </ContextMenuItem>
+              ) : !isHiddenFolder ? (
+                <>
+                  <ContextMenuItem
+                    onSelect={(e) => {
+                      handleOpenFolderDialog(world.worldId);
+                    }}
+                  >
+                    {t('world-grid:move-title')}
+                  </ContextMenuItem>
+                  {!isSpecialFolder && (
+                    <ContextMenuItem
+                      onSelect={(e) => {
+                        handleRemoveFromCurrentFolder(world.worldId);
+                      }}
+                      className="text-destructive"
+                    >
+                      {t('world-grid:remove-title')}
+                    </ContextMenuItem>
+                  )}
+                  <ContextMenuItem
+                    onSelect={(e) => {
+                      const worldsToHide =
+                        selectedWorlds.length > 0 &&
+                        selectedWorlds.includes(world.worldId)
+                          ? Array.from(selectedWorlds)
+                          : [world.worldId];
+                      const worldNames = worldsToHide
+                        .map(
+                          (id) =>
+                            worlds.find((w) => w.worldId === id)?.name || '',
+                        )
+                        .filter(Boolean);
+                      handleHideWorld(worldsToHide, worldNames);
+                    }}
+                    className="text-destructive"
+                  >
+                    {t('general:hide-title')}
+                  </ContextMenuItem>
+                </>
+              ) : (
+                <ContextMenuItem
+                  onSelect={(e) => {
+                    const worldsToRestore =
+                      selectedWorlds.length > 0 &&
+                      selectedWorlds.includes(world.worldId)
+                        ? Array.from(selectedWorlds)
+                        : [world.worldId];
+                    handleRestoreWorld?.(worldsToRestore);
+                  }}
+                >
+                  {t('world-grid:restore-world')}
+                </ContextMenuItem>
+              )}
+            </ContextMenuContent>
+          </ContextMenu>
+        );
+      })}
 
       {/* Portaled AlertDialogs */}
       <Portal.Root>
@@ -378,8 +297,8 @@ export function WorldGrid({
       {isFindPage && selectedWorlds.length > 0 && (
         <div
           className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-center pointer-events-none w-full"
-          // add half-width of sidebar (250px) to center the button
-          style={{ left: 'calc(50% + 125px)' }}
+          // Offset is controlled by CSS variable to avoid hardcoding sidebar width
+          style={{ left: 'calc(50% + var(--sidebar-offset, 0px))' }}
         >
           <div className="pointer-events-auto relative inline-block">
             <div
@@ -395,7 +314,7 @@ export function WorldGrid({
             >
               <Plus className="w-5 h-5" />
               <span className="text-md font-semibold">
-                {t('world-grid:add-title')}
+                {t('world-grid:add-multiple', selectedWorlds.length)}
               </span>
             </Button>
           </div>

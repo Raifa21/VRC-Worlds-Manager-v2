@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import {
   CircleHelpIcon,
   Loader2,
-  RefreshCcw,
+  RefreshCw,
   Search,
   Square,
   CheckSquare,
@@ -60,10 +60,73 @@ export default function FindWorldsPage() {
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const findGridRef = useRef<HTMLDivElement>(null);
-  const { isSelectionMode, toggleSelectionMode, clearFolderSelections } =
-    useSelectedWorldsStore();
+  const {
+    isSelectionMode,
+    toggleSelectionMode,
+    clearFolderSelections,
+    selectAllWorlds,
+    getSelectedWorlds,
+  } = useSelectedWorldsStore();
+
+  const selectedWorlds = Array.from(getSelectedWorlds(SpecialFolders.Find));
+  const selectedWorldIdSet = new Set(selectedWorlds);
+
+  // Check if all recently visited worlds are selected
+  const allSelected =
+    recentlyVisitedWorlds.length > 0 &&
+    selectedWorlds.length === recentlyVisitedWorlds.length &&
+    recentlyVisitedWorlds.every((world) =>
+      selectedWorldIdSet.has(world.worldId),
+    );
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      clearFolderSelections(SpecialFolders.Find);
+    } else {
+      const worldIds = recentlyVisitedWorlds.map((world) => world.worldId);
+      selectAllWorlds(SpecialFolders.Find, worldIds);
+    }
+  };
 
   const { importFolder } = useFolders();
+
+  const fetchRecentlyVisitedWorlds = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const worlds = await commands.getRecentlyVisitedWorlds();
+      if (worlds.status !== 'ok') {
+        throw new Error(worlds.error);
+      } else {
+        info(`Fetched recently visited worlds: ${worlds.data.length}`);
+        setRecentlyVisitedWorlds(worlds.data);
+      }
+      toast(t('find-page:fetch-recently-visited-worlds'), {
+        description: t(
+          'find-page:fetch-recently-visited-worlds-success',
+          worlds.data.length,
+        ),
+        duration: 1000,
+      });
+    } catch (err) {
+      error(`Error fetching recently visited worlds: ${String(err)}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [t]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CTRL + R - Reload worlds (only in recently-visited tab)
+      if (e.ctrlKey && e.key === 'r' && activeTab === 'recently-visited') {
+        e.preventDefault();
+        fetchRecentlyVisitedWorlds();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, fetchRecentlyVisitedWorlds]);
 
   // subscribe to deep link events
   useEffect(() => {
@@ -107,36 +170,12 @@ export default function FindWorldsPage() {
     number | null
   >(null);
 
-  const fetchRecentlyVisitedWorlds = async () => {
-    try {
-      setIsLoading(true);
-      const worlds = await commands.getRecentlyVisitedWorlds();
-      if (worlds.status !== 'ok') {
-        throw new Error(worlds.error);
-      } else {
-        info(`Fetched recently visited worlds: ${worlds.data.length}`);
-        setRecentlyVisitedWorlds(worlds.data);
-      }
-      toast(t('find-page:fetch-recently-visited-worlds'), {
-        description: t(
-          'find-page:fetch-recently-visited-worlds-success',
-          worlds.data.length,
-        ),
-        duration: 1000,
-      });
-    } catch (err) {
-      error(`Error fetching recently visited worlds: ${String(err)}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Fetch recently visited worlds on initial load
   useEffect(() => {
     if (recentlyVisitedWorlds.length === 0 && !isLoading) {
       fetchRecentlyVisitedWorlds();
     }
-  }, []);
+  }, [recentlyVisitedWorlds.length, isLoading, fetchRecentlyVisitedWorlds]);
 
   // Load tags when the search tab is active
   useEffect(() => {
@@ -278,6 +317,21 @@ export default function FindWorldsPage() {
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
         <div className="flex items-center">
+          {isSelectionMode &&
+            activeTab === 'recently-visited' &&
+            recentlyVisitedWorlds.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleSelectAll}
+                className="mr-2 flex items-center gap-2 cursor-pointer"
+              >
+                <span>
+                  {allSelected
+                    ? t('general:clear-all')
+                    : t('general:select-all')}
+                </span>
+              </Button>
+            )}
           <Button
             variant="outline"
             onClick={fetchRecentlyVisitedWorlds}
@@ -286,9 +340,10 @@ export default function FindWorldsPage() {
               activeTab !== 'recently-visited' ? 'invisible' : ''
             }`}
           >
-            <RefreshCcw
+            <RefreshCw
               className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
             />
+            <span>{t('general:fetch-refresh')}</span>
           </Button>
           <Button
             variant={isSelectionMode ? 'secondary' : 'ghost'}

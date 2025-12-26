@@ -7,6 +7,7 @@ import '@/app/globals.css';
 import { LocalizationContextProvider } from '@/components/localization-context';
 import { UpdateDialogProvider } from '@/components/UpdateDialogContext';
 import { DeepLinkProvider } from '@/components/deep-link-provider';
+import { PatreonProvider } from '@/contexts/patreon-context';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -40,7 +41,9 @@ export default function RootLayout({
           >
             <LocalizationContextProvider>
               <UpdateDialogProvider>
-                <main>{children}</main>
+                <PatreonProvider>
+                  <main>{children}</main>
+                </PatreonProvider>
               </UpdateDialogProvider>
             </LocalizationContextProvider>
           </ThemeProvider>

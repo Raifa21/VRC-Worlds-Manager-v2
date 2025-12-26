@@ -116,11 +116,15 @@ export const useWorldsStore = create<WorldsStoreState>((set, get) => ({
     }));
   },
   async addWorldToFolder(folder, worldId) {
-    if (!isUserFolder(folder)) return;
     const key = folderKey(folder);
     const res = await commands.getWorld(worldId, null);
     if (res.status === 'error') throw new Error(res.error);
-    await commands.addWorldToFolder(folder as string, worldId);
+
+    // Only call addWorldToFolder command for user folders
+    if (isUserFolder(folder)) {
+      await commands.addWorldToFolder(folder as string, worldId);
+    }
+
     // optimistic update: append if not exists
     set((s) => {
       const entry = s.byKey[key] ?? { worlds: [], isLoading: false };
@@ -163,6 +167,10 @@ export function useWorlds(folder: FolderType) {
   const addWorld = async (worldId: string) => {
     try {
       await store.addWorldToFolder(folder, worldId);
+      // For special folders, refresh to get the updated data from backend
+      if (!isUserFolder(folder)) {
+        await refresh();
+      }
       toast(t('listview-page:world-added-title'), {
         description: t('listview-page:world-added-description'),
       });
