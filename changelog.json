@@ -1,49 +1,5 @@
 [
   {
-    "version": "1.3.0-rc.0",
-    "preRelease": true,
-    "features": [
-      {
-        "text": "Added Share world feature",
-        "langs": [
-          {
-            "lang": ["ja-JP"],
-            "text": "ワールドのシェアボタンを追加"
-          }
-        ]
-      },
-      {
-        "text": "Added select all button in all folders",
-        "langs": [
-          {
-            "lang": ["ja-JP"],
-            "text": "すべてのフォルダに全選択ボタンを追加"
-          }
-        ]
-      },
-      {
-        "text": "Added sort order selection for export",
-        "langs": [
-          {
-            "lang": ["ja-JP"],
-            "text": "エクスポートの並び順選択を追加"
-          }
-        ]
-      }
-    ],
-    "others": [
-      {
-        "text": "Improved multi-select functionality",
-        "langs": [
-          {
-            "lang": ["ja-JP"],
-            "text": "複数選択機能の改善"
-          }
-        ]
-      }
-    ]
-  },
-  {
     "version": "1.2.4",
     "fixes": [
       {
