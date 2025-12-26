@@ -54,7 +54,6 @@
   "error-page:logs": "Open Logs",
   "error-page:contact-support": "Contact Support",
   "error-page:unknown-error": "Unknown Error",
-
   "login-page:title": "Login to VRChat",
   "login-page:username-placeholder": "Email / Username",
   "login-page:password-placeholder": "Password",
@@ -67,7 +66,6 @@
   "login-page:2fa-button": "Verify",
   "login-page:error-invalid-credentials": "Invalid credentials",
   "login-page:error-invalid-2fa": "Invalid 2FA code",
-
   "setup-page:welcome-title": "Welcome to VRC Worlds Manager v2",
   "setup-page:thank-you": "Thank you for installing!",
   "setup-page:first-time": "Since this is your first time here, let's take a moment to set up VRC Worlds Manager v2 just the way you like it.",
@@ -99,7 +97,6 @@
   "setup-page:migration-exists-description": "Migration will overwrite existing data. Continue?",
   "setup-page:migration-exists-cancel": "Keep existing data",
   "setup-page:migration-exists-continue": "Import new data",
-
   "listview-page:open-in-client": "Open in VRChat",
   "listview-page:reloading-worlds": "Getting favorite worlds...",
   "listview-page:importing-folder": "Importing folder...",
@@ -163,14 +160,12 @@
   "listview-page:no-worlds-in-folder": "Add new worlds to this folder by right-clicking on a world or using the \"Add World\" button.",
   "listview-page:no-worlds": "No worlds found.",
   "listview-page:no-results-filtered": "No worlds match your filters. Try changing your filters or search criteria.",
-
   "world-card:cross-platform": "Cross-platform",
   "world-card:pc": "PC",
   "world-card:quest": "Quest",
   "world-card:visits": "Visits: {0}",
   "world-card:updated": "Updated: {0}",
   "world-card:by-author": "By {0}",
-
   "world-grid:search-placeholder": "Search worlds...",
   "world-grid:sort-placeholder": "Sort by...",
   "world-grid:sort-name": "Name",
@@ -193,7 +188,7 @@
   "world-grid:hide-note": "You can find the world in the \"Hidden Folder\" in settings to revert.",
   "world-grid:remove-button": "Remove",
   "world-grid:exists-in-collection": "Added",
-
+  "world-grid:share-world": "Share World",
   "world-detail:create-group-instance": "Create Group Instance",
   "world-detail:world-details": "World Details",
   "world-detail:loading-details": "Loading world details...",
@@ -220,7 +215,6 @@
   "world-detail:author-removal-title": "Are you the author of this world?",
   "world-detail:author-removal-description": "If you are the world creator and wish to request removal of your world's data from our service, please use the form below.",
   "world-detail:request-removal": "Request Data Removal",
-
   "add-world-dialog:add": "Add World",
   "add-world-dialog:description": "Enter a world URL or world ID to add to the folder",
   "add-world-dialog:placeholder": "Enter world URL or ID",
@@ -228,22 +222,18 @@
   "add-world-dialog:preview": "World Preview",
   "add-world-dialog:author": "Author: ",
   "add-world-dialog:duplicate-warning": "This world already exists!",
-
   "app-sidebar:add-folder": "Add Folder",
   "app-sidebar:about": "About",
   "app-sidebar:rename": "Rename",
-
   "advanced-search:title": "Advanced Search",
   "advanced-search:search-author": "Search by author name",
   "advanced-search:search-tags": "Search by tags",
   "advanced-search:search-folders": "Search by folders",
   "advanced-search:search-memo-text": "Search by memo text",
   "advanced-search:apply-filters": "Apply Filters",
-
   "filter-item-selector:custom-value": "Press Enter to add {0}",
   "filter-item-selector:selection-limit": "{0}/{1} selected",
   "filter-item-selector:no-results-found": "No results found",
-
   "about-section:development-team": "Development Team",
   "about-section:developers": "Developers",
   "about-section:media-design": "Media Design",
@@ -265,7 +255,6 @@
   "about-section:no-supporters": "Unable to load supporters. Sorry!",
   "about-section:source-code": "Source Code",
   "about-section:report-issue": "Report an Issue",
-
   "settings-page:section-preferences": "Customize Appearance",
   "settings-page:world-card-size": "World Card Size",
   "settings-page:world-card-description": "Select how world cards appear",
@@ -344,7 +333,6 @@
   "settings-page:folder-removal-ask": "Ask me every time",
   "settings-page:folder-removal-keep": "Always Keep",
   "settings-page:folder-removal-remove": "Always Remove",
-
   "delete-data:warning-title": "Delete Data",
   "delete-data:warning-description": "Delete world and folder data",
   "delete-data:deletion-warning": "Warning",
@@ -352,7 +340,6 @@
   "delete-data:deletion-irreversible": "This action cannot be undone!",
   "delete-data:hold-to-delete": "Hold to Delete",
   "delete-data:deleting": "Deleting...",
-
   "find-page:recently-visited": "Recently Visited Worlds",
   "find-page:search-worlds": "Search Worlds",
   "find-page:no-recently-visited-worlds": "No recently visited worlds found.",
@@ -387,7 +374,6 @@
   "find-page:search-error": "An error occurred while searching for worlds",
   "find-page:no-search-results": "No worlds found",
   "find-page:search-instructions": "To search for worlds, enter a world name or tag in the search bar above",
-
   "add-to-folder-dialog:title": "Manage Folders",
   "add-to-folder-dialog:description-single": "Select folders to add or remove {0} world to",
   "add-to-folder-dialog:description-multiple": "Select folders to add or remove {0} worlds from",
@@ -402,7 +388,6 @@
   "add-to-folder-dialog:always-remove": "Always remove",
   "add-to-folder-dialog:keep": "Keep",
   "add-to-folder-dialog:always-keep": "Always keep",
-
   "create-folder-dialog:title": "Add Folder",
   "create-folder-dialog:import-title": "Import Folder",
   "create-folder-dialog:import-description": "Import a shared folder from another user. This will also add all worlds in the folder which are not already in your collection.",
@@ -413,7 +398,6 @@
   "create-folder-dialog:placeholder": "Enter folder name",
   "create-folder-dialog:creating": "Creating...",
   "create-folder-dialog:create": "Create",
-
   "group-instance-creator:loading-groups": "Loading groups...",
   "group-instance-creator:select-group": "Select a Group",
   "group-instance-creator:loading-permissions": "Loading permissions...",
@@ -436,21 +420,17 @@
   "group-instance-creator:enable-queue": "Enable Queue",
   "group-instance-creator:loading-configuration": "Loading configuration...",
   "group-instance-creator:no-groups-found": "No groups found",
-
   "migration-confirmation-popup:title": "Existing Data Detected",
   "migration-confirmation-popup:description": "Toggle which existing data you want to keep:",
   "migration-confirmation-popup:keep-existing": "Keep existing data",
   "migration-confirmation-popup:import-new": "Import new data",
-
   "setup-layout:start": "Start",
   "setup-layout:finish": "Finish",
   "setup-layout:skip": "Skip",
-
   "imported-folder:hidden-title": "Imported folder contains hidden worlds",
   "imported-folder:hidden-description": "These worlds are set as hidden in your library. Select worlds to restore:",
   "imported-folder:restore": "Restore selected worlds",
   "imported-folder:do-not-restore": "Do not restore",
-
   "share-folder:error-message": "Failed to share folder: {0}",
   "share-folder:title": "Share Folder",
   "share-folder:description": "Share this folder with other users. Any user with the folder UUID can access it.",
@@ -459,7 +439,6 @@
   "share-folder:worlds-count": "Worlds Count: ",
   "share-folder:share-button": "Share",
   "share-folder:sharing": "Sharing...",
-
   "share-folder:success-title": "Folder Shared",
   "share-folder:success-message": "Share the UUID with others to allow them to access it. Changes you make to this folder will not affect the shared folder.",
   "share-folder:UUID": "Folder UUID: ",
@@ -470,30 +449,40 @@
   "share-folder:share-twitter": "Share on Twitter",
   "share-folder:twitter-text": "I just shared “{0}” with VRC Worlds Manager v2!\nView the worlds here 👇\n{1}\n\n#VRCWMWorldShare",
   "share-folder:share-text": "I just shared “{0}” with VRC Worlds Manager v2!\nView the worlds here 👇\n{1}",
-
+  "share-folder:toast-id-copied": "Folder UUID copied.",
+  "share-folder:toast-link-copied": "Share link copied.",
+  "share-folder:toast-text-copied": "Share text copied.",
+  "share-folder:toast-twitter-opened": "Twitter share opened.",
   "delete-folder:title": "Delete Folder",
   "delete-folder:description": "Are you sure you want to delete \"{0}\"? This will remove the folder but not delete the worlds inside.",
-
   "changelog:prefix:new-feature": "New Features",
   "changelog:prefix:bug-fixes": "Bug Fixes",
   "changelog:prefix:others": "Others",
   "changelog:title": "Changelog",
   "changelog:not-found": "No changelog available",
   "changelog:github": "View changes on GitHub",
-
   "new-update-toast": "A new update is available!",
   "new-update-toast:description": "This update includes bug fixes, new features, and more",
   "new-update-toast:button": "Update now",
   "new-update-toast:close": "Not now",
-
   "update-dialog:title": "Preparing update",
   "update-dialog:description": "Downloading update...",
   "update-dialog:downloading:foretext": "Downloading (",
   "update-dialog:downloading:posttext": "%)",
   "update-dialog:download-complete": "Update downloaded",
   "update-dialog:execute": "Update",
-
   "export-popup:title": "Export Folders",
   "export-popup:export": "Export to: ",
+  "share-world:title": "Share World",
+  "share-world:description": "Share \"{0}\" with others",
+  "share-world:world-url": "World URL",
+  "share-world:share-options": "Share Options",
+  "share-world:copy-share-text": "Copy Share Text",
+  "share-world:share-twitter": "Share on Twitter",
+  "share-world:twitter-text": "I just shared “{0}” with VRC Worlds Manager v2! Check it out! 🌍\n{1}\n\n#VRCWMWorldShare",
+  "share-world:share-text": "I just shared “{0}” with VRC Worlds Manager v2! Check it out!\n{1}",
+  "share-world:toast-url-copied": "World link copied.",
+  "share-world:toast-share-text-copied": "Share text copied.",
+  "share-world:toast-twitter-opened": "Twitter share opened.",
   "export-popup:sort-order": "Sort Order"
 }
