@@ -137,11 +137,12 @@ export function PopupManager() {
       {showWorldDetails && (
         <WorldDetailPopup
           open={!!showWorldDetails}
-          onOpenChange={(open) =>
-            setPopup('showWorldDetails', open ? showWorldDetails : null)
-          }
-          worldId={showWorldDetails}
+          onOpenChange={(open) => {
+            if (!open) setPopup('showWorldDetails', null);
+          }}
+          worldId={showWorldDetails.id}
           currentFolder={currentFolder}
+          dontSaveToLocal={showWorldDetails.dontSaveToLocal}
         />
       )}
     </>

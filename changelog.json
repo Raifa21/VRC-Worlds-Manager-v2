@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.2.4",
+    "fixes": [
+      {
+        "text": "Fixed issue where preference data could be lost when PC crashes",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "PCがクラッシュした際に設定データが失われる可能性がある問題を修正"
+          }
+        ]
+      },
+      {
+        "text": "Fixed minor localization mistakes",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "一部の日本語の誤りを修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.2.4",
+    "fixes": [
+      {
+        "text": "Fixed issue where setup page crashes under certain conditions",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "セットアップページが特定の条件下でクラッシュする問題を修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.2.2",
+    "others": [
+      {
+        "text": "Security update",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "セキュリティアップデート"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.2.1",
     "features": [
       {

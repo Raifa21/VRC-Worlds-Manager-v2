@@ -46,6 +46,8 @@
   "general:open-folder": "Open Folder",
   "general:cancelled": "Cancelled",
   "general:failed": "Failed",
+  "general:fetch-refresh": "Refresh",
+
   "error-page:title": "Error Loading Application",
   "error-page:try-again": "Retry",
   "error-page:read-data-error-message": "Failed to read application data. Your data seems to be corrupted or missing.",
@@ -171,13 +173,14 @@
   "world-grid:sort-favorites": "Favorites",
   "world-grid:sort-capacity": "Capacity",
   "world-grid:sort-last-updated": "Last Updated",
-  "world-grid:move-multiple": "Move {0} worlds to folder",
+  "world-grid:move-multiple": "Move {0} worlds",
+  "world-grid:add-multiple": "Add {0} worlds",
   "world-grid:move-single": "Move world to folder",
   "world-grid:remove-multiple": "Remove {0} worlds from folder",
   "world-grid:remove-single": "Remove world from folder",
   "world-grid:hide-multiple": "Hide {0} worlds",
   "world-grid:restore-world": "Restore world",
-  "world-grid:move-title": "Move to folder",
+  "world-grid:move-title": "Add to folder",
   "world-grid:add-title": "Add to Folder",
   "world-grid:remove-title": "Remove from Folder",
   "world-grid:remove-description": "This will remove this world from the current folder.",
@@ -474,5 +477,5 @@
   "share-world:twitter-text": "I just shared “{0}” with VRC Worlds Manager v2! Check it out! 🌍\n{1}\n\n#VRCWMWorldShare",
   "share-world:share-text": "I just shared “{0}” with VRC Worlds Manager v2! Check it out!\n{1}",
   "world-grid:share-world": "Share World",
-  "general:copied": "Copied!"
+  "export-popup:sort-order": "Sort Order"
 }

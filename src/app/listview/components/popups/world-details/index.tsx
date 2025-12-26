@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { info, error } from '@tauri-apps/plugin-log';
 import Image from 'next/image';
+import { mutate as mutateFoldersCache } from 'swr';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ import {
   GroupInstancePermissionInfo,
   GroupRole,
   commands,
+  FolderData,
 } from '@/lib/bindings';
 import { WorldDisplayData } from '@/lib/bindings';
 import { WorldDetails } from '@/lib/bindings';
@@ -40,7 +42,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useWorldDetailsActions } from './hook';
 import { useWorlds } from '@/app/listview/hook/use-worlds';
 import { FolderType } from '@/types/folders';
-import { usePatreon } from '@/hooks/use-patreon';
+import { usePatreonContext } from '@/contexts/patreon-context';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -101,7 +103,7 @@ export function WorldDetailPopup({
   } = useWorldDetailsActions(onOpenChange);
   const { t } = useLocalization();
   const { folders } = useFolders();
-  const { supporters } = usePatreon();
+  const { supporters } = usePatreonContext();
   const [isLoading, setIsLoading] = useState(false);
   const [worldDetails, setWorldDetails] = useState<WorldDetails | null>(null);
   const [errorState, setErrorState] = useState<string | null>(null);
@@ -235,8 +237,10 @@ export function WorldDetailPopup({
     };
 
     fetchWorldDetails();
-    fetchMemo();
-    fetchWorldFolders();
+    if (!dontSaveToLocal) {
+      fetchMemo();
+      fetchWorldFolders();
+    }
   }, [open, worldId]);
 
   useEffect(() => {
@@ -386,8 +390,9 @@ export function WorldDetailPopup({
 
   async function toggleWorldFolder(folder: string): Promise<void> {
     try {
+      const isRemoving = worldFolders.includes(folder);
       let updatedFolders: string[];
-      if (worldFolders.includes(folder)) {
+      if (isRemoving) {
         // Remove folder
         const result = await commands.removeWorldFromFolder(folder, worldId);
         if (result.status !== 'ok') {
@@ -409,6 +414,23 @@ export function WorldDetailPopup({
         updatedFolders = [...worldFolders, folder];
       }
       setWorldFolders(updatedFolders);
+      // Optimistically bump cached folder count so sidebar updates immediately
+      const delta = isRemoving ? -1 : 1;
+      await mutateFoldersCache<FolderData[]>(
+        'folders',
+        (current) => {
+          if (!current) return current;
+          return current.map((f) => {
+            if (f.name !== folder) return f;
+            const nextCount = Math.max(0, f.world_count + delta);
+            return { ...f, world_count: nextCount };
+          });
+        },
+        { revalidate: true },
+      );
+      info(
+        `[WorldDetails] Optimistic folder count delta applied: ${folder}:${delta}`,
+      );
       refresh();
     } catch (e) {
       error(`Error toggling world folder: ${e}`);
@@ -894,90 +916,95 @@ export function WorldDetailPopup({
                       </div>
                     </div>
                   </div>
-                  <Separator className="my-2" />
-                  <div className="flex gap-4">
-                    <div className="w-2/3">
-                      <div className="text-sm font-semibold mb-2 flex flex-row items-center gap-2">
-                        {t('general:memo')}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="p-0 size-8 [&_svg]:size-4"
-                          onClick={() => setIsEditingMemo(true)}
-                        >
-                          <Pencil />
-                        </Button>
-                      </div>
-                      <div className="flex flex-row">
-                        {!isEditingMemo && (
-                          <div className="pr-4">
-                            <MemoRenderer value={memo ?? ''} />
-                          </div>
-                        )}
-                        {isEditingMemo && (
-                          <div className="space-y-2 w-full">
-                            <Textarea
-                              value={memoInput}
-                              onChange={(e) => setMemoInput(e.target.value)}
-                              className="h-32"
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                variant="secondary"
-                                className="w-full"
-                                onClick={() => {
-                                  setIsEditingMemo(false);
-                                  setMemoInput(memo ?? '');
-                                }}
-                              >
-                                {t('general:cancel')}
-                              </Button>
-                              <Button
-                                variant="default"
-                                className="w-full"
-                                onClick={handleSaveMemo}
-                              >
-                                {t('general:save')}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Separator orientation="vertical" />
-                    <div className="w-1/3">
-                      <div className="text-sm font-semibold mb-2 flex items-center gap-2">
-                        {t('general:folders')}
-                      </div>
-                      <div className="flex flex-col gap-2 h-48 overflow-y-auto no-webview-scroll-bar">
-                        {folders.length > 0 ? (
-                          folders.map((folder) => (
-                            <div
-                              className="flex items-center space-x-2"
-                              key={folder.name}
+
+                  {!dontSaveToLocal && (
+                    <>
+                      <Separator className="my-2" />
+                      <div className="flex gap-4">
+                        <div className="w-2/3">
+                          <div className="text-sm font-semibold mb-2 flex flex-row items-center gap-2">
+                            {t('general:memo')}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="p-0 size-8 [&_svg]:size-4"
+                              onClick={() => setIsEditingMemo(true)}
                             >
-                              <Checkbox
-                                checked={worldFolders.includes(folder.name)}
-                                onCheckedChange={() =>
-                                  toggleWorldFolder(folder.name)
-                                }
-                              />
-                              <span className="text-sm text-muted-foreground">
-                                {folder.world_count}
+                              <Pencil />
+                            </Button>
+                          </div>
+                          <div className="flex flex-row">
+                            {!isEditingMemo && (
+                              <div className="pr-4">
+                                <MemoRenderer value={memo ?? ''} />
+                              </div>
+                            )}
+                            {isEditingMemo && (
+                              <div className="space-y-2 w-full">
+                                <Textarea
+                                  value={memoInput}
+                                  onChange={(e) => setMemoInput(e.target.value)}
+                                  className="h-32"
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="secondary"
+                                    className="w-full"
+                                    onClick={() => {
+                                      setIsEditingMemo(false);
+                                      setMemoInput(memo ?? '');
+                                    }}
+                                  >
+                                    {t('general:cancel')}
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    className="w-full"
+                                    onClick={handleSaveMemo}
+                                  >
+                                    {t('general:save')}
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <Separator orientation="vertical" />
+                        <div className="w-1/3">
+                          <div className="text-sm font-semibold mb-2 flex items-center gap-2">
+                            {t('general:folders')}
+                          </div>
+                          <div className="flex flex-col gap-2 h-48 overflow-y-auto no-webview-scroll-bar">
+                            {folders.length > 0 ? (
+                              folders.map((folder) => (
+                                <div
+                                  className="flex items-center space-x-2"
+                                  key={folder.name}
+                                >
+                                  <Checkbox
+                                    checked={worldFolders.includes(folder.name)}
+                                    onCheckedChange={() =>
+                                      toggleWorldFolder(folder.name)
+                                    }
+                                  />
+                                  <span className="text-sm text-muted-foreground">
+                                    {folder.world_count}
+                                  </span>
+                                  <span className="truncate max-w-[200px] text-sm">
+                                    {folder.name}
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                {t('general:no-folders')}
                               </span>
-                              <span className="truncate max-w-[200px] text-sm">
-                                {folder.name}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            {t('general:no-folders')}
-                          </span>
-                        )}
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
               )
             )}

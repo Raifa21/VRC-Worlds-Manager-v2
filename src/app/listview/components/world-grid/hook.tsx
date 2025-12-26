@@ -126,8 +126,14 @@ export function useWorldGrid(
     selectAllWorlds(currentFolder, worldsToSelect);
   };
 
-  const handleOpenWorldDetails = (worldId: string) => {
-    setPopup('showWorldDetails', worldId);
+  const handleOpenWorldDetails = (
+    worldId: string,
+    dontSaveToLocal?: boolean,
+  ) => {
+    setPopup('showWorldDetails', {
+      id: worldId,
+      dontSaveToLocal: dontSaveToLocal ?? false,
+    });
   };
 
   const handleShareWorld = (worldId: string, worldName: string) => {

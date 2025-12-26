@@ -51,11 +51,26 @@ export const useWorldFiltersStore = create<FilterState>((set) => ({
   availableAuthors: [],
   availableTags: [],
   setSortField: (field) =>
-    set((state) => ({
-      sortField: field,
-      sortDirection: getDefaultDirection(field),
-    })),
-  setSortDirection: (dir) => set({ sortDirection: dir }),
+    set((state) => {
+      const newDirection = getDefaultDirection(field);
+      // Save to backend
+      commands.setSortPreferences(field, newDirection).catch((e) => {
+        error(`Failed to save sort preferences: ${e}`);
+      });
+      return {
+        sortField: field,
+        sortDirection: newDirection,
+      };
+    }),
+  setSortDirection: (dir) => {
+    set((state) => {
+      // Save to backend
+      commands.setSortPreferences(state.sortField, dir).catch((e) => {
+        error(`Failed to save sort preferences: ${e}`);
+      });
+      return { sortDirection: dir };
+    });
+  },
   setAuthorFilter: (author) => set({ authorFilter: author }),
   setTagFilters: (tags) => set({ tagFilters: tags }),
   setFolderFilters: (folders) => set({ folderFilters: folders }),
@@ -74,7 +89,7 @@ export const useWorldFiltersStore = create<FilterState>((set) => ({
     }),
 }));
 
-function getDefaultDirection(field: SortField): 'asc' | 'desc' {
+export function getDefaultDirection(field: SortField): 'asc' | 'desc' {
   switch (field) {
     case 'visits':
     case 'favorites':
@@ -117,6 +132,31 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
   const requestSeq = useRef(0);
   // Ensure we only attempt the backend tag fallback once per hook lifetime
   const tagsFallbackTriedRef = useRef(false);
+  const sortPreferencesLoadedRef = useRef(false);
+
+  // Load sort preferences from backend on mount
+  useEffect(() => {
+    if (!sortPreferencesLoadedRef.current) {
+      sortPreferencesLoadedRef.current = true;
+      commands
+        .getSortPreferences()
+        .then((result) => {
+          if (result.status === 'ok') {
+            const [field, direction] = result.data;
+            useWorldFiltersStore.setState({
+              sortField: field as SortField,
+              sortDirection: direction as 'asc' | 'desc',
+            });
+            info(
+              `[useWorldFilters] Loaded sort preferences: field=${field} direction=${direction}`,
+            );
+          }
+        })
+        .catch((e) => {
+          error(`Failed to load sort preferences: ${e}`);
+        });
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -190,9 +230,6 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
         memoTextFilter === '' &&
         searchQuery === ''
       ) {
-        info(
-          `[useWorldFilters] No filters active worlds=${worlds.length} intermediate=${intermediate.length}`,
-        );
       }
 
       // 2. Memo text filtering (async)
@@ -222,23 +259,44 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
         );
       }
 
-      // 3. Sorting
-      const dirFactor = sortDirection === 'asc' ? 1 : -1;
-      finalList = finalList.slice().sort((a, b) => {
-        const av = getSortValue(a, sortField);
-        const bv = getSortValue(b, sortField);
-        if (av == null && bv == null) return 0;
-        if (av == null) return 1;
-        if (bv == null) return -1;
-        if (typeof av === 'number' && typeof bv === 'number') {
-          return (av - bv) * dirFactor;
-        }
-        return (
-          String(av).localeCompare(String(bv), undefined, {
-            sensitivity: 'base',
-          }) * dirFactor
+      // 3. Sorting (delegated to backend for consistency)
+      const fallbackSort = () => {
+        const dirFactor = sortDirection === 'asc' ? 1 : -1;
+        return finalList.slice().sort((a, b) => {
+          const av = getSortValue(a, sortField);
+          const bv = getSortValue(b, sortField);
+          if (av == null && bv == null) return 0;
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          if (typeof av === 'number' && typeof bv === 'number') {
+            return (av - bv) * dirFactor;
+          }
+          return (
+            String(av).localeCompare(String(bv), undefined, {
+              sensitivity: 'base',
+            }) * dirFactor
+          );
+        });
+      };
+
+      let sortedList: WorldDisplayData[];
+      try {
+        const sortRes = await commands.sortWorldsDisplay(
+          finalList,
+          sortField,
+          sortDirection,
         );
-      });
+        if (sortRes.status === 'ok') {
+          sortedList = sortRes.data;
+        } else {
+          error(`[useWorldFilters] Backend sort failed: ${sortRes.error}`);
+          sortedList = fallbackSort();
+        }
+      } catch (e) {
+        error(`[useWorldFilters] Exception during backend sort: ${e}`);
+        sortedList = fallbackSort();
+      }
+      finalList = sortedList;
 
       // 4. Facets (authors & tags) based on finalList
       const authorsSet = new Set<string>();
@@ -291,9 +349,9 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
           }
         }
       }
-      info(
-        `[useWorldFilters] Facet final authors=${authorsArr.length} tags=${tagsArr.length}`,
-      );
+      // info(
+      //   `[useWorldFilters] Facet final authors=${authorsArr.length} tags=${tagsArr.length}`,
+      // );
 
       // 5. Commit if still latest & not cancelled (avoid redundant updates)
       if (!cancelled && seq === requestSeq.current) {
