@@ -279,7 +279,7 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
         });
       };
 
-      let sortedList = finalList;
+      let sortedList: WorldDisplayData[];
       try {
         const sortRes = await commands.sortWorldsDisplay(
           finalList,
