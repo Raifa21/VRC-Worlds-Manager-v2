@@ -7,6 +7,7 @@ pub mod memo_commands;
 pub mod open_folder_commands;
 pub mod patreon_cache;
 pub mod preferences_commands;
+pub mod sort_commands;
 pub mod task;
 pub mod update;
 
@@ -59,6 +60,8 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         preferences_commands::set_folder_removal_preference,
         preferences_commands::get_update_channel,
         preferences_commands::set_update_channel,
+        preferences_commands::get_sort_preferences,
+        preferences_commands::set_sort_preferences,
         api_commands::try_login,
         api_commands::login_with_credentials,
         api_commands::login_with_2fa,
@@ -92,5 +95,6 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         memo_commands::get_memo,
         memo_commands::set_memo_and_save,
         memo_commands::search_memo_text,
+        sort_commands::sort_worlds_display,
     ])
 }

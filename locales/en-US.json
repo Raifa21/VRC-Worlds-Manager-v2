@@ -494,5 +494,6 @@
   "update-dialog:execute": "Update",
 
   "export-popup:title": "Export Folders",
-  "export-popup:export": "Export to: "
+  "export-popup:export": "Export to: ",
+  "export-popup:sort-order": "Sort Order"
 }

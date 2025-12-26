@@ -100,7 +100,7 @@ export function WorldGrid({
   return (
     <div
       ref={containerRef}
-      className="pt-2 flex-1 overflow-auto p-4"
+      className="pt-2 flex-1 overflow-auto p-4 justify-items-center"
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(auto-fill, minmax(${cardW}px, 1fr))`,

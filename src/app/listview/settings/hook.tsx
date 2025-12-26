@@ -42,13 +42,19 @@ export const useSettingsPage = () => {
   const handleExportConfirm = async (
     folders: string[],
     exportType: ExportType,
+    sortField: string,
+    sortDirection: string,
   ) => {
     try {
       let result;
       switch (exportType) {
         case ExportType.PLS:
           info('Exporting to Portal Library System...');
-          result = await commands.exportToPortalLibrarySystem(folders);
+          result = await commands.exportToPortalLibrarySystem(
+            folders,
+            sortField,
+            sortDirection,
+          );
           break;
         default:
           error(`Unknown export type: ${exportType}`);
