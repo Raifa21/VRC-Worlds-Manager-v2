@@ -4,6 +4,7 @@ import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { AppSidebar } from './components/app-sidebar';
 import { PopupManager } from './hook/usePopups/popup-manager';
 import { PatreonProvider } from '@/contexts/patreon-context';
+import type { CSSProperties } from 'react';
 
 const MIN_SIDEBAR_WIDTH = 250;
 const MAX_SIDEBAR_WIDTH = 600;
@@ -82,7 +83,12 @@ export function ListViewClientShell({
   return (
     <Suspense fallback={null}>
       <PatreonProvider>
-        <div className="flex">
+        <div
+          className="flex"
+          style={
+            { '--sidebar-offset': `${sidebarWidth / 2}px` } as CSSProperties
+          }
+        >
           <div
             ref={sidebarRef}
             style={{ width: `${sidebarWidth}px` }}

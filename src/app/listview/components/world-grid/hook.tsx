@@ -126,8 +126,18 @@ export function useWorldGrid(
     selectAllWorlds(currentFolder, worldsToSelect);
   };
 
-  const handleOpenWorldDetails = (worldId: string) => {
-    setPopup('showWorldDetails', worldId);
+  const handleOpenWorldDetails = (
+    worldId: string,
+    dontSaveToLocal?: boolean,
+  ) => {
+    setPopup('showWorldDetails', {
+      id: worldId,
+      dontSaveToLocal: dontSaveToLocal ?? false,
+    });
+  };
+
+  const handleShareWorld = (worldId: string, worldName: string) => {
+    setPopup('showShareWorld', { worldId, worldName });
   };
 
   // pass the worldId of the world that was selected. This only gets used if
@@ -342,6 +352,7 @@ export function useWorldGrid(
     selectAllFindPage,
     handleOpenFolderDialog,
     handleOpenWorldDetails,
+    handleShareWorld,
     handleDeleteWorld,
     handleRemoveFromCurrentFolder,
     removeWorldsFromFolder,

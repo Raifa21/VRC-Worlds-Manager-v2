@@ -45,6 +45,7 @@
   "general:open-folder": "フォルダを開く",
   "general:cancelled": "キャンセルされました",
   "general:failed": "失敗しました",
+  "general:fetch-refresh": "最新の情報に更新",
 
   "error-page:title": "アプリケーションエラー",
   "error-page:try-again": "再試行",
@@ -52,7 +53,6 @@
   "error-page:logs": "ログを開く",
   "error-page:contact-support": "サポートに連絡",
   "error-page:unknown-error": "不明なエラー",
-
   "login-page:title": "VRChat にログイン",
   "login-page:username-placeholder": "メール / ユーザー名",
   "login-page:password-placeholder": "パスワード",
@@ -65,7 +65,6 @@
   "login-page:2fa-button": "確認",
   "login-page:error-invalid-credentials": "認証情報が無効です",
   "login-page:error-invalid-2fa": "無効な2FAコードです",
-
   "setup-page:welcome-title": "VRC Worlds Manager v2 へようこそ",
   "setup-page:thank-you": "インストールしていただきありがとうございます！",
   "setup-page:first-time": "初回起動のため、VRC Worlds Manager の初期設定を行います",
@@ -97,7 +96,6 @@
   "setup-page:migration-exists-description": "移行により既存データが上書きされます。続行しますか？",
   "setup-page:migration-exists-cancel": "既存データを保持する",
   "setup-page:migration-exists-continue": "新しいデータをインポートする",
-
   "listview-page:open-in-client": "VRChatで開く",
   "listview-page:reloading-worlds": "お気に入りのワールドを取得中...",
   "listview-page:importing-folder": "フォルダをインポート中...",
@@ -161,14 +159,12 @@
   "listview-page:no-worlds-in-folder": "ワールドを右クリックするか「ワールドを追加」ボタンで新しいワールドを追加できます。",
   "listview-page:no-worlds": "ワールドが見つかりません。",
   "listview-page:no-results-filtered": "フィルタに一致するワールドがありません。フィルタや検索条件を変更してみてください。",
-
   "world-card:cross-platform": "クロスプラットフォーム",
   "world-card:pc": "PC",
   "world-card:quest": "Quest",
   "world-card:visits": "訪問数: {0}",
   "world-card:updated": "更新日時: {0}",
   "world-card:by-author": "by {0}",
-
   "world-grid:search-placeholder": "ワールドを検索...",
   "world-grid:sort-placeholder": "並び替え...",
   "world-grid:sort-name": "名前",
@@ -176,13 +172,14 @@
   "world-grid:sort-favorites": "お気に入り",
   "world-grid:sort-capacity": "最大人数",
   "world-grid:sort-last-updated": "最終更新",
-  "world-grid:move-multiple": "{0} 件のワールドをフォルダに移動",
+  "world-grid:move-multiple": "{0} 件のワールドを移動",
+  "world-grid:add-multiple": "{0} 件のワールドを追加",
   "world-grid:move-single": "ワールドをフォルダに移動",
   "world-grid:remove-multiple": "フォルダから {0} 件のワールドを削除",
   "world-grid:remove-single": "フォルダからワールドを削除",
   "world-grid:hide-multiple": "{0} 件のワールドを非表示にする",
   "world-grid:restore-world": "非表示を元に戻す",
-  "world-grid:move-title": "フォルダに移動",
+  "world-grid:move-title": "フォルダを移動",
   "world-grid:add-title": "フォルダに追加",
   "world-grid:remove-title": "フォルダから削除",
   "world-grid:remove-description": "これにより、このワールドは現在のフォルダから削除されます。",
@@ -190,7 +187,7 @@
   "world-grid:hide-note": "元に戻すには、設定内の「非表示フォルダ」でワールドを見つけてください。",
   "world-grid:remove-button": "削除",
   "world-grid:exists-in-collection": "追加済み",
-
+  "world-grid:share-world": "ワールドを共有",
   "world-detail:create-group-instance": "グループインスタンスを作成",
   "world-detail:world-details": "ワールド詳細",
   "world-detail:loading-details": "ワールド詳細を読み込み中...",
@@ -217,7 +214,6 @@
   "world-detail:author-removal-title": "あなたはこのワールドの作者ですか？",
   "world-detail:author-removal-description": "もしあなたがこのワールドの作成者で、当サービスからワールドデータの削除を希望される場合は、下記のフォームをご利用ください。",
   "world-detail:request-removal": "データ削除を申請する",
-
   "add-world-dialog:add": "ワールドを追加",
   "add-world-dialog:description": "フォルダに追加するワールドのURLまたはワールドIDを入力してください",
   "add-world-dialog:placeholder": "ワールドURLまたはIDを入力",
@@ -225,22 +221,18 @@
   "add-world-dialog:preview": "ワールドプレビュー",
   "add-world-dialog:author": "作成者: ",
   "add-world-dialog:duplicate-warning": "このワールドはすでに存在します！",
-
   "app-sidebar:add-folder": "フォルダを追加",
   "app-sidebar:about": "このアプリについて",
   "app-sidebar:rename": "名前を変更",
-
   "advanced-search:title": "詳細検索",
   "advanced-search:search-author": "作者名で検索",
   "advanced-search:search-tags": "タグで検索",
   "advanced-search:search-folders": "フォルダ名で検索",
   "advanced-search:search-memo-text": "メモで検索",
   "advanced-search:apply-filters": "フィルタを適用",
-
   "filter-item-selector:custom-value": "Enterキーで {0} を追加",
   "filter-item-selector:selection-limit": "{0}/{1} 選択中",
   "filter-item-selector:no-results-found": "結果が見つかりません",
-
   "about-section:development-team": "開発チーム",
   "about-section:developers": "開発者",
   "about-section:media-design": "メディアデザイン",
@@ -262,7 +254,6 @@
   "about-section:no-supporters": "支援者が読み込めませんでした。ごめんなさい！",
   "about-section:source-code": "ソースコード",
   "about-section:report-issue": "問題を報告する",
-
   "settings-page:section-preferences": "UIのカスタマイズ",
   "settings-page:world-card-size": "ワールドカードの大きさ",
   "settings-page:world-card-description": "ワールドカードの表示方法を選択してください",
@@ -341,7 +332,6 @@
   "settings-page:folder-removal-ask": "毎回確認する",
   "settings-page:folder-removal-keep": "常に残す",
   "settings-page:folder-removal-remove": "常に削除する",
-
   "delete-data:warning-title": "データ削除",
   "delete-data:warning-description": "ワールドとフォルダのデータを削除します",
   "delete-data:deletion-warning": "警告",
@@ -349,7 +339,6 @@
   "delete-data:deletion-irreversible": "この操作は元に戻せません！",
   "delete-data:hold-to-delete": "長押しして削除",
   "delete-data:deleting": "削除中...",
-
   "find-page:recently-visited": "最近訪れたワールド",
   "find-page:search-worlds": "ワールドを検索",
   "find-page:no-recently-visited-worlds": "最近訪れたワールドが見つかりませんでした。",
@@ -384,7 +373,6 @@
   "find-page:search-error": "ワールドの検索中にエラーが発生しました",
   "find-page:no-search-results": "ワールドが見つかりませんでした",
   "find-page:search-instructions": "ワールドを検索するには、上の検索欄にワールド名やタグを入力してください",
-
   "add-to-folder-dialog:title": "フォルダの管理",
   "add-to-folder-dialog:description-single": "{0}つのワールドを追加または削除するフォルダを選択してください",
   "add-to-folder-dialog:description-multiple": "{0}つのワールドを追加または削除するフォルダを選択してください",
@@ -399,7 +387,6 @@
   "add-to-folder-dialog:always-remove": "常に削除",
   "add-to-folder-dialog:keep": "残す",
   "add-to-folder-dialog:always-keep": "常に残す",
-
   "create-folder-dialog:title": "フォルダを追加",
   "create-folder-dialog:import-title": "フォルダをインポート",
   "create-folder-dialog:import-description": "他のユーザーから共有されたフォルダをインポートします。フォルダ内の未追加ワールドもすべて追加されます。",
@@ -410,7 +397,6 @@
   "create-folder-dialog:placeholder": "フォルダ名を入力",
   "create-folder-dialog:creating": "作成中...",
   "create-folder-dialog:create": "作成",
-
   "group-instance-creator:loading-groups": "グループを読み込み中...",
   "group-instance-creator:select-group": "グループを選択",
   "group-instance-creator:loading-permissions": "権限を読み込み中...",
@@ -433,21 +419,17 @@
   "group-instance-creator:enable-queue": "キューを有効にする",
   "group-instance-creator:loading-configuration": "設定を読み込み中...",
   "group-instance-creator:no-groups-found": "グループが見つかりません",
-
   "migration-confirmation-popup:title": "既存データが検出されました",
   "migration-confirmation-popup:description": "保持する既存データを選択してください：",
   "migration-confirmation-popup:keep-existing": "既存データを保持する",
   "migration-confirmation-popup:import-new": "新しいデータをインポートする",
-
   "setup-layout:start": "始める",
   "setup-layout:finish": "完了",
   "setup-layout:skip": "スキップ",
-
   "imported-folder:hidden-title": "インポートしたフォルダに非表示ワールドが含まれています",
   "imported-folder:hidden-description": "これらのワールドはライブラリ内で非表示に設定されています。復元するワールドを選択してください：",
   "imported-folder:restore": "選択したワールドを復元",
   "imported-folder:do-not-restore": "復元しない",
-
   "share-folder:error-message": "フォルダの共有に失敗しました: {0}",
   "share-folder:title": "フォルダを共有",
   "share-folder:description": "このフォルダを他のユーザーと共有します。フォルダのUUIDを持つユーザーはアクセスできます。",
@@ -456,7 +438,6 @@
   "share-folder:worlds-count": "ワールド数: ",
   "share-folder:share-button": "共有",
   "share-folder:sharing": "共有中...",
-
   "share-folder:success-title": "フォルダを共有しました",
   "share-folder:success-message": "UUIDを他のユーザーと共有すると、そのユーザーがこのフォルダにアクセスできます。あなたが行った変更は共有先のフォルダには影響しません。",
   "share-folder:UUID": "フォルダUUID: ",
@@ -467,29 +448,40 @@
   "share-folder:share-twitter": "Twitterで共有",
   "share-folder:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}\n\n#VRCWMワールド共有",
   "share-folder:share-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}",
-
+  "share-folder:toast-id-copied": "フォルダUUIDをコピーしました。",
+  "share-folder:toast-link-copied": "共有リンクをコピーしました。",
+  "share-folder:toast-text-copied": "共有テキストをコピーしました。",
+  "share-folder:toast-twitter-opened": "Twitter共有を開きました。",
   "delete-folder:title": "フォルダを削除",
   "delete-folder:description": "「{0}」を削除しますか？この操作はフォルダのみを削除し、中のワールドは削除されません。",
-
   "changelog:prefix:new-feature": "新機能",
   "changelog:prefix:bug-fixes": "バグ修正",
   "changelog:prefix:others": "その他",
   "changelog:title": "変更履歴",
   "changelog:not-found": "変更履歴はありません",
   "changelog:github": "GitHubで変更を見る",
-
   "new-update-toast": "新しいアップデートがあります！",
   "new-update-toast:description": "このアップデートにはバグ修正や新機能などが含まれています",
   "new-update-toast:button": "今すぐアップデート",
   "new-update-toast:close": "後で",
-
   "update-dialog:title": "アップデートの準備中",
   "update-dialog:description": "アップデートをダウンロード中...",
   "update-dialog:downloading:foretext": "ダウンロード中（",
   "update-dialog:downloading:posttext": "%）",
   "update-dialog:download-complete": "アップデートのダウンロードが完了しました",
   "update-dialog:execute": "アップデートを実行",
-
   "export-popup:title": "フォルダをエクスポート",
-  "export-popup:export": "エクスポート先: "
+  "export-popup:export": "エクスポート先: ",
+  "share-world:title": "ワールドを共有",
+  "share-world:description": "\"{0}\"を共有する",
+  "share-world:world-url": "ワールドURL",
+  "share-world:share-options": "共有オプション",
+  "share-world:copy-share-text": "共有テキストをコピー",
+  "share-world:share-twitter": "Twitterで共有",
+  "share-world:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！🌟\nワールドはこちら👇\n{1}\n\n#VRCWMワールド共有",
+  "share-world:share-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールドはこちら👇\n{1}",
+  "share-world:toast-url-copied": "ワールドURLをコピーしました。",
+  "share-world:toast-share-text-copied": "共有テキストをコピーしました。",
+  "share-world:toast-twitter-opened": "Twitter共有を開きました。",
+  "export-popup:sort-order": "並び順"
 }

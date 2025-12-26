@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
   CircleHelpIcon,
   Loader2,
-  RefreshCcw,
+  RefreshCw,
   Search,
   Square,
   CheckSquare,
@@ -60,8 +60,33 @@ export default function FindWorldsPage() {
   const [hasMoreResults, setHasMoreResults] = useState(true);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const findGridRef = useRef<HTMLDivElement>(null);
-  const { isSelectionMode, toggleSelectionMode, clearFolderSelections } =
-    useSelectedWorldsStore();
+  const {
+    isSelectionMode,
+    toggleSelectionMode,
+    clearFolderSelections,
+    selectAllWorlds,
+    getSelectedWorlds,
+  } = useSelectedWorldsStore();
+
+  const selectedWorlds = Array.from(getSelectedWorlds(SpecialFolders.Find));
+  const selectedWorldIdSet = new Set(selectedWorlds);
+
+  // Check if all recently visited worlds are selected
+  const allSelected =
+    recentlyVisitedWorlds.length > 0 &&
+    selectedWorlds.length === recentlyVisitedWorlds.length &&
+    recentlyVisitedWorlds.every((world) =>
+      selectedWorldIdSet.has(world.worldId),
+    );
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      clearFolderSelections(SpecialFolders.Find);
+    } else {
+      const worldIds = recentlyVisitedWorlds.map((world) => world.worldId);
+      selectAllWorlds(SpecialFolders.Find, worldIds);
+    }
+  };
 
   const { importFolder } = useFolders();
 
@@ -292,6 +317,21 @@ export default function FindWorldsPage() {
         <h1 className="text-xl font-bold">{t('general:find-worlds')}</h1>
 
         <div className="flex items-center">
+          {isSelectionMode &&
+            activeTab === 'recently-visited' &&
+            recentlyVisitedWorlds.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleSelectAll}
+                className="mr-2 flex items-center gap-2 cursor-pointer"
+              >
+                <span>
+                  {allSelected
+                    ? t('general:clear-all')
+                    : t('general:select-all')}
+                </span>
+              </Button>
+            )}
           <Button
             variant="outline"
             onClick={fetchRecentlyVisitedWorlds}
@@ -300,9 +340,10 @@ export default function FindWorldsPage() {
               activeTab !== 'recently-visited' ? 'invisible' : ''
             }`}
           >
-            <RefreshCcw
+            <RefreshCw
               className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
             />
+            <span>{t('general:fetch-refresh')}</span>
           </Button>
           <Button
             variant={isSelectionMode ? 'secondary' : 'ghost'}

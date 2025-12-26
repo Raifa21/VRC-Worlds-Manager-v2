@@ -7,6 +7,8 @@ import { CreateFolderDialog } from '../../components/popups/create-folder-popup'
 import { DeleteFolderDialog } from '../../components/popups/delete-folder-popup';
 import { ImportedFolderContainsHidden } from '../../components/popups/imported-folder-contains-hidden';
 import { WorldDetailPopup } from '../../components/popups/world-details';
+import { ShareFolderPopup } from '../../components/popups/share-folder-popup';
+import { ShareWorldPopup } from '../../components/popups/share-world-popup';
 import { usePopupStore } from './store';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { SpecialFolders, FolderType, isUserFolder } from '@/types/folders';
@@ -15,7 +17,6 @@ import { commands } from '@/lib/bindings';
 import { error, info } from '@tauri-apps/plugin-log';
 import { useLocalization } from '@/hooks/use-localization';
 import { toast } from 'sonner';
-import { ShareFolderPopup } from '../../components/popups/share-folder-popup';
 
 export function PopupManager() {
   const {
@@ -27,6 +28,7 @@ export function PopupManager() {
     showImportedFolderContainsHidden,
     showWorldDetails,
     showShareFolder,
+    showShareWorld,
     setPopup,
   } = usePopupStore();
 
@@ -122,14 +124,25 @@ export function PopupManager() {
           folderName={currentFolder}
         />
       )}
+      {showShareWorld && (
+        <ShareWorldPopup
+          open={!!showShareWorld}
+          onOpenChange={(open) =>
+            setPopup('showShareWorld', open ? showShareWorld : null)
+          }
+          worldId={showShareWorld.worldId}
+          worldName={showShareWorld.worldName}
+        />
+      )}
       {showWorldDetails && (
         <WorldDetailPopup
           open={!!showWorldDetails}
-          onOpenChange={(open) =>
-            setPopup('showWorldDetails', open ? showWorldDetails : null)
-          }
-          worldId={showWorldDetails}
+          onOpenChange={(open) => {
+            if (!open) setPopup('showWorldDetails', null);
+          }}
+          worldId={showWorldDetails.id}
           currentFolder={currentFolder}
+          dontSaveToLocal={showWorldDetails.dontSaveToLocal}
         />
       )}
     </>

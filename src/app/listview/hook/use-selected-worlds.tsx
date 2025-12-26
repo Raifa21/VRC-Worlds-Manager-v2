@@ -7,6 +7,7 @@ interface SelectedWorldsState {
   selectedWorldsMap: SelectedWorldsMap;
   toggleWorldSelection: (folderId: FolderType, worldId: string) => void;
   selectAllWorlds: (folderId: FolderType, worldIds: string[]) => void;
+  setSelection: (folderId: FolderType, worldIds: string[]) => void;
   clearFolderSelections: (folderId: FolderType) => void;
   getSelectedWorlds: (folderId: FolderType) => Set<string>;
   isWorldSelected: (folderId: FolderType, worldId: string) => boolean;
@@ -38,6 +39,17 @@ export const useSelectedWorldsStore = create<SelectedWorldsState>(
       set((state) => {
         const newMap = new Map(state.selectedWorldsMap);
         newMap.set(folderId, new Set(worldIds));
+        return { selectedWorldsMap: newMap };
+      });
+    },
+    setSelection: (folderId, worldIds) => {
+      set((state) => {
+        const newMap = new Map(state.selectedWorldsMap);
+        if (worldIds.length === 0) {
+          newMap.delete(folderId);
+        } else {
+          newMap.set(folderId, new Set(worldIds));
+        }
         return { selectedWorldsMap: newMap };
       });
     },
