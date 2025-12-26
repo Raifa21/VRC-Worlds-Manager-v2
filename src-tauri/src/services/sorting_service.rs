@@ -160,6 +160,7 @@ mod tests {
                 memo: "".to_string(),
                 folders: vec![],
                 hidden: false,
+                custom_tags: vec![],
             },
         }
     }

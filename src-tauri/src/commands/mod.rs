@@ -43,6 +43,8 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         folder_commands::get_authors_by_count,
         folder_commands::delete_world,
         folder_commands::get_folders_for_world,
+        folder_commands::get_custom_tags,
+        folder_commands::set_custom_tags,
         folder_commands::share_folder,
         folder_commands::update_folder_share,
         folder_commands::download_folder,

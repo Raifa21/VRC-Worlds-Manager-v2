@@ -74,6 +74,8 @@ pub struct WorldUserData {
     #[serde(skip)]
     pub folders: Vec<String>,
     pub hidden: bool,
+    #[serde(rename = "customTags", default)]
+    pub custom_tags: Vec<String>,
 }
 
 impl WorldUserData {
@@ -102,11 +104,20 @@ impl WorldModel {
                 memo: "".to_string(),
                 folders: vec![],
                 hidden: false,
+                custom_tags: vec![],
             },
         }
     }
 
     pub fn to_display_data(&self) -> WorldDisplayData {
+        let mut merged_tags = self.api_data.tags.clone();
+
+        for tag in &self.user_data.custom_tags {
+            if !merged_tags.contains(tag) {
+                merged_tags.push(tag.clone());
+            }
+        }
+
         WorldDisplayData {
             world_id: self.api_data.world_id.clone(),
             name: self.api_data.world_name.clone(),
@@ -132,9 +143,21 @@ impl WorldModel {
                 Platform::PC
             },
             folders: self.user_data.folders.clone(),
-            tags: self.api_data.tags.clone(),
+            tags: merged_tags,
             capacity: self.api_data.capacity,
         }
+    }
+
+    pub fn to_world_details(&self) -> WorldDetails {
+        let mut details = self.api_data.to_world_details();
+
+        for tag in &self.user_data.custom_tags {
+            if !details.tags.contains(tag) {
+                details.tags.push(tag.clone());
+            }
+        }
+
+        details
     }
 }
 

@@ -197,6 +197,10 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
         }
         const worldTagsLower = world.tags.map((wt) => wt.toLowerCase());
         const allTagsFound = activeTagsLower.every((tag) => {
+          if (tag.startsWith('custom:')) {
+            return worldTagsLower.some((wTag) => wTag === tag);
+          }
+
           const prefixed = `author_tag_${tag}`;
           return worldTagsLower.some((wTag) => wTag === prefixed.toLowerCase());
         });
@@ -308,6 +312,8 @@ export function useWorldFilters(worlds: WorldDisplayData[]) {
             const lower = rawTag.toLowerCase();
             if (lower.startsWith('author_tag_')) {
               tagsSet.add(rawTag.substring('author_tag_'.length));
+            } else if (lower.startsWith('custom:')) {
+              tagsSet.add(rawTag);
             }
           }
         }
