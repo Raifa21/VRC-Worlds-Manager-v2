@@ -263,6 +263,31 @@ export const useSettingsPage = () => {
     }
   };
 
+  const handleClearImageCache = async () => {
+    try {
+      info('Clearing unused image cache...');
+      const result = await commands.clearUnusedCachedImages();
+
+      if (result.status === 'error') {
+        error(`Image cache clearing failed: ${result.error}`);
+        toast(t('general:error-title'), {
+          description: t('settings-page:image-cache-error'),
+        });
+        return;
+      }
+
+      info(`Cleared ${result.data} unused images`);
+      toast(t('general:success-title'), {
+        description: t('settings-page:image-cache-cleared', result.data),
+      });
+    } catch (e) {
+      error(`Image cache clearing error: ${e}`);
+      toast(t('general:error-title'), {
+        description: t('settings-page:image-cache-error'),
+      });
+    }
+  };
+
   const handleLogout = async () => {
     try {
       info('Logging out...');
@@ -440,6 +465,7 @@ export const useSettingsPage = () => {
     handleRestoreConfirm,
     handleMigrationConfirm,
     handleDeleteConfirm,
+    handleClearImageCache,
     handleLogout,
     handleOpenLogs,
     handleThemeChange,
