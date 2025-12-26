@@ -219,6 +219,24 @@ pub fn get_sort_preferences() -> Result<(String, String), String> {
 #[tauri::command]
 #[specta::specta]
 pub fn set_sort_preferences(sort_field: String, sort_direction: String) -> Result<(), String> {
+    let valid_fields = [
+        "name",
+        "authorName",
+        "visits",
+        "favorites",
+        "capacity",
+        "dateAdded",
+        "lastUpdated",
+    ];
+    let valid_directions = ["asc", "desc"];
+
+    if !valid_fields.contains(&sort_field.as_str()) {
+        return Err(format!("Invalid sort_field: {}", sort_field));
+    }
+    if !valid_directions.contains(&sort_direction.as_str()) {
+        return Err(format!("Invalid sort_direction: {}", sort_direction));
+    }
+
     let mut preferences_lock = PREFERENCES.get().write();
     let preferences = preferences_lock.as_mut().unwrap();
     preferences.sort_field = sort_field;

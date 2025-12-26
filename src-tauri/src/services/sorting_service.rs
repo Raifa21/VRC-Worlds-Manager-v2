@@ -1,13 +1,21 @@
 use std::cmp::Ordering;
 
+use unicode_normalization::UnicodeNormalization;
+
 use crate::definitions::{WorldDisplayData, WorldModel};
 
 pub struct SortingService;
 
 impl SortingService {
+    fn normalize_for_sorting(value: &str) -> String {
+        // Approximate frontend localeCompare(sensitivity: "base") by normalizing (NFKC) and lowercasing
+        value.nfkc().flat_map(|c| c.to_lowercase()).collect()
+    }
+
     fn cmp_case_insensitive(left: &str, right: &str) -> Ordering {
-        // Mirrors frontend locale-insensitive compare used in list view sorting
-        left.to_lowercase().cmp(&right.to_lowercase())
+        let l = Self::normalize_for_sorting(left);
+        let r = Self::normalize_for_sorting(right);
+        l.cmp(&r)
     }
 
     fn apply_direction(ordering: Ordering, ascending: bool) -> Ordering {
@@ -228,6 +236,27 @@ mod tests {
     }
 
     #[test]
+    fn test_sort_by_name_locale_friendly() {
+        // Includes composed and decomposed diacritics to ensure normalization aligns with frontend localeCompare(sensitivity: "base")
+        let worlds = vec![
+            create_test_world_model("1", "Éclair", "Author1", Some(100), 10, 16, 1, 1),
+            create_test_world_model("2", "E2clair", "Author2", Some(100), 10, 16, 1, 1), // uses Latin small letter e + combining acute
+            create_test_world_model("3", "eclair", "Author3", Some(100), 10, 16, 1, 1),
+            create_test_world_model("4", "ÉCLAIR", "Author4", Some(100), 10, 16, 1, 1),
+        ];
+
+        let sorted = SortingService::sort_world_models(worlds, "name", "asc");
+
+        let names: Vec<_> = sorted
+            .iter()
+            .map(|w| w.api_data.world_name.as_str())
+            .collect();
+
+        // All variants should group together; with identical normalized keys, stability falls back to id ordering
+        assert_eq!(names, vec!["E2clair", "eclair", "Éclair", "ÉCLAIR"]);
+    }
+
+    #[test]
     fn test_sort_by_author_name() {
         let worlds = vec![
             create_test_world_model("1", "World1", "Zack", Some(100), 10, 16, 1, 1),
@@ -353,9 +382,36 @@ mod tests {
     #[test]
     fn test_sort_world_display_data_by_name() {
         let worlds = vec![
-            create_test_world_display_data("1", "Zebra", "Author1", 100, 10, 16, "2024-01-01T00:00:00.000Z", "2024-01-01"),
-            create_test_world_display_data("2", "Alpha", "Author2", 200, 20, 16, "2024-01-02T00:00:00.000Z", "2024-01-02"),
-            create_test_world_display_data("3", "Beta", "Author3", 150, 15, 16, "2024-01-03T00:00:00.000Z", "2024-01-03"),
+            create_test_world_display_data(
+                "1",
+                "Zebra",
+                "Author1",
+                100,
+                10,
+                16,
+                "2024-01-01T00:00:00.000Z",
+                "2024-01-01",
+            ),
+            create_test_world_display_data(
+                "2",
+                "Alpha",
+                "Author2",
+                200,
+                20,
+                16,
+                "2024-01-02T00:00:00.000Z",
+                "2024-01-02",
+            ),
+            create_test_world_display_data(
+                "3",
+                "Beta",
+                "Author3",
+                150,
+                15,
+                16,
+                "2024-01-03T00:00:00.000Z",
+                "2024-01-03",
+            ),
         ];
 
         let sorted = SortingService::sort_world_display_data(worlds, "name", "asc");
@@ -368,9 +424,36 @@ mod tests {
     #[test]
     fn test_sort_world_display_data_by_visits() {
         let worlds = vec![
-            create_test_world_display_data("1", "World1", "Author1", 300, 10, 16, "2024-01-01T00:00:00.000Z", "2024-01-01"),
-            create_test_world_display_data("2", "World2", "Author2", 100, 20, 16, "2024-01-02T00:00:00.000Z", "2024-01-02"),
-            create_test_world_display_data("3", "World3", "Author3", 200, 15, 16, "2024-01-03T00:00:00.000Z", "2024-01-03"),
+            create_test_world_display_data(
+                "1",
+                "World1",
+                "Author1",
+                300,
+                10,
+                16,
+                "2024-01-01T00:00:00.000Z",
+                "2024-01-01",
+            ),
+            create_test_world_display_data(
+                "2",
+                "World2",
+                "Author2",
+                100,
+                20,
+                16,
+                "2024-01-02T00:00:00.000Z",
+                "2024-01-02",
+            ),
+            create_test_world_display_data(
+                "3",
+                "World3",
+                "Author3",
+                200,
+                15,
+                16,
+                "2024-01-03T00:00:00.000Z",
+                "2024-01-03",
+            ),
         ];
 
         let sorted = SortingService::sort_world_display_data(worlds, "visits", "asc");
@@ -383,9 +466,36 @@ mod tests {
     #[test]
     fn test_sort_world_display_data_descending() {
         let worlds = vec![
-            create_test_world_display_data("1", "World1", "Author1", 100, 5, 16, "2024-01-01T00:00:00.000Z", "2024-01-01"),
-            create_test_world_display_data("2", "World2", "Author2", 200, 20, 16, "2024-01-02T00:00:00.000Z", "2024-01-02"),
-            create_test_world_display_data("3", "World3", "Author3", 150, 10, 16, "2024-01-03T00:00:00.000Z", "2024-01-03"),
+            create_test_world_display_data(
+                "1",
+                "World1",
+                "Author1",
+                100,
+                5,
+                16,
+                "2024-01-01T00:00:00.000Z",
+                "2024-01-01",
+            ),
+            create_test_world_display_data(
+                "2",
+                "World2",
+                "Author2",
+                200,
+                20,
+                16,
+                "2024-01-02T00:00:00.000Z",
+                "2024-01-02",
+            ),
+            create_test_world_display_data(
+                "3",
+                "World3",
+                "Author3",
+                150,
+                10,
+                16,
+                "2024-01-03T00:00:00.000Z",
+                "2024-01-03",
+            ),
         ];
 
         let sorted = SortingService::sort_world_display_data(worlds, "favorites", "desc");
@@ -404,9 +514,16 @@ mod tests {
 
     #[test]
     fn test_single_item() {
-        let worlds = vec![
-            create_test_world_model("1", "Only World", "Author1", Some(100), 10, 16, 1, 1),
-        ];
+        let worlds = vec![create_test_world_model(
+            "1",
+            "Only World",
+            "Author1",
+            Some(100),
+            10,
+            16,
+            1,
+            1,
+        )];
 
         let sorted = SortingService::sort_world_models(worlds, "name", "asc");
 
