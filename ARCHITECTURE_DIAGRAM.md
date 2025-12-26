@@ -142,21 +142,26 @@
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│  commands.exportToPortalLibrarySystem(folders: string[])         │
+│  commands.exportToPortalLibrarySystem(                          │
+│    folders: string[], sortField: string, sortDirection: string  │
+│  )                                                              │
 └──────────────────────┬───────────────────────────────────────────┘
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │              Backend: export_service.rs                           │
 │  ┌────────────────────────────────────────────────────────────┐  │
-│  │  export_to_portal_library_system(folders, FOLDERS, WORLDS) │  │
-│  │    1. Read current sort preferences from PREFERENCES       │  │
-│  │    2. For each folder:                                      │  │
-│  │       a. Get all worlds in folder                           │  │
-│  │       b. Call sort_worlds(worlds, sort_field, direction)    │  │
-│  │       c. Add sorted worlds to export data                   │  │
-│  │    3. Serialize to JSON                                     │  │
-│  │    4. Write to exports/portal_library_system_*.json         │  │
+│  │  export_to_portal_library_system(                          │  │
+│  │    folders, FOLDERS, WORLDS, sort_field, sort_direction    │  │
+│  │  )                                                         │  │
+│  │    1. Use sort_field and sort_direction parameters         │  │
+│  │       passed from export popup                             │  │
+│  │    2. For each folder:                                     │  │
+│  │       a. Get all worlds in folder                          │  │
+│  │       b. Call sort_worlds(worlds, sort_field, direction)   │  │
+│  │       c. Add sorted worlds to export data                  │  │
+│  │    3. Serialize to JSON                                    │  │
+│  │    4. Write to exports/portal_library_system_*.json        │  │
 │  └──────────────────────┬───────────────────────────────────────┘  │
 └─────────────────────────┼──────────────────────────────────────────┘
                           │
