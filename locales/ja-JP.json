@@ -187,6 +187,7 @@
   "world-grid:hide-note": "元に戻すには、設定内の「非表示フォルダ」でワールドを見つけてください。",
   "world-grid:remove-button": "削除",
   "world-grid:exists-in-collection": "追加済み",
+  "world-grid:share-world": "ワールドを共有",
   "world-detail:create-group-instance": "グループインスタンスを作成",
   "world-detail:world-details": "ワールド詳細",
   "world-detail:loading-details": "ワールド詳細を読み込み中...",
@@ -447,6 +448,10 @@
   "share-folder:share-twitter": "Twitterで共有",
   "share-folder:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}\n\n#VRCWMワールド共有",
   "share-folder:share-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールド一覧はこちら👇\n{1}",
+  "share-folder:toast-id-copied": "フォルダUUIDをコピーしました。",
+  "share-folder:toast-link-copied": "共有リンクをコピーしました。",
+  "share-folder:toast-text-copied": "共有テキストをコピーしました。",
+  "share-folder:toast-twitter-opened": "Twitter共有を開きました。",
   "delete-folder:title": "フォルダを削除",
   "delete-folder:description": "「{0}」を削除しますか？この操作はフォルダのみを削除し、中のワールドは削除されません。",
   "changelog:prefix:new-feature": "新機能",
@@ -475,6 +480,8 @@
   "share-world:share-twitter": "Twitterで共有",
   "share-world:twitter-text": "「{0}」をVRC Worlds Managerで共有しました！🌟\nワールドはこちら👇\n{1}\n\n#VRCWMワールド共有",
   "share-world:share-text": "「{0}」をVRC Worlds Managerで共有しました！\nワールドはこちら👇\n{1}",
-  "world-grid:share-world": "ワールドを共有",
+  "share-world:toast-url-copied": "ワールドURLをコピーしました。",
+  "share-world:toast-share-text-copied": "共有テキストをコピーしました。",
+  "share-world:toast-twitter-opened": "Twitter共有を開きました。",
   "export-popup:sort-order": "並び順"
 }

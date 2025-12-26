@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocalization } from '@/hooks/use-localization';
 import { info, error } from '@tauri-apps/plugin-log';
 import { Copy, Twitter } from 'lucide-react';
+import { open as openUrl } from '@tauri-apps/plugin-shell';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +29,6 @@ export function ShareWorldPopup({
   worldName,
 }: ShareWorldPopupProps) {
   const { t } = useLocalization();
-  const [showCopied, setShowCopied] = useState<string | null>(null);
 
   const worldUrl = `https://vrchat.com/home/world/${worldId}`;
 
@@ -42,8 +43,8 @@ export function ShareWorldPopup({
     try {
       await navigator.clipboard.writeText(worldUrl);
       info('Copied world URL to clipboard');
-      setShowCopied('url');
-      setTimeout(() => setShowCopied(null), 2000);
+      toast.success(t('share-world:toast-url-copied', worldName));
+      onOpenChange(false);
     } catch (e) {
       error(`Clipboard copy failed: ${e}`);
     }
@@ -53,10 +54,20 @@ export function ShareWorldPopup({
     try {
       await navigator.clipboard.writeText(shareText);
       info('Copied share text to clipboard');
-      setShowCopied('text');
-      setTimeout(() => setShowCopied(null), 2000);
+      toast.success(t('share-world:toast-share-text-copied', worldName));
+      onOpenChange(false);
     } catch (e) {
       error(`Clipboard copy failed: ${e}`);
+    }
+  };
+  const handleTweetShare = async () => {
+    if (!tweetIntentUrl) return;
+    try {
+      await openUrl(tweetIntentUrl);
+      toast.success(t('share-world:toast-twitter-opened', worldName));
+      onOpenChange(false);
+    } catch (e) {
+      error(`Twitter share failed: ${e}`);
     }
   };
 
@@ -78,19 +89,9 @@ export function ShareWorldPopup({
             </Label>
             <div className="flex items-center gap-2">
               <Input className="flex-1" value={worldUrl} readOnly />
-              <div className="relative">
-                <Button onClick={handleCopyUrl} size="sm" variant="outline">
-                  <Copy className="h-4 w-4" />
-                </Button>
-                {showCopied === 'url' && (
-                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg">
-                      {t('general:copied')}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <Button onClick={handleCopyUrl} size="sm" variant="outline">
+                <Copy className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
@@ -109,24 +110,14 @@ export function ShareWorldPopup({
                   <Copy className="h-4 w-4" />
                   {t('share-world:copy-share-text')}
                 </Button>
-                {showCopied === 'text' && (
-                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg">
-                      {t('general:copied')}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                    </div>
-                  </div>
-                )}
               </div>
-              <Button variant="outline" className="flex-1 gap-2" asChild>
-                <a
-                  href={tweetIntentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Twitter className="h-4 w-4" />
-                  {t('share-world:share-twitter')}
-                </a>
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={handleTweetShare}
+              >
+                <Twitter className="h-4 w-4" />
+                {t('share-world:share-twitter')}
               </Button>
             </div>
           </div>

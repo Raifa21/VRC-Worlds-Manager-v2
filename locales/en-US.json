@@ -188,6 +188,7 @@
   "world-grid:hide-note": "You can find the world in the \"Hidden Folder\" in settings to revert.",
   "world-grid:remove-button": "Remove",
   "world-grid:exists-in-collection": "Added",
+  "world-grid:share-world": "Share World",
   "world-detail:create-group-instance": "Create Group Instance",
   "world-detail:world-details": "World Details",
   "world-detail:loading-details": "Loading world details...",
@@ -448,6 +449,10 @@
   "share-folder:share-twitter": "Share on Twitter",
   "share-folder:twitter-text": "I just shared “{0}” with VRC Worlds Manager v2!\nView the worlds here 👇\n{1}\n\n#VRCWMWorldShare",
   "share-folder:share-text": "I just shared “{0}” with VRC Worlds Manager v2!\nView the worlds here 👇\n{1}",
+  "share-folder:toast-id-copied": "Folder UUID copied.",
+  "share-folder:toast-link-copied": "Share link copied.",
+  "share-folder:toast-text-copied": "Share text copied.",
+  "share-folder:toast-twitter-opened": "Twitter share opened.",
   "delete-folder:title": "Delete Folder",
   "delete-folder:description": "Are you sure you want to delete \"{0}\"? This will remove the folder but not delete the worlds inside.",
   "changelog:prefix:new-feature": "New Features",
@@ -476,6 +481,8 @@
   "share-world:share-twitter": "Share on Twitter",
   "share-world:twitter-text": "I just shared “{0}” with VRC Worlds Manager v2! Check it out! 🌍\n{1}\n\n#VRCWMWorldShare",
   "share-world:share-text": "I just shared “{0}” with VRC Worlds Manager v2! Check it out!\n{1}",
-  "world-grid:share-world": "Share World",
+  "share-world:toast-url-copied": "World link copied.",
+  "share-world:toast-share-text-copied": "Share text copied.",
+  "share-world:toast-twitter-opened": "Twitter share opened.",
   "export-popup:sort-order": "Sort Order"
 }
