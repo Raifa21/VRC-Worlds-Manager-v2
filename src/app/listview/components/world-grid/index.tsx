@@ -118,8 +118,13 @@ export function WorldGrid({
                 onClick={() => {
                   if (disableCardClick) return;
                   if (isFindPage) {
-                    handleOpenFolderDialog(world.worldId);
+                    // Only set dontSaveToLocal on worlds not already in collection
+                    handleOpenWorldDetails(
+                      world.worldId,
+                      !existingWorldIds.has(world.worldId),
+                    );
                   } else {
+                    // dontSaveToLocal defaults to false when omitted
                     handleOpenWorldDetails(world.worldId);
                   }
                 }}
@@ -292,8 +297,8 @@ export function WorldGrid({
       {isFindPage && selectedWorlds.length > 0 && (
         <div
           className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex justify-center pointer-events-none w-full"
-          // add half-width of sidebar (250px) to center the button
-          style={{ left: 'calc(50% + 125px)' }}
+          // Offset is controlled by CSS variable to avoid hardcoding sidebar width
+          style={{ left: 'calc(50% + var(--sidebar-offset, 0px))' }}
         >
           <div className="pointer-events-auto relative inline-block">
             <div
@@ -309,7 +314,7 @@ export function WorldGrid({
             >
               <Plus className="w-5 h-5" />
               <span className="text-md font-semibold">
-                {t('world-grid:add-title')}
+                {t('world-grid:add-multiple', selectedWorlds.length)}
               </span>
             </Button>
           </div>
