@@ -1,5 +1,3 @@
-import { Platform } from './worlds';
-
 export type GroupInstanceType = 'public' | 'group+' | 'group';
 
 export type InstanceType =
@@ -9,23 +7,6 @@ export type InstanceType =
   | 'friends'
   | 'invite+'
   | 'invite';
-
-export interface WorldDetails {
-  worldId: string;
-  name: string;
-  thumbnailUrl: string;
-  authorName: string;
-  authorId: string;
-  favorites: number;
-  lastUpdated: string;
-  visits?: number;
-  platform: Platform;
-  description: string;
-  tags: string[];
-  capacity: number;
-  recommendedCapacity?: number;
-  publicationDate?: string;
-}
 
 export interface GroupInstanceTypeOption {
   type: GroupInstanceType;

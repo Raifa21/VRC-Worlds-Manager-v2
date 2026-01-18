@@ -14,9 +14,9 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink, Pencil } from 'lucide-react';
-import QPc from '@/../public/icons/VennColorQPc.svg';
-import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
-import QQ from '@/../public/icons/VennColorQQ.svg';
+import PAndroid from '@/../public/icons/Platform_Android.svg';
+import PIos from '@/../public/icons/Platform_iOS.svg';
+import PWindows from '@/../public/icons/Platform_Windows.svg';
 import { ChevronRight } from 'lucide-react';
 import {
   GroupInstanceCreatePermission,
@@ -30,7 +30,6 @@ import { WorldDisplayData } from '@/lib/bindings';
 import { WorldDetails } from '@/lib/bindings';
 import { WorldCardPreview } from '@/components/world-card';
 import { GroupInstanceCreator } from './group-instance-creator';
-import { Platform } from '@/types/worlds';
 import { GroupInstanceType, InstanceType } from '@/types/instances';
 import { InstanceRegion } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
@@ -43,6 +42,7 @@ import { useWorldDetailsActions } from './hook';
 import { useWorlds } from '@/app/listview/hook/use-worlds';
 import { FolderType } from '@/types/folders';
 import { usePatreonContext } from '@/contexts/patreon-context';
+import { PlatformIndicator } from '@/components/platform-indicator';
 
 export interface WorldDetailDialogProps {
   open: boolean;
@@ -529,8 +529,7 @@ export function WorldDetailPopup({
                             lastUpdated: cachedWorldData.lastUpdated,
                             visits: cachedWorldData.visits,
                             dateAdded: cachedWorldData.dateAdded,
-                            platform:
-                              cachedWorldData.platform as unknown as import('@/types/worlds').Platform,
+                            platform: cachedWorldData.platform,
                             folders: [],
                             tags: cachedWorldData.tags,
                             capacity: cachedWorldData.capacity,
@@ -668,26 +667,9 @@ export function WorldDetailPopup({
                           className="block h-full"
                         >
                           <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1">
-                            {worldDetails.platform == Platform.CrossPlatform ? (
-                              <Image
-                                src={QPcQ}
-                                alt={t('world-card:cross-platform')}
-                                width={35}
-                              />
-                            ) : worldDetails.platform ==
-                              Platform.StandaloneWindows ? (
-                              <Image
-                                src={QPc}
-                                alt={t('world-card:pc')}
-                                width={35}
-                              />
-                            ) : (
-                              <Image
-                                src={QQ}
-                                alt={t('world-card:quest')}
-                                width={35}
-                              />
-                            )}
+                            <PlatformIndicator
+                              platform={worldDetails.platform}
+                            />
                           </div>
                           <img
                             src={worldDetails.thumbnailUrl}
