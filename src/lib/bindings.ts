@@ -1076,7 +1076,7 @@ export type PatreonVRChatNames = {
   bronzeSupporter: string[];
   basicSupporter: string[];
 };
-export type Platform = 'PC' | 'Quest' | 'Cross-Platform';
+export type Platform = 'standalonewindows' | 'android' | 'ios';
 export type PreviousMetadata = {
   number_of_folders: number;
   number_of_worlds: number;
@@ -1110,7 +1110,7 @@ export type WorldDetails = {
   favorites: number;
   lastUpdated: string;
   visits: number;
-  platform: Platform;
+  platform: Platform[];
   description: string;
   tags: string[];
   capacity: number;
@@ -1126,7 +1126,7 @@ export type WorldDisplayData = {
   lastUpdated: string;
   visits: number;
   dateAdded: string;
-  platform: Platform;
+  platform: Platform[];
   folders: string[];
   tags: string[];
   capacity: number;

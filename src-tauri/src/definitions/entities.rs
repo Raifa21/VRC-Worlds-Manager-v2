@@ -6,6 +6,17 @@ use specta::Type;
 use crate::api::instance::InstanceRegion;
 use crate::updater::update_handler::UpdateChannel;
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize, specta::Type)]
+pub enum Platform {
+    // Backwards-compat: "PC" was used in some older files; keep as alias
+    #[serde(rename = "standalonewindows", alias = "pc")]
+    StandaloneWindows,
+    // Backwards-compat: "Quest" was used in some older files; keep as alias
+    #[serde(rename = "android", alias = "quest")]
+    Android,
+    #[serde(rename = "ios")]
+    IOS,
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldApiData {
     #[serde(rename = "imageUrl")]
@@ -32,7 +43,7 @@ pub struct WorldApiData {
     pub description: String,
     pub visits: Option<i32>,
     pub favorites: i32,
-    pub platform: Vec<String>,
+    pub platform: Vec<Platform>,
 }
 
 impl WorldApiData {
@@ -46,15 +57,7 @@ impl WorldApiData {
             favorites: self.favorites,
             last_updated: self.last_update.format("%Y-%m-%d").to_string(),
             visits: self.visits.unwrap_or(0),
-            platform: if self.platform.contains(&"standalonewindows".to_string())
-                && self.platform.contains(&"android".to_string())
-            {
-                Platform::CrossPlatform
-            } else if self.platform.contains(&"android".to_string()) {
-                Platform::Quest
-            } else {
-                Platform::PC
-            },
+            platform: self.platform.clone(),
             description: self.description.clone(),
             tags: self.tags.clone(),
             capacity: self.capacity,
@@ -119,33 +122,12 @@ impl WorldModel {
                 .user_data
                 .date_added
                 .to_rfc3339_opts(SecondsFormat::Millis, true),
-            platform: if self
-                .api_data
-                .platform
-                .contains(&"standalonewindows".to_string())
-                && self.api_data.platform.contains(&"android".to_string())
-            {
-                Platform::CrossPlatform
-            } else if self.api_data.platform.contains(&"android".to_string()) {
-                Platform::Quest
-            } else {
-                Platform::PC
-            },
+            platform: self.api_data.platform.clone(),
             folders: self.user_data.folders.clone(),
             tags: self.api_data.tags.clone(),
             capacity: self.api_data.capacity,
         }
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-pub enum Platform {
-    #[serde(rename = "PC")]
-    PC,
-    #[serde(rename = "Quest")]
-    Quest,
-    #[serde(rename = "Cross-Platform")]
-    CrossPlatform,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -163,7 +145,7 @@ pub struct WorldDisplayData {
     pub visits: i32,
     #[serde(rename = "dateAdded")]
     pub date_added: String,
-    pub platform: Platform,
+    pub platform: Vec<Platform>,
     pub folders: Vec<String>,
     pub tags: Vec<String>,
     pub capacity: i32,
@@ -184,7 +166,7 @@ pub struct WorldDetails {
     #[serde(rename = "lastUpdated")]
     pub last_updated: String,
     pub visits: i32,
-    pub platform: Platform,
+    pub platform: Vec<Platform>,
     pub description: String,
     pub tags: Vec<String>,
     pub capacity: i32,

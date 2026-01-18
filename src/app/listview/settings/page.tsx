@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { WorldCardPreview } from '@/components/world-card';
-import { Platform } from '@/types/worlds';
+
 import { FolderRemovalPreference, UpdateChannel } from '@/lib/bindings';
 import {
   LogOut,
@@ -168,7 +168,7 @@ export default function SettingsPage() {
                 visits: 1911,
                 dateAdded: '2025-01-01',
                 favorites: 616,
-                platform: Platform.CrossPlatform,
+                platform: ['standalonewindows', 'android', 'ios'],
                 folders: [],
                 tags: [],
                 capacity: 16,

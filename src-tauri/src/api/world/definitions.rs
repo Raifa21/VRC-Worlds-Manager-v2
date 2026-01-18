@@ -6,6 +6,35 @@ use crate::definitions::{Platform, WorldApiData, WorldDisplayData};
 use std::collections::HashSet;
 use std::fmt::Display;
 
+fn parse_platform(name: &str) -> Platform {
+    match name {
+        "standalonewindows" => Platform::StandaloneWindows,
+        "android" => Platform::Android,
+        "ios" => Platform::IOS,
+        _ => Platform::StandaloneWindows,
+    }
+}
+
+fn map_platforms(platforms: &[String]) -> Vec<Platform> {
+    let mut mapped: Vec<Platform> = platforms.iter().map(|p| parse_platform(p)).collect();
+
+    if mapped.is_empty() {
+        mapped.push(Platform::StandaloneWindows);
+    }
+
+    mapped
+}
+
+fn extract_platforms(unity_packages: &[UnityPackage]) -> Vec<Platform> {
+    let mut seen = HashSet::new();
+    let platforms: Vec<String> = unity_packages
+        .iter()
+        .map(|package| package.platform.clone())
+        .filter(|p| seen.insert(p.clone()))
+        .collect();
+    map_platforms(&platforms)
+}
+
 #[derive(Debug, Eq, PartialEq, Hash, Deserialize, Serialize, Clone, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum ReleaseStatus {
@@ -89,14 +118,7 @@ impl TryInto<WorldApiData> for FavoriteWorld {
         let last_update =
             DateTime::parse_from_rfc3339(&self.updated_at)?.with_timezone(&chrono::Utc);
 
-        let platform: Vec<String> = {
-            let mut seen = HashSet::new();
-            self.unity_packages
-                .iter()
-                .map(|package| package.platform.clone())
-                .filter(|p| seen.insert(p.clone()))
-                .collect()
-        };
+        let platform: Vec<Platform> = extract_platforms(&self.unity_packages);
 
         let recommended_capacity = match self.recommended_capacity {
             Some(capacity) if capacity > 0 => Some(capacity),
@@ -209,14 +231,7 @@ impl TryInto<WorldApiData> for WorldDetails {
         let last_update =
             DateTime::parse_from_rfc3339(&self.updated_at)?.with_timezone(&chrono::Utc);
 
-        let platform: Vec<String> = {
-            let mut seen = HashSet::new();
-            self.unity_packages
-                .iter()
-                .map(|package| package.platform.clone())
-                .filter(|p| seen.insert(p.clone()))
-                .collect()
-        };
+        let platform: Vec<Platform> = extract_platforms(&self.unity_packages);
 
         Ok(WorldApiData {
             image_url: self.image_url,
@@ -281,14 +296,7 @@ impl TryInto<WorldDisplayData> for VRChatWorld {
     type Error = chrono::ParseError;
 
     fn try_into(self) -> Result<WorldDisplayData, Self::Error> {
-        let platform: Vec<String> = {
-            let mut seen = HashSet::new();
-            self.unity_packages
-                .iter()
-                .map(|package| package.platform.clone())
-                .filter(|p| seen.insert(p.clone()))
-                .collect()
-        };
+        let platform: Vec<Platform> = extract_platforms(&self.unity_packages);
 
         Ok(WorldDisplayData {
             world_id: self.id.clone(),
@@ -299,15 +307,7 @@ impl TryInto<WorldDisplayData> for VRChatWorld {
             last_updated: self.updated_at,
             visits: self.visits.unwrap_or(0),
             date_added: "".to_string(),
-            platform: if platform.contains(&"standalonewindows".to_string())
-                && platform.contains(&"android".to_string())
-            {
-                Platform::CrossPlatform
-            } else if platform.contains(&"android".to_string()) {
-                Platform::Quest
-            } else {
-                Platform::PC
-            },
+            platform,
             folders: Vec::new(),
             tags: self.tags.clone(),
             capacity: self.capacity,

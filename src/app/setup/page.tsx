@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { invoke } from '@tauri-apps/api/core';
 import { useTheme } from 'next-themes';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Platform } from '@/types/worlds';
 import { useRouter } from 'next/navigation';
 import {
   Select,
@@ -538,7 +537,7 @@ const WelcomePage: React.FC = () => {
                         visits: 616,
                         dateAdded: '2025-01-01',
                         favorites: 59,
-                        platform: Platform.CrossPlatform,
+                        platform: ['standalonewindows', 'android', 'ios'],
                         folders: [],
                         tags: [],
                         capacity: 16,

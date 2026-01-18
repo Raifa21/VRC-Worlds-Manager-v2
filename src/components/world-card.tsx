@@ -1,13 +1,9 @@
 import React from 'react';
-import { Check, Heart, Plus } from 'lucide-react';
-import Image from 'next/image';
-import QPc from '@/../public/icons/VennColorQPc.svg';
-import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
-import QQ from '@/../public/icons/VennColorQQ.svg';
-import { Platform } from '@/types/worlds';
+import { Heart } from 'lucide-react';
 import { CardSize, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { usePatreonContext } from '@/contexts/patreon-context';
+import { PlatformIndicator } from './platform-indicator';
 
 interface WorldCardPreviewProps {
   size: CardSize;
@@ -32,31 +28,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
     >
       <div className="relative w-full">
         <div className="absolute top-2 right-2 z-1 bg-black/50 rounded-full p-1">
-          {world.platform == Platform.CrossPlatform ? (
-            <Image
-              src={QPcQ}
-              alt={t('world-card:cross-platform')}
-              width={24}
-              height={24}
-              loading="lazy"
-            />
-          ) : world.platform == Platform.PC ? (
-            <Image
-              src={QPc}
-              alt={t('world-card:pc')}
-              width={24}
-              height={24}
-              loading="lazy"
-            />
-          ) : (
-            <Image
-              src={QQ}
-              alt={t('world-card:quest')}
-              width={24}
-              height={24}
-              loading="lazy"
-            />
-          )}
+          <PlatformIndicator platform={world.platform} />
         </div>
       </div>
       <img

@@ -335,7 +335,7 @@ impl FileService {
                 .collect();
         }
 
-        // Backwards‐compat: dedupe any duplicate platform entries in worlds.json
+        // Backwards-compat: dedupe any duplicate platform entries in worlds.json
         {
             use std::collections::HashSet;
             for world in worlds.iter_mut() {
