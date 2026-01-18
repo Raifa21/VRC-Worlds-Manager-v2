@@ -177,15 +177,32 @@ impl MigrationService {
                 description: old_world.description.clone(),
                 visits: old_world.visits,
                 favorites: old_world.favorites,
-                platform: if old_world
-                    .platform
-                    .clone()
-                    .unwrap_or_default()
-                    .contains(&"PC".to_string())
-                {
-                    vec![Platform::StandaloneWindows]
-                } else {
-                    vec![Platform::Android]
+                platform: {
+                    // Migrate all known platform values, preserving cross-platform info.
+                    let mut new_platforms: Vec<Platform> = Vec::new();
+                    if let Some(old_platforms) = &old_world.platform {
+                        for p in old_platforms {
+                            let lp = p.to_lowercase();
+                            match lp.to_lowercase().as_str() {
+                                "pc" | "standalonewindows" => {
+                                    if !new_platforms.contains(&Platform::StandaloneWindows) {
+                                        new_platforms.push(Platform::StandaloneWindows);
+                                    }
+                                }
+                                "quest" | "android" => {
+                                    if !new_platforms.contains(&Platform::Android) {
+                                        new_platforms.push(Platform::Android);
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    // Fallback if nothing was mapped
+                    if new_platforms.is_empty() {
+                        new_platforms.push(Platform::StandaloneWindows);
+                    }
+                    new_platforms
                 },
             },
             user_data: WorldUserData {
