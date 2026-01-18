@@ -32,9 +32,19 @@ pub async fn restore_from_backup(backup_path: String) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn export_to_portal_library_system(folders: Vec<String>) -> Result<(), String> {
-    ExportService::export_to_portal_library_system(folders, FOLDERS.get())
-        .map_err(|e| e.to_string())
+pub fn export_to_portal_library_system(
+    folders: Vec<String>,
+    sort_field: String,
+    sort_direction: String,
+) -> Result<(), String> {
+    ExportService::export_to_portal_library_system(
+        folders,
+        FOLDERS.get(),
+        WORLDS.get(),
+        sort_field,
+        sort_direction,
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

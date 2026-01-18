@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/sonner';
 
 import '@/app/globals.css';
 import { LocalizationContextProvider } from '@/components/localization-context';
 import { UpdateDialogProvider } from '@/components/UpdateDialogContext';
+import { DeepLinkProvider } from '@/components/deep-link-provider';
+import { PatreonProvider } from '@/contexts/patreon-context';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -30,19 +32,23 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <LocalizationContextProvider>
-            <UpdateDialogProvider>
-              <main>{children}</main>
-            </UpdateDialogProvider>
-          </LocalizationContextProvider>
-        </ThemeProvider>
-        <Toaster />
+        <DeepLinkProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <LocalizationContextProvider>
+              <UpdateDialogProvider>
+                <PatreonProvider>
+                  <main>{children}</main>
+                </PatreonProvider>
+              </UpdateDialogProvider>
+            </LocalizationContextProvider>
+          </ThemeProvider>
+          <Toaster richColors />
+        </DeepLinkProvider>
       </body>
     </html>
   );

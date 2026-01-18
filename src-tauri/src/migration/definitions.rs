@@ -60,7 +60,7 @@ fn default_date_added() -> Option<DateTime<Utc>> {
 
 // Default value for platform
 fn default_platform() -> Option<Vec<String>> {
-    Some(vec!["pc".to_string()])
+    Some(vec!["standalonewindows".to_string()])
 }
 
 // Default value for user_memo

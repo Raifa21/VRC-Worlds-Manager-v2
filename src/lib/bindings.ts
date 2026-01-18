@@ -13,6 +13,17 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async fetchPatreonVrchatNames(): Promise<Result<PatreonVRChatNames, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('fetch_patreon_vrchat_names'),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async fetchBlacklist(): Promise<Result<WorldBlacklist, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('fetch_blacklist') };
@@ -490,6 +501,31 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getSortPreferences(): Promise<Result<[string, string], string>> {
+    try {
+      return { status: 'ok', data: await TAURI_INVOKE('get_sort_preferences') };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setSortPreferences(
+    sortField: string,
+    sortDirection: string,
+  ): Promise<Result<null, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_sort_preferences', {
+          sortField,
+          sortDirection,
+        }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async tryLogin(): Promise<Result<null, string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('try_login') };
@@ -610,7 +646,7 @@ export const commands = {
     worldId: string,
     instanceTypeStr: string,
     regionStr: string,
-  ): Promise<Result<null, string>> {
+  ): Promise<Result<InstanceInfo, string>> {
     try {
       return {
         status: 'ok',
@@ -655,7 +691,7 @@ export const commands = {
     allowedRoles: string[] | null,
     regionStr: string,
     queueEnabled: boolean,
-  ): Promise<Result<null, string>> {
+  ): Promise<Result<InstanceInfo, string>> {
     try {
       return {
         status: 'ok',
@@ -666,6 +702,23 @@ export const commands = {
           allowedRoles,
           regionStr,
           queueEnabled,
+        }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async openInstanceInClient(
+    worldId: string,
+    instanceId: string,
+  ): Promise<Result<string, string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('open_instance_in_client', {
+          worldId,
+          instanceId,
         }),
       };
     } catch (e) {
@@ -823,12 +876,16 @@ export const commands = {
   },
   async exportToPortalLibrarySystem(
     folders: string[],
+    sortField: string,
+    sortDirection: string,
   ): Promise<Result<null, string>> {
     try {
       return {
         status: 'ok',
         data: await TAURI_INVOKE('export_to_portal_library_system', {
           folders,
+          sortField,
+          sortDirection,
         }),
       };
     } catch (e) {
@@ -891,6 +948,25 @@ export const commands = {
       return {
         status: 'ok',
         data: await TAURI_INVOKE('search_memo_text', { searchText }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async sortWorldsDisplay(
+    worlds: WorldDisplayData[],
+    sortField: string,
+    sortDirection: string,
+  ): Promise<Result<WorldDisplayData[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('sort_worlds_display', {
+          worlds,
+          sortField,
+          sortDirection,
+        }),
       };
     } catch (e) {
       if (e instanceof Error) throw e;
@@ -973,6 +1049,11 @@ export type GroupRole = {
   permissions: GroupPermission[];
   isManagementRole: boolean;
 };
+export type InstanceInfo = {
+  world_id: string;
+  instance_id: string;
+  short_name: string | null;
+};
 export type InstanceRegion = 'us' | 'use' | 'eu' | 'jp';
 export type LocalizedChanges = {
   version: string;
@@ -988,7 +1069,14 @@ export type PatreonData = {
   bronzeSupporter: string[];
   basicSupporter: string[];
 };
-export type Platform = 'PC' | 'Quest' | 'Cross-Platform';
+export type PatreonVRChatNames = {
+  platinumSupporter: string[];
+  goldSupporter: string[];
+  silverSupporter: string[];
+  bronzeSupporter: string[];
+  basicSupporter: string[];
+};
+export type Platform = 'standalonewindows' | 'android' | 'ios';
 export type PreviousMetadata = {
   number_of_folders: number;
   number_of_worlds: number;
@@ -1022,7 +1110,7 @@ export type WorldDetails = {
   favorites: number;
   lastUpdated: string;
   visits: number;
-  platform: Platform;
+  platform: Platform[];
   description: string;
   tags: string[];
   capacity: number;
@@ -1038,7 +1126,7 @@ export type WorldDisplayData = {
   lastUpdated: string;
   visits: number;
   dateAdded: string;
-  platform: Platform;
+  platform: Platform[];
   folders: string[];
   tags: string[];
   capacity: number;

@@ -922,6 +922,7 @@ impl FolderManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::definitions::Platform;
     use crate::definitions::{AuthCookies, FolderModel, PreferenceModel, WorldModel};
     use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
     use std::sync::LazyLock;
@@ -971,7 +972,7 @@ mod tests {
             recommended_capacity: Some(0),
             visits: Some(0),
             favorites: 0,
-            platform: vec!["platform".to_string()],
+            platform: vec![Platform::StandaloneWindows],
         });
         let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
         worlds_lock.push(world);

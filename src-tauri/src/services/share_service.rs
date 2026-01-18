@@ -195,7 +195,7 @@ pub async fn download_folder(share_id: &str) -> Result<(String, Vec<WorldApiData
 #[cfg(test)]
 mod integration_tests {
     use super::post_folder;
-    use crate::definitions::WorldApiData;
+    use crate::definitions::{Platform, WorldApiData};
     use serde_json::Value;
     use std::env;
     use std::fs;
@@ -222,7 +222,7 @@ mod integration_tests {
             description: "A train headed for the center of the cosmos‚ where wishes are granted․ All music in world is stream-safe․".into(),
             visits: Some(590502),
             favorites: 31292,
-            platform: vec!["standalonewindows".into(), "standalonewindows".into()],
+            platform: vec![Platform::StandaloneWindows, Platform::Android],
         }
     }
 

@@ -5,7 +5,9 @@ pub mod data_commands;
 pub mod folder_commands;
 pub mod memo_commands;
 pub mod open_folder_commands;
+pub mod patreon_cache;
 pub mod preferences_commands;
+pub mod sort_commands;
 pub mod task;
 pub mod update;
 
@@ -14,6 +16,7 @@ use tauri_specta::{collect_commands, Builder};
 pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new().commands(collect_commands![
         data_commands::fetch_patreon_data,
+        patreon_cache::fetch_patreon_vrchat_names,
         data_commands::fetch_blacklist,
         changelog::get_changelog,
         task::get_task_status,
@@ -57,6 +60,8 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         preferences_commands::set_folder_removal_preference,
         preferences_commands::get_update_channel,
         preferences_commands::set_update_channel,
+        preferences_commands::get_sort_preferences,
+        preferences_commands::set_sort_preferences,
         api_commands::try_login,
         api_commands::login_with_credentials,
         api_commands::login_with_2fa,
@@ -70,6 +75,7 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         api_commands::get_user_groups,
         api_commands::get_permission_for_create_group_instance,
         api_commands::create_group_instance,
+        api_commands::open_instance_in_client,
         open_folder_commands::open_logs_directory,
         open_folder_commands::open_folder_directory,
         data::read_data_commands::require_initial_setup,
@@ -89,5 +95,6 @@ pub fn generate_tauri_specta_builder() -> Builder<tauri::Wry> {
         memo_commands::get_memo,
         memo_commands::set_memo_and_save,
         memo_commands::search_memo_text,
+        sort_commands::sort_worlds_display,
     ])
 }

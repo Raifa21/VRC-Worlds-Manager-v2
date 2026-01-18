@@ -113,6 +113,9 @@ pub fn run() {
             RATE_LIMIT_STORE.set(RwLock::new(api::RateLimitStore::load(rate_limit_path)));
             log::info!("Rate limit store initialized");
 
+            commands::patreon_cache::init_cache();
+            log::info!("Patreon cache initialized");
+
             if let Err(e) = initialize_app() {
                 log::error!("Failed to initialize app: {}", e);
             }

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { SiDiscord } from '@icons-pack/react-simple-icons';
 import { FolderOpen, Globe } from 'lucide-react';
 import { commands } from '@/lib/bindings';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { info, error } from '@tauri-apps/plugin-log';
 import { useState, useContext } from 'react';
 import { LocalizationContext } from '@/components/localization-context';
@@ -21,7 +21,6 @@ export function ErrorContent() {
   const { t } = useLocalization();
   const { setLanguage } = useContext(LocalizationContext);
   const searchParams = useSearchParams();
-  const { toast } = useToast();
   const [language, setLanguageState] = useState('en-US');
 
   // Get the first key from the query string as the error message
@@ -46,18 +45,14 @@ export function ErrorContent() {
         info('Opened logs directory');
       } else {
         error(`Failed to open logs directory: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t('general:error-open-logs'),
-          variant: 'destructive',
         });
       }
     } catch (e) {
       error(`Failed to open logs directory: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('general:error-open-logs'),
-        variant: 'destructive',
       });
     }
   };
@@ -70,18 +65,14 @@ export function ErrorContent() {
         info('Opened folder directory');
       } else {
         error(`Failed to open folder directory: ${result.error}`);
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t('general:error-open-folder'),
-          variant: 'destructive',
         });
       }
     } catch (e) {
       error(`Failed to open folder directory: ${e}`);
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('general:error-open-folder'),
-        variant: 'destructive',
       });
     }
   };

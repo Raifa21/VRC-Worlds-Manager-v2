@@ -1,12 +1,9 @@
 import React from 'react';
-import { Check, Heart, Plus } from 'lucide-react';
-import Image from 'next/image';
-import QPc from '@/../public/icons/VennColorQPc.svg';
-import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
-import QQ from '@/../public/icons/VennColorQQ.svg';
-import { Platform } from '@/types/worlds';
+import { Heart } from 'lucide-react';
 import { CardSize, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
+import { usePatreonContext } from '@/contexts/patreon-context';
+import { PlatformIndicator } from './platform-indicator';
 
 interface WorldCardPreviewProps {
   size: CardSize;
@@ -16,6 +13,8 @@ interface WorldCardPreviewProps {
 export function WorldCardPreview(props: WorldCardPreviewProps) {
   const { size, world } = props;
   const { t } = useLocalization();
+  const { supporters } = usePatreonContext();
+  const isSupporter = supporters.has(world.authorName);
   const sizeClasses: Record<CardSize, string> = {
     Compact: 'w-48 h-32',
     Normal: 'w-52 h-48',
@@ -29,31 +28,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
     >
       <div className="relative w-full">
         <div className="absolute top-2 right-2 z-1 bg-black/50 rounded-full p-1">
-          {world.platform == Platform.CrossPlatform ? (
-            <Image
-              src={QPcQ}
-              alt={t('world-card:cross-platform')}
-              width={24}
-              height={24}
-              loading="lazy"
-            />
-          ) : world.platform == Platform.PC ? (
-            <Image
-              src={QPc}
-              alt={t('world-card:pc')}
-              width={24}
-              height={24}
-              loading="lazy"
-            />
-          ) : (
-            <Image
-              src={QQ}
-              alt={t('world-card:quest')}
-              width={24}
-              height={24}
-              loading="lazy"
-            />
-          )}
+          <PlatformIndicator platform={world.platform} />
         </div>
       </div>
       <img
@@ -78,7 +53,9 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
             <h3 className="font-medium truncate">{world.name}</h3>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground truncate">
+            <span
+              className={`text-sm truncate ${isSupporter ? 'text-pink-500 dark:text-pink-400' : 'text-muted-foreground'}`}
+            >
               {world.authorName}
             </span>
             <div className="flex items-center gap-1">
@@ -94,9 +71,13 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
           <div className="flex items-center justify-between">
             <h3 className="font-medium truncate">{world.name}</h3>
           </div>
-          <div className="flex items-center text-muted-foreground text-sm justify-between">
-            <span className="truncate">{world.authorName}</span>
-            <span className="truncate">
+          <div className="flex items-center text-sm justify-between">
+            <span
+              className={`truncate ${isSupporter ? 'text-pink-500 dark:text-pink-400' : 'text-muted-foreground'}`}
+            >
+              {world.authorName}
+            </span>
+            <span className="truncate text-muted-foreground">
               {t('world-card:visits', world.visits)}
             </span>
           </div>
@@ -115,7 +96,9 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
       {size === 'Original' && (
         <div className="p-2">
           <h3 className="font-medium truncate">{world.name}</h3>
-          <p className="text-sm text-muted-foreground truncate">
+          <p
+            className={`text-sm truncate ${isSupporter ? 'text-pink-500 dark:text-pink-400' : 'text-muted-foreground'}`}
+          >
             {t('world-card:by-author', world.authorName)}
           </p>
         </div>

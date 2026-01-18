@@ -2,11 +2,9 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { invoke } from '@tauri-apps/api/core';
 import { useTheme } from 'next-themes';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Platform } from '@/types/worlds';
 import { useRouter } from 'next/navigation';
 import {
   Select,
@@ -17,11 +15,11 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { WorldCardPreview } from '@/components/world-card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Loader2, Globe } from 'lucide-react';
 import { commands, CardSize } from '@/lib/bindings';
-import { SetupLayout } from '@/components/setup-layout';
+import { SetupLayout } from '@/app/setup/components/setup-layout';
 import { useLocalization } from '@/hooks/use-localization';
 import { LocalizationContext } from '@/components/localization-context';
 import {
@@ -33,12 +31,11 @@ import {
 import { info, error } from '@tauri-apps/plugin-log';
 import { SaturnIcon } from '@/components/icons/saturn-icon';
 import { FolderOpen, Info } from 'lucide-react';
-import { MigrationConfirmationPopup } from '@/components/migration-confirmation-popup';
+import { MigrationConfirmationPopup } from '@/app/listview/settings/components/popups/migration-confirmation-popup';
 
 const WelcomePage: React.FC = () => {
   const router = useRouter();
   const { t } = useLocalization();
-  const { toast } = useToast();
   const { setTheme } = useTheme();
   const { setLanguage } = useContext(LocalizationContext);
   const [selectedSize, setSelectedSize] = useState<CardSize>('Normal');
@@ -83,18 +80,15 @@ const WelcomePage: React.FC = () => {
       migrationPaths[1],
     );
     if (result.status === 'error') {
-      toast({
-        title: t('general:error-title'),
+      toast(t('general:error-title'), {
         description: t('setup-page:toast:error:migrate:message', result.error),
       });
       setPage(2);
       return;
     }
     setPage(3);
-    toast({
-      title: t('general:success-title'),
+    toast(t('general:success-title'), {
       description: t('setup-page:toast:success:migrate:message'),
-      duration: 300,
     });
   };
 
@@ -167,8 +161,7 @@ const WelcomePage: React.FC = () => {
               : null;
 
       if (errorResult) {
-        toast({
-          title: t('general:error-title'),
+        toast(t('general:error-title'), {
           description: t(
             'setup-page:toast:error:save-preference:message',
             errorResult.error,
@@ -538,13 +531,13 @@ const WelcomePage: React.FC = () => {
                       world={{
                         worldId: '1',
                         name: t('settings-page:preview-world'),
-                        thumbnailUrl: 'icons/1.png',
+                        thumbnailUrl: '/icons/1.png',
                         authorName: t('general:author'),
                         lastUpdated: '2017-03-09',
                         visits: 616,
                         dateAdded: '2025-01-01',
                         favorites: 59,
-                        platform: Platform.CrossPlatform,
+                        platform: ['standalonewindows', 'android', 'ios'],
                         folders: [],
                         tags: [],
                         capacity: 16,
