@@ -117,7 +117,19 @@ impl TryInto<WorldApiData> for FavoriteWorld {
             description: self.description,
             visits: self.visits,
             favorites: self.favorites,
-            platform,
+            platform: if platform.is_empty() {
+                vec![Platform::StandaloneWindows]
+            } else {
+                platform
+                    .iter()
+                    .map(|p| match p.as_str() {
+                        "standalonewindows" => Platform::StandaloneWindows,
+                        "android" => Platform::Android,
+                        "ios" => Platform::IOS,
+                        _ => Platform::StandaloneWindows,
+                    })
+                    .collect()
+            },
         })
     }
 }
@@ -232,7 +244,19 @@ impl TryInto<WorldApiData> for WorldDetails {
             description: self.description,
             visits: self.visits,
             favorites: self.favorites,
-            platform,
+            platform: if platform.is_empty() {
+                vec![Platform::StandaloneWindows]
+            } else {
+                platform
+                    .iter()
+                    .map(|p| match p.as_str() {
+                        "standalonewindows" => Platform::StandaloneWindows,
+                        "android" => Platform::Android,
+                        "ios" => Platform::IOS,
+                        _ => Platform::StandaloneWindows,
+                    })
+                    .collect()
+            },
         })
     }
 }
@@ -299,14 +323,18 @@ impl TryInto<WorldDisplayData> for VRChatWorld {
             last_updated: self.updated_at,
             visits: self.visits.unwrap_or(0),
             date_added: "".to_string(),
-            platform: if platform.contains(&"standalonewindows".to_string())
-                && platform.contains(&"android".to_string())
-            {
-                Platform::CrossPlatform
-            } else if platform.contains(&"android".to_string()) {
-                Platform::Quest
+            platform: if platform.is_empty() {
+                vec![Platform::StandaloneWindows]
             } else {
-                Platform::StandaloneWindows
+                platform
+                    .iter()
+                    .map(|p| match p.as_str() {
+                        "standalonewindows" => Platform::StandaloneWindows,
+                        "android" => Platform::Android,
+                        "ios" => Platform::IOS,
+                        _ => Platform::StandaloneWindows,
+                    })
+                    .collect()
             },
             folders: Vec::new(),
             tags: self.tags.clone(),

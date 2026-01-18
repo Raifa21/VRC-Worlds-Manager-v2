@@ -2,7 +2,7 @@ use serde::Serialize;
 use std::sync::RwLock;
 
 use crate::{
-    definitions::{FolderModel, WorldModel},
+    definitions::{FolderModel, Platform, WorldModel},
     services::{FileService, SortingService},
 };
 
@@ -130,9 +130,9 @@ impl ExportService {
                     pc: world
                         .api_data
                         .platform
-                        .contains(&"standalonewindows".to_string()),
-                    android: world.api_data.platform.contains(&"android".to_string()),
-                    ios: false, // todo: add ios support
+                        .contains(&Platform::StandaloneWindows),
+                    android: world.api_data.platform.contains(&Platform::Android),
+                    ios: world.api_data.platform.contains(&Platform::IOS),
                 };
 
                 worlds_list.push(PLSWorlds {

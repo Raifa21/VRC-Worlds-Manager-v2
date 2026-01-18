@@ -1,4 +1,4 @@
-use crate::definitions::{FolderModel, WorldApiData, WorldModel, WorldUserData};
+use crate::definitions::{FolderModel, Platform, WorldApiData, WorldModel, WorldUserData};
 use crate::migration::{PreviousFolderCollection, PreviousMetadata, PreviousWorldModel};
 use crate::services::EncryptionService;
 use crate::services::FileService;
@@ -177,7 +177,16 @@ impl MigrationService {
                 description: old_world.description.clone(),
                 visits: old_world.visits,
                 favorites: old_world.favorites,
-                platform: old_world.platform.clone().unwrap_or_default(),
+                platform: if old_world
+                    .platform
+                    .clone()
+                    .unwrap_or_default()
+                    .contains(&"PC".to_string())
+                {
+                    vec![Platform::StandaloneWindows]
+                } else {
+                    vec![Platform::Android]
+                },
             },
             user_data: WorldUserData {
                 date_added: date,
