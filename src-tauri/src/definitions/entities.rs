@@ -8,10 +8,10 @@ use crate::updater::update_handler::UpdateChannel;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize, specta::Type)]
 pub enum Platform {
-    // Backwards‐compat: "PC" was used in some older files; keep as alias
+    // Backwards-compat: "PC" was used in some older files; keep as alias
     #[serde(rename = "standalonewindows", alias = "pc")]
     StandaloneWindows,
-    // Backwards‐compat: "Quest" was used in some older files; keep as alias
+    // Backwards-compat: "Quest" was used in some older files; keep as alias
     #[serde(rename = "android", alias = "quest")]
     Android,
     #[serde(rename = "ios")]
