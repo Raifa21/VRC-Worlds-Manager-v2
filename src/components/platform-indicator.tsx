@@ -15,6 +15,7 @@ export function PlatformIndicator({ platform }: { platform: Platform[] }) {
           src={PWindows}
           alt={t('world-card:windows')}
           width={25}
+          height={25}
           className={`${platform.includes('android') || platform.includes('ios') ? 'mr-[-10px] ' : ''}`}
         />
       )}
@@ -23,11 +24,12 @@ export function PlatformIndicator({ platform }: { platform: Platform[] }) {
           src={PAndroid}
           alt={t('world-card:android')}
           width={25}
+          height={25}
           className={`${platform.includes('ios') ? 'mr-[-10px] ' : ''}`}
         />
       )}
       {platform.includes('ios') && (
-        <Image src={PIos} alt={t('world-card:ios')} width={25} />
+        <Image src={PIos} alt={t('world-card:ios')} width={25} height={25} />
       )}
     </div>
   );
