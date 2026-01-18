@@ -1,9 +1,5 @@
 import React from 'react';
-import { Check, Heart, Plus } from 'lucide-react';
-import Image from 'next/image';
-import PAndroid from '@/../public/icons/Platform_Android.svg';
-import PIos from '@/../public/icons/Platform_iOS.svg';
-import PWindows from '@/../public/icons/Platform_Windows.svg';
+import { Heart } from 'lucide-react';
 import { CardSize, WorldDisplayData } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { usePatreonContext } from '@/contexts/patreon-context';

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { info, error } from '@tauri-apps/plugin-log';
-import Image from 'next/image';
 import { mutate as mutateFoldersCache } from 'swr';
 import {
   Dialog,
@@ -14,9 +13,6 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ExternalLink, Pencil } from 'lucide-react';
-import PAndroid from '@/../public/icons/Platform_Android.svg';
-import PIos from '@/../public/icons/Platform_iOS.svg';
-import PWindows from '@/../public/icons/Platform_Windows.svg';
 import { ChevronRight } from 'lucide-react';
 import {
   GroupInstanceCreatePermission,
