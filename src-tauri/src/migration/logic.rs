@@ -194,6 +194,11 @@ impl MigrationService {
                                         new_platforms.push(Platform::Android);
                                     }
                                 }
+                                "ios" => {
+                                    if !new_platforms.contains(&Platform::IOS) {
+                                        new_platforms.push(Platform::IOS);
+                                    }
+                                }
                                 _ => {}
                             }
                         }
