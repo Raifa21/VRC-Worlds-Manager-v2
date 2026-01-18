@@ -306,7 +306,7 @@ impl TryInto<WorldDisplayData> for VRChatWorld {
             } else if platform.contains(&"android".to_string()) {
                 Platform::Quest
             } else {
-                Platform::PC
+                Platform::StandaloneWindows
             },
             folders: Vec::new(),
             tags: self.tags.clone(),

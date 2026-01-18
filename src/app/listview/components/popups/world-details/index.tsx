@@ -674,7 +674,8 @@ export function WorldDetailPopup({
                                 alt={t('world-card:cross-platform')}
                                 width={35}
                               />
-                            ) : worldDetails.platform == Platform.PC ? (
+                            ) : worldDetails.platform ==
+                              Platform.StandaloneWindows ? (
                               <Image
                                 src={QPc}
                                 alt={t('world-card:pc')}

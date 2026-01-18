@@ -1,5 +1,5 @@
 export enum Platform {
-  PC = 'PC',
+  StandaloneWindows = 'StandaloneWindows',
   Quest = 'Quest',
   CrossPlatform = 'Cross-Platform',
 }

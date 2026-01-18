@@ -53,7 +53,7 @@ impl WorldApiData {
             } else if self.platform.contains(&"android".to_string()) {
                 Platform::Quest
             } else {
-                Platform::PC
+                Platform::StandaloneWindows
             },
             description: self.description.clone(),
             tags: self.tags.clone(),
@@ -129,7 +129,7 @@ impl WorldModel {
             } else if self.api_data.platform.contains(&"android".to_string()) {
                 Platform::Quest
             } else {
-                Platform::PC
+                Platform::StandaloneWindows
             },
             folders: self.user_data.folders.clone(),
             tags: self.api_data.tags.clone(),
@@ -140,8 +140,8 @@ impl WorldModel {
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub enum Platform {
-    #[serde(rename = "PC")]
-    PC,
+    #[serde(rename = "StandaloneWindows")]
+    StandaloneWindows,
     #[serde(rename = "Quest")]
     Quest,
     #[serde(rename = "Cross-Platform")]

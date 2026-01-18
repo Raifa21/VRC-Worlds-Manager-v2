@@ -40,7 +40,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
               height={24}
               loading="lazy"
             />
-          ) : world.platform == Platform.PC ? (
+          ) : world.platform == Platform.StandaloneWindows ? (
             <Image
               src={QPc}
               alt={t('world-card:pc')}

@@ -1076,7 +1076,7 @@ export type PatreonVRChatNames = {
   bronzeSupporter: string[];
   basicSupporter: string[];
 };
-export type Platform = 'PC' | 'Quest' | 'Cross-Platform';
+export type Platform = 'StandaloneWindows' | 'Quest' | 'Cross-Platform';
 export type PreviousMetadata = {
   number_of_folders: number;
   number_of_worlds: number;

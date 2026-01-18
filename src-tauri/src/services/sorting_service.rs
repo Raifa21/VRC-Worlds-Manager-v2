@@ -183,7 +183,7 @@ mod tests {
             last_updated: last_updated.to_string(),
             visits,
             date_added: date_added.to_string(),
-            platform: Platform::PC,
+            platform: Platform::StandaloneWindows,
             folders: vec![],
             tags: vec![],
             capacity,
