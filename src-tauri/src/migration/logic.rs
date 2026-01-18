@@ -183,7 +183,7 @@ impl MigrationService {
                     if let Some(old_platforms) = &old_world.platform {
                         for p in old_platforms {
                             let lp = p.to_lowercase();
-                            match lp.to_lowercase().as_str() {
+                            match lp.as_str() {
                                 "pc" | "standalonewindows" => {
                                     if !new_platforms.contains(&Platform::StandaloneWindows) {
                                         new_platforms.push(Platform::StandaloneWindows);
