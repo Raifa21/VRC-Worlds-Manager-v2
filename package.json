@@ -76,7 +76,7 @@
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.1",
     "typescript": "5.8.3",
-    "wrangler": "^4.20.0"
+    "wrangler": "^4.59.1"
   },
   "optionalDependencies": {
     "@tauri-apps/cli-darwin-arm64": "2.5.0",
