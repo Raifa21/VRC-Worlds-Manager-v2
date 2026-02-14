@@ -183,6 +183,24 @@ pub async fn get_folders_for_world(world_id: String) -> Result<Vec<String>, Stri
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_custom_tags(world_id: String) -> Result<Vec<String>, String> {
+    FolderManager::get_custom_tags(world_id, WORLDS.get()).map_err(|e| {
+        log::error!("Error getting custom tags: {}", e);
+        e.to_string()
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn set_custom_tags(world_id: String, tags: Vec<String>) -> Result<Vec<String>, String> {
+    FolderManager::set_custom_tags(world_id, tags, WORLDS.get()).map_err(|e| {
+        log::error!("Error saving custom tags: {}", e);
+        e.to_string()
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn share_folder(folder_name: String) -> Result<String, String> {
     let result: Result<(String, String), String> =
         share_service::share_folder(&folder_name, FOLDERS.get(), WORLDS.get())

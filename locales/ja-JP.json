@@ -208,6 +208,8 @@
   "world-detail:max": "最大",
   "world-detail:world-name": "ワールド名",
   "world-detail:show-on-website": "ウェブサイトで見る",
+  "world-detail:custom-tag-placeholder": "カスタムタグを追加",
+  "world-detail:custom-tags-save-error": "カスタムタグの保存に失敗しました。もう一度お試しください。",
   "world-detail:world-not-public": "このワールドは非公開、または削除されています。インスタンスを作成できません。",
   "world-detail:world-blacklisted": "このワールドは作者の要請により削除申請されました。",
   "world-detail:closing-in": "このポップアップは{0}秒後に閉じられ、ワールドが削除されます",

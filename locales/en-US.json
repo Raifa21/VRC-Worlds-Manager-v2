@@ -209,6 +209,8 @@
   "world-detail:max": "max",
   "world-detail:world-name": "World Name",
   "world-detail:show-on-website": "Show on Website",
+  "world-detail:custom-tag-placeholder": "Add custom tag",
+  "world-detail:custom-tags-save-error": "Failed to save custom tags. Please try again.",
   "world-detail:world-not-public": "This world is private or has been deleted. Instances cannot be created.",
   "world-detail:world-blacklisted": "The world was requested for deletion by the world author.",
   "world-detail:closing-in": "This popup will close and the world will be deleted in {0} seconds",

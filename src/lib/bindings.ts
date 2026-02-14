@@ -297,6 +297,31 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getCustomTags(worldId: string): Promise<Result<string[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_custom_tags', { worldId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setCustomTags(
+    worldId: string,
+    tags: string[],
+  ): Promise<Result<string[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_custom_tags', { worldId, tags }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async shareFolder(folderName: string): Promise<Result<string, string>> {
     try {
       return {

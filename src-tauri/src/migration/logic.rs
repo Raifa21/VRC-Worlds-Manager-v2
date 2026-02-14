@@ -222,6 +222,7 @@ impl MigrationService {
                 memo: old_world.user_memo.clone().unwrap_or_default(),
                 folders: Vec::new(),
                 hidden,
+                custom_tags: vec![],
             },
         }
     }

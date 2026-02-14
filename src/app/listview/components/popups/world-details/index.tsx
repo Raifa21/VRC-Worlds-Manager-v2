@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { info, error } from '@tauri-apps/plugin-log';
+import { toast } from 'sonner';
+import Image from 'next/image';
 import { mutate as mutateFoldersCache } from 'swr';
 import {
   Dialog,
@@ -12,7 +14,10 @@ import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ExternalLink, Pencil } from 'lucide-react';
+import { AlertCircle, ExternalLink, Pencil, Plus, X } from 'lucide-react';
+import QPc from '@/../public/icons/VennColorQPc.svg';
+import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
+import QQ from '@/../public/icons/VennColorQQ.svg';
 import { ChevronRight } from 'lucide-react';
 import {
   GroupInstanceCreatePermission,
@@ -31,6 +36,7 @@ import { InstanceRegion } from '@/lib/bindings';
 import { useLocalization } from '@/hooks/use-localization';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import MemoRenderer from '@/components/memo-renderer';
 import { useFolders } from '@/app/listview/hook/use-folders';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -119,6 +125,11 @@ export function WorldDetailPopup({
   const [memo, setMemo] = useState<string | null>(null);
   const [isEditingMemo, setIsEditingMemo] = useState<boolean>(false);
   const [memoInput, setMemoInput] = useState<string>('');
+  const [customTags, setCustomTags] = useState<string[]>([]);
+  const [customTagInput, setCustomTagInput] = useState<string>('');
+  const [isSavingCustomTags, setIsSavingCustomTags] = useState<boolean>(false);
+
+  const [isComposing, setIsComposing] = useState(false);
 
   const [isWorldNotPublic, setIsWorldNotPublic] = useState<boolean>(false);
   const [isWorldBlacklisted, setIsWorldBlacklisted] = useState<boolean>(false);
@@ -132,6 +143,120 @@ export function WorldDetailPopup({
 
   const { refresh } = useWorlds(currentFolder);
 
+  const mergeCustomTagsIntoTags = useCallback(
+    (existing: string[] | undefined, nextCustom: string[]) => {
+      const base = (existing ?? []).filter(
+        (tag) => !tag.toLowerCase().startsWith('custom:'),
+      );
+      return [...base, ...nextCustom];
+    },
+    [],
+  );
+
+  const normalizeCustomTag = useCallback((raw: string): string | null => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+
+    const withoutPrefix = trimmed.startsWith('custom:')
+      ? trimmed.slice('custom:'.length)
+      : trimmed;
+    const cleaned = withoutPrefix.trim();
+
+    if (!cleaned) return null;
+    return `custom:${cleaned}`;
+  }, []);
+
+  const loadCustomTags = useCallback(async () => {
+    try {
+      const result = await commands.getCustomTags(worldId);
+      if (result.status === 'ok') {
+        setCustomTags(result.data);
+        setWorldDetails((prev) =>
+          prev
+            ? {
+                ...prev,
+                tags: mergeCustomTagsIntoTags(prev.tags, result.data),
+              }
+            : prev,
+        );
+      }
+    } catch (e) {
+      error(`Unable to load custom tags for ${worldId}: ${e}`);
+    }
+  }, [mergeCustomTagsIntoTags, worldId]);
+
+  const persistCustomTags = useCallback(
+    async (next: string[]) => {
+      setIsSavingCustomTags(true);
+      try {
+        const result = await commands.setCustomTags(worldId, next);
+        if (result.status === 'ok') {
+          setCustomTags(result.data);
+          setWorldDetails((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  tags: mergeCustomTagsIntoTags(prev.tags, result.data),
+                }
+              : prev,
+          );
+          refresh();
+        } else {
+          toast(t('general:error-title'), { description: result.error });
+        }
+      } catch (e) {
+        error(`Failed to save custom tags: ${e}`);
+        toast(t('general:error-title'), {
+          description: t('world-detail:custom-tags-save-error'),
+        });
+      } finally {
+        setIsSavingCustomTags(false);
+      }
+    },
+    [mergeCustomTagsIntoTags, refresh, t, worldId],
+  );
+
+  const handleAddCustomTag = useCallback(async () => {
+    if (dontSaveToLocal || isSavingCustomTags) {
+      return;
+    }
+    const normalized = normalizeCustomTag(customTagInput);
+    if (!normalized) {
+      return;
+    }
+
+    const exists = customTags.some(
+      (tag) => tag.toLowerCase() === normalized.toLowerCase(),
+    );
+    if (exists) {
+      setCustomTagInput('');
+      return;
+    }
+
+    await persistCustomTags([...customTags, normalized]);
+    setCustomTagInput('');
+  }, [
+    customTagInput,
+    customTags,
+    dontSaveToLocal,
+    isSavingCustomTags,
+    normalizeCustomTag,
+    persistCustomTags,
+  ]);
+
+  const handleRemoveCustomTag = useCallback(
+    async (tag: string) => {
+      if (dontSaveToLocal || isSavingCustomTags) {
+        return;
+      }
+      const filtered = customTags.filter(
+        (t) => t.toLowerCase() !== tag.toLowerCase(),
+      );
+      await persistCustomTags(filtered);
+    },
+    [customTags, dontSaveToLocal, isSavingCustomTags, persistCustomTags],
+  );
+
   useEffect(() => {
     const fetchWorldDetails = async () => {
       if (!open) return;
@@ -143,6 +268,8 @@ export function WorldDetailPopup({
       setIsWorldBlacklisted(false); // Reset blacklisted status
       setCountdownSeconds(5); // Reset to initial countdown value
       setIsCountdownActive(false); // Reset countdown activation
+      setCustomTags([]);
+      setCustomTagInput('');
 
       try {
         info(`Is dontSaveToLocal: ${dontSaveToLocal}`);
@@ -153,6 +280,11 @@ export function WorldDetailPopup({
 
         if (result.status === 'ok') {
           setWorldDetails(result.data);
+          setCustomTags(
+            (result.data.tags ?? []).filter((tag) =>
+              tag.toLowerCase().startsWith('custom:'),
+            ),
+          );
         } else {
           if (result.error.includes('World is not public')) {
             setIsWorldNotPublic(true);
@@ -232,12 +364,15 @@ export function WorldDetailPopup({
       }
     };
 
+    if (!open) return;
+
     fetchWorldDetails();
     if (!dontSaveToLocal) {
       fetchMemo();
       fetchWorldFolders();
     }
-  }, [open, worldId]);
+    loadCustomTags();
+  }, [dontSaveToLocal, loadCustomTags, open, worldId]);
 
   useEffect(() => {
     const loadRegionPreference = async () => {
@@ -818,7 +953,7 @@ export function WorldDetailPopup({
                         <div className="text-sm font-semibold mb-2">
                           {t('general:tags')}
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2 ">
                           {worldDetails.tags
                             .filter((tag) => tag.startsWith('author_tag_'))
                             .map((tag) => {
@@ -827,7 +962,7 @@ export function WorldDetailPopup({
                                 <button
                                   key={tag}
                                   type="button"
-                                  className="inline-block px-1.5 py-0.5 text-xs bg-gray-500 text-white rounded-full max-w-[250px] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-gray-600"
+                                  className="inline-flex items-center h-6 px-1.5 py-0.5 text-xs bg-gray-500 text-white rounded-full max-w-[250px] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-gray-600"
                                   title={label}
                                   onClick={() => {
                                     // set tag filter and close via hook
@@ -838,7 +973,74 @@ export function WorldDetailPopup({
                                 </button>
                               );
                             })}
+                          {customTags.map((tag) => {
+                            const label = tag.replace(/^custom:/i, '');
+                            return (
+                              <div
+                                key={tag}
+                                className={
+                                  'inline-flex h-6 items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold shadow bg-cyan-700'
+                                }
+                              >
+                                <button
+                                  type="button"
+                                  className="flex items-center gap-1"
+                                  onClick={() => selectTag(tag)}
+                                  title={label}
+                                >
+                                  <span className="max-w-[140px] truncate">
+                                    {label}
+                                  </span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="grid place-items-center rounded-full bg-black/20 hover:bg-black/30 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveCustomTag(tag);
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
+                        {!dontSaveToLocal && (
+                          <div className="flex flex-row items-center gap-2 mt-4">
+                            <Input
+                              className="inline-flex px-2 py-0 text-xs focus:ring-2 focus:ring-primary focus:outline-none"
+                              value={customTagInput}
+                              onChange={(e) =>
+                                setCustomTagInput(e.target.value)
+                              }
+                              onCompositionStart={() => setIsComposing(true)}
+                              onCompositionEnd={() => {
+                                setTimeout(() => {
+                                  setIsComposing(false);
+                                }, 150);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !isComposing) {
+                                  e.preventDefault();
+                                  handleAddCustomTag();
+                                }
+                              }}
+                              placeholder={t(
+                                'world-detail:custom-tag-placeholder',
+                              )}
+                            />
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="inline-flex p-0"
+                              onClick={handleAddCustomTag}
+                              disabled={isSavingCustomTags}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Separator orientation="vertical" />
