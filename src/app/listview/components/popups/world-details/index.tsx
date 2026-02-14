@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ExternalLink, Pencil, X } from 'lucide-react';
+import { AlertCircle, ExternalLink, Pencil, Plus, X } from 'lucide-react';
 import QPc from '@/../public/icons/VennColorQPc.svg';
 import QPcQ from '@/../public/icons/VennColorQPcQ.svg';
 import QQ from '@/../public/icons/VennColorQQ.svg';
@@ -87,23 +87,6 @@ const mapRegion = {
   },
 };
 
-const customTagPalette = [
-  'bg-amber-500 text-white',
-  'bg-sky-600 text-white',
-  'bg-emerald-600 text-white',
-  'bg-rose-500 text-white',
-  'bg-indigo-600 text-white',
-  'bg-teal-600 text-white',
-];
-
-const getCustomTagColor = (tag: string) => {
-  const hash = Array.from(tag).reduce(
-    (acc, char) => acc + char.charCodeAt(0),
-    0,
-  );
-  return customTagPalette[hash % customTagPalette.length];
-};
-
 export function WorldDetailPopup({
   open,
   onOpenChange,
@@ -145,6 +128,8 @@ export function WorldDetailPopup({
   const [customTags, setCustomTags] = useState<string[]>([]);
   const [customTagInput, setCustomTagInput] = useState<string>('');
   const [isSavingCustomTags, setIsSavingCustomTags] = useState<boolean>(false);
+
+  const [isComposing, setIsComposing] = useState(false);
 
   const [isWorldNotPublic, setIsWorldNotPublic] = useState<boolean>(false);
   const [isWorldBlacklisted, setIsWorldBlacklisted] = useState<boolean>(false);
@@ -985,7 +970,7 @@ export function WorldDetailPopup({
                         <div className="text-sm font-semibold mb-2">
                           {t('general:tags')}
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2 ">
                           {worldDetails.tags
                             .filter((tag) => tag.startsWith('author_tag_'))
                             .map((tag) => {
@@ -994,7 +979,7 @@ export function WorldDetailPopup({
                                 <button
                                   key={tag}
                                   type="button"
-                                  className="inline-block px-1.5 py-0.5 text-xs bg-gray-500 text-white rounded-full max-w-[250px] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-gray-600"
+                                  className="inline-flex items-center h-6 px-1.5 py-0.5 text-xs bg-gray-500 text-white rounded-full max-w-[250px] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-gray-600"
                                   title={label}
                                   onClick={() => {
                                     // set tag filter and close via hook
@@ -1005,78 +990,74 @@ export function WorldDetailPopup({
                                 </button>
                               );
                             })}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-sm font-semibold">
-                            {t('world-detail:custom-tags')}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {t('world-detail:custom-tags-helper')}
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {customTags.length > 0 ? (
-                            customTags.map((tag) => {
-                              const label = tag.replace(/^custom:/i, '');
-                              return (
-                                <div
-                                  key={tag}
-                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold shadow ${getCustomTagColor(tag)}`}
+                          {customTags.map((tag) => {
+                            const label = tag.replace(/^custom:/i, '');
+                            return (
+                              <div
+                                key={tag}
+                                className={
+                                  'inline-flex h-6 items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold shadow bg-cyan-700'
+                                }
+                              >
+                                <button
+                                  type="button"
+                                  className="flex items-center gap-1"
+                                  onClick={() => selectTag(tag)}
+                                  title={label}
                                 >
-                                  <button
-                                    type="button"
-                                    className="flex items-center gap-1"
-                                    onClick={() => selectTag(tag)}
-                                    title={label}
-                                  >
-                                    <span className="max-w-[140px] truncate">
-                                      {label}
-                                    </span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="grid place-items-center rounded-full bg-black/20 hover:bg-black/30 transition-colors"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRemoveCustomTag(tag);
-                                    }}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              {t('world-detail:custom-tags-none')}
-                            </span>
-                          )}
+                                  <span className="max-w-[140px] truncate">
+                                    {label}
+                                  </span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="grid place-items-center rounded-full bg-black/20 hover:bg-black/30 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveCustomTag(tag);
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div className="flex gap-2">
-                          <Input
-                            value={customTagInput}
-                            onChange={(e) => setCustomTagInput(e.target.value)}
-                            placeholder={t(
-                              'world-detail:custom-tags-placeholder',
-                            )}
-                            disabled={!!dontSaveToLocal}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleAddCustomTag();
+                        {!dontSaveToLocal && (
+                          <div className="flex flex-row items-center gap-2 mt-4">
+                            <Input
+                              className="inline-flex px-2 py-0 text-xs focus:ring-2 focus:ring-primary focus:outline-none"
+                              value={customTagInput}
+                              onChange={(e) =>
+                                setCustomTagInput(e.target.value)
                               }
-                            }}
-                          />
-                          <Button
-                            variant="secondary"
-                            onClick={handleAddCustomTag}
-                            disabled={isSavingCustomTags || !!dontSaveToLocal}
-                          >
-                            {t('world-detail:custom-tags-add')}
-                          </Button>
-                        </div>
+                              onCompositionStart={() => setIsComposing(true)}
+                              onCompositionEnd={() => {
+                                setTimeout(() => {
+                                  setIsComposing(false);
+                                }, 150);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !isComposing) {
+                                  e.preventDefault();
+                                  handleAddCustomTag();
+                                }
+                              }}
+                              placeholder={t(
+                                'world-detail:custom-tag-placeholder',
+                              )}
+                            />
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="inline-flex p-0"
+                              onClick={handleAddCustomTag}
+                              disabled={isSavingCustomTags}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Separator orientation="vertical" />
