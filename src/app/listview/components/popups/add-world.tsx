@@ -225,8 +225,7 @@ export function AddWorldPopup({ onClose, currentFolder }: AddWorldPopupProps) {
                       lastUpdated: previewWorld.lastUpdated,
                       visits: previewWorld.visits,
                       dateAdded: '',
-                      platform:
-                        previewWorld.platform as unknown as import('@/types/worlds').Platform,
+                      platform: previewWorld.platform,
                       folders: [],
                       tags: previewWorld.tags || [],
                       capacity: previewWorld.capacity,
