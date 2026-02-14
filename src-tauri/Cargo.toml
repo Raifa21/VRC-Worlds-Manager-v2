@@ -43,7 +43,7 @@ specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 ringbuffer = "0.15.0"
 simplelog = "0.12.2"
-time = "0.3.41"
+time = "0.3.47"
 rand = "0.9.1"
 hmac = "0.12.1"
 sha2 = "0.10.9"
