@@ -6,6 +6,17 @@ use specta::Type;
 use crate::api::instance::InstanceRegion;
 use crate::updater::update_handler::UpdateChannel;
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize, specta::Type)]
+pub enum Platform {
+    // Backwards-compat: "PC" was used in some older files; keep as alias
+    #[serde(rename = "standalonewindows", alias = "pc")]
+    StandaloneWindows,
+    // Backwards-compat: "Quest" was used in some older files; keep as alias
+    #[serde(rename = "android", alias = "quest")]
+    Android,
+    #[serde(rename = "ios")]
+    IOS,
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldApiData {
     #[serde(rename = "imageUrl")]
@@ -32,7 +43,7 @@ pub struct WorldApiData {
     pub description: String,
     pub visits: Option<i32>,
     pub favorites: i32,
-    pub platform: Vec<String>,
+    pub platform: Vec<Platform>,
 }
 
 impl WorldApiData {
@@ -46,15 +57,7 @@ impl WorldApiData {
             favorites: self.favorites,
             last_updated: self.last_update.format("%Y-%m-%d").to_string(),
             visits: self.visits.unwrap_or(0),
-            platform: if self.platform.contains(&"standalonewindows".to_string())
-                && self.platform.contains(&"android".to_string())
-            {
-                Platform::CrossPlatform
-            } else if self.platform.contains(&"android".to_string()) {
-                Platform::Quest
-            } else {
-                Platform::PC
-            },
+            platform: self.platform.clone(),
             description: self.description.clone(),
             tags: self.tags.clone(),
             capacity: self.capacity,
@@ -74,6 +77,8 @@ pub struct WorldUserData {
     #[serde(skip)]
     pub folders: Vec<String>,
     pub hidden: bool,
+    #[serde(rename = "customTags", default)]
+    pub custom_tags: Vec<String>,
 }
 
 impl WorldUserData {
@@ -102,11 +107,20 @@ impl WorldModel {
                 memo: "".to_string(),
                 folders: vec![],
                 hidden: false,
+                custom_tags: vec![],
             },
         }
     }
 
     pub fn to_display_data(&self) -> WorldDisplayData {
+        let mut merged_tags = self.api_data.tags.clone();
+
+        for tag in &self.user_data.custom_tags {
+            if !merged_tags.contains(tag) {
+                merged_tags.push(tag.clone());
+            }
+        }
+
         WorldDisplayData {
             world_id: self.api_data.world_id.clone(),
             name: self.api_data.world_name.clone(),
@@ -119,33 +133,24 @@ impl WorldModel {
                 .user_data
                 .date_added
                 .to_rfc3339_opts(SecondsFormat::Millis, true),
-            platform: if self
-                .api_data
-                .platform
-                .contains(&"standalonewindows".to_string())
-                && self.api_data.platform.contains(&"android".to_string())
-            {
-                Platform::CrossPlatform
-            } else if self.api_data.platform.contains(&"android".to_string()) {
-                Platform::Quest
-            } else {
-                Platform::PC
-            },
+            platform: self.api_data.platform.clone(),
             folders: self.user_data.folders.clone(),
-            tags: self.api_data.tags.clone(),
+            tags: merged_tags,
             capacity: self.api_data.capacity,
         }
     }
-}
 
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-pub enum Platform {
-    #[serde(rename = "PC")]
-    PC,
-    #[serde(rename = "Quest")]
-    Quest,
-    #[serde(rename = "Cross-Platform")]
-    CrossPlatform,
+    pub fn to_world_details(&self) -> WorldDetails {
+        let mut details = self.api_data.to_world_details();
+
+        for tag in &self.user_data.custom_tags {
+            if !details.tags.contains(tag) {
+                details.tags.push(tag.clone());
+            }
+        }
+
+        details
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -163,7 +168,7 @@ pub struct WorldDisplayData {
     pub visits: i32,
     #[serde(rename = "dateAdded")]
     pub date_added: String,
-    pub platform: Platform,
+    pub platform: Vec<Platform>,
     pub folders: Vec<String>,
     pub tags: Vec<String>,
     pub capacity: i32,
@@ -184,7 +189,7 @@ pub struct WorldDetails {
     #[serde(rename = "lastUpdated")]
     pub last_updated: String,
     pub visits: i32,
-    pub platform: Platform,
+    pub platform: Vec<Platform>,
     pub description: String,
     pub tags: Vec<String>,
     pub capacity: i32,

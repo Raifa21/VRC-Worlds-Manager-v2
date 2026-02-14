@@ -1,7 +1,7 @@
 use log::info;
 
 use crate::definitions::{
-    FolderModel, PreferenceModel, WorldApiData, WorldDisplayData, WorldModel,
+    FolderModel, PreferenceModel, WorldApiData, WorldDetails, WorldDisplayData, WorldModel,
 };
 use crate::errors::{AppError, ConcurrencyError, EntityError};
 use serde::{Deserialize, Serialize};
@@ -506,6 +506,69 @@ impl FolderManager {
         }
     }
 
+    fn normalize_custom_tag(tag: &str) -> Option<String> {
+        let trimmed = tag.trim();
+        if trimmed.is_empty() {
+            return None;
+        }
+
+        let without_prefix = trimmed.strip_prefix("custom:").unwrap_or(trimmed).trim();
+
+        if without_prefix.is_empty() {
+            return None;
+        }
+
+        Some(format!("custom:{}", without_prefix))
+    }
+
+    pub fn get_world_details(
+        world_id: String,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<WorldDetails, AppError> {
+        let world = Self::get_world(world_id, worlds)?;
+        Ok(world.to_world_details())
+    }
+
+    pub fn get_custom_tags(
+        world_id: String,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<Vec<String>, AppError> {
+        let world = Self::get_world(world_id, worlds)?;
+        Ok(world.user_data.custom_tags.clone())
+    }
+
+    pub fn set_custom_tags(
+        world_id: String,
+        tags: Vec<String>,
+        worlds: &RwLock<Vec<WorldModel>>,
+    ) -> Result<Vec<String>, AppError> {
+        let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
+
+        let world = worlds_lock
+            .iter_mut()
+            .find(|w| w.api_data.world_id == world_id)
+            .ok_or_else(|| EntityError::WorldNotFound(world_id.clone()))?;
+
+        let mut seen = HashSet::new();
+        let mut normalized = Vec::new();
+
+        for tag in tags {
+            if let Some(canonical) = Self::normalize_custom_tag(&tag) {
+                let key = canonical.to_lowercase();
+                if seen.insert(key) {
+                    normalized.push(canonical);
+                }
+            }
+        }
+
+        normalized.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+
+        world.user_data.custom_tags = normalized.clone();
+        FileService::write_worlds(&*worlds_lock)?;
+
+        Ok(normalized)
+    }
+
     /// Get the worlds in a folder by name
     /// Calls get_world for each world ID in the folder
     ///
@@ -922,6 +985,7 @@ impl FolderManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::definitions::Platform;
     use crate::definitions::{AuthCookies, FolderModel, PreferenceModel, WorldModel};
     use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
     use std::sync::LazyLock;
@@ -971,7 +1035,7 @@ mod tests {
             recommended_capacity: Some(0),
             visits: Some(0),
             favorites: 0,
-            platform: vec!["platform".to_string()],
+            platform: vec![Platform::StandaloneWindows],
         });
         let mut worlds_lock = worlds.write().map_err(|_| ConcurrencyError::PoisonedLock)?;
         worlds_lock.push(world);

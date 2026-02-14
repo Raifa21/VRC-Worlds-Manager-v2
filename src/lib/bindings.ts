@@ -297,6 +297,31 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
+  async getCustomTags(worldId: string): Promise<Result<string[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('get_custom_tags', { worldId }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
+  async setCustomTags(
+    worldId: string,
+    tags: string[],
+  ): Promise<Result<string[], string>> {
+    try {
+      return {
+        status: 'ok',
+        data: await TAURI_INVOKE('set_custom_tags', { worldId, tags }),
+      };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: 'error', error: e as any };
+    }
+  },
   async shareFolder(folderName: string): Promise<Result<string, string>> {
     try {
       return {
@@ -1076,7 +1101,7 @@ export type PatreonVRChatNames = {
   bronzeSupporter: string[];
   basicSupporter: string[];
 };
-export type Platform = 'PC' | 'Quest' | 'Cross-Platform';
+export type Platform = 'standalonewindows' | 'android' | 'ios';
 export type PreviousMetadata = {
   number_of_folders: number;
   number_of_worlds: number;
@@ -1110,7 +1135,7 @@ export type WorldDetails = {
   favorites: number;
   lastUpdated: string;
   visits: number;
-  platform: Platform;
+  platform: Platform[];
   description: string;
   tags: string[];
   capacity: number;
@@ -1126,7 +1151,7 @@ export type WorldDisplayData = {
   lastUpdated: string;
   visits: number;
   dateAdded: string;
-  platform: Platform;
+  platform: Platform[];
   folders: string[];
   tags: string[];
   capacity: number;

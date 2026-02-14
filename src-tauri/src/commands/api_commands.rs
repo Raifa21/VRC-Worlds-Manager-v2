@@ -102,7 +102,13 @@ pub async fn get_world(
 
     let user_id = INITSTATE.get().read().await.user_id.clone();
 
-    let world = match ApiService::get_world_by_id(world_id, cookie_store, world_copy, user_id).await
+    let world = match ApiService::get_world_by_id(
+        world_id.clone(),
+        cookie_store,
+        world_copy,
+        user_id,
+    )
+    .await
     {
         Ok(world) => world,
         Err(e) => {
@@ -116,11 +122,20 @@ pub async fn get_world(
         // If the flag is set to true, skip saving the world to local storage.
         if dont_save {
             log::info!("Not saving world to local storage");
-            return Ok(world.to_world_details());
+            return match FolderManager::get_world_details(world.world_id.clone(), WORLDS.get()) {
+                Ok(details) => Ok(details),
+                Err(e) => {
+                    log::info!("Failed to read world from folder: {}", e);
+                    Ok(world.to_world_details())
+                }
+            };
         }
     }
     match FolderManager::add_worlds(WORLDS.get(), vec![world.clone()]) {
-        Ok(_) => Ok(world.to_world_details()),
+        Ok(_) => FolderManager::get_world_details(world.world_id, WORLDS.get()).map_err(|e| {
+            log::info!("Failed to read world after save: {}", e);
+            format!("Failed to read world after save: {}", e)
+        }),
         Err(e) => {
             log::info!("Failed to add world to folder: {}", e);
             Err(format!("Failed to add world to folder: {}", e))
@@ -146,7 +161,18 @@ pub async fn check_world_info(world_id: String) -> Result<WorldDetails, String> 
     };
 
     log::info!("Received world: {:#?}", world); // Debug print the world
-    Ok(world.to_world_details())
+    let mut details = world.to_world_details();
+
+    if let Ok(custom_tags) = FolderManager::get_custom_tags(details.world_id.clone(), WORLDS.get())
+    {
+        for tag in custom_tags {
+            if !details.tags.contains(&tag) {
+                details.tags.push(tag);
+            }
+        }
+    }
+
+    Ok(details)
 }
 
 #[tauri::command]

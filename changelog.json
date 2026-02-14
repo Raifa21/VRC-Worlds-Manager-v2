@@ -1,5 +1,103 @@
 [
   {
+    "version": "1.3.0",
+    "features": [
+      {
+        "text": "Added Share world feature",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "ワールドのシェアボタンを追加"
+          }
+        ]
+      },
+      {
+        "text": "Added select all button in all folders",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "すべてのフォルダに全選択ボタンを追加"
+          }
+        ]
+      },
+      {
+        "text": "Added sort order selection for export",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "エクスポートの並び順選択を追加"
+          }
+        ]
+      },
+      {
+        "text": "Added iOS to world platform options",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "ワールドプラットフォームにiOSを追加"
+          }
+        ]
+      },
+      {
+        "text": "Added ability to add custom tags to worlds",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "ワールドにカスタムタグを追加する機能を追加"
+          }
+        ]
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Fixed issue where folders could not be shared correctly",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "フォルダが正しく共有できない問題を修正"
+          }
+        ]
+      }
+    ],
+    "others": [
+      {
+        "text": "Improved multi-select functionality",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "複数選択機能の改善"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.3.0-rc.1",
+    "preRelease": true,
+    "features": [
+      {
+        "text": "Added iOS to world platform options",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "ワールドプラットフォームにiOSを追加"
+          }
+        ]
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Fixed issue where folders could not be shared correctly",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "フォルダが正しく共有できない問題を修正"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.3.0-rc.0",
     "preRelease": true,
     "features": [
@@ -67,7 +165,7 @@
     ]
   },
   {
-    "version": "1.2.4",
+    "version": "1.2.3",
     "fixes": [
       {
         "text": "Fixed issue where setup page crashes under certain conditions",

@@ -152,7 +152,7 @@ mod tests {
                 description: "".to_string(),
                 visits,
                 favorites,
-                platform: vec!["standalonewindows".to_string()],
+                platform: vec![Platform::StandaloneWindows],
             },
             user_data: WorldUserData {
                 date_added,
@@ -160,6 +160,7 @@ mod tests {
                 memo: "".to_string(),
                 folders: vec![],
                 hidden: false,
+                custom_tags: vec![],
             },
         }
     }
@@ -183,7 +184,7 @@ mod tests {
             last_updated: last_updated.to_string(),
             visits,
             date_added: date_added.to_string(),
-            platform: Platform::PC,
+            platform: vec![Platform::StandaloneWindows],
             folders: vec![],
             tags: vec![],
             capacity,
