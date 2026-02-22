@@ -106,11 +106,17 @@ impl fmt::Display for FileError {
                 file_name,
                 error_message,
             } => {
+                let line_str = line
+                    .map(|l| l.to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
+                let column_str = column
+                    .map(|c| c.to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
                 write!(
                     f,
                     "invalid format at line {}, column {} in file: {} - error: {}",
-                    line.unwrap_or(0),
-                    column.unwrap_or(0),
+                    line_str,
+                    column_str,
                     file_name.as_deref().unwrap_or("unknown"),
                     error_message
                 )
