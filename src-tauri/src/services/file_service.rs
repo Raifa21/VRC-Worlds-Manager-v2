@@ -326,11 +326,11 @@ impl FileService {
                 }
                 Ok(cookies)
             }
-            Err(_) => Err(FileError::InvalidFile {
-                line: None,
-                column: None,
+            Err(e) => Err(FileError::InvalidFile {
+                line: Some(e.line()),
+                column: Some(e.column()),
                 file_name: Some(path.to_string_lossy().to_string()),
-                error_message: "Failed to parse JSON".into(),
+                error_message: e.to_string(),
             }),
         }
     }
