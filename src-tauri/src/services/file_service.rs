@@ -188,15 +188,27 @@ impl FileService {
             .and_then(|data| {
                 // Check if the file is corrupted (empty or contains only null bytes)
                 if Self::is_file_corrupted_with_null_bytes(&data) {
-                    log::warn!("File {:?} is empty or contains only null bytes, attempting backup recovery", path);
-                    Err(FileError::InvalidFile)
+                    log::error!("File {:?} is empty or contains only null bytes, attempting backup recovery", path);
+                    Err(FileError::InvalidFile {
+                        line: None,
+                        column: None,
+                        file_name: Some(path.to_string_lossy().to_string()),
+                        error_message: "File is empty or contains only null bytes".into(),
+                    })
                 } else {
-                    serde_json::from_str(&data).map_err(|_| FileError::InvalidFile)
+                    serde_json::from_str(&data).map_err(|e| FileError::InvalidFile {
+                        line: Some(e.line()),
+                        column: Some(e.column()),
+                        file_name: Some(path.to_string_lossy().to_string()),
+                        error_message: e.to_string(),
+                    })
+                    
                 }
             });
 
         // If the primary file failed, try the backup
         if result.is_err() {
+            
             let backup_path = Self::get_backup_path(path);
             if backup_path.exists() {
                 log::info!("Attempting to recover from backup: {:?}", backup_path);
@@ -207,7 +219,12 @@ impl FileService {
                     })
                     .and_then(|data| {
                         let parsed =
-                            serde_json::from_str(&data).map_err(|_| FileError::InvalidFile)?;
+                            serde_json::from_str(&data).map_err(|e| FileError::InvalidFile {
+                                line: Some(e.line()),
+                                column: Some(e.column()),
+                                file_name: Some(backup_path.to_string_lossy().to_string()),
+                                error_message: e.to_string(),
+                            })?;
                         // Restore the backup to the primary file
                         Self::restore_backup_to_primary(&backup_path, path);
                         Ok(parsed)
@@ -242,7 +259,12 @@ impl FileService {
                         Self::restore_backup_to_primary(&backup_path, path);
                         backup_content
                     } else {
-                        return Err(FileError::InvalidFile);
+                        return Err(FileError::InvalidFile {
+                            line: None,
+                            column: None,
+                            file_name: Some(path.to_string_lossy().to_string()),
+                            error_message: "File is empty or contains only null bytes".into(),
+                        });
                     }
                 } else {
                     c
@@ -277,7 +299,12 @@ impl FileService {
                         cookies.auth_token =
                             Some(EncryptionService::decrypt_aes(auth).map_err(|e| {
                                 log::error!("Failed to decrypt auth token: {}", e);
-                                FileError::InvalidFile
+                                FileError::InvalidFile {
+                                    line: None,
+                                    column: None,
+                                    file_name: Some(path.to_string_lossy().to_string()),
+                                    error_message: e.to_string(),
+                                }
                             })?);
                     }
                 } else {
@@ -288,7 +315,12 @@ impl FileService {
                         cookies.two_factor_auth =
                             Some(EncryptionService::decrypt_aes(tfa).map_err(|e| {
                                 log::error!("Failed to decrypt two-factor auth token: {}", e);
-                                FileError::InvalidFile
+                                FileError::InvalidFile {
+                                    line: None,
+                                    column: None,
+                                    file_name: Some(path.to_string_lossy().to_string()),
+                                    error_message: e.to_string(),
+                                }
                             })?);
                     }
                 } else {
@@ -296,7 +328,12 @@ impl FileService {
                 }
                 Ok(cookies)
             }
-            Err(_) => Err(FileError::InvalidFile),
+            Err(_) => Err(FileError::InvalidFile {
+                line: None,
+                column: None,
+                file_name: Some(path.to_string_lossy().to_string()),
+                error_message: "Failed to parse JSON".into(),
+            }),
         }
     }
 
@@ -368,7 +405,12 @@ impl FileService {
     pub fn write_preferences(preferences: &PreferenceModel) -> Result<(), FileError> {
         let (config_path, _, _, _) = Self::get_paths();
 
-        let data = serde_json::to_string_pretty(preferences).map_err(|_| FileError::InvalidFile)?;
+        let data = serde_json::to_string_pretty(preferences).map_err(|e| FileError::InvalidFile {
+            line: None,
+            column: None,
+            file_name: Some(config_path.to_string_lossy().to_string()),
+            error_message: e.to_string(),
+        })?;
         Self::atomic_write(&config_path, &data)
     }
 
@@ -385,7 +427,12 @@ impl FileService {
     /// Returns a FileError if the data could not be written    
     pub fn write_folders(folders: &Vec<FolderModel>) -> Result<(), FileError> {
         let (_, folders_path, _, _) = Self::get_paths();
-        let data = serde_json::to_string_pretty(folders).map_err(|_| FileError::InvalidFile)?;
+        let data = serde_json::to_string_pretty(folders).map_err(|e| FileError::InvalidFile {
+            line: None,
+            column: None,
+            file_name: Some(folders_path.to_string_lossy().to_string()),
+            error_message: e.to_string(),
+        })?;
         Self::atomic_write(&folders_path, &data)
     }
 
@@ -403,7 +450,12 @@ impl FileService {
     pub fn write_worlds(worlds: &Vec<WorldModel>) -> Result<(), FileError> {
         let (_, _, worlds_path, _) = Self::get_paths();
 
-        let data = serde_json::to_string_pretty(&worlds).map_err(|_| FileError::InvalidFile)?;
+        let data = serde_json::to_string_pretty(&worlds).map_err(|e| FileError::InvalidFile {
+            line: None,
+            column: None,
+            file_name: Some(worlds_path.to_string_lossy().to_string()),
+            error_message: e.to_string(),
+        })?;
         Self::atomic_write(&worlds_path, &data)
     }
 
@@ -444,7 +496,12 @@ impl FileService {
         encrypted_cookies.version = 1;
 
         let data =
-            serde_json::to_string_pretty(&encrypted_cookies).map_err(|_| FileError::InvalidFile)?;
+            serde_json::to_string_pretty(&encrypted_cookies).map_err(|e| FileError::InvalidFile {
+                line: None,
+                column: None,
+                file_name: Some(auth_path.to_string_lossy().to_string()),
+                error_message: e.to_string(),
+            })?;
         Self::atomic_write(&auth_path, &data)
     }
 

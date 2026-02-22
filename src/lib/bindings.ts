@@ -1101,7 +1101,11 @@ export type PatreonVRChatNames = {
   bronzeSupporter: string[];
   basicSupporter: string[];
 };
-export type Platform = 'standalonewindows' | 'android' | 'ios';
+export type Platform =
+  | 'standalonewindows'
+  | 'android'
+  | 'ios'
+  | 'unknownplatform';
 export type PreviousMetadata = {
   number_of_folders: number;
   number_of_worlds: number;
