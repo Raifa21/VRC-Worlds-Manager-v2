@@ -16,6 +16,8 @@ pub enum Platform {
     Android,
     #[serde(rename = "ios")]
     IOS,
+    #[serde(rename = "unknownplatform")]
+    UnknownPlatform,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldApiData {

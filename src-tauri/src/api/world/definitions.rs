@@ -4,30 +4,21 @@ use specta::Type;
 
 use crate::definitions::{Platform, WorldApiData, WorldDisplayData};
 use std::collections::HashSet;
-use std::fmt::Display;
 
-fn parse_platform(name: &str) -> Platform {
-    match name {
-        "standalonewindows" => Platform::StandaloneWindows,
-        "android" => Platform::Android,
-        "ios" => Platform::IOS,
-        _ => Platform::StandaloneWindows,
-    }
-}
+fn map_platforms(platforms: &[Platform]) -> Vec<Platform> {
+    let mut mapped: Vec<Platform> = platforms.to_vec();
 
-fn map_platforms(platforms: &[String]) -> Vec<Platform> {
-    let mut mapped: Vec<Platform> = platforms.iter().map(|p| parse_platform(p)).collect();
+    mapped.retain(|p| *p != Platform::UnknownPlatform);
 
     if mapped.is_empty() {
         mapped.push(Platform::StandaloneWindows);
     }
-
     mapped
 }
 
 fn extract_platforms(unity_packages: &[UnityPackage]) -> Vec<Platform> {
     let mut seen = HashSet::new();
-    let platforms: Vec<String> = unity_packages
+    let platforms: Vec<Platform> = unity_packages
         .iter()
         .map(|package| package.platform.clone())
         .filter(|p| seen.insert(p.clone()))
@@ -50,10 +41,10 @@ impl Default for ReleaseStatus {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Type)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Type)]
 pub struct UnityPackage {
     #[serde(rename = "platform")]
-    pub platform: String,
+    pub platform: Platform,
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Deserialize)]
