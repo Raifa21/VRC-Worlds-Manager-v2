@@ -202,13 +202,11 @@ impl FileService {
                         file_name: Some(path.to_string_lossy().to_string()),
                         error_message: e.to_string(),
                     })
-                    
                 }
             });
 
         // If the primary file failed, try the backup
         if result.is_err() {
-            
             let backup_path = Self::get_backup_path(path);
             if backup_path.exists() {
                 log::info!("Attempting to recover from backup: {:?}", backup_path);
@@ -405,12 +403,13 @@ impl FileService {
     pub fn write_preferences(preferences: &PreferenceModel) -> Result<(), FileError> {
         let (config_path, _, _, _) = Self::get_paths();
 
-        let data = serde_json::to_string_pretty(preferences).map_err(|e| FileError::InvalidFile {
-            line: None,
-            column: None,
-            file_name: Some(config_path.to_string_lossy().to_string()),
-            error_message: e.to_string(),
-        })?;
+        let data =
+            serde_json::to_string_pretty(preferences).map_err(|e| FileError::InvalidFile {
+                line: None,
+                column: None,
+                file_name: Some(config_path.to_string_lossy().to_string()),
+                error_message: e.to_string(),
+            })?;
         Self::atomic_write(&config_path, &data)
     }
 
@@ -495,13 +494,14 @@ impl FileService {
         }
         encrypted_cookies.version = 1;
 
-        let data =
-            serde_json::to_string_pretty(&encrypted_cookies).map_err(|e| FileError::InvalidFile {
+        let data = serde_json::to_string_pretty(&encrypted_cookies).map_err(|e| {
+            FileError::InvalidFile {
                 line: None,
                 column: None,
                 file_name: Some(auth_path.to_string_lossy().to_string()),
                 error_message: e.to_string(),
-            })?;
+            }
+        })?;
         Self::atomic_write(&auth_path, &data)
     }
 
