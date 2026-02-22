@@ -17,7 +17,12 @@ pub enum FileError {
     /// File not found at expected location
     FileNotFound,
     /// File exists but contains invalid data
-    InvalidFile,
+    InvalidFile {
+        line: Option<usize>,
+        column: Option<usize>,
+        file_name: Option<String>,
+        error_message: String,
+    }, // line and column for JSON parsing errors
     /// File could not be decrypted correctly
     DecryptionError,
     /// The app was not given access to the file
@@ -95,7 +100,27 @@ impl fmt::Display for FileError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FileError::FileNotFound => write!(f, "file not found"),
-            FileError::InvalidFile => write!(f, "invalid format"),
+            FileError::InvalidFile {
+                line,
+                column,
+                file_name,
+                error_message,
+            } => {
+                let line_str = line
+                    .map(|l| l.to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
+                let column_str = column
+                    .map(|c| c.to_string())
+                    .unwrap_or_else(|| "unknown".to_string());
+                write!(
+                    f,
+                    "invalid format at line {}, column {} in file: {} - error: {}",
+                    line_str,
+                    column_str,
+                    file_name.as_deref().unwrap_or("unknown"),
+                    error_message
+                )
+            }
             FileError::DecryptionError => write!(f, "failed to decrypt file"),
             FileError::AccessDenied => write!(f, "access to file denied"),
             FileError::FileWriteError => write!(f, "failed to write file"),
