@@ -1,5 +1,5 @@
 use serde::Serialize;
-use std::{fmt, string};
+use std::fmt;
 
 #[derive(Debug, Clone, Serialize)]
 pub enum AppError {
