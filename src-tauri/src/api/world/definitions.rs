@@ -8,12 +8,11 @@ use std::collections::HashSet;
 fn map_platforms(platforms: &[Platform]) -> Vec<Platform> {
     let mut mapped: Vec<Platform> = platforms.to_vec();
 
+    mapped.retain(|p| *p != Platform::UnknownPlatform);
+
     if mapped.is_empty() {
         mapped.push(Platform::StandaloneWindows);
     }
-
-    mapped.retain(|p| *p != Platform::UnknownPlatform);
-
     mapped
 }
 
