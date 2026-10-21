@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.3.2",
+    "fixes": [
+      {
+        "text": "Updated dependencies to their latest versions",
+        "langs": [
+          {
+            "lang": ["ja-JP"],
+            "text": "依存関係を最新バージョンに更新"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.3.1",
     "fixes": [
       {
