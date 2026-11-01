@@ -108,6 +108,8 @@ export function WorldGrid({
         gridTemplateColumns: `repeat(auto-fill, minmax(${cardW}px, 1fr))`,
         gap: `${gap}px`,
         justifyContent: 'center',
+        alignContent: 'start',
+        alignItems: 'start',
       }}
     >
       {worlds.map((world) => {

@@ -310,7 +310,7 @@ export default function FindWorldsPage() {
   // no external select-all; handled by grid internally when needed
 
   return (
-    <div className="p-1 flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0">
       {/* added min-h-0 */}
       {/* Header with title and reload button */}
       <div className="flex items-center justify-between p-4 bg-background">
@@ -569,7 +569,7 @@ export default function FindWorldsPage() {
               </Card>
             </div>
 
-            <div className="flex flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
               {/* original search tab content */}
               {/* Search results */}
               {isSearching && searchResults.length === 0 && (
