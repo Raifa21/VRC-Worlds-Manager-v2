@@ -1,4 +1,5 @@
 {
+  "listview-page:error-move-folder": "Failed to reorder folders",
   "general:loading": "Loading...",
   "general:worlds-data": "Worlds Data",
   "general:folders-data": "Folders Data",

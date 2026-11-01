@@ -5,6 +5,8 @@ import { useLocalization } from '../../../hooks/use-localization';
 import { usePathname, useRouter } from 'next/navigation';
 import { usePopupStore } from './usePopups/store';
 
+const EMPTY_FOLDERS: FolderData[] = [];
+
 const fetchFolders = async (): Promise<FolderData[]> => {
   const result = await commands.getFolders();
   if (result.status === 'ok') return result.data;
@@ -38,7 +40,7 @@ export function useFolders() {
   const setPopup = usePopupStore((state) => state.setPopup);
 
   const {
-    data: folders = [],
+    data: folders = EMPTY_FOLDERS,
     error,
     isLoading,
     mutate: refresh,
@@ -107,9 +109,14 @@ export function useFolders() {
     folderName: string,
     destinationIndex: number,
   ): Promise<void> => {
-    const result = await moveFolderCommand(folderName, destinationIndex);
-    if (result.status !== 'ok') {
-      mutate('folders');
+    try {
+      const result = await moveFolderCommand(folderName, destinationIndex);
+      if (result.status !== 'ok') throw new Error(result.error);
+      await refresh();
+    } catch (e) {
+      toast(t('general:error-title'), { description: t('listview-page:error-move-folder') });
+      await refresh();
+      throw e;
     }
   };
 
