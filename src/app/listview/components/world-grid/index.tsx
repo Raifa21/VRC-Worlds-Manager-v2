@@ -144,8 +144,8 @@ export function WorldGrid({
                         <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
                           {t('world-grid:exists-in-collection')}
                         </Badge>
-                  )}
-                </div>
+                      )}
+                    </div>
                   )}
                 />
                 {(isSelectionMode || alwaysShowSelection) && (
