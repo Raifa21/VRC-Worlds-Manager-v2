@@ -76,7 +76,9 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
       !result.destination ||
       sortingRef.current ||
       result.source.index === result.destination.index
-    ) return;
+    ) {
+      return;
+    }
     sortingRef.current = true;
     setIsSorting(true);
 
@@ -271,16 +273,39 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
           <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
             <span className="text-sm font-medium">{t('general:folders')}</span>
           </div>
-          <DragDropContext onDragStart={() => setIsDragging(true)} onDragEnd={handleDragEnd}>
-            <Droppable droppableId="folders" getContainerForClone={() => document.body}
+          <DragDropContext
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={handleDragEnd}
+          >
+            <Droppable
+              droppableId="folders"
+              getContainerForClone={() => document.body}
               renderClone={(provided, _snapshot, rubric) => {
                 const folder = localFolders[rubric.source.index];
-                return <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                  style={{ ...provided.draggableProps.style, width: sidebarWidth - 60, cursor: 'grabbing', background: 'hsl(var(--background))', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
-                  className="px-3 py-2 text-sm font-medium rounded-lg overflow-hidden whitespace-nowrap flex items-center gap-3">
-                  <span className="flex items-center w-full"><span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">({folder.world_count})</span><span className="truncate flex-1 pl-1">{folder.name}</span></span>
-                </div>;
-              }}>
+                return (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    style={{
+                      ...provided.draggableProps.style,
+                      width: sidebarWidth - 60,
+                      cursor: 'grabbing',
+                      background: 'hsl(var(--background))',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    }}
+                    className="px-3 py-2 text-sm font-medium rounded-lg overflow-hidden whitespace-nowrap flex items-center gap-3"
+                  >
+                    <span className="flex items-center w-full">
+                      <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
+                        ({folder.world_count})
+                      </span>
+                      <span className="truncate flex-1 pl-1">{folder.name}</span>
+                    </span>
+                  </div>
+                );
+              }}
+            >
               {(provided) => (
                 <div
                   ref={provided.innerRef}

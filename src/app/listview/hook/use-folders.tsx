@@ -114,7 +114,9 @@ export function useFolders() {
       if (result.status !== 'ok') throw new Error(result.error);
       await refresh();
     } catch (e) {
-      toast(t('general:error-title'), { description: t('listview-page:error-move-folder') });
+      toast(t('general:error-title'), {
+        description: t('listview-page:error-move-folder'),
+      });
       await refresh();
       throw e;
     }
