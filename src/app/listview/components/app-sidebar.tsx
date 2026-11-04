@@ -39,7 +39,8 @@ const sidebarStyles = {
 };
 
 const SIDEBAR_CLASS = 'app-sidebar';
-const FOLDER_DRAG_BACKGROUND = 'hsl(var(--accent) / 0.5)';
+const FOLDER_DRAG_BACKGROUND =
+  'color-mix(in srgb, hsl(var(--accent)) 50%, hsl(var(--background)))';
 
 interface AppSidebarProps {
   sidebarWidth: number;
