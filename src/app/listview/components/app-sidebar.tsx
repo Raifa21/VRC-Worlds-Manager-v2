@@ -291,10 +291,8 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
                       ...provided.draggableProps.style,
                       width: sidebarWidth - 60,
                       cursor: 'grabbing',
-                      background: 'hsl(var(--background))',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     }}
-                    className="px-3 py-2 text-sm font-medium rounded-lg overflow-hidden whitespace-nowrap flex items-center gap-3"
+                    className="px-3 py-2 text-sm font-medium rounded-lg overflow-hidden whitespace-nowrap flex items-center gap-3 bg-accent/50 text-accent-foreground"
                   >
                     <span className="flex items-center w-full">
                       <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
