@@ -39,6 +39,7 @@ const sidebarStyles = {
 };
 
 const SIDEBAR_CLASS = 'app-sidebar';
+const FOLDER_DRAG_BACKGROUND = 'hsl(var(--accent) / 0.5)';
 
 interface AppSidebarProps {
   sidebarWidth: number;
@@ -51,6 +52,7 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
   const setPopup = usePopupStore((state) => state.setPopup);
 
   const [isDragging, setIsDragging] = useState(false);
+  const [droppedFolder, setDroppedFolder] = useState<string | null>(null);
   const [isSorting, setIsSorting] = useState(false);
   const sortingRef = useRef(false);
   const [localFolders, setLocalFolders] = useState<FolderData[]>(folders);
@@ -70,7 +72,26 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
     if (!isDragging && !isSorting) setLocalFolders(folders);
   }, [folders, isDragging, isSorting]);
 
+  // Keep the drop background until the pointer can update the normal hover state.
+  useEffect(() => {
+    if (!droppedFolder) return;
+
+    const clearDroppedFolder = () => setDroppedFolder(null);
+    const events = ['pointermove', 'pointerdown', 'keydown', 'blur'];
+    events.forEach((event) => window.addEventListener(event, clearDroppedFolder));
+    return () => {
+      events.forEach((event) =>
+        window.removeEventListener(event, clearDroppedFolder),
+      );
+    };
+  }, [droppedFolder]);
+
   const handleDragEnd = async (result: DropResult) => {
+    setDroppedFolder(
+      result.reason === 'DROP' && result.destination && result.mode === 'FLUID'
+        ? result.draggableId
+        : null,
+    );
     setIsDragging(false);
     if (
       !result.destination ||
@@ -274,7 +295,10 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
             <span className="text-sm font-medium">{t('general:folders')}</span>
           </div>
           <DragDropContext
-            onDragStart={() => setIsDragging(true)}
+            onDragStart={() => {
+              setDroppedFolder(null);
+              setIsDragging(true);
+            }}
             onDragEnd={handleDragEnd}
           >
             <Droppable
@@ -291,8 +315,9 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
                       ...provided.draggableProps.style,
                       width: sidebarWidth - 60,
                       cursor: 'grabbing',
+                      backgroundColor: FOLDER_DRAG_BACKGROUND,
                     }}
-                    className="px-3 py-2 text-sm font-medium rounded-lg overflow-hidden whitespace-nowrap flex items-center gap-3 bg-accent/50 text-accent-foreground"
+                    className="px-3 py-2 text-sm font-medium rounded-lg overflow-hidden whitespace-nowrap flex items-center gap-3 text-accent-foreground"
                   >
                     <span className="flex items-center w-full">
                       <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
@@ -327,6 +352,10 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
                               style={{
                                 ...provided.draggableProps.style,
                                 width: `${sidebarWidth - 60}px`,
+                                backgroundColor:
+                                  droppedFolder === folder.name
+                                    ? FOLDER_DRAG_BACKGROUND
+                                    : undefined,
                               }}
                               className={`
                                 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
