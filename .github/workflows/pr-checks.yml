@@ -1,0 +1,69 @@
+name: PR Checks
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - "main"
+      - "pre-release"
+      - "develop"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (Prettier, ESLint, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - name: Prettier
+        run: npx prettier --check "src/**/*.{ts,tsx}"
+
+      - name: ESLint
+        run: npm run lint
+
+      # next build also runs the TypeScript type check (and generates next-env.d.ts,
+      # which a standalone `tsc --noEmit` needs for the *.svg module declarations).
+      - name: Build and type check
+        run: npm run build
+
+  rust:
+    name: Rust (fmt, clippy)
+    # The app only ships for Windows, so check the Windows-specific code paths too.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: cargo fmt
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+
+      # tauri::generate_context! requires frontendDist (../out) to exist.
+      - name: Create placeholder frontend dist
+        shell: bash
+        run: mkdir -p out
+
+      # Existing clippy warnings are reported but not fatal (matches the pre-commit hook).
+      - name: cargo clippy
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked
