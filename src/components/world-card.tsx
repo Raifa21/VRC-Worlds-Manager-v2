@@ -8,10 +8,11 @@ import { PlatformIndicator } from './platform-indicator';
 interface WorldCardPreviewProps {
   size: CardSize;
   world: WorldDisplayData;
+  imageOverlay?: React.ReactNode;
 }
 
 export function WorldCardPreview(props: WorldCardPreviewProps) {
-  const { size, world } = props;
+  const { size, world, imageOverlay } = props;
   const { t } = useLocalization();
   const { supporters } = usePatreonContext();
   const isSupporter = supporters.has(world.authorName);
@@ -24,41 +25,44 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
 
   return (
     <div
-      className={`border rounded-lg shadow hover:shadow-md transition-all duration-300 ${sizeClasses[size]}`}
+      className={`relative flex flex-col overflow-hidden border rounded-lg shadow hover:shadow-md transition-shadow duration-300 ${sizeClasses[size]}`}
     >
-      <div className="relative w-full">
-        <div className="absolute top-2 right-2 z-1 bg-black/50 rounded-full p-1">
-          <PlatformIndicator platform={world.platform} />
-        </div>
+      {/* Overlay platform icons without affecting the content height. */}
+      <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1">
+        <PlatformIndicator platform={world.platform} />
       </div>
-      <img
-        src={world.thumbnailUrl}
-        alt={world.name}
-        className={`w-full h-2/3 object-cover rounded-t-lg`}
-        draggable="false"
-        loading="lazy"
-      />
+      {/* Position badges relative to the image rather than the card height. */}
+      <div className="relative w-full min-h-0 flex-1">
+        <img
+          src={world.thumbnailUrl}
+          alt={world.name}
+          className="block w-full h-full object-cover rounded-t-lg"
+          draggable="false"
+          loading="lazy"
+        />
+        {imageOverlay}
+      </div>
 
-      {/* Various size renderings... */}
+      {/* Reserve space for text and let the image fill the remaining height. */}
 
       {size === 'Compact' && (
-        <div className="p-2">
+        <div className="shrink-0 min-w-0 p-2">
           <h3 className="font-medium truncate">{world.name}</h3>
         </div>
       )}
 
       {size === 'Normal' && (
-        <div className="p-2 space-y-1">
+        <div className="shrink-0 min-w-0 p-2 space-y-1">
           <div className="flex items-center justify-between">
             <h3 className="font-medium truncate">{world.name}</h3>
           </div>
           <div className="flex items-center justify-between">
             <span
-              className={`text-sm truncate ${isSupporter ? 'text-pink-500 dark:text-pink-400' : 'text-muted-foreground'}`}
+              className={`min-w-0 text-sm truncate ${isSupporter ? 'text-pink-500 dark:text-pink-400' : 'text-muted-foreground'}`}
             >
               {world.authorName}
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               <Heart className="w-3.5 h-3.5" />
               <span className="text-sm truncate">{world.favorites}</span>
             </div>
@@ -67,13 +71,13 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
       )}
 
       {size === 'Expanded' && (
-        <div className="p-2 space-y-1">
+        <div className="shrink-0 min-w-0 p-2 space-y-1">
           <div className="flex items-center justify-between">
             <h3 className="font-medium truncate">{world.name}</h3>
           </div>
           <div className="flex items-center text-sm justify-between">
             <span
-              className={`truncate ${isSupporter ? 'text-pink-500 dark:text-pink-400' : 'text-muted-foreground'}`}
+              className={`min-w-0 truncate ${isSupporter ? 'text-pink-500 dark:text-pink-400' : 'text-muted-foreground'}`}
             >
               {world.authorName}
             </span>
@@ -85,7 +89,7 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
             <span className="text-sm text-muted-foreground truncate">
               {t('world-card:updated', world.lastUpdated)}
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               <Heart className="w-3.5 h-3.5" />
               <span className="text-sm truncate">{world.favorites}</span>
             </div>
@@ -94,10 +98,10 @@ export function WorldCardPreview(props: WorldCardPreviewProps) {
       )}
 
       {size === 'Original' && (
-        <div className="p-2">
+        <div className="shrink-0 min-w-0 p-2">
           <h3 className="font-medium truncate">{world.name}</h3>
           <p
-            className={`text-sm truncate ${isSupporter ? 'text-pink-500 dark:text-pink-400' : 'text-muted-foreground'}`}
+            className={`min-w-0 text-sm truncate ${isSupporter ? 'text-pink-500 dark:text-pink-400' : 'text-muted-foreground'}`}
           >
             {t('world-card:by-author', world.authorName)}
           </p>
