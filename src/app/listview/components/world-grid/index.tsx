@@ -109,7 +109,6 @@ export function WorldGrid({
         gap: `${gap}px`,
         justifyContent: 'center',
         alignContent: 'start',
-        alignItems: 'start',
       }}
     >
       {worlds.map((world) => {
