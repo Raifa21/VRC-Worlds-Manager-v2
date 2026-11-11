@@ -3,7 +3,7 @@ use log::info;
 use crate::definitions::{
     FolderModel, PreferenceModel, WorldApiData, WorldDetails, WorldDisplayData, WorldModel,
 };
-use crate::errors::{AppError, ConcurrencyError, EntityError};
+use crate::errors::{AppError, ConcurrencyError, EntityError, StateError};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
@@ -409,7 +409,7 @@ impl FolderManager {
             .ok_or_else(|| EntityError::FolderNotFound(folder_name))?;
         // Reject invalid destinations before changing the folder order.
         if new_index >= folders_lock.len() {
-            return Err(crate::errors::StateError::InvalidOperation("Invalid folder index").into());
+            return Err(StateError::InvalidOperation("Invalid folder index").into());
         }
         // Keep the in-memory order unchanged until saving succeeds.
         let mut reordered = folders_lock.clone();

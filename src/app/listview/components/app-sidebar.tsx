@@ -4,7 +4,12 @@ import { SaturnIcon } from '../../../components/icons/saturn-icon';
 import { GearIcon } from '../../../components/icons/gear-icon';
 import { Info, FileQuestion, History, Plus } from 'lucide-react';
 import { SpecialFolders } from '@/types/folders';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from '@hello-pangea/dnd';
 import { FolderData } from '@/lib/bindings';
 import { useState, useEffect, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
@@ -79,7 +84,9 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
 
     const clearDroppedFolder = () => setDroppedFolder(null);
     const events = ['pointermove', 'pointerdown', 'keydown', 'blur'];
-    events.forEach((event) => window.addEventListener(event, clearDroppedFolder));
+    events.forEach((event) =>
+      window.addEventListener(event, clearDroppedFolder),
+    );
     return () => {
       events.forEach((event) =>
         window.removeEventListener(event, clearDroppedFolder),
@@ -324,7 +331,9 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
                       <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
                         ({folder.world_count})
                       </span>
-                      <span className="truncate flex-1 pl-1">{folder.name}</span>
+                      <span className="truncate flex-1 pl-1">
+                        {folder.name}
+                      </span>
                     </span>
                   </div>
                 );
