@@ -138,7 +138,7 @@ export function WorldGrid({
                 <WorldCardPreview
                   size={cardSize}
                   world={world}
-                  imageOverlay={(
+                  imageOverlay={
                     <div className="absolute bottom-2 left-2 z-10">
                       {isFindPage && existingWorldIds.has(world.worldId) && (
                         <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100 hover:border-green-300 cursor-default">
@@ -146,7 +146,7 @@ export function WorldGrid({
                         </Badge>
                       )}
                     </div>
-                  )}
+                  }
                 />
                 {(isSelectionMode || alwaysShowSelection) && (
                   <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
