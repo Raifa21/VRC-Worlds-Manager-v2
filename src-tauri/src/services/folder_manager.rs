@@ -3,7 +3,7 @@ use log::info;
 use crate::definitions::{
     FolderModel, PreferenceModel, WorldApiData, WorldDetails, WorldDisplayData, WorldModel,
 };
-use crate::errors::{AppError, ConcurrencyError, EntityError};
+use crate::errors::{AppError, ConcurrencyError, EntityError, StateError};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
@@ -407,11 +407,16 @@ impl FolderManager {
             .iter()
             .position(|f| f.folder_name == folder_name)
             .ok_or_else(|| EntityError::FolderNotFound(folder_name))?;
-        // Remove from current position and insert at new position
-        let folder = folders_lock.remove(current_index);
-        folders_lock.insert(new_index, folder);
-
-        FileService::write_folders(&*folders_lock)?;
+        // Reject invalid destinations before changing the folder order.
+        if new_index >= folders_lock.len() {
+            return Err(StateError::InvalidOperation("Invalid folder index").into());
+        }
+        // Keep the in-memory order unchanged until saving succeeds.
+        let mut reordered = folders_lock.clone();
+        let folder = reordered.remove(current_index);
+        reordered.insert(new_index, folder);
+        FileService::write_folders(&reordered)?;
+        *folders_lock = reordered;
         Ok(())
     }
 

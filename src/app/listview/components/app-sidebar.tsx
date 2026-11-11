@@ -4,7 +4,12 @@ import { SaturnIcon } from '../../../components/icons/saturn-icon';
 import { GearIcon } from '../../../components/icons/gear-icon';
 import { Info, FileQuestion, History, Plus } from 'lucide-react';
 import { SpecialFolders } from '@/types/folders';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from '@hello-pangea/dnd';
 import { FolderData } from '@/lib/bindings';
 import { useState, useEffect, useRef } from 'react';
 import { useLocalization } from '@/hooks/use-localization';
@@ -39,6 +44,8 @@ const sidebarStyles = {
 };
 
 const SIDEBAR_CLASS = 'app-sidebar';
+const FOLDER_DRAG_BACKGROUND =
+  'color-mix(in srgb, hsl(var(--accent)) 50%, hsl(var(--background)))';
 
 interface AppSidebarProps {
   sidebarWidth: number;
@@ -50,6 +57,10 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
     useFolders();
   const setPopup = usePopupStore((state) => state.setPopup);
 
+  const [isDragging, setIsDragging] = useState(false);
+  const [droppedFolder, setDroppedFolder] = useState<string | null>(null);
+  const [isSorting, setIsSorting] = useState(false);
+  const sortingRef = useRef(false);
   const [localFolders, setLocalFolders] = useState<FolderData[]>(folders);
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
@@ -64,11 +75,41 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
 
   // Update local folders when prop changes
   useEffect(() => {
-    setLocalFolders(folders);
-  }, [folders]);
+    if (!isDragging && !isSorting) setLocalFolders(folders);
+  }, [folders, isDragging, isSorting]);
 
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination) return;
+  // Keep the drop background until the pointer can update the normal hover state.
+  useEffect(() => {
+    if (!droppedFolder) return;
+
+    const clearDroppedFolder = () => setDroppedFolder(null);
+    const events = ['pointermove', 'pointerdown', 'keydown', 'blur'];
+    events.forEach((event) =>
+      window.addEventListener(event, clearDroppedFolder),
+    );
+    return () => {
+      events.forEach((event) =>
+        window.removeEventListener(event, clearDroppedFolder),
+      );
+    };
+  }, [droppedFolder]);
+
+  const handleDragEnd = async (result: DropResult) => {
+    setDroppedFolder(
+      result.reason === 'DROP' && result.destination && result.mode === 'FLUID'
+        ? result.draggableId
+        : null,
+    );
+    setIsDragging(false);
+    if (
+      !result.destination ||
+      sortingRef.current ||
+      result.source.index === result.destination.index
+    ) {
+      return;
+    }
+    sortingRef.current = true;
+    setIsSorting(true);
 
     const { source, destination } = result;
     const newFolders = Array.from(localFolders);
@@ -79,11 +120,14 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
     setLocalFolders(newFolders);
 
     try {
-      moveFolder(movedFolder.name, destination.index);
+      await moveFolder(movedFolder.name, destination.index);
     } catch (e) {
       // Revert on error
       setLocalFolders(folders);
       error(`Error moving folder: ${e}`);
+    } finally {
+      sortingRef.current = false;
+      setIsSorting(false);
     }
   };
 
@@ -258,8 +302,43 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
           <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
             <span className="text-sm font-medium">{t('general:folders')}</span>
           </div>
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="folders">
+          <DragDropContext
+            onDragStart={() => {
+              setDroppedFolder(null);
+              setIsDragging(true);
+            }}
+            onDragEnd={handleDragEnd}
+          >
+            <Droppable
+              droppableId="folders"
+              getContainerForClone={() => document.body}
+              renderClone={(provided, _snapshot, rubric) => {
+                const folder = localFolders[rubric.source.index];
+                return (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    style={{
+                      ...provided.draggableProps.style,
+                      width: sidebarWidth - 60,
+                      cursor: 'grabbing',
+                      backgroundColor: FOLDER_DRAG_BACKGROUND,
+                    }}
+                    className="px-3 py-2 text-sm font-medium rounded-lg overflow-hidden whitespace-nowrap flex items-center gap-3 text-accent-foreground"
+                  >
+                    <span className="flex items-center w-full">
+                      <span className="font-mono text-xs text-muted-foreground w-10 text-left flex-shrink-0">
+                        ({folder.world_count})
+                      </span>
+                      <span className="truncate flex-1 pl-1">
+                        {folder.name}
+                      </span>
+                    </span>
+                  </div>
+                );
+              }}
+            >
               {(provided) => (
                 <div
                   ref={provided.innerRef}
@@ -271,6 +350,7 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
                       key={folder.name}
                       draggableId={folder.name}
                       index={index}
+                      isDragDisabled={isSorting || editingFolder !== null}
                     >
                       {(provided) => (
                         <ContextMenu>
@@ -280,7 +360,12 @@ export function AppSidebar({ sidebarWidth }: AppSidebarProps) {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               style={{
+                                ...provided.draggableProps.style,
                                 width: `${sidebarWidth - 60}px`,
+                                backgroundColor:
+                                  droppedFolder === folder.name
+                                    ? FOLDER_DRAG_BACKGROUND
+                                    : undefined,
                               }}
                               className={`
                                 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer
