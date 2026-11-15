@@ -105,6 +105,7 @@
   "listview-page:reload-worlds": "Get Favorite Worlds",
   "listview-page:error-load-worlds": "Failed to load worlds",
   "listview-page:error-create-folder": "Failed to create folder",
+  "listview-page:error-move-folder": "Failed to reorder folders",
   "listview-page:worlds-added-title": "Worlds added",
   "listview-page:worlds-added-description-single": "1 world was successfully added",
   "listview-page:worlds-added-description-multiple": "{0} worlds were successfully added",
