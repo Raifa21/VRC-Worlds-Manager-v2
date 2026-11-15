@@ -310,7 +310,7 @@ export default function FindWorldsPage() {
   // no external select-all; handled by grid internally when needed
 
   return (
-    <div className="p-1 flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0">
       {/* added min-h-0 */}
       {/* Header with title and reload button */}
       <div className="flex items-center justify-between p-4 bg-background">
@@ -417,8 +417,8 @@ export default function FindWorldsPage() {
             {/* new scroll container for search tab */}
             <div className="sticky top-0 z-40 bg-background border-b">
               {/* sticky header now inside scroller */}
-              <Card className=" mx-4 border-0 shadow-none">
-                <CardContent className="pt-4 space-y-4">
+              <Card className="border-0 shadow-none">
+                <CardContent className="p-4 space-y-4">
                   {/* First row: Search input, Sort dropdown, and Search button */}
                   <div className="flex gap-4 items-end">
                     {/* Search text input */}
@@ -569,7 +569,7 @@ export default function FindWorldsPage() {
               </Card>
             </div>
 
-            <div className="flex flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4 pt-2">
               {/* original search tab content */}
               {/* Search results */}
               {isSearching && searchResults.length === 0 && (
